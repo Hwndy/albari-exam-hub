@@ -8,10 +8,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Users, BookOpen, School, FileText, Plus, Edit, Trash2, Shield } from 'lucide-react';
-import { User } from '@/types/auth';
-import { Exam } from '@/types/exam';
-import { useToast } from '@/hooks/use-toast';
+import { Users, BookOpen, School, FileText } from 'lucide-react';
+import { UserManagement } from '@/components/admin/UserManagement';
+import { ClassManagement } from '@/components/admin/ClassManagement';
+import { SubjectManagement } from '@/components/admin/SubjectManagement';
 
 // Mock data
 const mockUsers: User[] = [
@@ -210,8 +210,17 @@ export const AdminDashboard = () => {
 
           {/* Users Tab */}
           <TabsContent value="users" className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Manage Users</h2>
+            <UserManagement />
+          </TabsContent>
+
+          {/* Classes Tab */}
+          <TabsContent value="classes" className="space-y-6">
+            <ClassManagement />
+          </TabsContent>
+
+          {/* Subjects Tab */}
+          <TabsContent value="subjects" className="space-y-6">
+            <SubjectManagement />
               <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
                 <DialogTrigger asChild>
                   <Button>
@@ -452,14 +461,6 @@ export const AdminDashboard = () => {
                             Created: {new Date(exam.createdAt).toLocaleDateString()}
                           </span>
                         </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   </CardContent>

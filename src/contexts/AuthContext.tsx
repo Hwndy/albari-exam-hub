@@ -1,136 +1,129 @@
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
-import { User, AuthState, LoginCredentials, ApiResponse } from '@/types/auth';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { supabase } from '@/integrations/supabase/client';
+import { User, AuthState, LoginCredentials } from '@/types/auth';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
-  register: (userData: any) => Promise<void>;
+  logout: () => Promise<void>;
+  register: (userData: { email: string; password: string; fullName: string; role?: string }) => Promise<void>;
+  resetPassword: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-type AuthAction =
-  | { type: 'LOGIN_START' }
-  | { type: 'LOGIN_SUCCESS'; payload: { user: User; token: string } }
-  | { type: 'LOGIN_ERROR' }
-  | { type: 'LOGOUT' }
-  | { type: 'SET_USER'; payload: User };
-
-const authReducer = (state: AuthState, action: AuthAction): AuthState => {
-  switch (action.type) {
-    case 'LOGIN_START':
-      return { ...state, isLoading: true };
-    case 'LOGIN_SUCCESS':
-      return {
-        ...state,
-        user: action.payload.user,
-        token: action.payload.token,
-        isAuthenticated: true,
-        isLoading: false,
-      };
-    case 'LOGIN_ERROR':
-      return {
-        ...state,
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      };
-    case 'LOGOUT':
-      return {
-        user: null,
-        token: null,
-        isAuthenticated: false,
-        isLoading: false,
-      };
-    case 'SET_USER':
-      return { ...state, user: action.payload };
-    default:
-      return state;
-  }
-};
-
-const initialState: AuthState = {
-  user: null,
-  token: localStorage.getItem('token'),
-  isAuthenticated: false,
-  isLoading: false,
-};
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(authReducer, initialState);
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile from our database
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .single();
+            
+          if (profile) {
+            setUser({
+              id: profile.user_id,
+              email: session.user.email!,
+              name: profile.full_name,
+              role: profile.role as 'admin' | 'teacher' | 'student',
+              createdAt: profile.created_at,
+            });
+          }
+        } else {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setSession(session);
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const login = async (credentials: LoginCredentials) => {
-    dispatch({ type: 'LOGIN_START' });
-    
-    try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock user data based on email
-      let mockUser: User;
-      if (credentials.email.includes('admin')) {
-        mockUser = {
-          id: '1',
-          email: credentials.email,
-          name: 'System Administrator',
-          role: 'admin',
-          createdAt: new Date().toISOString(),
-        };
-      } else if (credentials.email.includes('teacher')) {
-        mockUser = {
-          id: '2',
-          email: credentials.email,
-          name: 'John Teacher',
-          role: 'teacher',
-          subject: 'Mathematics',
-          createdAt: new Date().toISOString(),
-        };
-      } else {
-        mockUser = {
-          id: '3',
-          email: credentials.email,
-          name: 'Jane Student',
-          role: 'student',
-          class: 'JSS 1',
-          createdAt: new Date().toISOString(),
-        };
-      }
+    setIsLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({
+      email: credentials.email,
+      password: credentials.password,
+    });
 
-      const mockToken = 'mock-jwt-token-' + Date.now();
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('user', JSON.stringify(mockUser));
-
-      dispatch({
-        type: 'LOGIN_SUCCESS',
-        payload: { user: mockUser, token: mockToken },
-      });
-    } catch (error) {
-      dispatch({ type: 'LOGIN_ERROR' });
-      throw error;
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    dispatch({ type: 'LOGOUT' });
+  const register = async (userData: { email: string; password: string; fullName: string; role?: string }) => {
+    setIsLoading(true);
+    
+    const { error } = await supabase.auth.signUp({
+      email: userData.email,
+      password: userData.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/`,
+        data: {
+          full_name: userData.fullName,
+          role: userData.role || 'student'
+        }
+      }
+    });
+
+    if (error) {
+      setIsLoading(false);
+      throw new Error(error.message);
+    }
   };
 
-  const register = async (userData: any) => {
-    // Mock registration - replace with actual API
-    await new Promise(resolve => setTimeout(resolve, 1000));
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  const resetPassword = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  };
+
+  const value: AuthContextType = {
+    user,
+    token: session?.access_token || null,
+    isAuthenticated: !!session && !!user,
+    isLoading,
+    login,
+    logout,
+    register,
+    resetPassword,
   };
 
   return (
-    <AuthContext.Provider
-      value={{
-        ...state,
-        login,
-        logout,
-        register,
-      }}
-    >
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
