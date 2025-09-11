@@ -16,9 +16,9 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 22% 22%;
     
-    /* Primary - ALBARI Brand Blue */
-    --primary: 217 91% 25%;
-    --primary-hover: 217 91% 20%;
+    /* Primary - ALBARI Brand Green */
+    --primary: 142 61% 30%;
+    --primary-hover: 142 61% 25%;
     --primary-foreground: 0 0% 100%;
     
     /* Secondary - Light Academic Gray */
@@ -43,13 +43,13 @@
     --muted-foreground: 210 12% 55%;
     
     /* Accent - Interactive Elements */
-    --accent: 217 91% 97%;
-    --accent-foreground: 217 91% 25%;
+    --accent: 142 61% 96%;
+    --accent-foreground: 142 61% 25%;
     
     /* Borders and Inputs */
     --border: 210 20% 88%;
     --input: 210 20% 88%;
-    --ring: 217 91% 25%;
+    --ring: 142 61% 30%;
 
     --radius: 0.75rem;
     
@@ -94,8 +94,8 @@
     --popover: 217 32% 15%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
-    --primary-hover: 217 91% 55%;
+    --primary: 142 61% 50%;
+    --primary-hover: 142 61% 45%;
     --primary-foreground: 217 32% 15%;
 
     --secondary: 217 32% 20%;
