@@ -292,6 +292,36 @@ export type Database = {
           },
         ]
       }
+      password_reset_otps: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          otp_code: string
+          updated_at: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          otp_code: string
+          updated_at?: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          otp_code?: string
+          updated_at?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -587,6 +617,10 @@ export type Database = {
       calculate_exam_score: {
         Args: { session_id_param: string }
         Returns: Json
+      }
+      cleanup_expired_otps: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
