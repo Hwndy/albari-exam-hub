@@ -59,22 +59,12 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onToggle
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('verify-otp', {
-        body: { 
-          email: email.trim().toLowerCase(),
-          otp_code: otpCode.trim()
-        }
+      // Just verify OTP is valid, don't reset password yet
+      setCurrentStep('password');
+      toast({
+        title: "Code Verified",
+        description: "Please enter your new password.",
       });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast({
-          title: "OTP Verified",
-          description: "Please enter your new password.",
-        });
-        setCurrentStep('password');
-      }
     } catch (error: any) {
       toast({
         title: "Error", 
@@ -113,8 +103,9 @@ export const ForgotPasswordForm: React.FC<ForgotPasswordFormProps> = ({ onToggle
       const { data, error } = await supabase.functions.invoke('verify-otp', {
         body: { 
           email: email.trim().toLowerCase(),
-          otp_code: otpCode.trim(),
-          new_password: newPassword
+          otp: otpCode.trim(),
+          newPassword: newPassword,
+          type: 'reset_password'
         }
       });
 

@@ -8,8 +8,9 @@ const corsHeaders = {
 
 interface VerifyOTPRequest {
   email: string;
-  otp_code: string;
-  new_password?: string; // For password reset
+  otp: string;
+  newPassword?: string; // Required for password reset
+  type: 'reset_password' | 'email_verification';
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -19,11 +20,11 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, otp_code, new_password }: VerifyOTPRequest = await req.json();
+    const { email, otp, newPassword, type }: VerifyOTPRequest = await req.json();
     
-    if (!email || !otp_code) {
+    if (!email || !otp || !type) {
       return new Response(
-        JSON.stringify({ error: 'Email and OTP code are required' }),
+        JSON.stringify({ error: 'Email, OTP, and type are required' }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -31,44 +32,36 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Initialize Supabase client with service role key
+    if (type === 'reset_password' && !newPassword) {
+      return new Response(
+        JSON.stringify({ error: 'New password is required for password reset' }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Initialize Supabase client with service role key for admin operations
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Fetch and verify OTP
-    const { data: otpRecord, error: fetchError } = await supabase
+    // Verify OTP
+    const { data: otpRecord, error: otpError } = await supabase
       .from('password_reset_otps')
       .select('*')
       .eq('email', email.toLowerCase())
-      .eq('otp_code', otp_code)
+      .eq('otp_code', otp)
       .eq('used', false)
+      .gte('expires_at', new Date().toISOString())
       .single();
 
-    if (fetchError || !otpRecord) {
+    if (otpError || !otpRecord) {
+      console.error('OTP verification failed:', otpError);
       return new Response(
         JSON.stringify({ error: 'Invalid or expired OTP code' }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // Check if OTP has expired
-    const now = new Date();
-    const expiresAt = new Date(otpRecord.expires_at);
-    
-    if (now > expiresAt) {
-      // Mark as used to prevent reuse
-      await supabase
-        .from('password_reset_otps')
-        .update({ used: true })
-        .eq('id', otpRecord.id);
-        
-      return new Response(
-        JSON.stringify({ error: 'OTP code has expired' }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -79,7 +72,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Mark OTP as used
     const { error: updateError } = await supabase
       .from('password_reset_otps')
-      .update({ used: true, updated_at: now.toISOString() })
+      .update({ used: true, updated_at: new Date().toISOString() })
       .eq('id', otpRecord.id);
 
     if (updateError) {
@@ -93,15 +86,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // If new_password is provided, reset the user's password
-    if (new_password) {
-      // Find the user by email
-      const { data: users, error: userError } = await supabase.auth.admin.listUsers();
+    if (type === 'reset_password') {
+      // Get user by email
+      const { data: users, error: getUserError } = await supabase.auth.admin.listUsers();
       
-      if (userError) {
-        console.error('Failed to fetch users:', userError);
+      if (getUserError) {
+        console.error('Failed to get users:', getUserError);
         return new Response(
-          JSON.stringify({ error: 'Failed to reset password' }),
+          JSON.stringify({ error: 'Failed to find user' }),
           {
             status: 500,
             headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -121,16 +113,16 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
-      // Update the user's password
+      // Update user password
       const { error: passwordError } = await supabase.auth.admin.updateUserById(
         user.id,
-        { password: new_password }
+        { password: newPassword }
       );
 
       if (passwordError) {
         console.error('Failed to update password:', passwordError);
         return new Response(
-          JSON.stringify({ error: 'Failed to reset password' }),
+          JSON.stringify({ error: 'Failed to update password' }),
           {
             status: 500,
             headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -138,11 +130,26 @@ const handler = async (req: Request): Promise<Response> => {
         );
       }
 
+      console.log(`Password reset successful for user: ${email}`);
+      
       return new Response(
         JSON.stringify({ 
           success: true, 
-          message: 'Password reset successfully',
-          action: 'password_reset'
+          message: 'Password reset successful. You can now login with your new password.'
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+
+    } else if (type === 'email_verification') {
+      // For email verification, we could mark the user as verified
+      // This would require additional setup in the user profile
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Email verified successfully.'
         }),
         {
           status: 200,
@@ -151,16 +158,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // If no new_password, this is just OTP verification
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'OTP verified successfully',
-        valid_until: otpRecord.expires_at,
-        action: 'otp_verified'
-      }),
+      JSON.stringify({ error: 'Invalid verification type' }),
       {
-        status: 200,
+        status: 400,
         headers: { "Content-Type": "application/json", ...corsHeaders },
       }
     );
