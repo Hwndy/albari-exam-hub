@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Clock, BookOpen, Trophy, TrendingUp } from 'lucide-react';
 import { Exam, ExamResult } from '@/types/exam';
+import { ExamList } from '@/components/student/ExamList';
 
 // Mock data
 const mockExams: Exam[] = [
@@ -132,79 +133,8 @@ export const StudentDashboard = () => {
           </Card>
         </div>
 
-        {/* Available Exams */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Available Exams</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {availableExams.map((exam) => (
-                <div
-                  key={exam.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors"
-                >
-                  <div className="space-y-2">
-                    <h3 className="font-semibold">{exam.title}</h3>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                      <span>{exam.subject}</span>
-                      <span>•</span>
-                      <span>{exam.totalQuestions} questions</span>
-                      <span>•</span>
-                      <span>{exam.duration} minutes</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-4">
-                    <Badge variant="secondary">{exam.status}</Badge>
-                    <Button onClick={() => handleStartExam(exam.id)}>
-                      Start Exam
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Recent Results */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {results.map((result) => {
-                const exam = availableExams.find(e => e.id === result.examId);
-                const percentage = Math.round((result.score / result.totalQuestions) * 100);
-                
-                return (
-                  <div
-                    key={result.id}
-                    className="flex items-center justify-between p-4 border border-border rounded-lg"
-                  >
-                    <div className="space-y-2">
-                      <h3 className="font-semibold">{exam?.title}</h3>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span>Completed on {new Date(result.completedAt).toLocaleDateString()}</span>
-                        <span>•</span>
-                        <span>{result.timeSpent} minutes</span>
-                      </div>
-                    </div>
-                    <div className="text-right space-y-2">
-                      <div className="text-2xl font-bold">
-                        {result.score}/{result.totalQuestions}
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={percentage} className="w-20" />
-                        <span className="text-sm font-medium">{percentage}%</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Exam List Component */}
+        <ExamList />
       </div>
     </DashboardLayout>
   );
