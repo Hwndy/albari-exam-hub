@@ -10,6 +10,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { StudentDashboard } from "@/pages/StudentDashboard";
 import { TeacherDashboard } from "@/pages/TeacherDashboard";
 import { AdminDashboard } from "@/pages/AdminDashboard";
+import { ExamPage } from "@/pages/ExamPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,16 @@ const App = () => (
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
                   <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
+            
+            {/* Exam route */}
+            <Route
+              path="/exam"
+              element={
+                <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
+                  <ExamPage />
                 </ProtectedRoute>
               }
             />
