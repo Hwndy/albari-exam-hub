@@ -7,6 +7,7 @@ import { Users, School, FileText, Shield } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
+import { AuditLogs } from '@/components/admin/AuditLogs';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types/auth';
 import type { Exam } from '@/types/exam';

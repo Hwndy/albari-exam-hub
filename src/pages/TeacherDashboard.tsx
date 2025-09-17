@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BookOpen, Users, FileText } from 'lucide-react';
 import { QuestionBank } from '@/components/teacher/QuestionBank';
 import { ExamBuilder } from '@/components/teacher/ExamBuilder';
+import { ExamResults } from '@/components/teacher/ExamResults';
 
 export const TeacherDashboard = () => {
   return (
