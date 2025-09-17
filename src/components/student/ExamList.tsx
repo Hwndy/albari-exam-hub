@@ -34,7 +34,7 @@ interface AvailableExam {
   status: 'upcoming' | 'active' | 'completed' | 'missed';
   session?: {
     id: string;
-    status: 'not_started' | 'in_progress' | 'completed';
+    status: 'not_started' | 'in_progress' | 'completed' | 'expired';
     current_question_index: number;
     time_remaining_seconds: number;
     total_score?: number;
@@ -236,7 +236,7 @@ export const ExamList: React.FC = () => {
                         <span className="ml-1 capitalize">{exam.status}</span>
                       </Badge>
                       {exam.session?.status === 'in_progress' && (
-                        <Badge variant="warning">In Progress</Badge>
+                        <Badge variant="secondary">In Progress</Badge>
                       )}
                     </div>
                     

@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Question {
   id: string;
   question_text: string;
-  question_type: 'mcq' | 'true_false' | 'short_answer';
+  question_type: 'mcq' | 'true_false' | 'fill_blank';
   difficulty_level: 'easy' | 'medium' | 'hard';
   points: number;
   options: QuestionOption[];
@@ -47,7 +47,7 @@ export const QuestionBank: React.FC = () => {
 
   const [questionForm, setQuestionForm] = useState({
     question_text: '',
-    question_type: 'mcq' as 'mcq' | 'true_false' | 'short_answer',
+    question_type: 'mcq' as 'mcq' | 'true_false' | 'fill_blank',
     difficulty_level: 'medium' as 'easy' | 'medium' | 'hard',
     points: 1,
     subject_id: '',
@@ -134,6 +134,7 @@ export const QuestionBank: React.FC = () => {
           difficulty_level: questionForm.difficulty_level,
           points: questionForm.points,
           explanation: questionForm.explanation || null,
+          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
         })
         .select()
         .single();
@@ -360,7 +361,7 @@ export const QuestionBank: React.FC = () => {
                     <Label htmlFor="question_type">Question Type</Label>
                     <Select
                       value={questionForm.question_type}
-                      onValueChange={(value: 'mcq' | 'true_false' | 'short_answer') =>
+                      onValueChange={(value: 'mcq' | 'true_false' | 'fill_blank') =>
                         setQuestionForm({ ...questionForm, question_type: value })
                       }
                     >
@@ -370,7 +371,7 @@ export const QuestionBank: React.FC = () => {
                       <SelectContent>
                         <SelectItem value="mcq">Multiple Choice</SelectItem>
                         <SelectItem value="true_false">True/False</SelectItem>
-                        <SelectItem value="short_answer">Short Answer</SelectItem>
+                        <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -549,7 +550,7 @@ export const QuestionBank: React.FC = () => {
                 <p className="font-medium">{previewQuestion.question_text}</p>
               </div>
               
-              {previewQuestion.question_type !== 'short_answer' && previewQuestion.options && (
+              {previewQuestion.question_type !== 'fill_blank' && previewQuestion.options && (
                 <div className="space-y-2">
                   <Label>Options:</Label>
                   {previewQuestion.options.map((option, index) => (

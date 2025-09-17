@@ -33,6 +33,8 @@ interface Exam {
   title: string;
   description?: string;
   instructions?: string;
+  subject_id?: string;
+  class_id?: string;
   duration_minutes: number;
   total_questions: number;
   pass_mark: number;
@@ -48,6 +50,7 @@ interface Exam {
   subject_name?: string;
   class_name?: string;
   created_at: string;
+  created_by: string;
 }
 
 export const ExamBuilder: React.FC = () => {
@@ -159,6 +162,7 @@ export const ExamBuilder: React.FC = () => {
           show_results_immediately: examForm.show_results_immediately,
           sequential_navigation: examForm.sequential_navigation,
           allow_question_flagging: examForm.allow_question_flagging,
+          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
           status: 'draft',
         })
         .select()
@@ -272,6 +276,7 @@ export const ExamBuilder: React.FC = () => {
           show_results_immediately: exam.show_results_immediately,
           sequential_navigation: exam.sequential_navigation,
           allow_question_flagging: exam.allow_question_flagging,
+          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
           status: 'draft',
         });
 
