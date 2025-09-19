@@ -74,9 +74,7 @@ export const TeacherDashboard = () => {
           </TabsContent>
 
           <TabsContent value="results" className="space-y-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Student results will be displayed here.</p>
-            </div>
+            <ExamResults />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

@@ -27,6 +27,7 @@ import {
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Exam {
   id: string;
@@ -65,6 +66,7 @@ export const ExamBuilder: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [examForm, setExamForm] = useState({
     title: '',
@@ -162,7 +164,7 @@ export const ExamBuilder: React.FC = () => {
           show_results_immediately: examForm.show_results_immediately,
           sequential_navigation: examForm.sequential_navigation,
           allow_question_flagging: examForm.allow_question_flagging,
-          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
+          created_by: user?.id || '', // Use actual user ID from auth context
           status: 'draft',
         })
         .select()
@@ -276,7 +278,7 @@ export const ExamBuilder: React.FC = () => {
           show_results_immediately: exam.show_results_immediately,
           sequential_navigation: exam.sequential_navigation,
           allow_question_flagging: exam.allow_question_flagging,
-          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
+          created_by: user?.id || '', // Use actual user ID from auth context
           status: 'draft',
         });
 

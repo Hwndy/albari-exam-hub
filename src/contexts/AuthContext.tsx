@@ -33,7 +33,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             
           if (profile) {
             setUser({
-              id: profile.user_id,
+              id: session.user.id, // Use session.user.id instead of profile.user_id
               email: session.user.email!,
               name: profile.full_name,
               role: profile.role as 'admin' | 'teacher' | 'student',

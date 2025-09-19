@@ -141,25 +141,11 @@ export const ExamList: React.FC = () => {
         .single();
 
       if (existingSession) {
-        // Resume existing session
+        // Resume existing session - go directly to exam
         window.location.href = `/exam?session=${existingSession.id}`;
       } else {
-        // Create new session
-        const { data: newSession, error } = await supabase
-          .from('exam_sessions')
-          .insert({
-            exam_id: examId,
-            student_id: user?.id,
-            status: 'in_progress',
-            started_at: new Date().toISOString(),
-            current_question_index: 0,
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-
-        window.location.href = `/exam?session=${newSession.id}`;
+        // New exam - go to instructions first  
+        window.location.href = `/exam/instructions/${examId}`;
       }
     } catch (error: any) {
       toast({

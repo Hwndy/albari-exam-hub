@@ -11,6 +11,8 @@ import { StudentDashboard } from "@/pages/StudentDashboard";
 import { TeacherDashboard } from "@/pages/TeacherDashboard";
 import { AdminDashboard } from "@/pages/AdminDashboard";
 import { ExamPage } from "@/pages/ExamPage";
+import { ExamInstructionsPage } from "@/pages/ExamInstructionsPage";
+import { ExamResultsPage } from "@/pages/ExamResultsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -83,12 +85,28 @@ const App = () => (
               }
             />
             
-            {/* Exam route */}
+            {/* Exam route with instructions and results */}
             <Route
-              path="/exam"
+              path="/exam/instructions/:examId"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <ExamInstructionsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exam/:sessionId"
               element={
                 <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
                   <ExamPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exam/results/:sessionId"
+              element={
+                <ProtectedRoute allowedRoles={['student']}>
+                  <ExamResultsPage />
                 </ProtectedRoute>
               }
             />
