@@ -12,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Plus, Edit, Trash2, Search, Upload, Download, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Question {
   id: string;
@@ -44,6 +45,7 @@ export const QuestionBank: React.FC = () => {
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [questionForm, setQuestionForm] = useState({
     question_text: '',
@@ -134,7 +136,7 @@ export const QuestionBank: React.FC = () => {
           difficulty_level: questionForm.difficulty_level,
           points: questionForm.points,
           explanation: questionForm.explanation || null,
-          created_by: 'temp-user-id', // TODO: Replace with actual user ID from auth context
+          created_by: user?.id || '',
         })
         .select()
         .single();

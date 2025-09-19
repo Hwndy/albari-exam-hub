@@ -158,13 +158,13 @@ export const ExamBuilder: React.FC = () => {
           pass_mark: examForm.pass_mark,
           start_date: examForm.start_date?.toISOString() || null,
           end_date: examForm.end_date?.toISOString() || null,
+          created_by: user?.id || '',
           randomize_questions: examForm.randomize_questions,
           shuffle_answers: examForm.shuffle_answers,
           allow_review: examForm.allow_review,
           show_results_immediately: examForm.show_results_immediately,
           sequential_navigation: examForm.sequential_navigation,
           allow_question_flagging: examForm.allow_question_flagging,
-          created_by: user?.id || '', // Use actual user ID from auth context
           status: 'draft',
         })
         .select()
