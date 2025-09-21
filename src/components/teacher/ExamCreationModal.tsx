@@ -531,12 +531,12 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
                   <div>
                     <Label htmlFor="class">Class (Optional)</Label>
-                    <Select value={metadata.classId} onValueChange={(value) => setMetadata(prev => ({ ...prev, classId: value }))}>
+                    <Select value={metadata.classId || "all"} onValueChange={(value) => setMetadata(prev => ({ ...prev, classId: value === "all" ? "" : value }))}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All Classes</SelectItem>
+                        <SelectItem value="all">All Classes</SelectItem>
                         {classes.map((cls) => (
                           <SelectItem key={cls.id} value={cls.id}>
                             {cls.name}
