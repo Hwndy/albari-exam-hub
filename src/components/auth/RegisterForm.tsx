@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RegisterFormProps {
   onToggleMode: () => void;
@@ -22,11 +23,33 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student' as 'admin' | 'teacher' | 'student'
+    role: 'student' as 'admin' | 'teacher' | 'student',
+    classId: '',
+    subjectIds: [] as string[]
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [classes, setClasses] = useState<Array<{id: string, name: string}>>([]);
+  const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
   const { register } = useAuth();
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [classesResult, subjectsResult] = await Promise.all([
+          supabase.from('classes').select('id, name').order('name'),
+          supabase.from('subjects').select('id, name').order('name')
+        ]);
+
+        if (classesResult.data) setClasses(classesResult.data);
+        if (subjectsResult.data) setSubjects(subjectsResult.data);
+      } catch (error) {
+        console.error('Error fetching classes/subjects:', error);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,7 +78,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         email: formData.email,
         password: formData.password,
         fullName: formData.fullName,
-        role: formData.role
+        role: formData.role,
+        classId: formData.role === 'student' ? formData.classId : undefined,
+        subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined
       });
       
       toast({
@@ -112,7 +137,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <Select 
               value={formData.role} 
               onValueChange={(value: 'admin' | 'teacher' | 'student') => 
-                setFormData({ ...formData, role: value })
+                setFormData({ ...formData, role: value, classId: '', subjectIds: [] })
               }
             >
               <SelectTrigger>
@@ -127,6 +152,89 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               </SelectContent>
             </Select>
           </div>
+
+          {formData.role === 'student' && (
+            <div className="space-y-2">
+              <Label htmlFor="class">Class</Label>
+              <Select 
+                value={formData.classId} 
+                onValueChange={(value) => setFormData({ ...formData, classId: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select your class" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes.map((cls) => (
+                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {formData.role === 'teacher' && (
+            <>
+              <div className="space-y-2">
+                <Label htmlFor="classes">Classes (Select multiple by holding Ctrl/Cmd)</Label>
+                <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                  {classes.map((cls) => (
+                    <div key={cls.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        id={`class-${cls.id}`}
+                        checked={formData.subjectIds.includes(cls.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              subjectIds: [...formData.subjectIds, cls.id] 
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              subjectIds: formData.subjectIds.filter(id => id !== cls.id) 
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor={`class-${cls.id}`} className="text-sm">{cls.name}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="subjects">Subjects</Label>
+                <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                  {subjects.map((subject) => (
+                    <div key={subject.id} className="flex items-center space-x-2 py-1">
+                      <input
+                        type="checkbox"
+                        id={`subject-${subject.id}`}
+                        checked={formData.subjectIds.includes(subject.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({ 
+                              ...formData, 
+                              subjectIds: [...formData.subjectIds, subject.id] 
+                            });
+                          } else {
+                            setFormData({ 
+                              ...formData, 
+                              subjectIds: formData.subjectIds.filter(id => id !== subject.id) 
+                            });
+                          }
+                        }}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor={`subject-${subject.id}`} className="text-sm">{subject.name}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
           
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>

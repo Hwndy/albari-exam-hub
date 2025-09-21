@@ -6,7 +6,14 @@ import { User, AuthState, LoginCredentials } from '@/types/auth';
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
-  register: (userData: { email: string; password: string; fullName: string; role?: string }) => Promise<void>;
+  register: (userData: { 
+    email: string; 
+    password: string; 
+    fullName: string; 
+    role?: string;
+    classId?: string;
+    subjectIds?: string[];
+  }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
 
@@ -121,17 +128,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Don't set loading to false here - let the auth state change handle it
   };
 
-  const register = async (userData: { email: string; password: string; fullName: string; role?: string }) => {
+  const register = async (userData: { 
+    email: string; 
+    password: string; 
+    fullName: string; 
+    role?: string;
+    classId?: string;
+    subjectIds?: string[];
+  }) => {
     setIsLoading(true);
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: userData.email,
       password: userData.password,
       options: {
         emailRedirectTo: `${window.location.origin}/`,
         data: {
           full_name: userData.fullName,
-          role: userData.role || 'student'
+          role: userData.role || 'student',
+          class_id: userData.classId,
+          subject_ids: userData.subjectIds
         }
       }
     });
@@ -139,6 +155,30 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     if (error) {
       setIsLoading(false);
       throw new Error(error.message);
+    }
+
+    // Handle class and subject assignments after user creation
+    if (data.user && userData.role === 'student' && userData.classId) {
+      try {
+        await supabase.from('class_assignments').insert({
+          student_id: data.user.id,
+          class_id: userData.classId
+        });
+      } catch (assignmentError) {
+        console.error('Error assigning class:', assignmentError);
+      }
+    }
+
+    if (data.user && userData.role === 'teacher' && userData.subjectIds?.length) {
+      try {
+        const assignments = userData.subjectIds.map(subjectId => ({
+          user_id: data.user!.id,
+          subject_id: subjectId
+        }));
+        await supabase.from('subject_assignments').insert(assignments);
+      } catch (assignmentError) {
+        console.error('Error assigning subjects:', assignmentError);
+      }
     }
   };
 
