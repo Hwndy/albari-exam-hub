@@ -38,6 +38,7 @@ interface AvailableExam {
     current_question_index: number;
     time_remaining_seconds: number;
     total_score?: number;
+    max_score?: number;
     percentage?: number;
   };
 }
@@ -127,6 +128,7 @@ export const ExamList: React.FC = () => {
               current_question_index: session.current_question_index || 0,
               time_remaining_seconds: session.time_remaining_seconds || exam.duration_minutes * 60,
               total_score: session.total_score,
+              max_score: session.max_score,
               percentage: session.percentage,
             } : undefined,
           };
@@ -422,10 +424,10 @@ export const ExamList: React.FC = () => {
                   </div>
                   
                   <div className="text-right space-y-1">
-                    {exam.session?.total_score !== undefined && (
+                    {exam.session?.total_score !== undefined && exam.session?.max_score !== undefined && (
                       <>
                         <div className="text-lg font-bold">
-                          {exam.session.total_score}/{exam.total_questions}
+                          {exam.session.total_score}/{exam.session.max_score}
                         </div>
                         <div className="flex items-center space-x-2">
                           <Progress 

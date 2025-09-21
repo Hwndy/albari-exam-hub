@@ -60,6 +60,11 @@ export const ExamResults: React.FC = () => {
     try {
       setLoading(true);
       
+      // Ensure the score is calculated first
+      await supabase.rpc('calculate_exam_score', {
+        session_id_param: sessionId
+      });
+      
       // Fetch session with exam details
       const { data: sessionData, error: sessionError } = await supabase
         .from('exam_sessions')

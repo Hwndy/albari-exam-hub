@@ -229,11 +229,56 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
     return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleAnswerChange = (questionId: string, answer: string) => {
+  const handleAnswerChange = async (questionId: string, answer: string) => {
     setAnswers(prev => ({
       ...prev,
       [questionId]: answer,
     }));
+
+    // Save the response to the database
+    if (user?.id) {
+      try {
+        // Get the session first
+        const { data: sessionData } = await supabase
+          .from('exam_sessions')
+          .select('id')
+          .eq('exam_id', exam.id)
+          .eq('student_id', user.id)
+          .single();
+
+        if (sessionData) {
+          // Find the question option ID for MCQ/True-False questions
+          const question = questions.find(q => q.id === questionId);
+          let selectedOptionId = null;
+          
+          if (question && ['mcq', 'true_false'].includes(question.type)) {
+            const optionIndex = answer.charCodeAt(0) - 65; // Convert A,B,C,D to 0,1,2,3
+            const { data: optionData } = await supabase
+              .from('question_options')
+              .select('id')
+              .eq('question_id', questionId)
+              .eq('option_order', optionIndex + 1)
+              .single();
+            
+            selectedOptionId = optionData?.id;
+          }
+
+          await supabase
+            .from('question_responses')
+            .upsert({
+              session_id: sessionData.id,
+              question_id: questionId,
+              selected_option_id: selectedOptionId,
+              text_answer: question?.type === 'fill_blank' ? answer : null,
+              answered_at: new Date().toISOString(),
+            }, {
+              onConflict: 'session_id,question_id'
+            });
+        }
+      } catch (error) {
+        console.error('Error saving answer:', error);
+      }
+    }
   };
 
   const handleFlag = (questionIndex: number) => {
@@ -248,9 +293,30 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
     });
   };
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    // First, submit all final answers to ensure they're saved
+    if (user?.id) {
+      try {
+        const { data: sessionData } = await supabase
+          .from('exam_sessions')
+          .select('id')
+          .eq('exam_id', exam.id)
+          .eq('student_id', user.id)
+          .single();
+
+        if (sessionData) {
+          // Calculate and save final score
+          await supabase.rpc('calculate_exam_score', {
+            session_id_param: sessionData.id
+          });
+        }
+      } catch (error) {
+        console.error('Error calculating final score:', error);
+      }
+    }
+    
     onSubmit(answers);
-  }, [answers, onSubmit]);
+  }, [answers, onSubmit, exam.id, user]);
 
   const getQuestionStatus = (index: number) => {
     if (answers[questions[index].id]) return 'answered';
