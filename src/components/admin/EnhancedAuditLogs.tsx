@@ -161,7 +161,7 @@ export const EnhancedAuditLogs: React.FC = () => {
             user_id: session.student_id,
             user_name: profile?.full_name || 'Unknown',
             user_role: profile?.role || 'student',
-            ip_address: session.ip_address,
+            ip_address: session.ip_address as string || '',
             user_agent: session.user_agent || '',
             timestamp: session.updated_at || session.created_at,
           });
