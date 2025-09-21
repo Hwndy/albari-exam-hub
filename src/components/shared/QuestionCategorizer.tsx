@@ -170,11 +170,11 @@ export const QuestionCategorizer: React.FC<QuestionCategorizerProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Subjects</SelectItem>
-                {subjects.map(subject => (
-                  <SelectItem key={subject.id} value={subject.id}>
-                    {subject.name}
-                  </SelectItem>
-                ))}
+              {subjects.filter(subject => subject.id && subject.id.trim()).map(subject => (
+                <SelectItem key={subject.id} value={subject.id}>
+                  {subject.name}
+                </SelectItem>
+              ))}
               </SelectContent>
             </Select>
           </div>
@@ -187,11 +187,11 @@ export const QuestionCategorizer: React.FC<QuestionCategorizerProps> = ({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Classes</SelectItem>
-                {classes.map(cls => (
-                  <SelectItem key={cls.id} value={cls.id}>
-                    {cls.name}
-                  </SelectItem>
-                ))}
+              {classes.filter(cls => cls.id && cls.id.trim()).map(cls => (
+                <SelectItem key={cls.id} value={cls.id}>
+                  {cls.name}
+                </SelectItem>
+              ))}
               </SelectContent>
             </Select>
           </div>

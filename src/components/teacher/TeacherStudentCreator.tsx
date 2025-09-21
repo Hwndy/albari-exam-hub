@@ -215,15 +215,15 @@ export const TeacherStudentCreator: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="class">Class</Label>
                 <Select
-                  value={studentForm.classId}
-                  onValueChange={(value) => setStudentForm({ ...studentForm, classId: value })}
+                  value={studentForm.classId || "none"}
+                  onValueChange={(value) => setStudentForm({ ...studentForm, classId: value === "none" ? "" : value })}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select class (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">No Class Assignment</SelectItem>
-                    {classes.map(cls => (
+                    <SelectItem value="none">No Class Assignment</SelectItem>
+                    {classes.filter(cls => cls.id && cls.id.trim()).map(cls => (
                       <SelectItem key={cls.id} value={cls.id}>
                         {cls.name}
                       </SelectItem>

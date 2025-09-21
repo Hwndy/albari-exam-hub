@@ -593,13 +593,13 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="class">Class</Label>
-                      <Select value={metadata.classId} onValueChange={(value) => setMetadata({ ...metadata, classId: value })}>
+                      <Select value={metadata.classId || "all"} onValueChange={(value) => setMetadata({ ...metadata, classId: value === "all" ? "" : value })}>
                         <SelectTrigger>
                           <SelectValue placeholder="Select class (optional)" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">All Classes</SelectItem>
-                          {classes.map(cls => (
+                          <SelectItem value="all">All Classes</SelectItem>
+                          {classes.filter(cls => cls.id && cls.id.trim()).map(cls => (
                             <SelectItem key={cls.id} value={cls.id}>
                               {cls.name}
                             </SelectItem>

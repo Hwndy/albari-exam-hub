@@ -287,13 +287,13 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="class">Class (Optional)</Label>
-                  <Select value={classId} onValueChange={setClassId}>
+                  <Select value={classId || "all"} onValueChange={(value) => setClassId(value === "all" ? "" : value)}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select class" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">All Classes</SelectItem>
-                      {classes.map(cls => (
+                      <SelectItem value="all">All Classes</SelectItem>
+                      {classes.filter(cls => cls.id && cls.id.trim()).map(cls => (
                         <SelectItem key={cls.id} value={cls.id}>
                           {cls.name}
                         </SelectItem>
