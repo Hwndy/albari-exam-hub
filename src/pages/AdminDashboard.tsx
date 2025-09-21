@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, School, FileText, Shield } from 'lucide-react';
+import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
@@ -13,138 +13,139 @@ import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
 import { EnhancedLiveMonitor } from '@/components/admin/EnhancedLiveMonitor';
 import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { useToast } from '@/hooks/use-toast';
-import type { User } from '@/types/auth';
-import type { Exam } from '@/types/exam';
+import { supabase } from '@/integrations/supabase/client';
 
-// Mock data
-const mockUsers: User[] = [
-  {
-    id: '1',
-    email: 'admin@albari.edu',
-    name: 'System Admin',
-    role: 'admin',
-    createdAt: '2024-01-01',
-  },
-  {
-    id: '2',
-    email: 'teacher1@albari.edu',
-    name: 'John Teacher',
-    role: 'teacher',
-    subject: 'Mathematics',
-    createdAt: '2024-01-02',
-  },
-  {
-    id: '3',
-    email: 'student1@albari.edu',
-    name: 'Jane Student',
-    role: 'student',
-    class: 'JSS 1',
-    createdAt: '2024-01-03',
-  },
-];
+interface DashboardStats {
+  totalStudents: number;
+  totalTeachers: number;
+  totalClasses: number;
+  totalSubjects: number;
+  totalExams: number;
+  activeExams: number;
+  totalQuestions: number;
+  activeSessions: number;
+}
 
-const mockSubjects = [
-  { id: '1', name: 'Mathematics', teachers: 3, students: 120 },
-  { id: '2', name: 'English Language', teachers: 2, students: 120 },
-  { id: '3', name: 'Basic Science', teachers: 2, students: 120 },
-  { id: '4', name: 'Social Studies', teachers: 2, students: 120 },
-];
-
-const mockClasses = [
-  { id: '1', name: 'JSS 1', students: 40, subjects: 8 },
-  { id: '2', name: 'JSS 2', students: 35, subjects: 8 },
-  { id: '3', name: 'JSS 3', students: 45, subjects: 9 },
-  { id: '4', name: 'SSS 1', students: 30, subjects: 12 },
-  { id: '5', name: 'SSS 2', students: 28, subjects: 12 },
-  { id: '6', name: 'SSS 3', students: 32, subjects: 12 },
-];
-
-const mockExams: Exam[] = [
-  {
-    id: '1',
-    title: 'Mathematics Mid-Term',
-    subject: 'Mathematics',
-    class: 'JSS 1',
-    duration: 60,
-    totalQuestions: 20,
-    questions: [],
-    randomizeQuestions: true,
-    shuffleAnswers: true,
-    createdBy: 'teacher1',
-    createdAt: '2024-01-10',
-    status: 'published',
-  },
-  {
-    id: '2',
-    title: 'English Quiz',
-    subject: 'English',
-    class: 'JSS 2',
-    duration: 45,
-    totalQuestions: 15,
-    questions: [],
-    randomizeQuestions: false,
-    shuffleAnswers: true,
-    createdBy: 'teacher2',
-    createdAt: '2024-01-12',
-    status: 'draft',
-  },
-];
+interface RecentExam {
+  id: string;
+  title: string;
+  subject: string;
+  class: string;
+  status: string;
+  created_at: string;
+  duration_minutes: number;
+  total_questions: number;
+}
 
 export const AdminDashboard = () => {
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [subjects, setSubjects] = useState(mockSubjects);
-  const [classes, setClasses] = useState(mockClasses);
-  const [exams, setExams] = useState<Exam[]>(mockExams);
-  const [isAddingUser, setIsAddingUser] = useState(false);
+  const [stats, setStats] = useState<DashboardStats>({
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalClasses: 0,
+    totalSubjects: 0,
+    totalExams: 0,
+    activeExams: 0,
+    totalQuestions: 0,
+    activeSessions: 0,
+  });
+  
+  const [recentExams, setRecentExams] = useState<RecentExam[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Add User Form State
-  const [userForm, setUserForm] = useState({
-    name: '',
-    email: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
-    subject: '',
-    class: '',
-  });
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
 
-  const handleAddUser = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newUser: User = {
-      id: Date.now().toString(),
-      name: userForm.name,
-      email: userForm.email,
-      role: userForm.role,
-      subject: userForm.role === 'teacher' ? userForm.subject : undefined,
-      class: userForm.role === 'student' ? userForm.class : undefined,
-      createdAt: new Date().toISOString(),
-    };
-    
-    setUsers([...users, newUser]);
-    setIsAddingUser(false);
-    setUserForm({
-      name: '',
-      email: '',
-      role: 'student',
-      subject: '',
-      class: '',
-    });
-    
-    toast({
-      title: 'User Added',
-      description: `${newUser.name} has been added as ${newUser.role}.`,
-    });
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch stats in parallel
+      const [
+        profilesResult,
+        classesResult,
+        subjectsResult,
+        examsResult,
+        questionsResult,
+        sessionsResult,
+      ] = await Promise.all([
+        supabase.from('profiles').select('role'),
+        supabase.from('classes').select('id'),
+        supabase.from('subjects').select('id'),
+        supabase.from('exams').select('id, status'),
+        supabase.from('questions').select('id'),
+        supabase.from('exam_sessions').select('id, status'),
+      ]);
+
+      // Calculate stats
+      const profiles = profilesResult.data || [];
+      const totalStudents = profiles.filter(p => p.role === 'student').length;
+      const totalTeachers = profiles.filter(p => p.role === 'teacher').length;
+      
+      const exams = examsResult.data || [];
+      const activeExams = exams.filter(e => e.status === 'published').length;
+      
+      const sessions = sessionsResult.data || [];
+      const activeSessions = sessions.filter(s => s.status === 'in_progress').length;
+
+      setStats({
+        totalStudents,
+        totalTeachers,
+        totalClasses: classesResult.data?.length || 0,
+        totalSubjects: subjectsResult.data?.length || 0,
+        totalExams: exams.length,
+        activeExams,
+        totalQuestions: questionsResult.data?.length || 0,
+        activeSessions,
+      });
+
+      // Fetch recent exams with details
+      const { data: recentExamsData } = await supabase
+        .from('exams')
+        .select(`
+          id,
+          title,
+          status,
+          created_at,
+          duration_minutes,
+          total_questions,
+          subjects(name),
+          classes(name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(5);
+
+      if (recentExamsData) {
+        const formattedExams = recentExamsData.map((exam: any) => ({
+          id: exam.id,
+          title: exam.title,
+          subject: exam.subjects?.name || 'N/A',
+          class: exam.classes?.name || 'N/A',
+          status: exam.status,
+          created_at: exam.created_at,
+          duration_minutes: exam.duration_minutes,
+          total_questions: exam.total_questions,
+        }));
+        setRecentExams(formattedExams);
+      }
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load dashboard data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
-
-  const getTotalStudents = () => users.filter(u => u.role === 'student').length;
-  const getTotalTeachers = () => users.filter(u => u.role === 'teacher').length;
-  const getTotalExams = () => exams.length;
-  const getActiveExams = () => exams.filter(e => e.status === 'published').length;
 
   return (
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
@@ -152,8 +153,8 @@ export const AdminDashboard = () => {
                   <Users className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{getTotalStudents()}</p>
-                  <p className="text-sm text-muted-foreground">Total Students</p>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalStudents}</p>
+                  <p className="text-sm text-muted-foreground">Students</p>
                 </div>
               </div>
             </CardContent>
@@ -162,12 +163,12 @@ export const AdminDashboard = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-2 bg-success/10 rounded-lg">
-                  <Shield className="h-6 w-6 text-success" />
+                <div className="p-2 bg-emerald-100 rounded-lg">
+                  <Shield className="h-6 w-6 text-emerald-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{getTotalTeachers()}</p>
-                  <p className="text-sm text-muted-foreground">Total Teachers</p>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalTeachers}</p>
+                  <p className="text-sm text-muted-foreground">Teachers</p>
                 </div>
               </div>
             </CardContent>
@@ -176,12 +177,12 @@ export const AdminDashboard = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <School className="h-6 w-6 text-warning" />
+                <div className="p-2 bg-orange-100 rounded-lg">
+                  <School className="h-6 w-6 text-orange-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{classes.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Classes</p>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalClasses}</p>
+                  <p className="text-sm text-muted-foreground">Classes</p>
                 </div>
               </div>
             </CardContent>
@@ -190,12 +191,54 @@ export const AdminDashboard = () => {
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <FileText className="h-6 w-6 text-primary" />
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <BookOpen className="h-6 w-6 text-blue-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{getActiveExams()}/{getTotalExams()}</p>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalSubjects}</p>
+                  <p className="text-sm text-muted-foreground">Subjects</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <FileText className="h-6 w-6 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : `${stats.activeExams}/${stats.totalExams}`}</p>
                   <p className="text-sm text-muted-foreground">Active Exams</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-indigo-100 rounded-lg">
+                  <TrendingUp className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalQuestions}</p>
+                  <p className="text-sm text-muted-foreground">Questions</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Clock className="h-6 w-6 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.activeSessions}</p>
+                  <p className="text-sm text-muted-foreground">Live Sessions</p>
                 </div>
               </div>
             </CardContent>
@@ -204,7 +247,7 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
             <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
@@ -216,38 +259,56 @@ export const AdminDashboard = () => {
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            <h2 className="text-2xl font-bold">System Overview</h2>
-            
-            <div className="grid gap-4">
-              {exams.map((exam) => (
-                <Card key={exam.id}>
-                  <CardContent className="p-6">
-                    <div className="flex justify-between items-start">
-                      <div className="space-y-2">
-                        <h3 className="text-lg font-semibold">{exam.title}</h3>
-                        <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                          <span>{exam.subject}</span>
-                          <span>•</span>
-                          <span>{exam.class}</span>
-                          <span>•</span>
-                          <span>{exam.duration} minutes</span>
-                          <span>•</span>
-                          <span>{exam.totalQuestions} questions</span>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
-                            {exam.status}
-                          </Badge>
-                          <span className="text-sm text-muted-foreground">
-                            Created: {new Date(exam.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Exams</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="animate-pulse">
+                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                    ))}
+                  </div>
+                ) : recentExams.length > 0 ? (
+                  <div className="space-y-4">
+                    {recentExams.map((exam) => (
+                      <Card key={exam.id} className="p-4">
+                        <div className="flex justify-between items-start">
+                          <div className="space-y-2">
+                            <h3 className="text-lg font-semibold">{exam.title}</h3>
+                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                              <span>{exam.subject}</span>
+                              <span>•</span>
+                              <span>{exam.class}</span>
+                              <span>•</span>
+                              <span>{exam.duration_minutes} minutes</span>
+                              <span>•</span>
+                              <span>{exam.total_questions} questions</span>
+                            </div>
+                            <div className="flex items-center space-x-2">
+                              <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
+                                {exam.status}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                Created: {new Date(exam.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No recent exams found
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Users Tab */}
