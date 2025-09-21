@@ -161,8 +161,27 @@ export const ExamList: React.FC = () => {
       console.log('Existing session:', existingSession);
 
       if (existingSession) {
-        // Resume existing session - go directly to exam
-        window.location.href = `/exam?session=${existingSession.id}`;
+        // Auto-submit existing session and close it
+        try {
+          await supabase
+            .from('exam_sessions')
+            .update({ 
+              status: 'completed',
+              ended_at: new Date().toISOString() 
+            })
+            .eq('id', existingSession.id);
+            
+          toast({
+            title: 'Previous Session Closed',
+            description: 'Your previous exam session has been automatically closed.',
+            variant: 'destructive',
+          });
+        } catch (error) {
+          console.error('Error closing previous session:', error);
+        }
+        
+        // Start new session - go to instructions
+        window.location.href = `/exam/instructions/${examId}`;
       } else {
         // New exam - go to instructions first  
         window.location.href = `/exam/instructions/${examId}`;

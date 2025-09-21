@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
+import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp, Plus } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
@@ -13,6 +13,9 @@ import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
 import { EnhancedLiveMonitor } from '@/components/admin/EnhancedLiveMonitor';
 import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { EnhancedQuestionCreator } from '@/components/admin/EnhancedQuestionCreator';
+import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
+import { ExamManagement } from '@/components/admin/ExamManagement';
+import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -248,16 +251,29 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="exams" className="text-xs sm:text-sm">Exams</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
             <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
             <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
             <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
-            <TabsTrigger value="create-question" className="text-xs sm:text-sm">Create Question</TabsTrigger>
-            <TabsTrigger value="monitor" className="text-xs sm:text-sm">Monitor</TabsTrigger>
-            <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
+            <TabsTrigger value="monitor-logs" className="text-xs sm:text-sm">Monitor & Logs</TabsTrigger>
           </TabsList>
+
+          {/* Exams Tab */}
+          <TabsContent value="exams" className="space-y-6">
+            <ConsolidatedExamCreator
+              trigger={
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create New Exam
+                </Button>
+              }
+              onExamCreated={fetchDashboardData}
+            />
+            <ExamManagement />
+          </TabsContent>
 
           {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
@@ -331,21 +347,29 @@ export const AdminDashboard = () => {
           {/* Questions Tab */}
           <TabsContent value="questions" className="space-y-6">
             <AdminQuestionBank />
-          </TabsContent>
-
-          {/* Create Question Tab */}
-          <TabsContent value="create-question" className="space-y-6">
             <EnhancedQuestionCreator />
           </TabsContent>
 
-          {/* Live Monitor Tab */}
-          <TabsContent value="monitor" className="space-y-6">
-            <EnhancedLiveMonitor />
-          </TabsContent>
-
-          {/* Audit Logs Tab */}
-          <TabsContent value="logs" className="space-y-6">
-            <EnhancedAuditLogs />
+          {/* Combined Monitor & Logs Tab */}
+          <TabsContent value="monitor-logs" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Live Monitor</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EnhancedLiveMonitor />
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Audit Logs</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <EnhancedAuditLogs />
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
         </Tabs>
       </div>

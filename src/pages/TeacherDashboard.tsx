@@ -4,10 +4,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Users, FileText, Plus } from 'lucide-react';
-import { QuestionBank } from '@/components/teacher/QuestionBank';
-import { ExamBuilder } from '@/components/teacher/ExamBuilder';
-import { ExamResults } from '@/components/teacher/ExamResults';
-import { ExamCreationModal } from '@/components/teacher/ExamCreationModal';
+import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
+import { TeacherExamBuilder } from '@/components/teacher/TeacherExamBuilder';
+import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
+import { TeacherStudentCreator } from '@/components/teacher/TeacherStudentCreator';
 
 export const TeacherDashboard = () => {
   return (
@@ -62,32 +62,34 @@ export const TeacherDashboard = () => {
         <Tabs defaultValue="exams" className="space-y-6">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="exams">My Exams</TabsTrigger>
-            <TabsTrigger value="questions">Question Bank</TabsTrigger>
             <TabsTrigger value="results">Student Results</TabsTrigger>
+            <TabsTrigger value="students">Create Student</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
           </TabsList>
 
           <TabsContent value="exams" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">My Exams</h2>
-              <ExamCreationModal
+              <ConsolidatedExamCreator
                 trigger={
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
                     Create New Exam
                   </Button>
                 }
+                isTeacher={true}
+                onExamCreated={() => window.location.reload()}
               />
             </div>
-            <ExamBuilder />
+            <TeacherExamBuilder />
           </TabsContent>
 
-          <TabsContent value="questions" className="space-y-6">
-            <QuestionBank />
+          <TabsContent value="students" className="space-y-6">
+            <TeacherStudentCreator />
           </TabsContent>
 
           <TabsContent value="results" className="space-y-6">
-            <ExamResults />
+            <EnhancedExamResults />
           </TabsContent>
 
           <TabsContent value="analytics" className="space-y-6">

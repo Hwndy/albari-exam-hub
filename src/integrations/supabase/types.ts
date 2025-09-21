@@ -622,6 +622,19 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      create_user_with_profile: {
+        Args: {
+          user_email: string
+          user_full_name: string
+          user_password: string
+          user_role: string
+        }
+        Returns: Json
+      }
+      delete_user_profile: {
+        Args: { user_id_param: string }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
