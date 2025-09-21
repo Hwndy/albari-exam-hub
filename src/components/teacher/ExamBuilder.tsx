@@ -780,28 +780,52 @@ export const ExamBuilder: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => setPreviewExam(exam)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('View button clicked for exam:', exam.id);
+                      setPreviewExam(exam);
+                    }}
+                    title="Preview Exam"
                   >
                     <Eye className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => startEditing(exam)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Edit button clicked for exam:', exam.id);
+                      startEditing(exam);
+                    }}
+                    title="Edit Exam"
                   >
                     <Edit className="h-4 w-4" />
                   </Button>
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDuplicateExam(exam)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Duplicate button clicked for exam:', exam.id);
+                      handleDuplicateExam(exam);
+                    }}
+                    title="Duplicate Exam"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
                   {exam.status === 'draft' && (
                     <Button
                       size="sm"
-                      onClick={() => handlePublishExam(exam.id)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log('Publish button clicked for exam:', exam.id);
+                        handlePublishExam(exam.id);
+                      }}
+                      title="Publish Exam"
                     >
                       <Send className="h-4 w-4 mr-1" />
                       Publish
@@ -810,7 +834,13 @@ export const ExamBuilder: React.FC = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleDeleteExam(exam.id, exam.title)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Delete button clicked for exam:', exam.id, exam.title);
+                      handleDeleteExam(exam.id, exam.title);
+                    }}
+                    title="Delete Exam"
                   >
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -820,6 +850,134 @@ export const ExamBuilder: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Exam Dialog */}
+      <Dialog open={!!editingExam} onOpenChange={(open) => !open && setEditingExam(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Exam</DialogTitle>
+          </DialogHeader>
+          <Tabs defaultValue="basic" className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
+              <TabsTrigger value="basic">Basic Info</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+              <TabsTrigger value="questions">Questions</TabsTrigger>
+            </TabsList>
+            
+            <form onSubmit={handleUpdateExam}>
+              <TabsContent value="basic" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-title">Exam Title</Label>
+                    <Input
+                      id="edit-title"
+                      value={examForm.title}
+                      onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
+                      placeholder="Enter exam title"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-subject">Subject</Label>
+                    <Select
+                      value={examForm.subject_id}
+                      onValueChange={(value) => setExamForm({ ...examForm, subject_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subject" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subjects.map(subject => (
+                          <SelectItem key={subject.id} value={subject.id}>
+                            {subject.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="edit-description">Description</Label>
+                  <Textarea
+                    id="edit-description"
+                    value={examForm.description}
+                    onChange={(e) => setExamForm({ ...examForm, description: e.target.value })}
+                    placeholder="Brief description of the exam"
+                    rows={2}
+                  />
+                </div>
+              </TabsContent>
+              
+              <div className="flex justify-end space-x-2 mt-6">
+                <Button type="button" variant="outline" onClick={() => setEditingExam(null)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  <Save className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </form>
+          </Tabs>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Exam Dialog */}
+      <Dialog open={!!previewExam} onOpenChange={(open) => !open && setPreviewExam(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Exam Preview</DialogTitle>
+          </DialogHeader>
+          {previewExam && (
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-semibold text-lg">{previewExam.title}</h3>
+                {previewExam.description && (
+                  <p className="text-muted-foreground mt-2">{previewExam.description}</p>
+                )}
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="font-medium">Subject:</span> {previewExam.subject_name || 'Not set'}
+                </div>
+                <div>
+                  <span className="font-medium">Class:</span> {previewExam.class_name || 'Not set'}
+                </div>
+                <div>
+                  <span className="font-medium">Duration:</span> {previewExam.duration_minutes} minutes
+                </div>
+                <div>
+                  <span className="font-medium">Questions:</span> {previewExam.total_questions}
+                </div>
+                <div>
+                  <span className="font-medium">Pass Mark:</span> {previewExam.pass_mark}%
+                </div>
+                <div>
+                  <span className="font-medium">Status:</span> 
+                  <Badge className="ml-2" variant={previewExam.status === 'published' ? 'default' : 'secondary'}>
+                    {previewExam.status}
+                  </Badge>
+                </div>
+              </div>
+              
+              {previewExam.instructions && (
+                <div>
+                  <h4 className="font-medium mb-2">Instructions:</h4>
+                  <p className="text-sm text-muted-foreground bg-accent/50 p-3 rounded">
+                    {previewExam.instructions}
+                  </p>
+                </div>
+              )}
+              
+              <div className="flex justify-end">
+                <Button onClick={() => setPreviewExam(null)}>Close</Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

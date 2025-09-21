@@ -57,6 +57,7 @@ export const ExamList: React.FC = () => {
   const fetchExams = async () => {
     try {
       setLoading(true);
+      console.log('Fetching exams for student:', user?.id);
       
       // Get student's class assignments
       const { data: classAssignments } = await supabase
@@ -65,6 +66,7 @@ export const ExamList: React.FC = () => {
         .eq('student_id', user?.id);
 
       const classIds = classAssignments?.map(ca => ca.class_id) || [];
+      console.log('Student class assignments:', classIds);
 
       // Fetch published exams for student's classes
       const { data: examsData } = await supabase
@@ -78,11 +80,15 @@ export const ExamList: React.FC = () => {
         .or(`class_id.is.null,class_id.in.(${classIds.join(',')})`)
         .order('created_at', { ascending: false });
 
+      console.log('Available exams:', examsData);
+
       // Fetch existing exam sessions for this student
       const { data: sessionsData } = await supabase
         .from('exam_sessions')
         .select('*')
         .eq('student_id', user?.id);
+
+      console.log('Existing sessions:', sessionsData);
 
       if (examsData) {
         const currentTime = new Date();
