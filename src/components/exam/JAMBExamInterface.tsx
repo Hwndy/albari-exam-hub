@@ -505,29 +505,29 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                   <div className="space-y-4">
                     {currentQ.type === 'true_false' ? (
                       <div className="space-y-3">
-                        {Object.entries(currentQ.options).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className={`
-                              flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
-                              ${answers[currentQ.id] === key 
-                                ? 'border-primary bg-primary/5 shadow-sm' 
-                                : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                              }
-                            `}
-                            onClick={() => handleAnswerChange(currentQ.id, key)}
-                          >
-                            <Switch
-                              checked={answers[currentQ.id] === key}
-                              onCheckedChange={(checked) => {
-                                if (checked) handleAnswerChange(currentQ.id, key);
-                              }}
-                            />
-                            <Label className="flex-1 text-base font-medium cursor-pointer">
-                              {value}
-                            </Label>
-                          </div>
-                        ))}
+                         {Object.entries(currentQ.options || {}).map(([key, value]) => (
+                           <div
+                             key={key}
+                             className={`
+                               flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
+                               ${answers[currentQ.id] === key 
+                                 ? 'border-primary bg-primary/5 shadow-sm' 
+                                 : 'border-border hover:border-primary/50 hover:bg-accent/30'
+                               }
+                             `}
+                             onClick={() => handleAnswerChange(currentQ.id, key)}
+                           >
+                             <Switch
+                               checked={answers[currentQ.id] === key}
+                               onCheckedChange={(checked) => {
+                                 if (checked) handleAnswerChange(currentQ.id, key);
+                               }}
+                             />
+                             <Label className="flex-1 text-base font-medium cursor-pointer">
+                               {String(value)}
+                             </Label>
+                           </div>
+                         ))}
                       </div>
                     ) : (
                       <RadioGroup
@@ -535,27 +535,27 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                         onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
                         className="space-y-3"
                       >
-                        {Object.entries(currentQ.options).map(([key, value]) => (
-                          <div
-                            key={key}
-                            className={`
-                              flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
-                              ${answers[currentQ.id] === key 
-                                ? 'border-primary bg-primary/5 shadow-sm' 
-                                : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                              }
-                            `}
-                          >
-                            <RadioGroupItem value={key} id={`option-${key}`} />
-                            <Label
-                              htmlFor={`option-${key}`}
-                              className="flex-1 text-base cursor-pointer"
-                            >
-                              <span className="font-bold mr-3 text-primary">{key}.</span>
-                              {value}
-                            </Label>
-                          </div>
-                        ))}
+                         {Object.entries(currentQ.options || {}).map(([key, value]) => (
+                           <div
+                             key={key}
+                             className={`
+                               flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
+                               ${answers[currentQ.id] === key 
+                                 ? 'border-primary bg-primary/5 shadow-sm' 
+                                 : 'border-border hover:border-primary/50 hover:bg-accent/30'
+                               }
+                             `}
+                           >
+                             <RadioGroupItem value={key} id={`option-${key}`} />
+                             <Label
+                               htmlFor={`option-${key}`}
+                               className="flex-1 text-base cursor-pointer"
+                             >
+                               <span className="font-bold mr-3 text-primary">{key}.</span>
+                               {String(value)}
+                             </Label>
+                           </div>
+                         ))}
                       </RadioGroup>
                     )}
                   </div>
