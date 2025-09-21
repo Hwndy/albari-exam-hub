@@ -41,12 +41,14 @@ export const TeacherStudentCreator: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch classes that teacher is assigned to
+      // Fetch classes that teacher is assigned to through teacher_class_assignments
       const { data: assignments } = await supabase
-        .from('subject_assignments')
-        .select('class_id, classes(id, name)')
-        .eq('user_id', user?.id)
-        .not('class_id', 'is', null);
+        .from('teacher_class_assignments')
+        .select(`
+          class_id,
+          classes!inner(id, name)
+        `)
+        .eq('teacher_id', user?.id);
 
       if (assignments) {
         const uniqueClasses = assignments
@@ -84,40 +86,43 @@ export const TeacherStudentCreator: React.FC = () => {
     try {
       setIsCreatingStudent(true);
 
-      // Create user account
-      const { data, error } = await supabase.auth.admin.createUser({
+      // Use Supabase client-side signup to create the student
+      const { data, error } = await supabase.auth.signUp({
         email: studentForm.email,
         password: studentForm.password,
-        user_metadata: {
-          full_name: studentForm.fullName,
-          role: 'student'
+        options: {
+          data: {
+            full_name: studentForm.fullName,
+            role: 'student'
+          }
         }
       });
 
       if (error) throw error;
 
-      // Assign student to class if selected
-      if (studentForm.classId && data.user) {
-        const { error: assignmentError } = await supabase
-          .from('class_assignments')
-          .insert({
-            student_id: data.user.id,
-            class_id: studentForm.classId,
-          });
+      if (data.user) {
+        // Assign student to class if selected
+        if (studentForm.classId) {
+          const { error: assignmentError } = await supabase
+            .from('class_assignments')
+            .insert({
+              student_id: data.user.id,
+              class_id: studentForm.classId,
+            });
 
-        if (assignmentError) {
-          console.warn('Failed to assign student to class:', assignmentError);
+          if (assignmentError) {
+            console.warn('Failed to assign student to class:', assignmentError);
+          }
         }
-      }
 
-      await fetchData();
-      setIsCreatingStudent(false);
-      resetForm();
-      
-      toast({
-        title: 'Student Created',
-        description: `${studentForm.fullName} has been created successfully.`,
-      });
+        await fetchData();
+        resetForm();
+        
+        toast({
+          title: 'Student Created',
+          description: `${studentForm.fullName} has been created successfully. They will receive a confirmation email.`,
+        });
+      }
     } catch (error: any) {
       toast({
         title: 'Error',

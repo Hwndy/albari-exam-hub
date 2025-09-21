@@ -15,6 +15,7 @@ import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { EnhancedQuestionCreator } from '@/components/admin/EnhancedQuestionCreator';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { ExamManagement } from '@/components/admin/ExamManagement';
+import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
