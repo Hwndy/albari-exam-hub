@@ -437,7 +437,11 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     placeholder="Enter new password"
+                    autoComplete="new-password"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Password will not be stored in browser memory and is transmitted securely.
+                  </p>
                 </div>
 
                 <div className="space-y-2">

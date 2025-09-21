@@ -284,10 +284,15 @@ Answer: C`;
               id="questions"
               value={questionsText}
               onChange={(e) => setQuestionsText(e.target.value)}
-              placeholder="Paste your questions here..."
+              onPaste={(e) => {
+                // Ensure paste is allowed and properly handled
+                e.stopPropagation();
+              }}
+              placeholder="Paste your questions here... (Ctrl+V or right-click to paste)"
               rows={10}
-              className="font-mono text-sm"
+              className="font-mono text-sm resize-y"
               required
+              style={{ userSelect: 'text', WebkitUserSelect: 'text' }}
             />
             <p className="text-sm text-muted-foreground">
               Questions found: {parseQuestionsText(questionsText).length}

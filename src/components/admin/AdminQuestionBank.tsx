@@ -12,6 +12,7 @@ import { Plus, Edit, Trash2, Search, Eye, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BulkQuestionImport } from './BulkQuestionImport';
+import { QuestionCategorizer } from '../shared/QuestionCategorizer';
 
 interface Question {
   id: string;
@@ -35,14 +36,12 @@ interface QuestionOption {
 
 export const AdminQuestionBank: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [bulkMode, setBulkMode] = useState(false);
   const [previewQuestion, setPreviewQuestion] = useState<Question | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterSubject, setFilterSubject] = useState('all');
-  const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -103,6 +102,7 @@ export const AdminQuestionBank: React.FC = () => {
           class_name: 'All Classes'
         }));
         setQuestions(formattedQuestions);
+        setFilteredQuestions(formattedQuestions);
       }
       
       if (subjectsData) setSubjects(subjectsData);
@@ -280,12 +280,9 @@ export const AdminQuestionBank: React.FC = () => {
     setQuestionForm({ ...questionForm, options: newOptions });
   };
 
-  const filteredQuestions = questions.filter(question => {
-    const matchesSearch = question.question_text.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = filterSubject === 'all' || question.subject_name === filterSubject;
-    const matchesDifficulty = filterDifficulty === 'all' || question.difficulty_level === filterDifficulty;
-    return matchesSearch && matchesSubject && matchesDifficulty;
-  });
+  const handleFilterChange = (filtered: Question[]) => {
+    setFilteredQuestions(filtered);
+  };
 
   const getStats = () => {
     return {

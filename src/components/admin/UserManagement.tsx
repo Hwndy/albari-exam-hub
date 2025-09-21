@@ -77,17 +77,33 @@ export const UserManagement = () => {
     e.preventDefault();
     
     try {
-      // Create user account
-      const { data, error } = await supabase.auth.admin.createUser({
-        email: userForm.email,
-        password: userForm.password,
-        user_metadata: {
-          full_name: userForm.fullName,
-          role: userForm.role
-        }
+      // Use the create_user_with_profile function
+      const { data, error } = await supabase.rpc('create_user_with_profile', {
+        user_email: userForm.email,
+        user_password: userForm.password,
+        user_full_name: userForm.fullName,
+        user_role: userForm.role
       });
 
       if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Create the actual user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: userForm.email,
+        password: userForm.password,
+        options: {
+          data: {
+            full_name: userForm.fullName,
+            role: userForm.role
+          }
+        }
+      });
+
+      if (authError) throw authError;
 
       // If successful, refresh the profiles list
       await fetchData();
@@ -144,8 +160,16 @@ export const UserManagement = () => {
     if (!confirm(`Are you sure you want to delete ${userName}?`)) return;
 
     try {
-      const { error } = await supabase.auth.admin.deleteUser(userId);
+      // Use the delete_user_profile function
+      const { data, error } = await supabase.rpc('delete_user_profile', {
+        user_id_param: userId
+      });
+
       if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       await fetchData();
       
