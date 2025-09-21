@@ -8,7 +8,9 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
+import { EnhancedAuditLogs } from '@/components/admin/EnhancedAuditLogs';
 import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
+import { EnhancedLiveMonitor } from '@/components/admin/EnhancedLiveMonitor';
 import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types/auth';
@@ -270,12 +272,12 @@ export const AdminDashboard = () => {
 
           {/* Live Monitor Tab */}
           <TabsContent value="monitor" className="space-y-6">
-            <LiveExamMonitor />
+            <EnhancedLiveMonitor />
           </TabsContent>
 
           {/* Audit Logs Tab */}
           <TabsContent value="logs" className="space-y-6">
-            <AuditLogs />
+            <EnhancedAuditLogs />
           </TabsContent>
         </Tabs>
       </div>

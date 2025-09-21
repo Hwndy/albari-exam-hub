@@ -10,6 +10,7 @@ import { Plus, Edit, Trash2, Search } from 'lucide-react';
 import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { UserEditModal } from './UserEditModal';
 
 export const UserManagement = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -383,49 +384,13 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Edit User Dialog */}
-      <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit User</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleUpdateUser} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="editFullName">Full Name</Label>
-              <Input
-                id="editFullName"
-                value={userForm.fullName}
-                onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="editRole">Role</Label>
-              <Select
-                value={userForm.role}
-                onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                  setUserForm({ ...userForm, role: value })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex space-x-2">
-              <Button type="submit">Update User</Button>
-              <Button type="button" variant="outline" onClick={() => setEditingUser(null)}>
-                Cancel
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      {/* Edit User Modal */}
+      <UserEditModal
+        isOpen={!!editingUser}
+        onClose={() => setEditingUser(null)}
+        user={editingUser}
+        onUserUpdated={fetchData}
+      />
     </div>
   );
 };
