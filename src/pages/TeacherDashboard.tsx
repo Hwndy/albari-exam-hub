@@ -8,8 +8,12 @@ import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCre
 import { TeacherExamBuilder } from '@/components/teacher/TeacherExamBuilder';
 import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
 import { TeacherStudentCreator } from '@/components/teacher/TeacherStudentCreator';
+import { TeacherClassAssignment } from '@/components/admin/TeacherClassAssignment';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const TeacherDashboard = () => {
+  const { user } = useAuth();
+  
   return (
     <DashboardLayout title="Teacher Dashboard">
       <div className="space-y-8">
@@ -22,7 +26,7 @@ export const TeacherDashboard = () => {
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">12</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Total Exams</p>
                 </div>
               </div>
@@ -36,7 +40,7 @@ export const TeacherDashboard = () => {
                   <FileText className="h-6 w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">245</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Questions Bank</p>
                 </div>
               </div>
@@ -50,7 +54,7 @@ export const TeacherDashboard = () => {
                   <Users className="h-6 w-6 text-warning" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">89</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Student Submissions</p>
                 </div>
               </div>
@@ -59,16 +63,16 @@ export const TeacherDashboard = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="exams" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+        <Tabs defaultValue="exams" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
             <TabsTrigger value="exams">My Exams</TabsTrigger>
             <TabsTrigger value="results">Student Results</TabsTrigger>
             <TabsTrigger value="students">Create Student</TabsTrigger>
-            <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="assignments">Class Assignments</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="exams" className="space-y-6">
-            <div className="flex justify-between items-center">
+          <TabsContent value="exams" className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <h2 className="text-2xl font-bold">My Exams</h2>
               <ConsolidatedExamCreator
                 trigger={
@@ -84,18 +88,25 @@ export const TeacherDashboard = () => {
             <TeacherExamBuilder />
           </TabsContent>
 
-          <TabsContent value="students" className="space-y-6">
-            <TeacherStudentCreator />
-          </TabsContent>
-
-          <TabsContent value="results" className="space-y-6">
+          <TabsContent value="results" className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-2xl font-bold">Student Results</h2>
+            </div>
             <EnhancedExamResults />
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <div className="text-center py-12 text-muted-foreground">
-              <p>Analytics and performance data will be displayed here.</p>
+          <TabsContent value="students" className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-2xl font-bold">Create Students</h2>
             </div>
+            <TeacherStudentCreator />
+          </TabsContent>
+
+          <TabsContent value="assignments" className="space-y-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <h2 className="text-2xl font-bold">Teacher Class Assignments</h2>
+            </div>
+            <TeacherClassAssignment teacherId={user?.id} />
           </TabsContent>
         </Tabs>
       </div>

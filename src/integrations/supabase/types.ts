@@ -495,6 +495,7 @@ export type Database = {
       }
       questions: {
         Row: {
+          allow_multiple_correct: boolean | null
           created_at: string
           created_by: string
           difficulty_level: Database["public"]["Enums"]["difficulty_level"]
@@ -510,6 +511,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_multiple_correct?: boolean | null
           created_at?: string
           created_by: string
           difficulty_level?: Database["public"]["Enums"]["difficulty_level"]
@@ -525,6 +527,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_multiple_correct?: boolean | null
           created_at?: string
           created_by?: string
           difficulty_level?: Database["public"]["Enums"]["difficulty_level"]
@@ -616,6 +619,27 @@ export type Database = {
           id?: string
           name?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      teacher_class_assignments: {
+        Row: {
+          class_id: string
+          created_at: string | null
+          id: string
+          teacher_id: string
+        }
+        Insert: {
+          class_id: string
+          created_at?: string | null
+          id?: string
+          teacher_id: string
+        }
+        Update: {
+          class_id?: string
+          created_at?: string | null
+          id?: string
+          teacher_id?: string
         }
         Relationships: []
       }

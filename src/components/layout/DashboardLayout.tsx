@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -26,11 +27,8 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-primary-foreground">A</span>
-              </div>
+              <Logo size="md" />
               <div>
-                <h1 className="text-2xl font-bold text-primary">ALBARI</h1>
                 <p className="text-sm text-muted-foreground">{title}</p>
               </div>
             </div>

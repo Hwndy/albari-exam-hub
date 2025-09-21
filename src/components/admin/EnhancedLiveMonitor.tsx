@@ -110,13 +110,13 @@ export const EnhancedLiveMonitor: React.FC = () => {
 
   const fetchLiveData = async () => {
     try {
-      // Fetch active sessions
+      // Fetch active sessions with proper join
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('exam_sessions')
         .select(`
           *,
           exams!inner(title, total_questions),
-          profiles!inner(full_name)
+          profiles!student_id(full_name)
         `)
         .eq('status', 'in_progress');
 
@@ -126,17 +126,17 @@ export const EnhancedLiveMonitor: React.FC = () => {
       const formattedSessions = sessionsData?.map((session: any) => ({
         id: session.id,
         student_id: session.student_id,
-        student_name: session.profiles.full_name,
-        exam_title: session.exams.title,
+        student_name: session.profiles?.full_name || 'Unknown Student',
+        exam_title: session.exams?.title || 'Unknown Exam',
         status: session.status,
         started_at: session.started_at,
         time_remaining_seconds: session.time_remaining_seconds || 0,
         current_question_index: session.current_question_index || 0,
-        total_questions: session.exams.total_questions,
+        total_questions: session.exams?.total_questions || 0,
         ip_address: session.ip_address,
         user_agent: session.user_agent,
         last_activity: session.updated_at,
-        suspicious_activity_count: 0 // Would be calculated from actual suspicious activity data
+        suspicious_activity_count: 0
       })) || [];
 
       setLiveSessions(formattedSessions);
