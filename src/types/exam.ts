@@ -1,3 +1,10 @@
+export interface QuestionOption {
+  id: string;
+  text: string;
+  isCorrect: boolean;
+}
+
+// Legacy Question interface for backward compatibility
 export interface Question {
   id: string;
   question: string;
@@ -11,6 +18,22 @@ export interface Question {
   subject: string;
   difficulty: 'easy' | 'medium' | 'hard';
   explanation?: string;
+}
+
+// New Database Question interface
+export interface DatabaseQuestion {
+  id: string;
+  questionText: string;
+  questionType: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
+  options: QuestionOption[];
+  difficulty: 'easy' | 'medium' | 'hard';
+  points: number;
+  explanation?: string;
+  media?: string;  
+  subject?: string;
+  category?: string;
+  createdAt?: string;
+  questionBankId?: string;
 }
 
 export interface Exam {

@@ -23,7 +23,7 @@ import { useToast } from '@/hooks/use-toast';
 interface Question {
   id: string;
   question_text: string;
-  question_type: 'mcq' | 'true_false' | 'fill_blank';
+  question_type: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
   difficulty_level: 'easy' | 'medium' | 'hard';
   points: number;
   options: Array<{
