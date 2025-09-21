@@ -159,10 +159,14 @@ export const ExamResults: React.FC = () => {
 
       // Fetch student profiles separately
       const studentIds = [...new Set(sessionData.map(s => s.student_id))];
-      const { data: studentProfiles } = await supabase
+      const { data: studentProfiles, error: profileError } = await supabase
         .from('profiles')
         .select('user_id, full_name')
         .in('user_id', studentIds);
+
+      if (profileError) {
+        console.error('Error fetching student profiles:', profileError);
+      }
 
       const studentMap = studentProfiles?.reduce((acc, p) => {
         acc[p.user_id] = p;
@@ -181,18 +185,23 @@ export const ExamResults: React.FC = () => {
         return acc;
       }, {} as Record<string, number>) || {};
 
-      const formattedResults: ExamResultData[] = sessionData.map(session => ({
-        session_id: session.id,
-        student_name: studentMap[session.student_id]?.full_name || 'Unknown',
-        exam_title: session.exams?.title || 'Unknown',
-        total_score: session.total_score || 0,
-        max_score: session.max_score || 0,
-        percentage: session.percentage || 0,
-        passed: session.passed || false,
-        time_spent: timeBySession[session.id] || 0,
-        completed_at: session.ended_at || '',
-        status: session.status,
-      }));
+      const formattedResults: ExamResultData[] = sessionData.map(session => {
+        const studentProfile = studentMap[session.student_id];
+        const studentName = studentProfile?.full_name || `Student ${session.student_id.slice(0, 8)}...`;
+        
+        return {
+          session_id: session.id,
+          student_name: studentName,
+          exam_title: session.exams?.title || 'Unknown',
+          total_score: session.total_score || 0,
+          max_score: session.max_score || 0,
+          percentage: Math.round(session.percentage || 0),
+          passed: session.passed || false,
+          time_spent: timeBySession[session.id] || 0,
+          completed_at: session.ended_at || '',
+          status: session.status,
+        };
+      });
 
       setResults(formattedResults);
     } catch (error: any) {

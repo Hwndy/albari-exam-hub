@@ -14,6 +14,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { 
   Plus, 
+  Minus,
   Trash2, 
   Save, 
   Eye, 
@@ -515,7 +516,18 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
                     <Label htmlFor="subject">Subject *</Label>
-                    <Select value={metadata.subjectId} onValueChange={(value) => setMetadata(prev => ({ ...prev, subjectId: value }))}>
+                    <Select value={metadata.subjectId} onValueChange={(value) => {
+                      setMetadata(prev => ({ ...prev, subjectId: value }));
+                      // Clear questions when subject changes to ensure proper filtering
+                      if (value !== metadata.subjectId && questions.length > 0) {
+                        setQuestions([]);
+                        toast({
+                          title: 'Questions Cleared',
+                          description: 'Questions cleared due to subject change. Please add questions for the new subject.',
+                          variant: 'default',
+                        });
+                      }
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select subject" />
                       </SelectTrigger>
@@ -531,7 +543,19 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
                   <div>
                     <Label htmlFor="class">Class (Optional)</Label>
-                    <Select value={metadata.classId || "all"} onValueChange={(value) => setMetadata(prev => ({ ...prev, classId: value === "all" ? "" : value }))}>
+                    <Select value={metadata.classId || "all"} onValueChange={(value) => {
+                      const newClassId = value === "all" ? "" : value;
+                      setMetadata(prev => ({ ...prev, classId: newClassId }));
+                      // Clear questions when class changes to ensure proper filtering
+                      if (newClassId !== metadata.classId && questions.length > 0) {
+                        setQuestions([]);
+                        toast({
+                          title: 'Questions Cleared',
+                          description: 'Questions cleared due to class change. Please add questions for the new class.',
+                          variant: 'default',
+                        });
+                      }
+                    }}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select class" />
                       </SelectTrigger>
@@ -660,10 +684,30 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
                 <h3 className="font-semibold">Questions</h3>
                 <Badge variant="outline">{questions.length}/1000</Badge>
               </div>
-              <Button onClick={addQuestion} disabled={questions.length >= 1000}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Question
-              </Button>
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => {
+                    if (questions.length > 0) {
+                      const lastQuestion = questions[questions.length - 1];
+                      removeQuestion(lastQuestion.id);
+                      toast({
+                        title: 'Question Removed',
+                        description: 'Last question has been removed',
+                        variant: 'default',
+                      });
+                    }
+                  }} 
+                  disabled={questions.length === 0}
+                >
+                  <Minus className="h-4 w-4 mr-2" />
+                  Remove Question
+                </Button>
+                <Button onClick={addQuestion} disabled={questions.length >= 1000}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
+              </div>
             </div>
 
             <ScrollArea className="h-[500px] pr-4">

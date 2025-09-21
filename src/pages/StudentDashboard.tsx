@@ -20,7 +20,7 @@ export const StudentDashboard = () => {
       if (!user) return;
 
       try {
-        // Get available exams count
+        // Get available exams count - should match ExamList logic
         const { data: classAssignments } = await supabase
           .from('class_assignments')
           .select('class_id')
@@ -28,11 +28,34 @@ export const StudentDashboard = () => {
 
         const classIds = classAssignments?.map(ca => ca.class_id) || [];
 
-        const { data: availableExams } = await supabase
+        // Fetch published exams - same logic as ExamList
+        let availableQuery = supabase
           .from('exams')
-          .select('id')
-          .eq('status', 'published')
-          .or(`class_id.is.null,class_id.in.(${classIds.join(',')})`);
+          .select('id, start_date, end_date')
+          .eq('status', 'published');
+
+        // Add class filtering only if student has class assignments
+        if (classIds.length > 0) {
+          availableQuery = availableQuery.or(`class_id.is.null,class_id.in.(${classIds.join(',')})`);
+        } else {
+          // If no class assignments, only show exams without class restrictions
+          availableQuery = availableQuery.is('class_id', null);
+        }
+
+        const { data: availableExams } = await availableQuery;
+
+        // Filter to only count active exams (not upcoming/missed)
+        const currentTime = new Date();
+        const activeExams = availableExams?.filter(exam => {
+          const startDate = exam.start_date ? new Date(exam.start_date) : null;
+          const endDate = exam.end_date ? new Date(exam.end_date) : null;
+          
+          // Active if: no end date or end date is future, AND no start date or start date is past
+          const notExpired = !endDate || currentTime <= endDate;
+          const notUpcoming = !startDate || currentTime >= startDate;
+          
+          return notExpired && notUpcoming;
+        }) || [];
 
         // Get completed exams and calculate average
         const { data: completedSessions } = await supabase
@@ -69,7 +92,7 @@ export const StudentDashboard = () => {
         }, 0) || 0;
 
         setStats({
-          availableExams: availableExams?.length || 0,
+          availableExams: activeExams.length,
           completedExams: completedCount,
           averageScore,
           totalStudyTime
