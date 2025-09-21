@@ -17,7 +17,7 @@ import {
   Trash2, 
   Search, 
   CalendarIcon, 
-  Clock, 
+  Clock,
   Settings, 
   Eye,
   Save,
@@ -29,6 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuestionSelector } from './QuestionSelector';
+import { ExamCreationModal } from './ExamCreationModal';
 
 interface Exam {
   id: string;
@@ -937,165 +938,19 @@ export const ExamBuilder: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Edit Exam Dialog */}
-      <Dialog open={!!editingExam} onOpenChange={(open) => !open && setEditingExam(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Exam</DialogTitle>
-          </DialogHeader>
-          <Tabs defaultValue="basic" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-              <TabsTrigger value="questions">Questions</TabsTrigger>
-            </TabsList>
-            
-            <form onSubmit={handleUpdateExam}>
-              <TabsContent value="basic" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-title">Exam Title</Label>
-                    <Input
-                      id="edit-title"
-                      value={examForm.title}
-                      onChange={(e) => setExamForm({ ...examForm, title: e.target.value })}
-                      placeholder="Enter exam title"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-subject">Subject</Label>
-                    <Select
-                      value={examForm.subject_id}
-                      onValueChange={(value) => {
-                        setExamForm({ ...examForm, subject_id: value });
-                        // Clear selected questions when subject changes
-                        setSelectedQuestions([]);
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-class">Class</Label>
-                    <Select
-                      value={examForm.class_id}
-                      onValueChange={(value) => setExamForm({ ...examForm, class_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes.map(cls => (
-                          <SelectItem key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-duration">Duration (minutes)</Label>
-                    <Input
-                      id="edit-duration"
-                      type="number"
-                      value={examForm.duration_minutes}
-                      onChange={(e) => setExamForm({ ...examForm, duration_minutes: parseInt(e.target.value) })}
-                      min="1"
-                      required
-                    />
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="edit-description">Description</Label>
-                  <Textarea
-                    id="edit-description"
-                    value={examForm.description}
-                    onChange={(e) => setExamForm({ ...examForm, description: e.target.value })}
-                    placeholder="Brief description of the exam"
-                    rows={2}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit-instructions">Instructions</Label>
-                  <Textarea
-                    id="edit-instructions"
-                    value={examForm.instructions}
-                    onChange={(e) => setExamForm({ ...examForm, instructions: e.target.value })}
-                    placeholder="Instructions for students taking the exam"
-                    rows={3}
-                  />
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="settings" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-pass-mark">Pass Mark (%)</Label>
-                    <Input
-                      id="edit-pass-mark"
-                      type="number"
-                      value={examForm.pass_mark}
-                      onChange={(e) => setExamForm({ ...examForm, pass_mark: parseInt(e.target.value) })}
-                      min="0"
-                      max="100"
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-total-questions">Total Questions</Label>
-                    <Input
-                      id="edit-total-questions"
-                      type="number"
-                      value={examForm.total_questions}
-                      onChange={(e) => {
-                        const newTotal = parseInt(e.target.value);
-                        setExamForm({ ...examForm, total_questions: newTotal });
-                        if (selectedQuestions.length > newTotal) {
-                          setSelectedQuestions(selectedQuestions.slice(0, newTotal));
-                        }
-                      }}
-                      min="1"
-                      max="100"
-                      required
-                    />
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="questions" className="space-y-4">
-                <QuestionSelector
-                  subjectId={examForm.subject_id}
-                  selectedQuestions={selectedQuestions}
-                  onQuestionsChange={setSelectedQuestions}
-                  maxQuestions={examForm.total_questions}
-                />
-              </TabsContent>
-              
-              <div className="flex justify-end space-x-2 mt-6">
-                <Button type="button" variant="outline" onClick={() => setEditingExam(null)}>
-                  Cancel
-                </Button>
-                <Button type="submit" disabled={selectedQuestions.length === 0}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Changes ({selectedQuestions.length} questions)
-                </Button>
-              </div>
-            </form>
-          </Tabs>
-        </DialogContent>
-      </Dialog>
+      {/* Edit Exam with New Modal */}
+      {editingExam && (
+        <ExamCreationModal
+          trigger={<></>}
+          open={!!editingExam}
+          onOpenChange={(open) => !open && setEditingExam(null)}
+          editingExam={editingExam}
+          onExamCreated={() => {
+            fetchData();
+            setEditingExam(null);
+          }}
+        />
+      )}
 
       {/* Preview Exam Dialog */}
       <Dialog open={!!previewExam} onOpenChange={(open) => !open && setPreviewExam(null)}>
