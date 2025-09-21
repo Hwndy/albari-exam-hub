@@ -17,9 +17,8 @@ export const StaticFormLayout: React.FC<StaticFormLayoutProps> = ({
 }) => {
   return (
     <div className={cn("flex flex-col h-full", className)}>
-      {/* Static Header */}
       {header && (
-        <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
+        <div className="flex-shrink-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 p-4">
           {header}
         </div>
       )}

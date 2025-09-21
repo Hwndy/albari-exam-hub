@@ -44,18 +44,19 @@ export const TeacherStudentCreator: React.FC = () => {
       // Fetch classes that teacher is assigned to through teacher_class_assignments
       const { data: assignments } = await supabase
         .from('teacher_class_assignments')
-        .select(`
-          class_id,
-          classes!inner(id, name)
-        `)
+        .select('class_id')
         .eq('teacher_id', user?.id);
 
-      if (assignments) {
-        const uniqueClasses = assignments
-          .filter(a => a.classes)
-          .map(a => a.classes)
-          .filter((cls, index, arr) => arr.findIndex(c => c.id === cls.id) === index);
-        setClasses(uniqueClasses);
+      if (assignments && assignments.length > 0) {
+        const classIds = assignments.map(a => a.class_id);
+        const { data: classesData } = await supabase
+          .from('classes')
+          .select('id, name')
+          .in('id', classIds);
+        
+        if (classesData) {
+          setClasses(classesData);
+        }
       }
 
       // Fetch recently created students (optional)

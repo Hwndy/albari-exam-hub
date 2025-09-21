@@ -252,9 +252,10 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
             <TabsTrigger value="exams" className="text-xs sm:text-sm">Exams</TabsTrigger>
+            <TabsTrigger value="results" className="text-xs sm:text-sm">Results</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
             <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
             <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
@@ -274,6 +275,11 @@ export const AdminDashboard = () => {
               onExamCreated={fetchDashboardData}
             />
             <ExamManagement />
+          </TabsContent>
+
+          {/* Results Tab */}
+          <TabsContent value="results" className="space-y-6">
+            <AdminStudentResults />
           </TabsContent>
 
           {/* Overview Tab */}
