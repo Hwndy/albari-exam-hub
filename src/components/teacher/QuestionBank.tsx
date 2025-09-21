@@ -37,12 +37,12 @@ interface QuestionOption {
 
 export const QuestionBank: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
-  const [subjects, setSubjects] = useState<any[]>([]);
+  const [teacherSubject, setTeacherSubject] = useState<any>(null);
+  const [questionBank, setQuestionBank] = useState<any>(null);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [previewQuestion, setPreviewQuestion] = useState<Question | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSubject, setFilterSubject] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [loading, setLoading] = useState(true);
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
@@ -54,7 +54,6 @@ export const QuestionBank: React.FC = () => {
     question_type: 'mcq' as 'mcq' | 'true_false' | 'fill_blank',
     difficulty_level: 'medium' as 'easy' | 'medium' | 'hard',
     points: 1,
-    subject_id: '',
     explanation: '',
     options: [
       { text: '', isCorrect: false },
@@ -72,24 +71,73 @@ export const QuestionBank: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch questions with options and subject info
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      // First, get teacher's assigned subject
+      const { data: subjectAssignment } = await supabase
+        .from('subject_assignments')
+        .select(`
+          subject_id,
+          subjects(*)
+        `)
+        .eq('user_id', user.id)
+        .single();
+
+      if (!subjectAssignment) {
+        toast({
+          title: 'No Subject Assignment',
+          description: 'You are not assigned to any subject. Please contact an administrator.',
+          variant: 'destructive',
+        });
+        setLoading(false);
+        return;
+      }
+
+      setTeacherSubject(subjectAssignment.subjects);
+
+      // Get or create question bank for this subject
+      let { data: questionBankData } = await supabase
+        .from('question_banks')
+        .select('*')
+        .eq('subject_id', subjectAssignment.subject_id)
+        .eq('created_by', user.id)
+        .single();
+
+      if (!questionBankData) {
+        // Create question bank if it doesn't exist
+        const { data: newBank } = await supabase
+          .from('question_banks')
+          .insert({
+            name: `${subjectAssignment.subjects.name} Question Bank`,
+            description: `Question bank for ${subjectAssignment.subjects.name}`,
+            subject_id: subjectAssignment.subject_id,
+            created_by: user.id
+          })
+          .select()
+          .single();
+        
+        questionBankData = newBank;
+      }
+
+      setQuestionBank(questionBankData);
+
+      // Fetch questions for this teacher's subject only
       const { data: questionsData } = await supabase
         .from('questions')
         .select(`
           *,
           question_options(*),
-          question_banks(
+          question_banks!inner(
             subject_id,
             subjects(name)
           )
         `)
+        .eq('question_banks.subject_id', subjectAssignment.subject_id)
+        .eq('created_by', user.id)
         .order('created_at', { ascending: false });
-
-      // Fetch subjects
-      const { data: subjectsData } = await supabase
-        .from('subjects')
-        .select('*')
-        .order('name');
 
       if (questionsData) {
         const formattedQuestions = questionsData.map(q => ({
@@ -100,8 +148,8 @@ export const QuestionBank: React.FC = () => {
         setQuestions(formattedQuestions);
       }
       
-      if (subjectsData) setSubjects(subjectsData);
     } catch (error: any) {
+      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch questions',
@@ -129,7 +177,7 @@ export const QuestionBank: React.FC = () => {
         }
       }
 
-      // First create the question
+      // First create the question and link it to the teacher's question bank
       const { data: questionData, error: questionError } = await supabase
         .from('questions')
         .insert({
@@ -139,6 +187,7 @@ export const QuestionBank: React.FC = () => {
           points: questionForm.points,
           explanation: questionForm.explanation || null,
           created_by: user?.id || '',
+          question_bank_id: questionBank?.id
         })
         .select()
         .single();
@@ -212,7 +261,6 @@ export const QuestionBank: React.FC = () => {
       question_type: 'mcq',
       difficulty_level: 'medium',
       points: 1,
-      subject_id: '',
       explanation: '',
       options: [
         { text: '', isCorrect: false },
@@ -239,9 +287,8 @@ export const QuestionBank: React.FC = () => {
 
   const filteredQuestions = questions.filter(question => {
     const matchesSearch = question.question_text.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = filterSubject === 'all' || question.subject_name === filterSubject;
     const matchesDifficulty = filterDifficulty === 'all' || question.difficulty_level === filterDifficulty;
-    return matchesSearch && matchesSubject && matchesDifficulty;
+    return matchesSearch && matchesDifficulty;
   });
 
   const getStats = () => {
@@ -259,8 +306,21 @@ export const QuestionBank: React.FC = () => {
     return <div className="flex justify-center p-8">Loading...</div>;
   }
 
+  if (!teacherSubject) {
+    return <div className="text-center p-8">No subject assigned. Please contact an administrator.</div>;
+  }
+
   return (
     <div className="space-y-6">
+      {/* Subject Info */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Question Bank - {teacherSubject.name}</CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Create and manage questions for {teacherSubject.name}. All questions will automatically be assigned to this subject.
+          </p>
+        </CardHeader>
+      </Card>
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
@@ -301,19 +361,6 @@ export const QuestionBank: React.FC = () => {
               className="pl-10 w-64"
             />
           </div>
-          <Select value={filterSubject} onValueChange={setFilterSubject}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by subject" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Subjects</SelectItem>
-              {subjects.map(subject => (
-                <SelectItem key={subject.id} value={subject.name}>
-                  {subject.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
           <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
             <SelectTrigger className="w-32">
               <SelectValue />
