@@ -87,8 +87,8 @@ export const UserManagement = () => {
 
       if (error) throw error;
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(data.error as string);
       }
 
       // Create the actual user with Supabase Auth
@@ -167,8 +167,8 @@ export const UserManagement = () => {
 
       if (error) throw error;
 
-      if (data.error) {
-        throw new Error(data.error);
+      if (data && typeof data === 'object' && 'error' in data) {
+        throw new Error(data.error as string);
       }
 
       await fetchData();

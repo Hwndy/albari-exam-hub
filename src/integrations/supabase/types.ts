@@ -351,6 +351,7 @@ export type Database = {
       }
       question_banks: {
         Row: {
+          class_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -360,6 +361,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          class_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -369,6 +371,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          class_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -378,6 +381,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "question_banks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "question_banks_subject_id_fkey"
             columns: ["subject_id"]
