@@ -189,13 +189,33 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
-    console.log('Logout attempt...');
-    const { error } = await supabase.auth.signOut();
-    if (error) {
+    try {
+      console.log('Logout attempt...');
+      // Check if we have a session before attempting logout
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.log('No active session found, clearing state');
+        setUser(null);
+        setSession(null);
+        return;
+      }
+      
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.log('Logout error:', error.message);
+        // Still clear state even if logout fails
+        setUser(null);
+        setSession(null);
+        return;
+      }
+      console.log('Logout successful');
+    } catch (error: any) {
       console.log('Logout error:', error.message);
-      throw new Error(error.message);
+      // Always clear state on error to prevent stuck state
+      setUser(null);
+      setSession(null);
     }
-    console.log('Logout successful');
   };
 
   const resetPassword = async (email: string) => {

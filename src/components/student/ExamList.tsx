@@ -80,11 +80,12 @@ export const ExamList: React.FC = () => {
         .eq('status', 'published')
         .order('created_at', { ascending: false });
 
-      // Add class filtering only if student has class assignments
+      // Add class filtering - show exams for student's classes OR general exams (no class restriction)
       if (classIds.length > 0) {
         query = query.or(`class_id.is.null,class_id.in.(${classIds.join(',')})`);
       } else {
-        // If no class assignments, only show exams without class restrictions
+        // If no class assignments, show general exams (no class restriction) + debug log
+        console.log('Student has no class assignments, showing general exams only');
         query = query.is('class_id', null);
       }
 
