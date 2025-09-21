@@ -114,7 +114,7 @@ const App = () => (
               }
             />
             <Route
-              path="/exam/:sessionId"
+              path="/exam"
               element={
                 <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
                   <ExamPage />

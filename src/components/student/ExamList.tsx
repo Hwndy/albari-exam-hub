@@ -138,13 +138,16 @@ export const ExamList: React.FC = () => {
 
   const handleStartExam = async (examId: string) => {
     try {
+      console.log('Starting exam:', examId);
       // Check if session already exists
       const { data: existingSession } = await supabase
         .from('exam_sessions')
         .select('*')
         .eq('exam_id', examId)
         .eq('student_id', user?.id)
-        .single();
+        .maybeSingle();
+
+      console.log('Existing session:', existingSession);
 
       if (existingSession) {
         // Resume existing session - go directly to exam
@@ -154,6 +157,7 @@ export const ExamList: React.FC = () => {
         window.location.href = `/exam/instructions/${examId}`;
       }
     } catch (error: any) {
+      console.error('Error starting exam:', error);
       toast({
         title: 'Error',
         description: error.message || 'Failed to start exam',

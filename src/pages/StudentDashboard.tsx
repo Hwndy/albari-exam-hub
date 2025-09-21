@@ -1,10 +1,64 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookOpen, Trophy, Clock, TrendingUp } from 'lucide-react';
 import { ExamList } from '@/components/student/ExamList';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export const StudentDashboard = () => {
+  const [stats, setStats] = useState({
+    availableExams: 0,
+    completedExams: 0,
+    averageScore: 0,
+    totalStudyTime: 0
+  });
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user) return;
+
+      try {
+        // Get available exams count
+        const { data: classAssignments } = await supabase
+          .from('class_assignments')
+          .select('class_id')
+          .eq('student_id', user.id);
+
+        const classIds = classAssignments?.map(ca => ca.class_id) || [];
+
+        const { data: availableExams } = await supabase
+          .from('exams')
+          .select('id')
+          .eq('status', 'published')
+          .or(`class_id.is.null,class_id.in.(${classIds.join(',')})`);
+
+        // Get completed exams and calculate average
+        const { data: completedSessions } = await supabase
+          .from('exam_sessions')
+          .select('total_score, max_score, percentage')
+          .eq('student_id', user.id)
+          .eq('status', 'completed');
+
+        const completedCount = completedSessions?.length || 0;
+        const averageScore = completedCount > 0 
+          ? Math.round(completedSessions.reduce((sum, session) => sum + (session.percentage || 0), 0) / completedCount)
+          : 0;
+
+        setStats({
+          availableExams: availableExams?.length || 0,
+          completedExams: completedCount,
+          averageScore,
+          totalStudyTime: completedCount * 30 // Rough estimate
+        });
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+      }
+    };
+
+    fetchStats();
+  }, [user]);
   return (
     <DashboardLayout title="Student Dashboard">
       <div className="space-y-8">
@@ -17,7 +71,7 @@ export const StudentDashboard = () => {
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">--</p>
+                  <p className="text-2xl font-bold">{stats.availableExams}</p>
                   <p className="text-sm text-muted-foreground">Available Exams</p>
                 </div>
               </div>
@@ -31,7 +85,7 @@ export const StudentDashboard = () => {
                   <Trophy className="h-6 w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">--</p>
+                  <p className="text-2xl font-bold">{stats.completedExams}</p>
                   <p className="text-sm text-muted-foreground">Completed</p>
                 </div>
               </div>
@@ -45,7 +99,7 @@ export const StudentDashboard = () => {
                   <TrendingUp className="h-6 w-6 text-warning" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">--%</p>
+                  <p className="text-2xl font-bold">{stats.averageScore}%</p>
                   <p className="text-sm text-muted-foreground">Average Score</p>
                 </div>
               </div>
@@ -59,7 +113,7 @@ export const StudentDashboard = () => {
                   <Clock className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">-- min</p>
+                  <p className="text-2xl font-bold">{stats.totalStudyTime} min</p>
                   <p className="text-sm text-muted-foreground">Study Time</p>
                 </div>
               </div>
