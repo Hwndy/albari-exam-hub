@@ -15,6 +15,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();
 
+  console.log('ProtectedRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -26,11 +28,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (user && !allowedRoles.includes(user.role)) {
+  if (!allowedRoles.includes(user.role)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">

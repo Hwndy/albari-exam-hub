@@ -7,6 +7,7 @@ import { Toaster as Sonner } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SessionMonitor } from '@/components/security/SessionMonitor';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { StudentDashboard } from '@/pages/StudentDashboard';
 import { TeacherDashboard } from '@/pages/TeacherDashboard';
 import { AdminDashboard } from '@/pages/AdminDashboard';
@@ -20,9 +21,24 @@ const queryClient = new QueryClient();
 
 // Dashboard Router Component
 const DashboardRouter = () => {
-  const { user } = useAuth();
+  const { user, isLoading } = useAuth();
   
-  if (!user) return <Navigate to="/login" replace />;
+  console.log('DashboardRouter - user:', user, 'isLoading:', isLoading);
+  
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <LoadingSpinner size="lg" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
   
   switch (user.role) {
     case 'student':
@@ -32,6 +48,7 @@ const DashboardRouter = () => {
     case 'admin':
       return <AdminDashboard />;
     default:
+      console.error('Unknown user role:', user.role);
       return <Navigate to="/login" replace />;
   }
 };

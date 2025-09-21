@@ -18,60 +18,88 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
+        
+        if (!mounted) return;
+        
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile from our database
-          try {
-            const { data: profile, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('user_id', session.user.id)
-              .single();
-              
-            if (error) {
-              console.error('Profile fetch error:', error);
-              setUser(null);
-              setIsLoading(false);
-              return;
-            }
-              
-            if (profile) {
+          // Fetch user profile from our database asynchronously
+          setTimeout(async () => {
+            if (!mounted) return;
+            
+            try {
+              const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('user_id', session.user.id)
+                .single();
+                
+              if (!mounted) return;
+                
+              if (error) {
+                console.error('Profile fetch error:', error);
+                // Create a basic user object even if profile fetch fails
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: session.user.email!,
+                  role: 'student', // Default role
+                  createdAt: new Date().toISOString(),
+                });
+              } else if (profile) {
+                setUser({
+                  id: session.user.id,
+                  email: session.user.email!,
+                  name: profile.full_name || session.user.email!,
+                  role: profile.role as 'admin' | 'teacher' | 'student',
+                  createdAt: profile.created_at,
+                });
+              }
+            } catch (error) {
+              console.error('Profile fetch failed:', error);
+              if (!mounted) return;
+              // Fallback user object
               setUser({
-                id: session.user.id, // Use session.user.id instead of profile.user_id
+                id: session.user.id,
                 email: session.user.email!,
-                name: profile.full_name,
-                role: profile.role as 'admin' | 'teacher' | 'student',
-                createdAt: profile.created_at,
+                name: session.user.email!,
+                role: 'student',
+                createdAt: new Date().toISOString(),
               });
             }
-          } catch (error) {
-            console.error('Profile fetch failed:', error);
-            setUser(null);
-          }
+            
+            if (mounted) {
+              setIsLoading(false);
+            }
+          }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        
-        setIsLoading(false);
       }
     );
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setSession(session);
-        // The onAuthStateChange will handle the rest
-      } else {
+      if (!mounted) return;
+      
+      if (!session) {
         setIsLoading(false);
       }
+      // If there's a session, the onAuthStateChange will handle it
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (credentials: LoginCredentials) => {
