@@ -21,6 +21,8 @@ import {
 } from 'lucide-react';
 import { Exam } from '@/types/exam';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface JAMBExamInterfaceProps {
   exam: Exam;
@@ -40,6 +42,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
   onExit,
 }) => {
   const isMobile = useIsMobile();
+  const { user } = useAuth();
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [timeRemaining, setTimeRemaining] = useState(exam.duration * 60);
@@ -47,48 +50,68 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
 
-  // Mock questions for demo
-  const mockQuestions = [
-    {
-      id: '1',
-      question: 'What is the sum of 15 + 27?',
-      options: { A: '40', B: '42', C: '44', D: '45' },
-      correctAnswer: 'B',
-      subject: 'Mathematics',
-      difficulty: 'easy' as const,
-      type: 'mcq' as const,
-    },
-    {
-      id: '2',
-      question: 'The Earth is flat.',
-      options: { A: 'True', B: 'False' },
-      correctAnswer: 'B',
-      subject: 'Geography',
-      difficulty: 'easy' as const,
-      type: 'true_false' as const,
-    },
-    {
-      id: '3',
-      question: 'Which of the following is a prime number?',
-      options: { A: '15', B: '21', C: '23', D: '27' },
-      correctAnswer: 'C',
-      subject: 'Mathematics',
-      difficulty: 'medium' as const,
-      type: 'mcq' as const,
-    },
-    // Add more questions to demonstrate sections
-    ...Array.from({ length: 17 }, (_, i) => ({
-      id: `${i + 4}`,
-      question: `Sample question ${i + 4}. What is the correct answer?`,
-      options: { A: 'Option A', B: 'Option B', C: 'Option C', D: 'Option D' },
-      correctAnswer: 'A' as const,
-      subject: i < 8 ? 'Mathematics' : 'English',
-      difficulty: 'medium' as const,
-      type: 'mcq' as const,
-    })),
-  ];
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loadingQuestions, setLoadingQuestions] = useState(true);
 
-  const questions = mockQuestions.slice(0, exam.totalQuestions || 20);
+  // Fetch real questions from database
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoadingQuestions(true);
+        const { data: examQuestions, error } = await supabase
+          .from('exam_questions')
+          .select(`
+            *,
+            questions!inner(
+              *,
+              question_options(*),
+              question_banks(
+                subjects(name)
+              )
+            )
+          `)
+          .eq('exam_id', exam.id)
+          .order('question_order');
+
+        if (error) throw error;
+
+        const formattedQuestions = examQuestions?.map((eq: any) => ({
+          id: eq.questions.id,
+          question: eq.questions.question_text,
+          options: eq.questions.question_options
+            ?.sort((a: any, b: any) => a.option_order - b.option_order)
+            ?.reduce((acc: any, opt: any, index: number) => {
+              const letter = String.fromCharCode(65 + index);
+              acc[letter] = opt.option_text;
+              return acc;
+            }, {}),
+          correctAnswer: eq.questions.question_options
+            ?.find((opt: any) => opt.is_correct)
+            ?.option_order 
+            ? String.fromCharCode(64 + eq.questions.question_options.find((opt: any) => opt.is_correct).option_order)
+            : 'A',
+          subject: eq.questions.question_banks?.subjects?.name || 'Unknown',
+          difficulty: eq.questions.difficulty_level,
+          type: eq.questions.question_type === 'true_false' ? 'true_false' : 'mcq',
+          points: eq.points,
+          explanation: eq.questions.explanation,
+          media_url: eq.questions.media_url,
+        })) || [];
+
+        setQuestions(formattedQuestions);
+      } catch (error) {
+        console.error('Error fetching questions:', error);
+        // Fallback to empty array
+        setQuestions([]);
+      } finally {
+        setLoadingQuestions(false);
+      }
+    };
+
+    if (exam.id) {
+      fetchQuestions();
+    }
+  }, [exam.id]);
 
   // Create sections (JAMB-style: Mathematics, English, etc.)
   const sections: ExamSection[] = [
@@ -117,6 +140,18 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
         .map(q => q.index),
     },
   ].filter(section => section.questions.length > 0);
+
+  // Auto-save answers periodically
+  useEffect(() => {
+    const autoSave = setInterval(() => {
+      if (Object.keys(answers).length > 0) {
+        // Save answers to session
+        console.log('Auto-saving answers...', answers);
+      }
+    }, 30000); // Auto-save every 30 seconds
+
+    return () => clearInterval(autoSave);
+  }, [answers]);
 
   // Timer effect
   useEffect(() => {
@@ -212,7 +247,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
     }
   };
 
-  const getStatusIcon = (index: number) => {
+  const getStatusIcon = (index: number): React.ReactNode => {
     const status = getQuestionStatus(index);
     if (index === currentQuestion) return <Circle className="h-3 w-3 fill-current" />;
     if (status === 'answered') return <CheckCircle2 className="h-3 w-3" />;
@@ -223,6 +258,28 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
   const currentQ = questions[currentQuestion];
   const isTimeWarning = timeRemaining < 300; // 5 minutes
   const isTimeCritical = timeRemaining < 60; // 1 minute
+
+  if (loadingQuestions) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading exam questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center space-y-4">
+          <p className="text-lg font-medium">No questions found for this exam</p>
+          <Button onClick={onExit}>Exit</Button>
+        </div>
+      </div>
+    );
+  }
 
   const toggleFullScreen = () => {
     if (!isFullScreen) {
@@ -335,15 +392,15 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                           `}
                           onClick={() => setCurrentQuestion(index)}
                         >
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            {index + 1}
-                          </span>
-                          {flaggedQuestions.has(index) && (
-                            <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 text-warning fill-current" />
-                          )}
-                          <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2">
-                            {getStatusIcon(index)}
-                          </div>
+                           <span className="absolute inset-0 flex items-center justify-center">
+                             {index + 1}
+                           </span>
+                           {flaggedQuestions.has(index) && (
+                             <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 text-warning fill-current" />
+                           )}
+                           <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2">
+                             {getStatusIcon(index)}
+                           </div>
                         </Button>
                       );
                     })}
@@ -421,12 +478,28 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                     </Button>
                   </div>
 
-                  {/* Question Text */}
-                  <div className="bg-card rounded-lg p-6 border">
-                    <p className="text-lg leading-relaxed font-medium">
-                      {currentQ.question}
-                    </p>
-                  </div>
+                   {/* Question Text */}
+                   <div className="bg-card rounded-lg p-6 border">
+                     <p className="text-lg leading-relaxed font-medium mb-4">
+                       {currentQ.question}
+                     </p>
+                     {/* Media Support */}
+                     {currentQ.media_url && (
+                       <div className="mt-4">
+                         {currentQ.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                           <img 
+                             src={currentQ.media_url} 
+                             alt="Question media" 
+                             className="max-w-full h-auto rounded border"
+                           />
+                         ) : currentQ.media_url.match(/\.(mp3|wav|ogg)$/i) ? (
+                           <audio controls className="w-full">
+                             <source src={currentQ.media_url} />
+                           </audio>
+                         ) : null}
+                       </div>
+                     )}
+                   </div>
 
                   {/* Answer Options */}
                   <div className="space-y-4">

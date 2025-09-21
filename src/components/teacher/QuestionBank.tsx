@@ -13,6 +13,7 @@ import { Plus, Edit, Trash2, Search, Upload, Download, Eye } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { QuestionBulkImport } from './QuestionBulkImport';
 
 interface Question {
   id: string;
@@ -44,6 +45,7 @@ export const QuestionBank: React.FC = () => {
   const [filterSubject, setFilterSubject] = useState('all');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -326,7 +328,7 @@ export const QuestionBank: React.FC = () => {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
             <Upload className="h-4 w-4 mr-2" />
             Bulk Import
           </Button>
