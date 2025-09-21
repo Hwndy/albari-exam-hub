@@ -36,21 +36,56 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   useEffect(() => {
     const fetchData = async () => {
+      console.log('Fetching classes and subjects...');
+      
       try {
-        const [classesResult, subjectsResult] = await Promise.all([
-          supabase.from('classes').select('id, name').order('name'),
-          supabase.from('subjects').select('id, name').order('name')
-        ]);
+        // Fetch classes
+        const { data: classesData, error: classesError } = await supabase
+          .from('classes')
+          .select('id, name')
+          .order('name');
 
-        if (classesResult.data) setClasses(classesResult.data);
-        if (subjectsResult.data) setSubjects(subjectsResult.data);
+        if (classesError) {
+          console.error('Classes fetch error:', classesError);
+          toast({
+            title: 'Error',
+            description: 'Failed to load classes',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('Classes fetched:', classesData);
+          setClasses(classesData || []);
+        }
+
+        // Fetch subjects
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from('subjects')
+          .select('id, name')
+          .order('name');
+
+        if (subjectsError) {
+          console.error('Subjects fetch error:', subjectsError);
+          toast({
+            title: 'Error',
+            description: 'Failed to load subjects',
+            variant: 'destructive',
+          });
+        } else {
+          console.log('Subjects fetched:', subjectsData);
+          setSubjects(subjectsData || []);
+        }
       } catch (error) {
         console.error('Error fetching classes/subjects:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load form data',
+          variant: 'destructive',
+        });
       }
     };
 
     fetchData();
-  }, []);
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,10 +196,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 setFormData({ ...formData, role: value, classId: '', classIds: [], subjectIds: [] })
               }
             >
-              <SelectTrigger>
-                <SelectValue />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select your role" />
               </SelectTrigger>
-              <SelectContent className="bg-background border shadow-lg z-50">
+              <SelectContent className="bg-popover border shadow-lg z-50">
                 {allowStudentRegistration && (
                   <SelectItem value="student">Student</SelectItem>
                 )}
@@ -181,13 +216,17 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 value={formData.classId} 
                 onValueChange={(value) => setFormData({ ...formData, classId: value })}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select your class" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border shadow-lg z-50">
-                  {classes.map((cls) => (
-                    <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
-                  ))}
+                <SelectContent className="bg-popover border shadow-lg z-50 max-h-[200px] overflow-y-auto">
+                  {classes.length > 0 ? (
+                    classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="no-classes" disabled>No classes available</SelectItem>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -197,61 +236,69 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <>
               <div className="space-y-2">
                 <Label htmlFor="classes">Classes</Label>
-                <div className="border border-input rounded-md p-3 max-h-32 overflow-y-auto bg-background">
-                  {classes.map((cls) => (
-                    <div key={cls.id} className="flex items-center space-x-2 py-1">
-                      <input
-                        type="checkbox"
-                        id={`class-${cls.id}`}
-                        checked={formData.classIds.includes(cls.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ 
-                              ...formData, 
-                              classIds: [...formData.classIds, cls.id] 
-                            });
-                          } else {
-                            setFormData({ 
-                              ...formData, 
-                              classIds: formData.classIds.filter(id => id !== cls.id) 
-                            });
-                          }
-                        }}
-                        className="rounded border-input"
-                      />
-                      <label htmlFor={`class-${cls.id}`} className="text-sm text-foreground cursor-pointer">{cls.name}</label>
-                    </div>
-                  ))}
+                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                  {classes.length > 0 ? (
+                    classes.map((cls) => (
+                      <div key={cls.id} className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          id={`class-${cls.id}`}
+                          checked={formData.classIds.includes(cls.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ 
+                                ...formData, 
+                                classIds: [...formData.classIds, cls.id] 
+                              });
+                            } else {
+                              setFormData({ 
+                                ...formData, 
+                                classIds: formData.classIds.filter(id => id !== cls.id) 
+                              });
+                            }
+                          }}
+                          className="rounded border-input"
+                        />
+                        <label htmlFor={`class-${cls.id}`} className="text-sm text-foreground cursor-pointer">{cls.name}</label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground py-2">No classes available</div>
+                  )}
                 </div>
               </div>
               
               <div className="space-y-2">
                 <Label htmlFor="subjects">Subjects</Label>
-                <div className="border border-input rounded-md p-3 max-h-32 overflow-y-auto bg-background">
-                  {subjects.map((subject) => (
-                    <div key={subject.id} className="flex items-center space-x-2 py-1">
-                      <input
-                        type="checkbox"
-                        id={`subject-${subject.id}`}
-                        checked={formData.subjectIds.includes(subject.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({ 
-                              ...formData, 
-                              subjectIds: [...formData.subjectIds, subject.id] 
-                            });
-                          } else {
-                            setFormData({ 
-                              ...formData, 
-                              subjectIds: formData.subjectIds.filter(id => id !== subject.id) 
-                            });
-                          }
-                        }}
-                        className="rounded border-input"
-                      />
-                      <label htmlFor={`subject-${subject.id}`} className="text-sm text-foreground cursor-pointer">{subject.name}</label>
-                    </div>
-                  ))}
+                <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                  {subjects.length > 0 ? (
+                    subjects.map((subject) => (
+                      <div key={subject.id} className="flex items-center space-x-2 py-1">
+                        <input
+                          type="checkbox"
+                          id={`subject-${subject.id}`}
+                          checked={formData.subjectIds.includes(subject.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ 
+                                ...formData, 
+                                subjectIds: [...formData.subjectIds, subject.id] 
+                              });
+                            } else {
+                              setFormData({ 
+                                ...formData, 
+                                subjectIds: formData.subjectIds.filter(id => id !== subject.id) 
+                              });
+                            }
+                          }}
+                          className="rounded border-input"
+                        />
+                        <label htmlFor={`subject-${subject.id}`} className="text-sm text-foreground cursor-pointer">{subject.name}</label>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-sm text-muted-foreground py-2">No subjects available</div>
+                  )}
                 </div>
               </div>
             </>
