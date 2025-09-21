@@ -638,7 +638,7 @@ export type Database = {
     Enums: {
       difficulty_level: "easy" | "medium" | "hard"
       exam_status: "draft" | "published" | "archived"
-      question_type: "mcq" | "true_false" | "fill_blank"
+      question_type: "mcq" | "true_false" | "fill_blank" | "diagram"
       session_status: "not_started" | "in_progress" | "completed" | "expired"
     }
     CompositeTypes: {
@@ -769,7 +769,7 @@ export const Constants = {
     Enums: {
       difficulty_level: ["easy", "medium", "hard"],
       exam_status: ["draft", "published", "archived"],
-      question_type: ["mcq", "true_false", "fill_blank"],
+      question_type: ["mcq", "true_false", "fill_blank", "diagram"],
       session_status: ["not_started", "in_progress", "completed", "expired"],
     },
   },

@@ -20,7 +20,7 @@ interface QuestionOption {
 
 interface QuestionFormData {
   questionText: string;
-  questionType: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
+  questionType: 'mcq' | 'true_false' | 'fill_blank';
   difficultyLevel: 'easy' | 'medium' | 'hard';
   points: number;
   explanation: string;
@@ -138,9 +138,6 @@ export const EnhancedQuestionCreator: React.FC = () => {
           { id: '4', text: '', isCorrect: false },
         ];
         newData.correctAnswers = [];
-      } else if (type === 'diagram') {
-        newData.options = [];
-        newData.hasMedia = true;
       }
       
       return newData;
@@ -258,7 +255,7 @@ export const EnhancedQuestionCreator: React.FC = () => {
         .from('questions')
         .insert({
           question_text: formData.questionText,
-          question_type: formData.questionType,
+          question_type: formData.questionType as 'mcq' | 'true_false' | 'fill_blank',
           difficulty_level: formData.difficultyLevel,
           points: formData.points,
           explanation: formData.explanation,
@@ -421,7 +418,6 @@ export const EnhancedQuestionCreator: React.FC = () => {
                   <SelectItem value="mcq">Multiple Choice</SelectItem>
                   <SelectItem value="true_false">True/False</SelectItem>
                   <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
-                  <SelectItem value="diagram">Diagram Question</SelectItem>
                 </SelectContent>
               </Select>
             </div>

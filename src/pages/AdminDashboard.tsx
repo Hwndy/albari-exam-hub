@@ -12,6 +12,7 @@ import { EnhancedAuditLogs } from '@/components/admin/EnhancedAuditLogs';
 import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
 import { EnhancedLiveMonitor } from '@/components/admin/EnhancedLiveMonitor';
 import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
+import { EnhancedQuestionCreator } from '@/components/admin/EnhancedQuestionCreator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -247,12 +248,13 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
             <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
             <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
             <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
             <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
+            <TabsTrigger value="create-question" className="text-xs sm:text-sm">Create Question</TabsTrigger>
             <TabsTrigger value="monitor" className="text-xs sm:text-sm">Monitor</TabsTrigger>
             <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
           </TabsList>
@@ -329,6 +331,11 @@ export const AdminDashboard = () => {
           {/* Questions Tab */}
           <TabsContent value="questions" className="space-y-6">
             <AdminQuestionBank />
+          </TabsContent>
+
+          {/* Create Question Tab */}
+          <TabsContent value="create-question" className="space-y-6">
+            <EnhancedQuestionCreator />
           </TabsContent>
 
           {/* Live Monitor Tab */}
