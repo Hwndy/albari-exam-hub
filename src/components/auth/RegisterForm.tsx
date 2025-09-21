@@ -25,6 +25,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     confirmPassword: '',
     role: 'student' as 'admin' | 'teacher' | 'student',
     classId: '',
+    classIds: [] as string[],
     subjectIds: [] as string[]
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -72,6 +73,25 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
 
+    // Validate role-specific requirements
+    if (formData.role === 'student' && !formData.classId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a class',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (formData.role === 'teacher' && formData.subjectIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one subject',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register({
@@ -80,6 +100,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         fullName: formData.fullName,
         role: formData.role,
         classId: formData.role === 'student' ? formData.classId : undefined,
+        classIds: formData.role === 'teacher' ? formData.classIds : undefined,
         subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined
       });
       
@@ -137,13 +158,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <Select 
               value={formData.role} 
               onValueChange={(value: 'admin' | 'teacher' | 'student') => 
-                setFormData({ ...formData, role: value, classId: '', subjectIds: [] })
+                setFormData({ ...formData, role: value, classId: '', classIds: [], subjectIds: [] })
               }
             >
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border shadow-lg z-50">
                 {allowStudentRegistration && (
                   <SelectItem value="student">Student</SelectItem>
                 )}
@@ -163,7 +184,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 <SelectTrigger>
                   <SelectValue placeholder="Select your class" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-lg z-50">
                   {classes.map((cls) => (
                     <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
                   ))}
@@ -175,30 +196,30 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           {formData.role === 'teacher' && (
             <>
               <div className="space-y-2">
-                <Label htmlFor="classes">Classes (Select multiple by holding Ctrl/Cmd)</Label>
-                <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                <Label htmlFor="classes">Classes</Label>
+                <div className="border border-input rounded-md p-3 max-h-32 overflow-y-auto bg-background">
                   {classes.map((cls) => (
                     <div key={cls.id} className="flex items-center space-x-2 py-1">
                       <input
                         type="checkbox"
                         id={`class-${cls.id}`}
-                        checked={formData.subjectIds.includes(cls.id)}
+                        checked={formData.classIds.includes(cls.id)}
                         onChange={(e) => {
                           if (e.target.checked) {
                             setFormData({ 
                               ...formData, 
-                              subjectIds: [...formData.subjectIds, cls.id] 
+                              classIds: [...formData.classIds, cls.id] 
                             });
                           } else {
                             setFormData({ 
                               ...formData, 
-                              subjectIds: formData.subjectIds.filter(id => id !== cls.id) 
+                              classIds: formData.classIds.filter(id => id !== cls.id) 
                             });
                           }
                         }}
-                        className="rounded border-gray-300"
+                        className="rounded border-input"
                       />
-                      <label htmlFor={`class-${cls.id}`} className="text-sm">{cls.name}</label>
+                      <label htmlFor={`class-${cls.id}`} className="text-sm text-foreground cursor-pointer">{cls.name}</label>
                     </div>
                   ))}
                 </div>
@@ -206,7 +227,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               
               <div className="space-y-2">
                 <Label htmlFor="subjects">Subjects</Label>
-                <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                <div className="border border-input rounded-md p-3 max-h-32 overflow-y-auto bg-background">
                   {subjects.map((subject) => (
                     <div key={subject.id} className="flex items-center space-x-2 py-1">
                       <input
@@ -226,9 +247,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                             });
                           }
                         }}
-                        className="rounded border-gray-300"
+                        className="rounded border-input"
                       />
-                      <label htmlFor={`subject-${subject.id}`} className="text-sm">{subject.name}</label>
+                      <label htmlFor={`subject-${subject.id}`} className="text-sm text-foreground cursor-pointer">{subject.name}</label>
                     </div>
                   ))}
                 </div>

@@ -12,6 +12,7 @@ interface AuthContextType extends AuthState {
     fullName: string; 
     role?: string;
     classId?: string;
+    classIds?: string[];
     subjectIds?: string[];
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -128,12 +129,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Don't set loading to false here - let the auth state change handle it
   };
 
-  const register = async (userData: { 
-    email: string; 
-    password: string; 
-    fullName: string; 
+  const register = async (userData: {
+    email: string;
+    password: string;
+    fullName: string;
     role?: string;
     classId?: string;
+    classIds?: string[];
     subjectIds?: string[];
   }) => {
     setIsLoading(true);
@@ -169,13 +171,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
     }
 
-    if (data.user && userData.role === 'teacher' && userData.subjectIds?.length) {
+    if (data.user && userData.role === 'teacher') {
       try {
-        const assignments = userData.subjectIds.map(subjectId => ({
-          user_id: data.user!.id,
-          subject_id: subjectId
-        }));
-        await supabase.from('subject_assignments').insert(assignments);
+        // Handle subject assignments for teachers
+        if (userData.subjectIds?.length) {
+          const subjectAssignments = userData.subjectIds.map(subjectId => ({
+            user_id: data.user!.id,
+            subject_id: subjectId,
+            class_id: userData.classIds?.[0] || null // Use first class if available
+          }));
+          await supabase.from('subject_assignments').insert(subjectAssignments);
+        }
       } catch (assignmentError) {
         console.error('Error assigning subjects:', assignmentError);
       }
