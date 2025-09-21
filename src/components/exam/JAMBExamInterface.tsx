@@ -58,6 +58,26 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
     const fetchQuestions = async () => {
       try {
         setLoadingQuestions(true);
+        
+        // First, start the exam session to allow access to questions
+        if (user?.id) {
+          console.log('Starting exam session for user:', user.id, 'exam:', exam.id);
+          
+          // Update session status to 'in_progress' to allow question access
+          const { error: sessionError } = await supabase
+            .from('exam_sessions')
+            .update({
+              status: 'in_progress',
+              started_at: new Date().toISOString()
+            })
+            .eq('exam_id', exam.id)
+            .eq('student_id', user.id);
+            
+          if (sessionError) {
+            console.error('Error starting session:', sessionError);
+          }
+        }
+
         const { data: examQuestions, error } = await supabase
           .from('exam_questions')
           .select(`

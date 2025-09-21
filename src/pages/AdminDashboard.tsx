@@ -9,6 +9,7 @@ import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
 import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
+import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types/auth';
 import type { Exam } from '@/types/exam';
@@ -201,11 +202,12 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-7">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="classes">Classes</TabsTrigger>
             <TabsTrigger value="subjects">Subjects</TabsTrigger>
+            <TabsTrigger value="questions">Questions</TabsTrigger>
             <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
             <TabsTrigger value="logs">Audit Logs</TabsTrigger>
           </TabsList>
@@ -259,6 +261,11 @@ export const AdminDashboard = () => {
           {/* Subjects Tab */}
           <TabsContent value="subjects" className="space-y-6">
             <SubjectManagement />
+          </TabsContent>
+
+          {/* Questions Tab */}
+          <TabsContent value="questions" className="space-y-6">
+            <AdminQuestionBank />
           </TabsContent>
 
           {/* Live Monitor Tab */}
