@@ -21,24 +21,37 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         
         if (session?.user) {
           // Fetch user profile from our database
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('user_id', session.user.id)
-            .single();
-            
-          if (profile) {
-            setUser({
-              id: session.user.id, // Use session.user.id instead of profile.user_id
-              email: session.user.email!,
-              name: profile.full_name,
-              role: profile.role as 'admin' | 'teacher' | 'student',
-              createdAt: profile.created_at,
-            });
+          try {
+            const { data: profile, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('user_id', session.user.id)
+              .single();
+              
+            if (error) {
+              console.error('Profile fetch error:', error);
+              setUser(null);
+              setIsLoading(false);
+              return;
+            }
+              
+            if (profile) {
+              setUser({
+                id: session.user.id, // Use session.user.id instead of profile.user_id
+                email: session.user.email!,
+                name: profile.full_name,
+                role: profile.role as 'admin' | 'teacher' | 'student',
+                createdAt: profile.created_at,
+              });
+            }
+          } catch (error) {
+            console.error('Profile fetch failed:', error);
+            setUser(null);
           }
         } else {
           setUser(null);
@@ -52,6 +65,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
         setSession(session);
+        // The onAuthStateChange will handle the rest
       } else {
         setIsLoading(false);
       }
@@ -71,6 +85,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       throw new Error(error.message);
     }
+    // Don't set loading to false here - let the auth state change handle it
   };
 
   const register = async (userData: { email: string; password: string; fullName: string; role?: string }) => {

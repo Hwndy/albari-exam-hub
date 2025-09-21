@@ -8,6 +8,7 @@ import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
 import { AuditLogs } from '@/components/admin/AuditLogs';
+import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
 import { useToast } from '@/hooks/use-toast';
 import type { User } from '@/types/auth';
 import type { Exam } from '@/types/exam';
@@ -199,32 +200,19 @@ export const AdminDashboard = () => {
         </div>
 
         {/* Main Content Tabs */}
-        <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="users">Manage Users</TabsTrigger>
+        <Tabs defaultValue="overview" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="classes">Classes</TabsTrigger>
             <TabsTrigger value="subjects">Subjects</TabsTrigger>
-            <TabsTrigger value="exams">Exams</TabsTrigger>
+            <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
+            <TabsTrigger value="logs">Audit Logs</TabsTrigger>
           </TabsList>
 
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <UserManagement />
-          </TabsContent>
-
-          {/* Classes Tab */}
-          <TabsContent value="classes" className="space-y-6">
-            <ClassManagement />
-          </TabsContent>
-
-          {/* Subjects Tab */}
-          <TabsContent value="subjects" className="space-y-6">
-            <SubjectManagement />
-          </TabsContent>
-
-          {/* Exams Tab */}
-          <TabsContent value="exams" className="space-y-6">
-            <h2 className="text-2xl font-bold">All Exams</h2>
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            <h2 className="text-2xl font-bold">System Overview</h2>
             
             <div className="grid gap-4">
               {exams.map((exam) => (
@@ -256,6 +244,31 @@ export const AdminDashboard = () => {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Users Tab */}
+          <TabsContent value="users" className="space-y-6">
+            <UserManagement />
+          </TabsContent>
+
+          {/* Classes Tab */}
+          <TabsContent value="classes" className="space-y-6">
+            <ClassManagement />
+          </TabsContent>
+
+          {/* Subjects Tab */}
+          <TabsContent value="subjects" className="space-y-6">
+            <SubjectManagement />
+          </TabsContent>
+
+          {/* Live Monitor Tab */}
+          <TabsContent value="monitor" className="space-y-6">
+            <LiveExamMonitor />
+          </TabsContent>
+
+          {/* Audit Logs Tab */}
+          <TabsContent value="logs" className="space-y-6">
+            <AuditLogs />
           </TabsContent>
         </Tabs>
       </div>
