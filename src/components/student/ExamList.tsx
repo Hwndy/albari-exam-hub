@@ -69,7 +69,7 @@ export const ExamList: React.FC = () => {
       console.log('Student class assignments:', classIds);
 
       // Fetch published exams for student's classes
-      const { data: examsData } = await supabase
+      let query = supabase
         .from('exams')
         .select(`
           *,
@@ -77,8 +77,17 @@ export const ExamList: React.FC = () => {
           classes(name)
         `)
         .eq('status', 'published')
-        .or(`class_id.is.null,class_id.in.(${classIds.join(',')})`)
         .order('created_at', { ascending: false });
+
+      // Add class filtering only if student has class assignments
+      if (classIds.length > 0) {
+        query = query.or(`class_id.is.null,class_id.in.(${classIds.join(',')})`);
+      } else {
+        // If no class assignments, only show exams without class restrictions
+        query = query.is('class_id', null);
+      }
+
+      const { data: examsData } = await query;
 
       console.log('Available exams:', examsData);
 

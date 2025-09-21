@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Users, FileText } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Users, FileText, Plus } from 'lucide-react';
 import { QuestionBank } from '@/components/teacher/QuestionBank';
 import { ExamBuilder } from '@/components/teacher/ExamBuilder';
 import { ExamResults } from '@/components/teacher/ExamResults';
+import { ExamCreationModal } from '@/components/teacher/ExamCreationModal';
 
 export const TeacherDashboard = () => {
   return (
@@ -66,6 +68,17 @@ export const TeacherDashboard = () => {
           </TabsList>
 
           <TabsContent value="exams" className="space-y-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-2xl font-bold">My Exams</h2>
+              <ExamCreationModal
+                trigger={
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create New Exam
+                  </Button>
+                }
+              />
+            </div>
             <ExamBuilder />
           </TabsContent>
 
