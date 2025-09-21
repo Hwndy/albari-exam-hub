@@ -37,20 +37,42 @@ export const StudentDashboard = () => {
         // Get completed exams and calculate average
         const { data: completedSessions } = await supabase
           .from('exam_sessions')
-          .select('total_score, max_score, percentage')
+          .select(`
+            total_score, 
+            max_score, 
+            percentage, 
+            started_at, 
+            ended_at,
+            time_remaining_seconds,
+            question_responses(time_spent_seconds)
+          `)
           .eq('student_id', user.id)
           .eq('status', 'completed');
 
         const completedCount = completedSessions?.length || 0;
-        const averageScore = completedCount > 0 
-          ? Math.round(completedSessions.reduce((sum, session) => sum + (session.percentage || 0), 0) / completedCount)
+        
+        // Calculate proper average score based on actual scores
+        const validSessions = completedSessions?.filter(s => s.percentage !== null) || [];
+        const averageScore = validSessions.length > 0 
+          ? Math.round(validSessions.reduce((sum, session) => sum + (session.percentage || 0), 0) / validSessions.length)
           : 0;
+
+        // Calculate total study time from actual session data
+        const totalStudyTime = completedSessions?.reduce((total, session) => {
+          if (session.started_at && session.ended_at) {
+            const sessionTime = Math.floor((new Date(session.ended_at).getTime() - new Date(session.started_at).getTime()) / (1000 * 60));
+            return total + sessionTime;
+          }
+          // Fallback to question response times
+          const responseTime = session.question_responses?.reduce((sum: number, r: any) => sum + (r.time_spent_seconds || 0), 0) || 0;
+          return total + Math.floor(responseTime / 60);
+        }, 0) || 0;
 
         setStats({
           availableExams: availableExams?.length || 0,
           completedExams: completedCount,
           averageScore,
-          totalStudyTime: completedCount * 30 // Rough estimate
+          totalStudyTime
         });
       } catch (error) {
         console.error('Error fetching stats:', error);

@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Plus, Edit, Trash2, Search, Eye } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { BulkQuestionImport } from './BulkQuestionImport';
 
 interface Question {
   id: string;
@@ -48,9 +49,10 @@ export const AdminQuestionBank: React.FC = () => {
     question_text: '',
     question_type: 'mcq' as 'mcq' | 'true_false' | 'fill_blank',
     difficulty_level: 'medium' as 'easy' | 'medium' | 'hard',
-      points: 1,
-      subject_id: '',
-      explanation: '',
+    points: 1,
+    subject_id: '',
+    class_id: '',
+    explanation: '',
     options: [
       { text: '', isCorrect: false },
       { text: '', isCorrect: false },
@@ -58,6 +60,10 @@ export const AdminQuestionBank: React.FC = () => {
       { text: '', isCorrect: false },
     ]
   });
+
+  const [bulkMode, setBulkMode] = useState(false);
+  const [bulkQuestions, setBulkQuestions] = useState('');
+  const [bulkCount, setBulkCount] = useState(10);
 
   useEffect(() => {
     fetchData();
@@ -259,6 +265,7 @@ export const AdminQuestionBank: React.FC = () => {
       difficulty_level: 'medium',
       points: 1,
       subject_id: '',
+      class_id: '',
       explanation: '',
       options: [
         { text: '', isCorrect: false },
@@ -322,7 +329,6 @@ export const AdminQuestionBank: React.FC = () => {
               <DialogTitle>Add New Question</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleAddQuestion} className="space-y-4">
-              {/* Subject Selection (Class removed since questions are subject-level) */}
               <div className="space-y-2">
                 <Label htmlFor="subject">Subject *</Label>
                 <Select
@@ -337,6 +343,26 @@ export const AdminQuestionBank: React.FC = () => {
                     {subjects.map(subject => (
                       <SelectItem key={subject.id} value={subject.id}>
                         {subject.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="class">Class *</Label>
+                <Select
+                  value={questionForm.class_id}
+                  onValueChange={(value) => setQuestionForm({ ...questionForm, class_id: value })}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map(cls => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -471,6 +497,8 @@ export const AdminQuestionBank: React.FC = () => {
                   Cancel
                 </Button>
               </div>
+                </>
+              )}
             </form>
           </DialogContent>
         </Dialog>

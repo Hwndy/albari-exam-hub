@@ -21,6 +21,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
+import { StudentResultDetails } from './StudentResultDetails';
 
 interface ExamResultData {
   session_id: string;
@@ -55,6 +56,7 @@ export const ExamResults: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [selectedStudentResult, setSelectedStudentResult] = useState<ExamResultData | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -238,6 +240,10 @@ export const ExamResults: React.FC = () => {
     a.download = `exam-results-${selectedExam}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
+  };
+
+  const viewStudentDetails = (result: ExamResultData) => {
+    setSelectedStudentResult(result);
   };
 
   if (loading) {
@@ -424,7 +430,12 @@ export const ExamResults: React.FC = () => {
                       {result.completed_at ? format(new Date(result.completed_at), 'PPP') : 'N/A'}
                     </TableCell>
                     <TableCell>
-                      <Button variant="outline" size="sm" disabled={result.status !== 'completed'}>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        disabled={result.status !== 'completed'}
+                        onClick={() => viewStudentDetails(result)}
+                      >
                         <Eye className="h-4 w-4 mr-1" />
                         View Details
                       </Button>
@@ -441,6 +452,16 @@ export const ExamResults: React.FC = () => {
             )}
           </CardContent>
         </Card>
+      )}
+
+      {/* Student Result Details Modal */}
+      {selectedStudentResult && (
+        <StudentResultDetails
+          isOpen={!!selectedStudentResult}
+          onClose={() => setSelectedStudentResult(null)}
+          sessionId={selectedStudentResult.session_id}
+          studentName={selectedStudentResult.student_name}
+        />
       )}
     </div>
   );

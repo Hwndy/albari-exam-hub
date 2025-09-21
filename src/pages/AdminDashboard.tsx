@@ -202,14 +202,14 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-7">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="classes">Classes</TabsTrigger>
-            <TabsTrigger value="subjects">Subjects</TabsTrigger>
-            <TabsTrigger value="questions">Questions</TabsTrigger>
-            <TabsTrigger value="monitor">Live Monitor</TabsTrigger>
-            <TabsTrigger value="logs">Audit Logs</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
+            <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
+            <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
+            <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
+            <TabsTrigger value="monitor" className="text-xs sm:text-sm">Monitor</TabsTrigger>
+            <TabsTrigger value="logs" className="text-xs sm:text-sm">Logs</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
