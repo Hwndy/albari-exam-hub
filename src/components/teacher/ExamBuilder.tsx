@@ -28,6 +28,7 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { QuestionSelector } from './QuestionSelector';
 
 interface Exam {
   id: string;
@@ -144,8 +145,17 @@ export const ExamBuilder: React.FC = () => {
   const handleCreateExam = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (selectedQuestions.length === 0) {
+      toast({
+        title: 'No Questions Selected',
+        description: 'Please select at least one question for the exam.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     try {
-      const { data, error } = await supabase
+      const { data: exam, error: examError } = await supabase
         .from('exams')
         .insert({
           title: examForm.title,
@@ -154,7 +164,7 @@ export const ExamBuilder: React.FC = () => {
           subject_id: examForm.subject_id || null,
           class_id: examForm.class_id || null,
           duration_minutes: examForm.duration_minutes,
-          total_questions: examForm.total_questions,
+          total_questions: selectedQuestions.length, // Use actual selected count
           pass_mark: examForm.pass_mark,
           start_date: examForm.start_date?.toISOString() || null,
           end_date: examForm.end_date?.toISOString() || null,
@@ -170,7 +180,21 @@ export const ExamBuilder: React.FC = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (examError) throw examError;
+
+      // Add selected questions to the exam
+      const examQuestions = selectedQuestions.map((questionId, index) => ({
+        exam_id: exam.id,
+        question_id: questionId,
+        question_order: index + 1,
+        points: 1 // You can modify this to use individual question points
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('exam_questions')
+        .insert(examQuestions);
+
+      if (questionsError) throw questionsError;
 
       await fetchData();
       setIsCreatingExam(false);
@@ -178,7 +202,7 @@ export const ExamBuilder: React.FC = () => {
       
       toast({
         title: 'Exam Created',
-        description: 'Exam has been created successfully.',
+        description: `Exam created successfully with ${selectedQuestions.length} questions.`,
       });
     } catch (error: any) {
       toast({
@@ -193,8 +217,17 @@ export const ExamBuilder: React.FC = () => {
     e.preventDefault();
     if (!editingExam) return;
 
+    if (selectedQuestions.length === 0) {
+      toast({
+        title: 'No Questions Selected',
+        description: 'Please select at least one question for the exam.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      const { error } = await supabase
+      const { error: examError } = await supabase
         .from('exams')
         .update({
           title: examForm.title,
@@ -203,7 +236,7 @@ export const ExamBuilder: React.FC = () => {
           subject_id: examForm.subject_id || null,
           class_id: examForm.class_id || null,
           duration_minutes: examForm.duration_minutes,
-          total_questions: examForm.total_questions,
+          total_questions: selectedQuestions.length,
           pass_mark: examForm.pass_mark,
           start_date: examForm.start_date?.toISOString() || null,
           end_date: examForm.end_date?.toISOString() || null,
@@ -216,7 +249,27 @@ export const ExamBuilder: React.FC = () => {
         })
         .eq('id', editingExam.id);
 
-      if (error) throw error;
+      if (examError) throw examError;
+
+      // Delete existing exam questions
+      await supabase
+        .from('exam_questions')
+        .delete()
+        .eq('exam_id', editingExam.id);
+
+      // Add new selected questions
+      const examQuestions = selectedQuestions.map((questionId, index) => ({
+        exam_id: editingExam.id,
+        question_id: questionId,
+        question_order: index + 1,
+        points: 1
+      }));
+
+      const { error: questionsError } = await supabase
+        .from('exam_questions')
+        .insert(examQuestions);
+
+      if (questionsError) throw questionsError;
 
       await fetchData();
       setEditingExam(null);
@@ -224,7 +277,7 @@ export const ExamBuilder: React.FC = () => {
       
       toast({
         title: 'Exam Updated',
-        description: 'Exam has been updated successfully.',
+        description: `Exam updated successfully with ${selectedQuestions.length} questions.`,
       });
     } catch (error: any) {
       toast({
@@ -344,9 +397,10 @@ export const ExamBuilder: React.FC = () => {
       sequential_navigation: false,
       allow_question_flagging: true,
     });
+    setSelectedQuestions([]);
   };
 
-  const startEditing = (exam: Exam) => {
+  const startEditing = async (exam: Exam) => {
     setEditingExam(exam);
     setExamForm({
       title: exam.title,
@@ -366,6 +420,22 @@ export const ExamBuilder: React.FC = () => {
       sequential_navigation: exam.sequential_navigation,
       allow_question_flagging: exam.allow_question_flagging,
     });
+
+    // Fetch existing questions for this exam
+    try {
+      const { data: examQuestions } = await supabase
+        .from('exam_questions')
+        .select('question_id')
+        .eq('exam_id', exam.id)
+        .order('question_order');
+
+      if (examQuestions) {
+        setSelectedQuestions(examQuestions.map(eq => eq.question_id));
+      }
+    } catch (error) {
+      console.error('Error fetching exam questions:', error);
+      setSelectedQuestions([]);
+    }
   };
 
   const filteredExams = exams.filter(exam => {
@@ -670,10 +740,21 @@ export const ExamBuilder: React.FC = () => {
                         id="total_questions"
                         type="number"
                         value={examForm.total_questions}
-                        onChange={(e) => setExamForm({ ...examForm, total_questions: parseInt(e.target.value) })}
+                        onChange={(e) => {
+                          const newTotal = parseInt(e.target.value);
+                          setExamForm({ ...examForm, total_questions: newTotal });
+                          // Trim selected questions if exceeding new limit
+                          if (selectedQuestions.length > newTotal) {
+                            setSelectedQuestions(selectedQuestions.slice(0, newTotal));
+                          }
+                        }}
                         min="1"
+                        max="100"
                         required
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Currently selected: {selectedQuestions.length} questions
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="pass_mark">Pass Mark (%)</Label>
@@ -691,19 +772,24 @@ export const ExamBuilder: React.FC = () => {
                 </TabsContent>
                 
                 <TabsContent value="questions" className="space-y-4">
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Question selection will be available after creating the exam.</p>
-                    <p className="text-sm">You can add questions from your question bank in the edit mode.</p>
-                  </div>
+                  <QuestionSelector
+                    subjectId={examForm.subject_id}
+                    selectedQuestions={selectedQuestions}
+                    onQuestionsChange={setSelectedQuestions}
+                    maxQuestions={examForm.total_questions}
+                  />
                 </TabsContent>
                 
                 <div className="flex justify-end space-x-2 mt-6">
-                  <Button type="button" variant="outline" onClick={() => setIsCreatingExam(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsCreatingExam(false);
+                    resetExamForm();
+                  }}>
                     Cancel
                   </Button>
-                  <Button type="submit">
+                  <Button type="submit" disabled={selectedQuestions.length === 0}>
                     <Save className="h-4 w-4 mr-2" />
-                    Create Exam
+                    Create Exam ({selectedQuestions.length} questions)
                   </Button>
                 </div>
               </form>
@@ -881,7 +967,11 @@ export const ExamBuilder: React.FC = () => {
                     <Label htmlFor="edit-subject">Subject</Label>
                     <Select
                       value={examForm.subject_id}
-                      onValueChange={(value) => setExamForm({ ...examForm, subject_id: value })}
+                      onValueChange={(value) => {
+                        setExamForm({ ...examForm, subject_id: value });
+                        // Clear selected questions when subject changes
+                        setSelectedQuestions([]);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select subject" />
@@ -895,6 +985,35 @@ export const ExamBuilder: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-class">Class</Label>
+                    <Select
+                      value={examForm.class_id}
+                      onValueChange={(value) => setExamForm({ ...examForm, class_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select class" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {classes.map(cls => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-duration">Duration (minutes)</Label>
+                    <Input
+                      id="edit-duration"
+                      type="number"
+                      value={examForm.duration_minutes}
+                      onChange={(e) => setExamForm({ ...examForm, duration_minutes: parseInt(e.target.value) })}
+                      min="1"
+                      required
+                    />
+                  </div>
                 </div>
                 
                 <div className="space-y-2">
@@ -907,15 +1026,70 @@ export const ExamBuilder: React.FC = () => {
                     rows={2}
                   />
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="edit-instructions">Instructions</Label>
+                  <Textarea
+                    id="edit-instructions"
+                    value={examForm.instructions}
+                    onChange={(e) => setExamForm({ ...examForm, instructions: e.target.value })}
+                    placeholder="Instructions for students taking the exam"
+                    rows={3}
+                  />
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="settings" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-pass-mark">Pass Mark (%)</Label>
+                    <Input
+                      id="edit-pass-mark"
+                      type="number"
+                      value={examForm.pass_mark}
+                      onChange={(e) => setExamForm({ ...examForm, pass_mark: parseInt(e.target.value) })}
+                      min="0"
+                      max="100"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-total-questions">Total Questions</Label>
+                    <Input
+                      id="edit-total-questions"
+                      type="number"
+                      value={examForm.total_questions}
+                      onChange={(e) => {
+                        const newTotal = parseInt(e.target.value);
+                        setExamForm({ ...examForm, total_questions: newTotal });
+                        if (selectedQuestions.length > newTotal) {
+                          setSelectedQuestions(selectedQuestions.slice(0, newTotal));
+                        }
+                      }}
+                      min="1"
+                      max="100"
+                      required
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="questions" className="space-y-4">
+                <QuestionSelector
+                  subjectId={examForm.subject_id}
+                  selectedQuestions={selectedQuestions}
+                  onQuestionsChange={setSelectedQuestions}
+                  maxQuestions={examForm.total_questions}
+                />
               </TabsContent>
               
               <div className="flex justify-end space-x-2 mt-6">
                 <Button type="button" variant="outline" onClick={() => setEditingExam(null)}>
                   Cancel
                 </Button>
-                <Button type="submit">
+                <Button type="submit" disabled={selectedQuestions.length === 0}>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  Save Changes ({selectedQuestions.length} questions)
                 </Button>
               </div>
             </form>
