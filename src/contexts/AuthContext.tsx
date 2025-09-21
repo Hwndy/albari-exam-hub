@@ -104,15 +104,20 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
+    console.log('Login attempt for:', credentials.email);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
     });
 
     if (error) {
+      console.log('Login error:', error.message);
       setIsLoading(false);
       throw new Error(error.message);
     }
+    
+    console.log('Login successful, waiting for auth state change...');
     // Don't set loading to false here - let the auth state change handle it
   };
 
@@ -138,10 +143,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   const logout = async () => {
+    console.log('Logout attempt...');
     const { error } = await supabase.auth.signOut();
     if (error) {
+      console.log('Logout error:', error.message);
       throw new Error(error.message);
     }
+    console.log('Logout successful');
   };
 
   const resetPassword = async (email: string) => {

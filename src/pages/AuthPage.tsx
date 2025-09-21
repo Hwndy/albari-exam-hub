@@ -14,6 +14,23 @@ export const AuthPage = () => {
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
   const { isAuthenticated, user, isLoading } = useAuth();
 
+  useEffect(() => {
+    // Fetch app settings to check if student registration is allowed
+    const fetchSettings = async () => {
+      const { data } = await supabase
+        .from('app_settings')
+        .select('setting_value')
+        .eq('setting_key', 'allow_student_registration')
+        .single();
+      
+      if (data) {
+        setAllowStudentRegistration(data.setting_value === true);
+      }
+    };
+
+    fetchSettings();
+  }, []);
+
   // Redirect authenticated users to their dashboard
   if (isLoading) {
     return (
@@ -38,23 +55,6 @@ export const AuthPage = () => {
         return <Navigate to="/dashboard" replace />;
     }
   }
-
-  useEffect(() => {
-    // Fetch app settings to check if student registration is allowed
-    const fetchSettings = async () => {
-      const { data } = await supabase
-        .from('app_settings')
-        .select('setting_value')
-        .eq('setting_key', 'allow_student_registration')
-        .single();
-      
-      if (data) {
-        setAllowStudentRegistration(data.setting_value === true);
-      }
-    };
-
-    fetchSettings();
-  }, []);
 
   const renderForm = () => {
     switch (mode) {
