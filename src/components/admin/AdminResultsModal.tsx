@@ -43,9 +43,9 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
   const [filteredResults, setFilteredResults] = useState<ExamResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterSubject, setFilterSubject] = useState('');
-  const [filterClass, setFilterClass] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterSubject, setFilterSubject] = useState('all-subjects');
+  const [filterClass, setFilterClass] = useState('all-classes');
+  const [filterStatus, setFilterStatus] = useState('all-status');
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   
@@ -148,15 +148,15 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
       );
     }
 
-    if (filterSubject) {
+    if (filterSubject && filterSubject !== 'all-subjects') {
       filtered = filtered.filter(result => result.subject_name === filterSubject);
     }
 
-    if (filterClass) {
+    if (filterClass && filterClass !== 'all-classes') {
       filtered = filtered.filter(result => result.class_name === filterClass);
     }
 
-    if (filterStatus) {
+    if (filterStatus && filterStatus !== 'all-status') {
       filtered = filtered.filter(result => 
         filterStatus === 'passed' ? result.passed : !result.passed
       );
@@ -227,7 +227,7 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
                 <SelectValue placeholder="All Subjects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Subjects</SelectItem>
+                <SelectItem value="all-subjects">All Subjects</SelectItem>
                 {subjects.map((subject) => (
                   <SelectItem key={subject.id} value={subject.name}>
                     {subject.name}
@@ -241,7 +241,7 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
                 <SelectValue placeholder="All Classes" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Classes</SelectItem>
+                <SelectItem value="all-classes">All Classes</SelectItem>
                 {classes.map((cls) => (
                   <SelectItem key={cls.id} value={cls.name}>
                     {cls.name}
@@ -255,7 +255,7 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
                 <SelectValue placeholder="All Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Status</SelectItem>
+                <SelectItem value="all-status">All Status</SelectItem>
                 <SelectItem value="passed">Passed</SelectItem>
                 <SelectItem value="failed">Failed</SelectItem>
               </SelectContent>
