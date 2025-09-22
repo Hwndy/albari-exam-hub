@@ -152,7 +152,7 @@ export const AdminDashboard = () => {
     <DashboardLayout title="Admin Dashboard">
       <div className="space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
@@ -254,16 +254,16 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-1">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
-            <TabsTrigger value="exams" className="text-xs sm:text-sm">Exams</TabsTrigger>
-            <TabsTrigger value="results" className="text-xs sm:text-sm">Results</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
-            <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
-            <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
-            <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
-            <TabsTrigger value="monitor-logs" className="text-xs sm:text-sm">Monitor & Logs</TabsTrigger>
-            <TabsTrigger value="results-modal" className="text-xs sm:text-sm">All Results</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-9 gap-1 h-auto">
+            <TabsTrigger value="overview" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Overview</TabsTrigger>
+            <TabsTrigger value="exams" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Exams</TabsTrigger>
+            <TabsTrigger value="results" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Results</TabsTrigger>
+            <TabsTrigger value="users" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Users</TabsTrigger>
+            <TabsTrigger value="classes" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Classes</TabsTrigger>
+            <TabsTrigger value="subjects" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Subjects</TabsTrigger>
+            <TabsTrigger value="questions" className="text-xs sm:text-sm py-2 px-2 sm:px-3">Questions</TabsTrigger>
+            <TabsTrigger value="monitor-logs" className="text-xs sm:text-sm py-2 px-1 sm:px-3">Monitor</TabsTrigger>
+            <TabsTrigger value="results-modal" className="text-xs sm:text-sm py-2 px-1 sm:px-3">All Results</TabsTrigger>
           </TabsList>
 
           {/* Exams Tab */}
@@ -362,7 +362,7 @@ export const AdminDashboard = () => {
 
           {/* Combined Monitor & Logs Tab */}
           <TabsContent value="monitor-logs" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
               <Card>
                 <CardHeader>
                   <CardTitle>Live Monitor</CardTitle>

@@ -249,48 +249,43 @@ export const ExamList: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4">
+        <div className="grid gap-4 sm:gap-6">
               {activeExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors gap-4"
                 >
                   <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold">{exam.title}</h3>
-                      <Badge variant={getStatusColor(exam.status)}>
-                        {getStatusIcon(exam.status)}
-                        <span className="ml-1 capitalize">{exam.status}</span>
-                      </Badge>
-                      {exam.session?.status === 'in_progress' && (
-                        <Badge variant="secondary">In Progress</Badge>
-                      )}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-2">
+                      <h3 className="font-semibold text-sm sm:text-base">{exam.title}</h3>
+                      <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                        <Badge variant={getStatusColor(exam.status)}>
+                          {getStatusIcon(exam.status)}
+                          <span className="ml-1 capitalize">{exam.status}</span>
+                        </Badge>
+                        {exam.session?.status === 'in_progress' && (
+                          <Badge variant="secondary">In Progress</Badge>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                       {exam.subject_name && (
-                        <>
-                          <span className="flex items-center">
-                            <BookOpen className="h-3 w-3 mr-1" />
-                            {exam.subject_name}
-                          </span>
-                        </>
+                        <span className="flex items-center">
+                          <BookOpen className="h-3 w-3 mr-1" />
+                          {exam.subject_name}
+                        </span>
                       )}
                       {exam.class_name && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center">
-                            <Users className="h-3 w-3 mr-1" />
-                            {exam.class_name}
-                          </span>
-                        </>
+                        <span className="flex items-center">
+                          <Users className="h-3 w-3 mr-1" />
+                          {exam.class_name}
+                        </span>
                       )}
-                      <span>•</span>
                       <span className="flex items-center">
                         <Clock className="h-3 w-3 mr-1" />
                         {exam.duration_minutes} minutes
                       </span>
-                      <span>•</span>
                       <span className="flex items-center">
                         <FileText className="h-3 w-3 mr-1" />
                         {exam.total_questions} questions
@@ -298,14 +293,14 @@ export const ExamList: React.FC = () => {
                     </div>
                     
                     {exam.description && (
-                      <p className="text-sm text-muted-foreground line-clamp-2">
+                      <p className="text-xs sm:text-sm text-muted-foreground line-clamp-2">
                         {exam.description}
                       </p>
                     )}
                     
                     {exam.session?.status === 'in_progress' && (
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-4 text-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span>Progress: {exam.session.current_question_index + 1}/{exam.total_questions}</span>
                           <span className="flex items-center text-warning">
                             <Timer className="h-3 w-3 mr-1" />
@@ -320,17 +315,17 @@ export const ExamList: React.FC = () => {
                     )}
                     
                     {exam.start_date && exam.end_date && (
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 text-xs text-muted-foreground">
                         <span>Available: {format(new Date(exam.start_date), 'PPP')}</span>
                         <span>Until: {format(new Date(exam.end_date), 'PPP')}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-2 w-full lg:w-auto">
                     <Button 
                       onClick={() => handleStartExam(exam.id)}
-                      className={exam.session?.status === 'in_progress' ? 'bg-warning hover:bg-warning/90' : ''}
+                      className={`w-full ${exam.session?.status === 'in_progress' ? 'bg-warning hover:bg-warning/90' : ''}`}
                     >
                       {exam.session?.status === 'in_progress' ? 'Resume' : 'Start'} Exam
                     </Button>

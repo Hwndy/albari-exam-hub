@@ -41,16 +41,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
   return (
     <Card className="w-full max-w-md shadow-lg">
       <CardHeader className="text-center space-y-4">
-        <div className="mx-auto w-20 h-20 bg-primary rounded-full flex items-center justify-center">
-          <span className="text-2xl font-bold text-primary-foreground">A</span>
+        <div className="mx-auto w-16 h-16 sm:w-20 sm:h-20 bg-primary rounded-full flex items-center justify-center">
+          <span className="text-xl sm:text-2xl font-bold text-primary-foreground">A</span>
         </div>
-        <CardTitle className="text-2xl font-bold text-primary">ALBARI</CardTitle>
-        <p className="text-muted-foreground">Computer Based Test System</p>
+        <CardTitle className="text-xl sm:text-2xl font-bold text-primary">ALBARI</CardTitle>
+        <p className="text-sm sm:text-base text-muted-foreground">Computer Based Test System</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-4 sm:px-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email" className="text-sm">Email</Label>
             <Input
               id="email"
               type="email"
@@ -58,12 +58,12 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Enter your email"
               required
-              className="h-11"
+              className="h-10 sm:h-11 text-base"
             />
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password" className="text-sm">Password</Label>
             <div className="relative">
               <Input
                 id="password"
@@ -72,16 +72,16 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 required
-                className="h-11 pr-10"
+                className="h-10 sm:h-11 text-base pr-10"
               />
               <Button
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0"
+                className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 sm:h-8 sm:w-8 p-0"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-3 w-3 sm:h-4 sm:w-4" /> : <Eye className="h-3 w-3 sm:h-4 sm:w-4" />}
               </Button>
             </div>
           </div>
@@ -89,7 +89,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
           <div className="text-right">
             <button
               type="button"
-              className="text-sm text-primary hover:underline"
+              className="text-xs sm:text-sm text-primary hover:underline"
               onClick={onForgotPassword}
             >
               Forgot password?
@@ -98,7 +98,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
           
           <Button
             type="submit"
-            className="w-full h-11"
+            className="w-full h-10 sm:h-11 text-base"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -113,7 +113,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode, onForgotPass
         </form>
         
         <div className="mt-4 text-center">
-          <Button variant="link" onClick={onToggleMode}>
+          <Button variant="link" onClick={onToggleMode} className="text-xs sm:text-sm">
             Don't have an account? Create one
           </Button>
         </div>

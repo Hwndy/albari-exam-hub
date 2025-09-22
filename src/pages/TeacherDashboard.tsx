@@ -18,7 +18,7 @@ export const TeacherDashboard = () => {
     <DashboardLayout title="Teacher Dashboard">
       <div className="space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
@@ -64,7 +64,7 @@ export const TeacherDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="exams" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
+          <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
             <TabsTrigger value="exams">My Exams</TabsTrigger>
             <TabsTrigger value="results">Student Results</TabsTrigger>
             <TabsTrigger value="students">Create Student</TabsTrigger>

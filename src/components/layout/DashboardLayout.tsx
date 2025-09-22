@@ -25,18 +25,18 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       {/* Header */}
       <header className="bg-card border-b border-border shadow-sm">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Logo size="md" />
               <div>
                 <p className="text-sm text-muted-foreground">{title}</p>
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-right">
-                <p className="font-medium text-foreground">{user?.name}</p>
-                <p className="text-sm text-muted-foreground capitalize">
+            <div className="flex items-center justify-between w-full sm:w-auto gap-3">
+              <div className="text-left sm:text-right">
+                <p className="font-medium text-foreground text-sm sm:text-base">{user?.name}</p>
+                <p className="text-xs sm:text-sm text-muted-foreground capitalize">
                   {user?.role} {user?.class && `• ${user.class}`} {user?.subject && `• ${user.subject}`}
                 </p>
               </div>
@@ -44,10 +44,10 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
                 variant="outline"
                 size="sm"
                 onClick={handleLogout}
-                className="flex items-center space-x-2"
+                className="flex items-center space-x-1 sm:space-x-2 shrink-0"
               >
-                <LogOut className="h-4 w-4" />
-                <span>Logout</span>
+                <LogOut className="h-3 w-3 sm:h-4 sm:w-4" />
+                <span className="hidden sm:inline">Logout</span>
               </Button>
             </div>
           </div>
@@ -55,7 +55,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-2 sm:px-4 py-4 sm:py-8">
         {children}
       </main>
     </div>
