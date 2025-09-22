@@ -655,8 +655,8 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
-        <DialogHeader className="flex-shrink-0">
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col p-0">
+        <DialogHeader className="flex-shrink-0 p-6 pb-0">
           <DialogTitle>
             {editingExam ? 'Edit Exam' : 'Create New Exam'}
           </DialogTitle>
@@ -664,16 +664,18 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         
         <div className="flex-1 flex flex-col min-h-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-              <TabsTrigger value="metadata">Details</TabsTrigger>
-              <TabsTrigger value="manual">Manual Questions</TabsTrigger>
-              <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
-              <TabsTrigger value="randomized">Randomized</TabsTrigger>
-            </TabsList>
+            <div className="flex-shrink-0 px-6">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="metadata">Details</TabsTrigger>
+                <TabsTrigger value="manual">Manual Questions</TabsTrigger>
+                <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
+                <TabsTrigger value="randomized">Randomized</TabsTrigger>
+              </TabsList>
+            </div>
             
-            <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="flex-1 overflow-hidden">
               <ScrollArea className="h-full">
-                <div className="p-6 space-y-6 pb-4">
+                <div className="p-6">
                   {/* Details Tab */}
                   <TabsContent value="metadata" className="space-y-6 mt-0">
                     <Card>
