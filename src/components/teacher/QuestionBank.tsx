@@ -2,164 +2,114 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Edit, Trash2, Search, Upload, Download, Eye } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { QuestionBulkImport } from './QuestionBulkImport';
+import { useToast } from '@/hooks/use-toast';
 import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
+import { EnhancedQuestionForm } from '@/components/shared/EnhancedQuestionForm';
+import { CheckCircle, FileText, Plus, Edit, Trash2 } from 'lucide-react';
 
-interface Question {
-  id: string;
-  question_text: string;
-  question_type: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
-  difficulty_level: 'easy' | 'medium' | 'hard';
+interface QuestionFormData {
+  questionText: string;
+  questionType: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
+  options: Array<{id: string, text: string, isCorrect: boolean}>;
+  difficulty: 'easy' | 'medium' | 'hard';
   points: number;
-  options: QuestionOption[];
-  explanation?: string;
-  media_url?: string;
-  subject_name: string;
-  created_at: string;
-}
-
-interface QuestionOption {
-  id: string;
-  option_text: string;
-  is_correct: boolean;
-  option_order: number;
+  explanation: string;
+  mediaUrl: string;
+  formulaLatex: string;
+  subjectId: string;
+  classId: string;
+  correctAnswers: string[];
 }
 
 export const QuestionBank: React.FC = () => {
-  const [questions, setQuestions] = useState<Question[]>([]);
-  const [teacherSubject, setTeacherSubject] = useState<any>(null);
-  const [teacherClass, setTeacherClass] = useState<any>(null);
-  const [questionBank, setQuestionBank] = useState<any>(null);
-  const [isAddingQuestion, setIsAddingQuestion] = useState(false);
-  const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
-  const [previewQuestion, setPreviewQuestion] = useState<Question | null>(null);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [filterDifficulty, setFilterDifficulty] = useState('all');
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bulkImportOpen, setBulkImportOpen] = useState(false);
-  const { toast } = useToast();
   const { user } = useAuth();
-
-  const [questionForm, setQuestionForm] = useState({
-    question_text: '',
-    question_type: 'mcq' as 'mcq' | 'true_false' | 'fill_blank',
-    difficulty_level: 'medium' as 'easy' | 'medium' | 'hard',
-    points: 1,
-    explanation: '',
-    options: [
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-    ]
-  });
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user]);
 
   const fetchData = async () => {
     try {
       setLoading(true);
       
-      if (!user?.id) {
-        setLoading(false);
-        return;
+      // Get teacher's assignments for both classes and subjects
+      const [classAssignments, subjectAssignments] = await Promise.all([
+        supabase
+          .from('teacher_class_assignments')
+          .select('class_id')
+          .eq('teacher_id', user?.id),
+        supabase
+          .from('subject_assignments')
+          .select('subject_id')
+          .eq('user_id', user?.id)
+      ]);
+
+      const teacherClassIds = classAssignments.data?.map(a => a.class_id) || [];
+      const teacherSubjectIds = subjectAssignments.data?.map(a => a.subject_id) || [];
+
+      // Fetch classes and subjects (filtered for teachers)
+      let classesQuery = supabase.from('classes').select('*').order('name');
+      let subjectsQuery = supabase.from('subjects').select('*').order('name');
+
+      if (teacherClassIds.length > 0) {
+        classesQuery = classesQuery.in('id', teacherClassIds);
+      }
+      if (teacherSubjectIds.length > 0) {
+        subjectsQuery = subjectsQuery.in('id', teacherSubjectIds);
       }
 
-      // First, get teacher's assigned subject and class
-      const { data: subjectAssignment } = await supabase
-        .from('subject_assignments')
-        .select(`
-          subject_id,
-          class_id,
-          subjects(*),
-          classes(*)
-        `)
-        .eq('user_id', user.id)
-        .single();
+      const [classesData, subjectsData] = await Promise.all([
+        classesQuery,
+        subjectsQuery
+      ]);
 
-      if (!subjectAssignment) {
-        toast({
-          title: 'No Subject Assignment',
-          description: 'You are not assigned to any subject. Please contact an administrator.',
-          variant: 'destructive',
-        });
-        setLoading(false);
-        return;
-      }
+      if (classesData.data) setClasses(classesData.data);
+      if (subjectsData.data) setSubjects(subjectsData.data);
 
-      setTeacherSubject(subjectAssignment.subjects);
-      setTeacherClass(subjectAssignment.classes);
-
-      // Get or create question bank for this subject and class
-      let { data: questionBankData } = await supabase
-        .from('question_banks')
-        .select('*')
-        .eq('subject_id', subjectAssignment.subject_id)
-        .eq('class_id', subjectAssignment.class_id)
-        .eq('created_by', user.id)
-        .single();
-
-      if (!questionBankData) {
-        // Create question bank if it doesn't exist
-        const { data: newBank } = await supabase
-          .from('question_banks')
-          .insert({
-            name: `${subjectAssignment.subjects.name} - ${subjectAssignment.classes.name} Question Bank`,
-            description: `Question bank for ${subjectAssignment.subjects.name} in ${subjectAssignment.classes.name}`,
-            subject_id: subjectAssignment.subject_id,
-            class_id: subjectAssignment.class_id,
-            created_by: user.id
-          })
-          .select()
-          .single();
-        
-        questionBankData = newBank;
-      }
-
-      setQuestionBank(questionBankData);
-
-      // Fetch questions for this teacher's subject only
-      const { data: questionsData } = await supabase
+      // Fetch questions based on teacher's assignments
+      let questionsQuery = supabase
         .from('questions')
         .select(`
           *,
           question_options(*),
           question_banks!inner(
+            id,
+            name,
             subject_id,
-            subjects(name)
+            class_id,
+            subjects(name),
+            classes(name)
           )
         `)
-        .eq('question_banks.subject_id', subjectAssignment.subject_id)
-        .eq('created_by', user.id)
+        .eq('created_by', user?.id)
         .order('created_at', { ascending: false });
 
-      if (questionsData) {
-        const formattedQuestions = questionsData.map(q => ({
-          ...q,
-          options: q.question_options?.sort((a: any, b: any) => a.option_order - b.option_order) || [],
-          subject_name: q.question_banks?.subjects?.name || 'Unknown'
-        }));
-        setQuestions(formattedQuestions);
+      // Filter by teacher's assignments
+      if (teacherSubjectIds.length > 0) {
+        questionsQuery = questionsQuery.in('question_banks.subject_id', teacherSubjectIds);
       }
-      
+
+      const { data: questionsData, error: questionsError } = await questionsQuery;
+
+      if (questionsError) {
+        console.error('Error fetching questions:', questionsError);
+        setQuestions([]);
+      } else if (questionsData) {
+        setQuestions(questionsData);
+      }
     } catch (error: any) {
-      console.error('Error fetching data:', error);
       toast({
         title: 'Error',
-        description: 'Failed to fetch questions',
+        description: 'Failed to fetch data',
         variant: 'destructive',
       });
     } finally {
@@ -167,498 +117,240 @@ export const QuestionBank: React.FC = () => {
     }
   };
 
-  const handleAddQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleAddQuestion = async (questionData: QuestionFormData) => {
     try {
-      // Validate that at least one option is marked as correct for MCQ
-      if (questionForm.question_type === 'mcq') {
-        const hasCorrectAnswer = questionForm.options.some(opt => opt.isCorrect);
-        if (!hasCorrectAnswer) {
-          toast({
-            title: 'Error',
-            description: 'Please mark at least one option as correct',
-            variant: 'destructive',
-          });
-          return;
-        }
+      // Find existing question bank or create new one for this subject and class
+      let questionBankId = null;
+      
+      const { data: existingBanks } = await supabase
+        .from('question_banks')
+        .select('id')
+        .eq('subject_id', questionData.subjectId)
+        .eq('class_id', questionData.classId)
+        .limit(1);
+
+      if (existingBanks && existingBanks.length > 0) {
+        questionBankId = existingBanks[0].id;
+      } else {
+        // Create new question bank
+        const subject = subjects.find(s => s.id === questionData.subjectId);
+        const cls = classes.find(c => c.id === questionData.classId);
+        
+        const { data: newQuestionBank, error: bankError } = await supabase
+          .from('question_banks')
+          .insert({
+            name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
+            subject_id: questionData.subjectId,
+            class_id: questionData.classId,
+            created_by: user?.id,
+          })
+          .select()
+          .single();
+
+        if (bankError) throw bankError;
+        questionBankId = newQuestionBank?.id;
       }
 
-      // First create the question and link it to the teacher's question bank
-      const { data: questionData, error: questionError } = await supabase
+      // Insert question
+      const { data: newQuestion, error: questionError } = await supabase
         .from('questions')
         .insert({
-          question_text: questionForm.question_text,
-          question_type: questionForm.question_type,
-          difficulty_level: questionForm.difficulty_level,
-          points: questionForm.points,
-          explanation: questionForm.explanation || null,
-          created_by: user?.id || '',
-          question_bank_id: questionBank?.id,
-          class_id: teacherClass?.id
+          question_text: questionData.questionText,
+          question_type: questionData.questionType,
+          difficulty_level: questionData.difficulty,
+          points: questionData.points,
+          explanation: questionData.explanation,
+          media_url: questionData.mediaUrl || null,
+          formula_latex: questionData.formulaLatex || null,
+          question_bank_id: questionBankId,
+          class_id: questionData.classId, // Add class_id directly
+          created_by: user?.id,
         })
         .select()
         .single();
 
       if (questionError) throw questionError;
 
-      // Then create the options if it's MCQ or True/False
-      if (questionForm.question_type === 'mcq' || questionForm.question_type === 'true_false') {
-        const optionsToInsert = questionForm.options
-          .filter(opt => opt.text.trim() !== '')
-          .map((opt, index) => ({
-            question_id: questionData.id,
-            option_text: opt.text,
-            is_correct: opt.isCorrect,
-            option_order: index + 1,
-          }));
+      // Insert question options
+      if (questionData.questionType === 'mcq' || questionData.questionType === 'true_false') {
+        const optionsData = questionData.options.map((option, index) => ({
+          question_id: newQuestion.id,
+          option_text: option.text,
+          is_correct: option.isCorrect,
+          option_order: index + 1,
+        }));
 
         const { error: optionsError } = await supabase
           .from('question_options')
-          .insert(optionsToInsert);
+          .insert(optionsData);
+
+        if (optionsError) throw optionsError;
+      } else if (questionData.questionType === 'fill_blank') {
+        const correctAnswersData = questionData.correctAnswers.map((answer, index) => ({
+          question_id: newQuestion.id,
+          option_text: answer,
+          is_correct: true,
+          option_order: index + 1,
+        }));
+
+        const { error: optionsError } = await supabase
+          .from('question_options')
+          .insert(correctAnswersData);
 
         if (optionsError) throw optionsError;
       }
 
+      // Refresh questions list
       await fetchData();
-      setIsAddingQuestion(false);
-      resetQuestionForm();
-      
+
       toast({
-        title: 'Question Added',
-        description: 'Question has been added to the bank successfully.',
+        title: 'Question Created',
+        description: 'Question has been added to the question bank successfully.',
       });
     } catch (error: any) {
       toast({
         title: 'Error',
-        description: error.message || 'Failed to add question',
+        description: error.message || 'Failed to create question',
         variant: 'destructive',
       });
     }
   };
-
-  const handleDeleteQuestion = async (questionId: string) => {
-    if (!confirm('Are you sure you want to delete this question?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('questions')
-        .delete()
-        .eq('id', questionId);
-
-      if (error) throw error;
-
-      await fetchData();
-      
-      toast({
-        title: 'Question Deleted',
-        description: 'Question has been deleted successfully.',
-      });
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Failed to delete question',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const resetQuestionForm = () => {
-    setQuestionForm({
-      question_text: '',
-      question_type: 'mcq',
-      difficulty_level: 'medium',
-      points: 1,
-      explanation: '',
-      options: [
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-      ]
-    });
-  };
-
-  const updateOption = (index: number, field: 'text' | 'isCorrect', value: string | boolean) => {
-    const newOptions = [...questionForm.options];
-    if (field === 'isCorrect' && value === true && questionForm.question_type === 'mcq') {
-      // For MCQ, allow multiple correct answers
-      newOptions[index].isCorrect = value as boolean;
-    } else if (field === 'isCorrect' && value === true && questionForm.question_type === 'true_false') {
-      // For True/False, only one correct answer
-      newOptions.forEach((opt, i) => opt.isCorrect = i === index);
-    } else {
-      newOptions[index] = { ...newOptions[index], [field]: value };
-    }
-    setQuestionForm({ ...questionForm, options: newOptions });
-  };
-
-  const filteredQuestions = questions.filter(question => {
-    const matchesSearch = question.question_text.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDifficulty = filterDifficulty === 'all' || question.difficulty_level === filterDifficulty;
-    return matchesSearch && matchesDifficulty;
-  });
-
-  const getStats = () => {
-    return {
-      total: questions.length,
-      easy: questions.filter(q => q.difficulty_level === 'easy').length,
-      medium: questions.filter(q => q.difficulty_level === 'medium').length,
-      hard: questions.filter(q => q.difficulty_level === 'hard').length,
-    };
-  };
-
-  const stats = getStats();
 
   if (loading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
-  }
-
-  if (!teacherSubject) {
-    return <div className="text-center p-8">No subject assigned. Please contact an administrator.</div>;
+    return (
+      <div className="flex justify-center items-center h-64">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Subject Info */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Question Bank - {teacherSubject.name}</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Create and manage questions for {teacherSubject.name} - {teacherClass?.name || 'All Classes'}. All questions will automatically be assigned to this subject and class.
+    <div className="space-y-6 h-full">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Question Bank</h2>
+          <p className="text-muted-foreground">
+            Create and manage questions for your subjects and classes
           </p>
-        </CardHeader>
-      </Card>
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold">{stats.total}</div>
-            <div className="text-sm text-muted-foreground">Total Questions</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-success">{stats.easy}</div>
-            <div className="text-sm text-muted-foreground">Easy</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-warning">{stats.medium}</div>
-            <div className="text-sm text-muted-foreground">Medium</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-destructive">{stats.hard}</div>
-            <div className="text-sm text-muted-foreground">Hard</div>
-          </CardContent>
-        </Card>
+        </div>
       </div>
 
-      {/* Controls */}
-      <div className="flex flex-col lg:flex-row gap-4 justify-between">
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search questions..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
-            />
-          </div>
-          <Select value={filterDifficulty} onValueChange={setFilterDifficulty}>
-            <SelectTrigger className="w-32">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Levels</SelectItem>
-              <SelectItem value="easy">Easy</SelectItem>
-              <SelectItem value="medium">Medium</SelectItem>
-              <SelectItem value="hard">Hard</SelectItem>
-            </SelectContent>
-          </Select>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+        {/* Question Form */}
+        <div className="h-full">
+          <EnhancedQuestionForm
+            onAddQuestion={handleAddQuestion}
+            classes={classes}
+            subjects={subjects}
+          />
         </div>
         
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setBulkImportOpen(true)}>
-            <Upload className="h-4 w-4 mr-2" />
-            Bulk Import
-          </Button>
-          <Button variant="outline">
-            <Download className="h-4 w-4 mr-2" />
-            Export
-          </Button>
-          <Dialog open={isAddingQuestion} onOpenChange={setIsAddingQuestion}>
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Question
-              </Button>
-            </DialogTrigger>
-                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-                  <StaticFormLayout
-                    header={
-                      <DialogHeader>
-                        <DialogTitle>Add New Question</DialogTitle>
-                      </DialogHeader>
-                    }
-                    footer={
-                      <div className="p-6 border-t">
-                        <div className="flex gap-2">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
-                            onClick={() => {
-                              setIsAddingQuestion(false);
-                              resetQuestionForm();
-                            }}
-                            className="flex-1"
-                          >
-                            Cancel
-                          </Button>
-                          <Button type="submit" className="flex-1">Add Question</Button>
-                        </div>
-                      </div>
-                    }
-                  >
-                    <form onSubmit={handleAddQuestion} className="space-y-4 p-6">
-                <div className="space-y-2">
-                  <Label htmlFor="question_text">Question</Label>
-                  <Textarea
-                    id="question_text"
-                    value={questionForm.question_text}
-                    onChange={(e) => setQuestionForm({ ...questionForm, question_text: e.target.value })}
-                    placeholder="Enter your question here..."
-                    required
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="question_type">Question Type</Label>
-                    <Select
-                      value={questionForm.question_type}
-                      onValueChange={(value: 'mcq' | 'true_false' | 'fill_blank') =>
-                        setQuestionForm({ ...questionForm, question_type: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mcq">Multiple Choice</SelectItem>
-                        <SelectItem value="true_false">True/False</SelectItem>
-                        <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty_level">Difficulty</Label>
-                    <Select
-                      value={questionForm.difficulty_level}
-                      onValueChange={(value: 'easy' | 'medium' | 'hard') =>
-                        setQuestionForm({ ...questionForm, difficulty_level: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {(questionForm.question_type === 'mcq' || questionForm.question_type === 'true_false') && (
-                  <div className="space-y-4">
-                    <Label>Options</Label>
-                    {questionForm.question_type === 'true_false' ? (
-                      <RadioGroup 
-                        value={questionForm.options.findIndex(opt => opt.isCorrect).toString()}
-                        onValueChange={(value) => {
-                          const newOptions = [
-                            { text: 'True', isCorrect: value === '0' },
-                            { text: 'False', isCorrect: value === '1' }
-                          ];
-                          setQuestionForm({ ...questionForm, options: newOptions });
-                        }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="0" id="true" />
-                          <Label htmlFor="true">True</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="1" id="false" />
-                          <Label htmlFor="false">False</Label>
-                        </div>
-                      </RadioGroup>
-                    ) : (
-                      <div className="space-y-3">
-                        {questionForm.options.map((option, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={option.isCorrect}
-                              onChange={(e) => updateOption(index, 'isCorrect', e.target.checked)}
-                              className="rounded border-gray-300"
-                            />
-                            <Label className="text-sm font-medium">
-                              {String.fromCharCode(65 + index)}.
-                            </Label>
-                            <Input
-                              value={option.text}
-                              onChange={(e) => updateOption(index, 'text', e.target.value)}
-                              placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                              required={index < 2}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                 <div className="space-y-2">
-                   <Label htmlFor="explanation">Explanation (Optional)</Label>
-                   <Textarea
-                     id="explanation"
-                     value={questionForm.explanation}
-                     onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                     placeholder="Explain the correct answer..."
-                     rows={2}
-                   />
-                 </div>
-               </form>
-             </StaticFormLayout>
-           </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Questions List */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Questions ({filteredQuestions.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {filteredQuestions.map((question) => (
-              <div
-                key={question.id}
-                className="flex items-start justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors"
-              >
-                <div className="flex-1 space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Badge
-                      variant={
-                        question.difficulty_level === 'hard'
-                          ? 'destructive'
-                          : question.difficulty_level === 'medium'
-                          ? 'default'
-                          : 'secondary'
-                      }
-                    >
-                      {question.difficulty_level}
-                    </Badge>
-                    <Badge variant="outline">{question.question_type.toUpperCase()}</Badge>
-                    <Badge variant="outline">{question.subject_name}</Badge>
-                    <span className="text-sm text-muted-foreground">
-                      {question.points} {question.points === 1 ? 'point' : 'points'}
-                    </span>
-                  </div>
-                  <p className="font-medium line-clamp-2">{question.question_text}</p>
-                  <p className="text-sm text-muted-foreground">
-                    Created: {new Date(question.created_at).toLocaleDateString()}
+        {/* Questions List */}
+        <Card className="h-full">
+          <StaticFormLayout
+            header={
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Question Bank ({questions.length})</span>
+                  <Badge variant="outline">
+                    {questions.length} Questions
+                  </Badge>
+                </CardTitle>
+              </CardHeader>
+            }
+          >
+            <CardContent>
+              {questions.length === 0 ? (
+                <div className="text-center py-8">
+                  <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">No Questions Yet</h3>
+                  <p className="text-muted-foreground">
+                    Create your first question using the form on the left.
                   </p>
                 </div>
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPreviewQuestion(question)}
-                  >
-                    <Eye className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setEditingQuestion(question)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteQuestion(question.id)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview Question Dialog */}
-      <Dialog open={!!previewQuestion} onOpenChange={(open) => !open && setPreviewQuestion(null)}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Question Preview</DialogTitle>
-          </DialogHeader>
-          {previewQuestion && (
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2">
-                <Badge variant="outline">{previewQuestion.question_type.toUpperCase()}</Badge>
-                <Badge variant="outline">{previewQuestion.difficulty_level}</Badge>
-                <Badge variant="outline">{previewQuestion.subject_name}</Badge>
-              </div>
-              
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-medium">{previewQuestion.question_text}</p>
-              </div>
-              
-              {previewQuestion.question_type !== 'fill_blank' && previewQuestion.options && (
-                <div className="space-y-2">
-                  <Label>Options:</Label>
-                  {previewQuestion.options.map((option, index) => (
-                    <div
-                      key={option.id}
-                      className={`p-2 rounded border ${
-                        option.is_correct ? 'bg-success/10 border-success' : 'bg-background'
-                      }`}
-                    >
-                      <span className="font-medium mr-2">
-                        {String.fromCharCode(65 + index)}.
-                      </span>
-                      {option.option_text}
-                      {option.is_correct && (
-                        <Badge className="ml-2" variant="outline">
-                          Correct
-                        </Badge>
-                      )}
-                    </div>
+              ) : (
+                <div className="space-y-4">
+                  {questions.map((question: any) => (
+                    <Card key={question.id} className="p-4">
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium line-clamp-2">
+                              {question.question_text}
+                            </h4>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="outline" className={
+                                question.difficulty_level === 'easy' ? 'text-green-600' :
+                                question.difficulty_level === 'medium' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }>
+                                {question.difficulty_level}
+                              </Badge>
+                              <Badge variant="secondary">
+                                {question.question_type === 'mcq' ? 'Multiple Choice' :
+                                 question.question_type === 'true_false' ? 'True/False' :
+                                 question.question_type === 'fill_blank' ? 'Fill Blank' :
+                                 'Diagram'}
+                              </Badge>
+                              <Badge variant="outline">
+                                {question.points} point{question.points !== 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                            {question.question_banks?.subjects?.name && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {question.question_banks.subjects.name} - {question.question_banks.classes?.name || 'All Classes'}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {question.question_options && question.question_options.length > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            <div className="grid grid-cols-1 gap-1">
+                              {question.question_options
+                                .sort((a: any, b: any) => a.option_order - b.option_order)
+                                .slice(0, 2)
+                                .map((option: any, index: number) => (
+                                <div key={option.id} className="flex items-center space-x-1">
+                                  <span className={`w-4 h-4 rounded text-xs flex items-center justify-center ${
+                                    option.is_correct 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {String.fromCharCode(65 + index)}
+                                  </span>
+                                  <span className={`line-clamp-1 ${option.is_correct ? 'font-medium' : ''}`}>
+                                    {option.option_text}
+                                  </span>
+                                  {option.is_correct && <CheckCircle className="h-3 w-3 text-green-600" />}
+                                </div>
+                              ))}
+                              {question.question_options.length > 2 && (
+                                <div className="text-xs text-gray-500">
+                                  +{question.question_options.length - 2} more options
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Card>
                   ))}
                 </div>
               )}
-              
-              {previewQuestion.explanation && (
-                <div className="space-y-2">
-                  <Label>Explanation:</Label>
-                  <p className="text-sm text-muted-foreground">{previewQuestion.explanation}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+            </CardContent>
+          </StaticFormLayout>
+        </Card>
+      </div>
     </div>
   );
 };
