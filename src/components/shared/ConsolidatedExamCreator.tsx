@@ -125,6 +125,13 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     }
   }, [isOpen, editingExam]);
 
+  // Fetch question bank based on selected subject and class
+  useEffect(() => {
+    if (metadata.subjectId) {
+      fetchQuestionBank();
+    }
+  }, [metadata.subjectId, metadata.classId]);
+
   const fetchData = async () => {
     try {
       let subjectsQuery = supabase.from('subjects').select('*');
@@ -147,30 +154,50 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         }
       }
 
-      const [subjectsData, classesData, questionsData] = await Promise.all([
+      const [subjectsData, classesData] = await Promise.all([
         subjectsQuery,
-        classesQuery,
-        supabase.from('questions').select(`
-          *,
-          question_options(*),
-          question_banks!inner(
-            id,
-            name,
-            subject_id,
-            subjects(name)
-          )
-        `).order('created_at', { ascending: false })
+        classesQuery
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
-      if (questionsData.data) {
-        setQuestionBankQuestions(questionsData.data);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    }
+  };
+
+  const fetchQuestionBank = async () => {
+    try {
+      let query = supabase.from('questions').select(`
+        *,
+        question_options(*),
+        question_banks!inner(
+          id,
+          name,
+          subject_id,
+          subjects(name)
+        )
+      `);
+
+      // Filter by subject
+      if (metadata.subjectId) {
+        query = query.eq('question_banks.subject_id', metadata.subjectId);
+      }
+
+      // Filter by class if specified
+      if (metadata.classId) {
+        query = query.eq('class_id', metadata.classId);
+      }
+
+      const { data: questionsData } = await query.order('created_at', { ascending: false });
+
+      if (questionsData) {
+        setQuestionBankQuestions(questionsData);
         
         // Process available questions count by subject and difficulty
         const questionCounts: Record<string, Record<string, number>> = {};
-        questionsData.data.forEach((q: any) => {
-          const subjectId = q.question_banks.subject_id;
+        questionsData.forEach((q: any) => {
+          const subjectId = q.question_banks?.subject_id || metadata.subjectId;
           const difficulty = q.difficulty_level;
           
           if (!questionCounts[subjectId]) {
@@ -182,7 +209,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         setAvailableQuestions(questionCounts);
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error('Error fetching question bank:', error);
     }
   };
 
@@ -456,6 +483,35 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     for (let i = 0; i < questions.length; i++) {
       const q = questions[i];
       
+      // Get or create question bank for this subject and class
+      let questionBankId = null;
+      if (metadata.subjectId) {
+        let { data: questionBank } = await supabase
+          .from('question_banks')
+          .select('id')
+          .eq('subject_id', metadata.subjectId)
+          .eq('class_id', metadata.classId || null)
+          .maybeSingle();
+
+        if (!questionBank) {
+          const { data: newQuestionBank, error: bankError } = await supabase
+            .from('question_banks')
+            .insert({
+              name: `${subjects.find(s => s.id === metadata.subjectId)?.name || 'Subject'} - ${classes.find(c => c.id === metadata.classId)?.name || 'All Classes'}`,
+              subject_id: metadata.subjectId,
+              class_id: metadata.classId || null,
+              created_by: user?.id
+            })
+            .select()
+            .single();
+
+          if (bankError) throw bankError;
+          questionBank = newQuestionBank;
+        }
+
+        questionBankId = questionBank.id;
+      }
+
       // Insert question
       const questionData = {
         question_text: q.questionText,
@@ -464,7 +520,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         points: q.marks,
         explanation: q.explanation,
         created_by: user?.id,
-        question_bank_id: null,
+        question_bank_id: questionBankId,
         class_id: metadata.classId || null,
         media_url: q.mediaUrl,
         formula_latex: q.formulaLatex
@@ -615,9 +671,9 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
               <TabsTrigger value="randomized">Randomized</TabsTrigger>
             </TabsList>
             
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <ScrollArea className="h-full">
-                <div className="p-6 space-y-6">
+                <div className="p-6 space-y-6 pb-4">
                   {/* Details Tab */}
                   <TabsContent value="metadata" className="space-y-6 mt-0">
                     <Card>
@@ -941,38 +997,52 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                       <Badge>{selectedQuestionIds.length} selected</Badge>
                     </div>
 
-                    <div className="space-y-4">
-                      {questionBankQuestions.length === 0 ? (
-                        <Card>
-                          <CardContent className="text-center py-8">
-                            <p className="text-muted-foreground">No questions available in the question bank.</p>
-                          </CardContent>
-                        </Card>
-                      ) : (
-                        questionBankQuestions.map((question) => (
-                          <Card key={question.id} className={selectedQuestionIds.includes(question.id) ? 'ring-2 ring-primary' : ''}>
-                            <CardContent className="p-4">
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 space-y-2">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={selectedQuestionIds.includes(question.id)}
-                                      onCheckedChange={() => toggleQuestionSelection(question.id)}
-                                    />
-                                    <h4 className="font-medium">{question.question_text}</h4>
-                                  </div>
-                                  <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                                    <Badge variant="outline">{question.question_type}</Badge>
-                                    <Badge variant="outline">{question.difficulty_level}</Badge>
-                                    <span>{question.points} points</span>
-                                  </div>
-                                </div>
-                              </div>
+                    {!metadata.subjectId ? (
+                      <Card>
+                        <CardContent className="text-center py-8">
+                          <p className="text-muted-foreground">Please select a subject in the Details tab first.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <div className="space-y-4">
+                        {questionBankQuestions.length === 0 ? (
+                          <Card>
+                            <CardContent className="text-center py-8">
+                              <p className="text-muted-foreground">
+                                No questions available for the selected subject
+                                {metadata.classId ? ' and class' : ''}.
+                              </p>
                             </CardContent>
                           </Card>
-                        ))
-                      )}
-                    </div>
+                        ) : (
+                          questionBankQuestions.map((question) => (
+                            <Card key={question.id} className={selectedQuestionIds.includes(question.id) ? 'ring-2 ring-primary' : ''}>
+                              <CardContent className="p-4">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1 space-y-2">
+                                    <div className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={selectedQuestionIds.includes(question.id)}
+                                        onCheckedChange={() => toggleQuestionSelection(question.id)}
+                                      />
+                                      <h4 className="font-medium">{question.question_text}</h4>
+                                    </div>
+                                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                                      <Badge variant="outline">{question.question_type}</Badge>
+                                      <Badge variant="outline">{question.difficulty_level}</Badge>
+                                      <span>{question.points} points</span>
+                                      {question.question_banks?.subjects?.name && (
+                                        <span>Subject: {question.question_banks.subjects.name}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))
+                        )}
+                      </div>
+                    )}
                   </TabsContent>
 
                   {/* Randomized Tab */}
@@ -1069,7 +1139,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t bg-background p-6">
+        <div className="flex-shrink-0 border-t bg-background p-4">
           <div className="flex justify-between">
             <Button variant="outline" onClick={() => handleOpenChange(false)}>
               Cancel
