@@ -547,22 +547,24 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle>
             {editingExam ? 'Edit Exam' : 'Create New Exam'}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="metadata">Details</TabsTrigger>
-            <TabsTrigger value="manual">Manual Questions</TabsTrigger>
-            <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
-            <TabsTrigger value="randomized">Randomized</TabsTrigger>
-          </TabsList>
+        <div className="flex-1 flex flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+              <TabsTrigger value="metadata">Details</TabsTrigger>
+              <TabsTrigger value="manual">Manual Questions</TabsTrigger>
+              <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
+              <TabsTrigger value="randomized">Randomized</TabsTrigger>
+            </TabsList>
 
-          <ScrollArea className="h-[600px] mt-4">
+            <div className="flex-1 mt-4">
+              <ScrollArea className="h-full">
             <TabsContent value="metadata" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -988,26 +990,28 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
               )}
             </TabsContent>
           </ScrollArea>
+        </div>
 
-          <div className="flex justify-between items-center pt-4 border-t">
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">Total Questions:</span>
-              <Badge variant="outline">{getTotalQuestionCount()}</Badge>
-            </div>
-            <div className="flex space-x-2">
-              <Button variant="outline" onClick={() => handleOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button onClick={() => saveExam('draft')} disabled={saving}>
-                {saving ? 'Saving...' : 'Save Draft'}
-              </Button>
-              <Button onClick={() => saveExam('published')} disabled={saving}>
-                {saving ? 'Publishing...' : 'Publish'}
-              </Button>
-            </div>
+        <div className="flex justify-between items-center pt-4 border-t flex-shrink-0">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">Total Questions:</span>
+            <Badge variant="outline">{getTotalQuestionCount()}</Badge>
           </div>
-        </Tabs>
-      </DialogContent>
-    </Dialog>
+          <div className="flex space-x-2">
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => saveExam('draft')} disabled={saving}>
+              {saving ? 'Saving...' : 'Save Draft'}
+            </Button>
+            <Button onClick={() => saveExam('published')} disabled={saving}>
+              {saving ? 'Publishing...' : 'Publish'}
+            </Button>
+          </div>
+        </div>
+      </Tabs>
+    </div>
+  </DialogContent>
+</Dialog>
   );
 };

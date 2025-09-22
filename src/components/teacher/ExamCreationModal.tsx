@@ -587,21 +587,33 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle>{editingExam ? 'Edit Exam' : 'Create New Exam'}</DialogTitle>
+      <DialogContent className="max-w-4xl h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle>
+            {editingExam ? 'Edit Exam' : 'Create New Exam'}
+          </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full h-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="metadata">Exam Details</TabsTrigger>
-            <TabsTrigger value="questions">Questions ({questions.length})</TabsTrigger>
-            <TabsTrigger value="preview">Preview</TabsTrigger>
-          </TabsList>
+        <div className="flex-1 flex flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+            <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
+              <TabsTrigger value="metadata">
+                <FileText className="h-4 w-4 mr-2" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="questions">
+                <Plus className="h-4 w-4 mr-2" />
+                Questions ({questions.length})
+              </TabsTrigger>
+              <TabsTrigger value="preview">
+                <Eye className="h-4 w-4 mr-2" />
+                Preview
+              </TabsTrigger>
+            </TabsList>
 
-          <TabsContent value="metadata" className="space-y-6 mt-6">
-            <ScrollArea className="h-[60vh]">
-              <div className="space-y-6 pr-4">
+            <TabsContent value="metadata" className="flex-1 flex flex-col mt-6">
+              <ScrollArea className="flex-1">
+                <div className="space-y-6 pr-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="title">Exam Title *</Label>
@@ -757,25 +769,25 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
                       <Label htmlFor="showResults">Show Results Immediately</Label>
                     </div>
                   </div>
+                  </div>
                 </div>
-              </div>
-            </ScrollArea>
-          </TabsContent>
+              </ScrollArea>
+            </TabsContent>
 
-          <TabsContent value="questions" className="space-y-6 mt-6">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                <span className="font-medium">Questions ({questions.length}/1000)</span>
+            <TabsContent value="questions" className="flex-1 flex flex-col mt-6">
+              <div className="flex justify-between items-center flex-shrink-0 mb-4">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  <span className="font-medium">Questions ({questions.length}/1000)</span>
+                </div>
+                <Button onClick={addQuestion} disabled={questions.length >= 1000}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Question
+                </Button>
               </div>
-              <Button onClick={addQuestion} disabled={questions.length >= 1000}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Question
-              </Button>
-            </div>
 
-            <ScrollArea className="h-[60vh]">
-              <div className="space-y-6 pr-4">
+              <ScrollArea className="flex-1">
+                <div className="space-y-6 pr-4">
                 {questions.map((question, qIndex) => (
                   <Card key={question.id} className="p-4">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
@@ -887,32 +899,32 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
 
-          <TabsContent value="preview" className="space-y-6 mt-6">
-            <div className="text-center space-y-4">
-              <h3 className="text-lg font-semibold">{metadata.title || 'Untitled Exam'}</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Duration:</span> {metadata.duration} mins
-                </div>
-                <div>
-                  <span className="font-medium">Questions:</span> {questions.length}
-                </div>
-                <div>
-                  <span className="font-medium">Pass Mark:</span> {metadata.passMarks}%
-                </div>
-                <div>
-                  <span className="font-medium">Total Marks:</span> {questions.reduce((sum, q) => sum + q.marks, 0)}
+            <TabsContent value="preview" className="flex-1 flex flex-col mt-6">
+              <div className="text-center space-y-4 flex-shrink-0 mb-4">
+                <h3 className="text-lg font-semibold">{metadata.title || 'Untitled Exam'}</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="font-medium">Duration:</span> {metadata.duration} mins
+                  </div>
+                  <div>
+                    <span className="font-medium">Questions:</span> {questions.length}
+                  </div>
+                  <div>
+                    <span className="font-medium">Pass Mark:</span> {metadata.passMarks}%
+                  </div>
+                  <div>
+                    <span className="font-medium">Total Marks:</span> {questions.reduce((sum, q) => sum + q.marks, 0)}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <ScrollArea className="h-[50vh]">
-              <div className="space-y-4 pr-4">
+              <ScrollArea className="flex-1">
+                <div className="space-y-4 pr-4">
                 {questions.map((question, index) => (
                   <Card key={question.id} className="p-4">
                     <div className="space-y-3">
@@ -945,26 +957,27 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
               </div>
             </ScrollArea>
           </TabsContent>
-
-          <div className="flex justify-between items-center pt-6 border-t">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={saveDraft} disabled={saving}>
-                <Save className="h-4 w-4 mr-2" />
-                {editingExam ? 'Update' : 'Save Draft'}
-              </Button>
-              {!editingExam && (
-                <Button onClick={publishExam} disabled={saving}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  Publish Exam
-                </Button>
-              )}
-            </div>
-          </div>
         </Tabs>
-      </DialogContent>
-    </Dialog>
-  );
+      </div>
+
+      <div className="flex justify-between items-center pt-6 border-t flex-shrink-0">
+        <Button variant="outline" onClick={() => handleOpenChange(false)}>
+          Cancel
+        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={saveDraft} disabled={saving}>
+            <Save className="h-4 w-4 mr-2" />
+            {editingExam ? 'Update' : 'Save Draft'}
+          </Button>
+          {!editingExam && (
+            <Button onClick={publishExam} disabled={saving}>
+              <Eye className="h-4 w-4 mr-2" />
+              Publish Exam
+            </Button>
+          )}
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
+);
 };

@@ -237,17 +237,12 @@ export const EnhancedExamForm: React.FC<EnhancedExamFormProps> = ({
   );
 
   return (
-    <Card className="w-full h-full">
+    <Card className="w-full h-full flex flex-col">
       <StaticFormLayout
         header={formHeader}
-        footer={
-          <CardContent className="pt-0">
-            {formFooter}
-          </CardContent>
-        }
+        footer={formFooter}
       >
-        <CardContent>
-          <div className="space-y-6">
+        <div className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -479,7 +474,6 @@ export const EnhancedExamForm: React.FC<EnhancedExamFormProps> = ({
               </div>
             </div>
           </div>
-        </CardContent>
       </StaticFormLayout>
     </Card>
   );
