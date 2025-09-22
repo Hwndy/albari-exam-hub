@@ -138,19 +138,25 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
       // If teacher, restrict to assigned subjects and classes
       if (isTeacher) {
-        const { data: assignments } = await supabase
-          .from('subject_assignments')
-          .select('subject_id, class_id')
-          .eq('user_id', user?.id);
+        const [subjectAssignments, classAssignments] = await Promise.all([
+          supabase
+            .from('subject_assignments')
+            .select('subject_id')
+            .eq('user_id', user?.id),
+          supabase
+            .from('teacher_class_assignments')
+            .select('class_id')
+            .eq('teacher_id', user?.id)
+        ]);
 
-        if (assignments && assignments.length > 0) {
-          const subjectIds = [...new Set(assignments.map(a => a.subject_id))];
-          const classIds = [...new Set(assignments.map(a => a.class_id).filter(Boolean))];
-          
+        if (subjectAssignments.data && subjectAssignments.data.length > 0) {
+          const subjectIds = subjectAssignments.data.map(a => a.subject_id);
           subjectsQuery = subjectsQuery.in('id', subjectIds);
-          if (classIds.length > 0) {
-            classesQuery = classesQuery.in('id', classIds);
-          }
+        }
+
+        if (classAssignments.data && classAssignments.data.length > 0) {
+          const classIds = classAssignments.data.map(a => a.class_id);
+          classesQuery = classesQuery.in('id', classIds);
         }
       }
 

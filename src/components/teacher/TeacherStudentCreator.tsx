@@ -92,6 +92,7 @@ export const TeacherStudentCreator: React.FC = () => {
         email: studentForm.email,
         password: studentForm.password,
         options: {
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             full_name: studentForm.fullName,
             role: 'student'

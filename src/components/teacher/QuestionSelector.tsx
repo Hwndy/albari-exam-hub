@@ -78,17 +78,34 @@ export const QuestionSelector: React.FC<QuestionSelectorProps> = ({
     try {
       setLoading(true);
       
+      // First get questions for the subject
+      const { data: questionBanks } = await supabase
+        .from('question_banks')
+        .select('id')
+        .eq('subject_id', subjectId);
+
+      if (!questionBanks || questionBanks.length === 0) {
+        setQuestions([]);
+        return;
+      }
+
+      const bankIds = questionBanks.map(bank => bank.id);
+      
       const { data: questionsData, error } = await supabase
         .from('questions')
         .select(`
           *,
           question_options(*),
           question_banks(
+            id,
+            name,
             subject_id,
-            subjects(name)
+            class_id,
+            subjects(name),
+            classes(name)
           )
         `)
-        .eq('question_banks.subject_id', subjectId)
+        .in('question_bank_id', bankIds)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -97,7 +114,8 @@ export const QuestionSelector: React.FC<QuestionSelectorProps> = ({
         const formattedQuestions = questionsData.map(q => ({
           ...q,
           options: q.question_options?.sort((a: any, b: any) => a.option_order - b.option_order) || [],
-          subject_name: q.question_banks?.subjects?.name || 'Unknown'
+          subject_name: q.question_banks?.subjects?.name || 'Unknown',
+          class_name: q.question_banks?.classes?.name || 'All Classes'
         }));
         setQuestions(formattedQuestions);
       }
