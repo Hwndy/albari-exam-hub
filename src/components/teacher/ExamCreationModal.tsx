@@ -51,7 +51,7 @@ interface ExamMetadata {
 interface ExamCreationModalProps {
   trigger: React.ReactNode;
   onExamCreated?: () => void;
-  editingExam?: any; // For editing existing exams
+  editingExam?: any;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
 }
@@ -66,7 +66,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  // Use controlled state if provided, otherwise use internal state
   const isOpen = controlledOpen !== undefined ? controlledOpen : open;
   const handleOpenChange = controlledOnOpenChange || setOpen;
 
@@ -111,13 +110,11 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
     }
   ]);
 
-  // Load subjects and classes
   useEffect(() => {
     fetchSubjects();
     fetchClasses();
   }, []);
 
-  // Load editing exam data
   useEffect(() => {
     if (editingExam && isOpen) {
       setMetadata({
@@ -137,12 +134,10 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
         showResultsImmediately: editingExam.show_results_immediately ?? false,
       });
 
-      // Load existing questions if editing
       if (editingExam.id) {
         loadExamQuestions(editingExam.id);
       }
     } else if (!editingExam && isOpen) {
-      // Reset for new exam
       resetForm();
     }
   }, [editingExam, isOpen]);
@@ -172,7 +167,7 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
       if (error) throw error;
 
-      const loadedQuestions = examQuestions?.map((eq: any, index) => ({
+      const loadedQuestions = examQuestions?.map((eq: any) => ({
         id: eq.questions.id,
         questionText: eq.questions.question_text,
         options: eq.questions.question_options
@@ -352,7 +347,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
       let exam;
       if (editingExam) {
-        // Update existing exam
         const { data: updatedExam, error: examError } = await supabase
           .from('exams')
           .update(examData)
@@ -363,13 +357,11 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
         if (examError) throw examError;
         exam = updatedExam;
 
-        // Delete existing exam questions
         await supabase
           .from('exam_questions')
           .delete()
           .eq('exam_id', editingExam.id);
       } else {
-        // Create new exam
         const { data: newExam, error: examError } = await supabase
           .from('exams')
           .insert(examData)
@@ -380,7 +372,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
         exam = newExam;
       }
 
-      // Save questions
       await saveQuestions(exam.id);
 
       toast({
@@ -413,7 +404,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
       return;
     }
 
-    // Validate all questions have correct answers
     const invalidQuestions = questions.filter(q => 
       !q.questionText.trim() || 
       !q.options.some(opt => opt.isCorrect && opt.text.trim()) ||
@@ -458,7 +448,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
       if (examError) throw examError;
 
-      // Save questions
       await saveQuestions(exam.id);
 
       toast({
@@ -482,12 +471,12 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
   };
 
   const saveQuestions = async (examId: string) => {
-    // First, create question bank if needed
     const { data: questionBank, error: bankError } = await supabase
       .from('question_banks')
       .insert({
         name: `${metadata.title} - Questions`,
         subject_id: metadata.subjectId,
+        class_id: metadata.classId || null,
         created_by: user?.id,
       })
       .select()
@@ -495,12 +484,9 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
     if (bankError) throw bankError;
 
-    // Create questions
     for (let i = 0; i < questions.length; i++) {
       const question = questions[i];
-      
-      // Create question
-      const { data: questionData, error: questionError } = await supabase
+      const { data: questionRecord } = await supabase
         .from('questions')
         .insert({
           question_text: question.questionText,
@@ -508,41 +494,29 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
           difficulty_level: question.difficultyLevel,
           points: question.marks,
           explanation: question.explanation,
-          question_bank_id: questionBank.id,
           created_by: user?.id,
+          question_bank_id: questionBank?.id,
         })
         .select()
         .single();
 
-      if (questionError) throw questionError;
-
-      // Create options
-      const optionsData = question.options
-        .filter(opt => opt.text.trim())
-        .map((option, index) => ({
-          question_id: questionData.id,
-          option_text: option.text,
-          is_correct: option.isCorrect,
+      if (questionRecord) {
+        const optionsToInsert = question.options.map((opt, index) => ({
+          question_id: questionRecord.id,
+          option_text: opt.text,
+          is_correct: opt.isCorrect,
           option_order: index + 1,
         }));
 
-      const { error: optionsError } = await supabase
-        .from('question_options')
-        .insert(optionsData);
+        await supabase.from('question_options').insert(optionsToInsert);
 
-      if (optionsError) throw optionsError;
-
-      // Link question to exam
-      const { error: examQuestionError } = await supabase
-        .from('exam_questions')
-        .insert({
+        await supabase.from('exam_questions').insert({
           exam_id: examId,
-          question_id: questionData.id,
+          question_id: questionRecord.id,
           question_order: i + 1,
           points: question.marks,
         });
-
-      if (examQuestionError) throw examQuestionError;
+      }
     }
   };
 
@@ -563,22 +537,20 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
       shuffleAnswers: true,
       showResultsImmediately: false,
     });
-    setQuestions([
-      {
-        id: 'q-1',
-        questionText: '',
-        options: [
-          { id: 'opt-1', text: '', isCorrect: false },
-          { id: 'opt-2', text: '', isCorrect: false },
-          { id: 'opt-3', text: '', isCorrect: false },
-          { id: 'opt-4', text: '', isCorrect: false },
-        ],
-        difficultyLevel: 'medium',
-        marks: 1,
-        explanation: '',
-        tags: '',
-      }
-    ]);
+    setQuestions([{
+      id: 'q-1',
+      questionText: '',
+      options: [
+        { id: 'opt-1', text: '', isCorrect: false },
+        { id: 'opt-2', text: '', isCorrect: false },
+        { id: 'opt-3', text: '', isCorrect: false },
+        { id: 'opt-4', text: '', isCorrect: false },
+      ],
+      difficultyLevel: 'medium',
+      marks: 1,
+      explanation: '',
+      tags: '',
+    }]);
     setActiveTab('metadata');
   };
 
@@ -611,373 +583,379 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="metadata" className="flex-1 flex flex-col mt-6">
-              <ScrollArea className="flex-1">
-                <div className="space-y-6 pr-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="title">Exam Title *</Label>
-                    <Input
-                      id="title"
-                      placeholder="e.g. First Term SS2 Mathematics Examination"
-                      value={metadata.title}
-                      onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="subject">Subject *</Label>
-                    <Select
-                      value={metadata.subjectId}
-                      onValueChange={(value) => setMetadata(prev => ({ ...prev, subjectId: value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="class">Class</Label>
-                    <Select
-                      value={metadata.classId}
-                      onValueChange={(value) => setMetadata(prev => ({ ...prev, classId: value === "all" ? "" : value }))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Classes</SelectItem>
-                        {classes.map(cls => (
-                          <SelectItem key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <Label htmlFor="duration">Duration (minutes)</Label>
-                    <Input
-                      id="duration"
-                      type="number"
-                      min="1"
-                      value={metadata.duration}
-                      onChange={(e) => setMetadata(prev => ({ ...prev, duration: Number(e.target.value) }))}
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="passMarks">Pass Mark (%)</Label>
-                    <Input
-                      id="passMarks"
-                      type="number"
-                      min="0"
-                      max="100"
-                      value={metadata.passMarks}
-                      onChange={(e) => setMetadata(prev => ({ ...prev, passMarks: Number(e.target.value) }))}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    placeholder="Brief description of the exam"
-                    value={metadata.description}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="instructions">Instructions</Label>
-                  <Textarea
-                    id="instructions"
-                    placeholder="Special instructions for students"
-                    value={metadata.instructions}
-                    onChange={(e) => setMetadata(prev => ({ ...prev, instructions: e.target.value }))}
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="startDate">Start Date (Optional)</Label>
-                    <Input
-                      id="startDate"
-                      type="datetime-local"
-                      value={metadata.startDate}
-                      onChange={(e) => setMetadata(prev => ({ ...prev, startDate: e.target.value }))}
-                    />
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="endDate">End Date (Optional)</Label>
-                    <Input
-                      id="endDate"
-                      type="datetime-local"
-                      value={metadata.endDate}
-                      onChange={(e) => setMetadata(prev => ({ ...prev, endDate: e.target.value }))}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-3">
-                  <Label>Exam Settings</Label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="allowReview"
-                        checked={metadata.allowReview}
-                        onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, allowReview: !!checked }))}
-                      />
-                      <Label htmlFor="allowReview">Allow Review</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="shuffleQuestions"
-                        checked={metadata.shuffleQuestions}
-                        onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, shuffleQuestions: !!checked }))}
-                      />
-                      <Label htmlFor="shuffleQuestions">Shuffle Questions</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="shuffleAnswers"
-                        checked={metadata.shuffleAnswers}
-                        onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, shuffleAnswers: !!checked }))}
-                      />
-                      <Label htmlFor="shuffleAnswers">Shuffle Answers</Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="showResults"
-                        checked={metadata.showResultsImmediately}
-                        onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, showResultsImmediately: !!checked }))}
-                      />
-                      <Label htmlFor="showResults">Show Results Immediately</Label>
-                    </div>
-                  </div>
-                  </div>
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="questions" className="flex-1 flex flex-col mt-6">
-              <div className="flex justify-between items-center flex-shrink-0 mb-4">
-                <div className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  <span className="font-medium">Questions ({questions.length}/1000)</span>
-                </div>
-                <Button onClick={addQuestion} disabled={questions.length >= 1000}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </div>
-
-              <ScrollArea className="flex-1">
-                <div className="space-y-6 pr-4">
-                {questions.map((question, qIndex) => (
-                  <Card key={question.id} className="p-4">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                      <CardTitle className="text-base">Question {qIndex + 1}</CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => duplicateQuestion(question.id)}
-                          disabled={questions.length >= 1000}
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                        {questions.length > 1 && (
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => removeQuestion(question.id)}
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
+            <div className="flex-1 mt-4 overflow-hidden">
+              <TabsContent value="metadata" className="h-full">
+                <ScrollArea className="h-full">
+                  <div className="space-y-6 pr-4 pb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Question Text *</Label>
-                        <Textarea
-                          placeholder="Enter your question here..."
-                          value={question.questionText}
-                          onChange={(e) => updateQuestion(question.id, 'questionText', e.target.value)}
+                        <Label htmlFor="title">Exam Title *</Label>
+                        <Input
+                          id="title"
+                          placeholder="e.g. First Term SS2 Mathematics Examination"
+                          value={metadata.title}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
                         />
                       </div>
 
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <Label>Answer Options *</Label>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => addOption(question.id)}
-                            disabled={question.options.length >= 6}
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Add Option
-                          </Button>
-                        </div>
+                      <div>
+                        <Label htmlFor="subject">Subject *</Label>
+                        <Select
+                          value={metadata.subjectId}
+                          onValueChange={(value) => setMetadata(prev => ({ ...prev, subjectId: value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select subject" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subjects.map(subject => (
+                              <SelectItem key={subject.id} value={subject.id}>
+                                {subject.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
 
-                        {question.options.map((option, optIndex) => (
-                          <div key={option.id} className="flex items-center gap-2">
-                            <Checkbox
-                              checked={option.isCorrect}
-                              onCheckedChange={() => setCorrectOption(question.id, option.id)}
-                            />
-                            <Input
-                              placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
-                              value={option.text}
-                              onChange={(e) => updateOption(question.id, option.id, e.target.value)}
-                            />
-                            {question.options.length > 2 && (
+                      <div>
+                        <Label htmlFor="class">Class</Label>
+                        <Select
+                          value={metadata.classId}
+                          onValueChange={(value) => setMetadata(prev => ({ ...prev, classId: value === "all" ? "" : value }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All Classes</SelectItem>
+                            {classes.map(cls => (
+                              <SelectItem key={cls.id} value={cls.id}>
+                                {cls.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="duration">Duration (minutes)</Label>
+                        <Input
+                          id="duration"
+                          type="number"
+                          min="1"
+                          value={metadata.duration}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, duration: Number(e.target.value) }))}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="passMarks">Pass Mark (%)</Label>
+                        <Input
+                          id="passMarks"
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={metadata.passMarks}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, passMarks: Number(e.target.value) }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="description">Description</Label>
+                      <Textarea
+                        id="description"
+                        placeholder="Brief description of the exam"
+                        value={metadata.description}
+                        onChange={(e) => setMetadata(prev => ({ ...prev, description: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="instructions">Instructions</Label>
+                      <Textarea
+                        id="instructions"
+                        placeholder="Special instructions for students"
+                        value={metadata.instructions}
+                        onChange={(e) => setMetadata(prev => ({ ...prev, instructions: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="startDate">Start Date (Optional)</Label>
+                        <Input
+                          id="startDate"
+                          type="datetime-local"
+                          value={metadata.startDate}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, startDate: e.target.value }))}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="endDate">End Date (Optional)</Label>
+                        <Input
+                          id="endDate"
+                          type="datetime-local"
+                          value={metadata.endDate}
+                          onChange={(e) => setMetadata(prev => ({ ...prev, endDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <Label>Exam Settings</Label>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="allowReview"
+                            checked={metadata.allowReview}
+                            onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, allowReview: !!checked }))}
+                          />
+                          <Label htmlFor="allowReview">Allow Review</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="shuffleQuestions"
+                            checked={metadata.shuffleQuestions}
+                            onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, shuffleQuestions: !!checked }))}
+                          />
+                          <Label htmlFor="shuffleQuestions">Shuffle Questions</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="shuffleAnswers"
+                            checked={metadata.shuffleAnswers}
+                            onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, shuffleAnswers: !!checked }))}
+                          />
+                          <Label htmlFor="shuffleAnswers">Shuffle Answers</Label>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="showResults"
+                            checked={metadata.showResultsImmediately}
+                            onCheckedChange={(checked) => setMetadata(prev => ({ ...prev, showResultsImmediately: !!checked }))}
+                          />
+                          <Label htmlFor="showResults">Show Results Immediately</Label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="questions" className="h-full">
+                <div className="h-full flex flex-col">
+                  <div className="flex justify-between items-center mb-4 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-5 w-5" />
+                      <span className="font-medium">Questions ({questions.length}/1000)</span>
+                    </div>
+                    <Button onClick={addQuestion} disabled={questions.length >= 1000}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
+                  </div>
+
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-6 pr-4 pb-4">
+                      {questions.map((question, qIndex) => (
+                        <Card key={question.id} className="p-4">
+                          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+                            <CardTitle className="text-base">Question {qIndex + 1}</CardTitle>
+                            <div className="flex items-center gap-2">
                               <Button
                                 size="sm"
-                                variant="destructive"
-                                onClick={() => removeOption(question.id, option.id)}
+                                variant="outline"
+                                onClick={() => duplicateQuestion(question.id)}
+                                disabled={questions.length >= 1000}
                               >
-                                <X className="h-4 w-4" />
+                                <Copy className="h-4 w-4" />
                               </Button>
+                              {questions.length > 1 && (
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => removeQuestion(question.id)}
+                                >
+                                  <Minus className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div>
+                              <Label>Question Text *</Label>
+                              <Textarea
+                                placeholder="Enter your question here..."
+                                value={question.questionText}
+                                onChange={(e) => updateQuestion(question.id, 'questionText', e.target.value)}
+                              />
+                            </div>
+
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-center">
+                                <Label>Answer Options *</Label>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => addOption(question.id)}
+                                  disabled={question.options.length >= 6}
+                                >
+                                  <Plus className="h-4 w-4 mr-2" />
+                                  Add Option
+                                </Button>
+                              </div>
+
+                              {question.options.map((option, optIndex) => (
+                                <div key={option.id} className="flex items-center gap-2">
+                                  <Checkbox
+                                    checked={option.isCorrect}
+                                    onCheckedChange={() => setCorrectOption(question.id, option.id)}
+                                  />
+                                  <Input
+                                    placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
+                                    value={option.text}
+                                    onChange={(e) => updateOption(question.id, option.id, e.target.value)}
+                                  />
+                                  {question.options.length > 2 && (
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => removeOption(question.id, option.id)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <Label>Difficulty Level</Label>
+                                <Select
+                                  value={question.difficultyLevel}
+                                  onValueChange={(value) => updateQuestion(question.id, 'difficultyLevel', value)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="easy">Easy</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="hard">Hard</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+
+                              <div>
+                                <Label>Marks</Label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={question.marks}
+                                  onChange={(e) => updateQuestion(question.id, 'marks', Number(e.target.value))}
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <Label>Explanation (Optional)</Label>
+                              <Textarea
+                                placeholder="Explain the correct answer..."
+                                value={question.explanation}
+                                onChange={(e) => updateQuestion(question.id, 'explanation', e.target.value)}
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="preview" className="h-full">
+                <div className="h-full flex flex-col">
+                  <div className="text-center space-y-4 flex-shrink-0 mb-4">
+                    <h3 className="text-lg font-semibold">{metadata.title || 'Untitled Exam'}</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                      <div>
+                        <span className="font-medium">Duration:</span> {metadata.duration} mins
+                      </div>
+                      <div>
+                        <span className="font-medium">Questions:</span> {questions.length}
+                      </div>
+                      <div>
+                        <span className="font-medium">Pass Mark:</span> {metadata.passMarks}%
+                      </div>
+                      <div>
+                        <span className="font-medium">Total Marks:</span> {questions.reduce((sum, q) => sum + q.marks, 0)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <ScrollArea className="flex-1">
+                    <div className="space-y-4 pr-4 pb-4">
+                      {questions.map((question, index) => (
+                        <Card key={question.id} className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-start">
+                              <h4 className="font-medium">Question {index + 1}</h4>
+                              <div className="flex gap-2">
+                                <Badge variant={question.difficultyLevel === 'easy' ? 'default' : question.difficultyLevel === 'hard' ? 'destructive' : 'secondary'}>
+                                  {question.difficultyLevel}
+                                </Badge>
+                                <Badge variant="outline">{question.marks} mark{question.marks > 1 ? 's' : ''}</Badge>
+                              </div>
+                            </div>
+                            <p>{question.questionText || 'Question text not provided'}</p>
+                            <div className="space-y-2">
+                              {question.options.filter(opt => opt.text.trim()).map((option, optIndex) => (
+                                <div key={option.id} className={`p-2 rounded border ${option.isCorrect ? 'bg-green-50 border-green-200' : ''}`}>
+                                  {String.fromCharCode(65 + optIndex)}. {option.text}
+                                  {option.isCorrect && <span className="ml-2 text-green-600 font-medium">(Correct)</span>}
+                                </div>
+                              ))}
+                            </div>
+                            {question.explanation && (
+                              <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
+                                <span className="font-medium text-blue-800">Explanation:</span> {question.explanation}
+                              </div>
                             )}
                           </div>
-                        ))}
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <Label>Difficulty Level</Label>
-                          <Select
-                            value={question.difficultyLevel}
-                            onValueChange={(value) => updateQuestion(question.id, 'difficultyLevel', value)}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="easy">Easy</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="hard">Hard</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div>
-                          <Label>Marks</Label>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={question.marks}
-                            onChange={(e) => updateQuestion(question.id, 'marks', Number(e.target.value))}
-                          />
-                        </div>
-                      </div>
-
-                      <div>
-                        <Label>Explanation (Optional)</Label>
-                        <Textarea
-                          placeholder="Explain the correct answer..."
-                          value={question.explanation}
-                          onChange={(e) => updateQuestion(question.id, 'explanation', e.target.value)}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="preview" className="flex-1 flex flex-col mt-6">
-              <div className="text-center space-y-4 flex-shrink-0 mb-4">
-                <h3 className="text-lg font-semibold">{metadata.title || 'Untitled Exam'}</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                  <div>
-                    <span className="font-medium">Duration:</span> {metadata.duration} mins
-                  </div>
-                  <div>
-                    <span className="font-medium">Questions:</span> {questions.length}
-                  </div>
-                  <div>
-                    <span className="font-medium">Pass Mark:</span> {metadata.passMarks}%
-                  </div>
-                  <div>
-                    <span className="font-medium">Total Marks:</span> {questions.reduce((sum, q) => sum + q.marks, 0)}
-                  </div>
-                </div>
-              </div>
-
-              <ScrollArea className="flex-1">
-                <div className="space-y-4 pr-4">
-                {questions.map((question, index) => (
-                  <Card key={question.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-start">
-                        <h4 className="font-medium">Question {index + 1}</h4>
-                        <div className="flex gap-2">
-                          <Badge variant={question.difficultyLevel === 'easy' ? 'default' : question.difficultyLevel === 'hard' ? 'destructive' : 'secondary'}>
-                            {question.difficultyLevel}
-                          </Badge>
-                          <Badge variant="outline">{question.marks} mark{question.marks > 1 ? 's' : ''}</Badge>
-                        </div>
-                      </div>
-                      <p>{question.questionText || 'Question text not provided'}</p>
-                      <div className="space-y-2">
-                        {question.options.filter(opt => opt.text.trim()).map((option, optIndex) => (
-                          <div key={option.id} className={`p-2 rounded border ${option.isCorrect ? 'bg-green-50 border-green-200' : ''}`}>
-                            {String.fromCharCode(65 + optIndex)}. {option.text}
-                            {option.isCorrect && <span className="ml-2 text-green-600 font-medium">(Correct)</span>}
-                          </div>
-                        ))}
-                      </div>
-                      {question.explanation && (
-                        <div className="mt-3 p-2 bg-blue-50 border border-blue-200 rounded">
-                          <span className="font-medium text-blue-800">Explanation:</span> {question.explanation}
-                        </div>
-                      )}
+                        </Card>
+                      ))}
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
-      </div>
-
-      <div className="flex justify-between items-center pt-6 border-t flex-shrink-0">
-        <Button variant="outline" onClick={() => handleOpenChange(false)}>
-          Cancel
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={saveDraft} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {editingExam ? 'Update' : 'Save Draft'}
-          </Button>
-          {!editingExam && (
-            <Button onClick={publishExam} disabled={saving}>
-              <Eye className="h-4 w-4 mr-2" />
-              Publish Exam
-            </Button>
-          )}
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            </div>
+          </Tabs>
         </div>
-      </div>
-    </DialogContent>
-  </Dialog>
-);
+
+        <div className="flex justify-between items-center pt-6 border-t flex-shrink-0">
+          <Button variant="outline" onClick={() => handleOpenChange(false)}>
+            Cancel
+          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={saveDraft} disabled={saving}>
+              <Save className="h-4 w-4 mr-2" />
+              {editingExam ? 'Update' : 'Save Draft'}
+            </Button>
+            {!editingExam && (
+              <Button onClick={publishExam} disabled={saving}>
+                <Eye className="h-4 w-4 mr-2" />
+                Publish Exam
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 };
