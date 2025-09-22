@@ -8,15 +8,22 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
 
 interface RegisterFormProps {
   onToggleMode: () => void;
   allowStudentRegistration?: boolean;
+  isAdminEdit?: boolean;
+  adminData?: any;
+  onSaveEdit?: (data: any) => void;
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
   onToggleMode, 
-  allowStudentRegistration = true 
+  allowStudentRegistration = true,
+  isAdminEdit = false,
+  adminData,
+  onSaveEdit
 }) => {
   const [formData, setFormData] = useState({
     fullName: '',
@@ -154,16 +161,48 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
+  const formHeader = (
+    <div>
+      <CardTitle className="text-2xl font-bold">
+        {isAdminEdit ? 'Edit User Account' : 'Create Account'}
+      </CardTitle>
+      <CardDescription>
+        {isAdminEdit ? 'Update account information' : 'Join ALBARI Secondary School'}
+      </CardDescription>
+    </div>
+  );
+
+  const formFooter = (
+    <div className="space-y-4">
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? <LoadingSpinner /> : (isAdminEdit ? 'Update Account' : 'Create Account')}
+      </Button>
+      {!isAdminEdit && (
+        <div className="text-center">
+          <Button variant="link" onClick={onToggleMode}>
+            Already have an account? Sign in
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
-    <Card className="w-full max-w-md mx-auto">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-center">Create Account</CardTitle>
-        <CardDescription className="text-center">
-          Join ALBARI Secondary School
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <Card className={isAdminEdit ? "w-full h-full" : "w-full max-w-md mx-auto"}>
+      <StaticFormLayout
+        header={
+          <CardHeader className="space-y-1">
+            {formHeader}
+          </CardHeader>
+        }
+        footer={
+          <CardContent className="pt-0">
+            {formFooter}
+          </CardContent>
+        }
+      >
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
@@ -200,9 +239,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 <SelectValue placeholder="Select your role" />
               </SelectTrigger>
               <SelectContent className="bg-popover border shadow-lg z-50">
-                {allowStudentRegistration && (
-                  <SelectItem value="student">Student</SelectItem>
-                )}
                 <SelectItem value="teacher">Teacher</SelectItem>
                 <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
@@ -327,18 +363,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               required
             />
           </div>
-          
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? <LoadingSpinner /> : 'Create Account'}
-          </Button>
         </form>
-        
-        <div className="mt-4 text-center">
-          <Button variant="link" onClick={onToggleMode}>
-            Already have an account? Sign in
-          </Button>
-        </div>
-      </CardContent>
+        </CardContent>
+      </StaticFormLayout>
     </Card>
   );
 };

@@ -55,19 +55,24 @@ export const SessionMonitor: React.FC<SessionMonitorProps> = ({ children }) => {
       }
     };
 
-    // Disable right-click context menu
+    // Disable right-click context menu for students only
     const handleContextMenu = (e: MouseEvent) => {
-      e.preventDefault();
+      const isAdminOrTeacher = user?.role === 'admin' || user?.role === 'teacher';
+      if (!isAdminOrTeacher) {
+        e.preventDefault();
+      }
     };
 
     // Disable certain keyboard shortcuts
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U
-      if (
+      // Allow certain shortcuts for admin and teachers only
+      const isAdminOrTeacher = user?.role === 'admin' || user?.role === 'teacher';
+      
+      // Disable F12, Ctrl+Shift+I, Ctrl+Shift+J for students only
+      if (!isAdminOrTeacher && (
         e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J')) ||
-        (e.ctrlKey && e.key === 'u')
-      ) {
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J'))
+      )) {
         e.preventDefault();
         toast({
           title: 'Action Blocked',
@@ -76,8 +81,18 @@ export const SessionMonitor: React.FC<SessionMonitorProps> = ({ children }) => {
         });
       }
 
-      // Disable copy, paste, select all
-      if (e.ctrlKey && ['a', 'c', 'v', 's', 'x'].includes(e.key.toLowerCase())) {
+      // Allow Ctrl+U, Ctrl+C, Ctrl+V for admin and teachers, disable for students
+      if (!isAdminOrTeacher && e.ctrlKey && ['u', 'c', 'v'].includes(e.key.toLowerCase())) {
+        e.preventDefault();
+        toast({
+          title: 'Action Blocked',
+          description: 'This action is not allowed during the exam.',
+          variant: 'destructive',
+        });
+      }
+
+      // Disable select all, save, cut for all users during exams
+      if (e.ctrlKey && ['a', 's', 'x'].includes(e.key.toLowerCase())) {
         e.preventDefault();
       }
     };

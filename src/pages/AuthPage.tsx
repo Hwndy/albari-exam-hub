@@ -3,15 +3,17 @@ import { Navigate } from 'react-router-dom';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { TokenValidationForm } from '@/components/auth/TokenValidationForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-type AuthMode = 'login' | 'register' | 'forgot-password';
+type AuthMode = 'login' | 'register' | 'forgot-password' | 'token-validation';
 
 export const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
+  const [tokenValidated, setTokenValidated] = useState(false);
   const { isAuthenticated, user, isLoading } = useAuth();
 
   useEffect(() => {
@@ -61,15 +63,32 @@ export const AuthPage = () => {
       case 'login':
         return (
           <LoginForm 
-            onToggleMode={() => setMode('register')}
+            onToggleMode={() => setMode('token-validation')}
             onForgotPassword={() => setMode('forgot-password')}
           />
         );
+      case 'token-validation':
+        return (
+          <TokenValidationForm 
+            onValidToken={() => {
+              setTokenValidated(true);
+              setMode('register');
+            }}
+            onBackToLogin={() => setMode('login')}
+          />
+        );
       case 'register':
+        if (!tokenValidated) {
+          setMode('token-validation');
+          return null;
+        }
         return (
           <RegisterForm 
-            onToggleMode={() => setMode('login')}
-            allowStudentRegistration={allowStudentRegistration}
+            onToggleMode={() => {
+              setMode('login');
+              setTokenValidated(false);
+            }}
+            allowStudentRegistration={false}
           />
         );
       case 'forgot-password':
