@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp, Plus } from 'lucide-react';
+import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp, Plus, Award } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
@@ -16,6 +16,7 @@ import { EnhancedQuestionCreator } from '@/components/admin/EnhancedQuestionCrea
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
+import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -56,6 +57,7 @@ export const AdminDashboard = () => {
   
   const [recentExams, setRecentExams] = useState<RecentExam[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -252,7 +254,7 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-8 gap-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-1">
             <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
             <TabsTrigger value="exams" className="text-xs sm:text-sm">Exams</TabsTrigger>
             <TabsTrigger value="results" className="text-xs sm:text-sm">Results</TabsTrigger>
@@ -261,6 +263,7 @@ export const AdminDashboard = () => {
             <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
             <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
             <TabsTrigger value="monitor-logs" className="text-xs sm:text-sm">Monitor & Logs</TabsTrigger>
+            <TabsTrigger value="results-modal" className="text-xs sm:text-sm">All Results</TabsTrigger>
           </TabsList>
 
           {/* Exams Tab */}
@@ -378,7 +381,23 @@ export const AdminDashboard = () => {
               </Card>
             </div>
           </TabsContent>
+
+          {/* All Results Tab */}
+          <TabsContent value="results-modal" className="space-y-6">
+            <div className="text-center">
+              <Button onClick={() => setResultsModalOpen(true)} size="lg">
+                <Award className="w-4 h-4 mr-2" />
+                View All Exam Results
+              </Button>
+            </div>
+          </TabsContent>
         </Tabs>
+
+        {/* Results Modal */}
+        <AdminResultsModal
+          open={resultsModalOpen}
+          onOpenChange={setResultsModalOpen}
+        />
       </div>
     </DashboardLayout>
   );

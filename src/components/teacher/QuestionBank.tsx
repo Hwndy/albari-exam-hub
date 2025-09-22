@@ -14,7 +14,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { QuestionBulkImport } from './QuestionBulkImport';
-import { EnhancedBulkImport } from './EnhancedBulkImport';
+import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
 
 interface Question {
   id: string;
@@ -39,6 +39,7 @@ interface QuestionOption {
 export const QuestionBank: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [teacherSubject, setTeacherSubject] = useState<any>(null);
+  const [teacherClass, setTeacherClass] = useState<any>(null);
   const [questionBank, setQuestionBank] = useState<any>(null);
   const [isAddingQuestion, setIsAddingQuestion] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
@@ -77,12 +78,14 @@ export const QuestionBank: React.FC = () => {
         return;
       }
 
-      // First, get teacher's assigned subject
+      // First, get teacher's assigned subject and class
       const { data: subjectAssignment } = await supabase
         .from('subject_assignments')
         .select(`
           subject_id,
-          subjects(*)
+          class_id,
+          subjects(*),
+          classes(*)
         `)
         .eq('user_id', user.id)
         .single();
@@ -98,12 +101,14 @@ export const QuestionBank: React.FC = () => {
       }
 
       setTeacherSubject(subjectAssignment.subjects);
+      setTeacherClass(subjectAssignment.classes);
 
-      // Get or create question bank for this subject
+      // Get or create question bank for this subject and class
       let { data: questionBankData } = await supabase
         .from('question_banks')
         .select('*')
         .eq('subject_id', subjectAssignment.subject_id)
+        .eq('class_id', subjectAssignment.class_id)
         .eq('created_by', user.id)
         .single();
 
@@ -112,9 +117,10 @@ export const QuestionBank: React.FC = () => {
         const { data: newBank } = await supabase
           .from('question_banks')
           .insert({
-            name: `${subjectAssignment.subjects.name} Question Bank`,
-            description: `Question bank for ${subjectAssignment.subjects.name}`,
+            name: `${subjectAssignment.subjects.name} - ${subjectAssignment.classes.name} Question Bank`,
+            description: `Question bank for ${subjectAssignment.subjects.name} in ${subjectAssignment.classes.name}`,
             subject_id: subjectAssignment.subject_id,
+            class_id: subjectAssignment.class_id,
             created_by: user.id
           })
           .select()
@@ -188,7 +194,8 @@ export const QuestionBank: React.FC = () => {
           points: questionForm.points,
           explanation: questionForm.explanation || null,
           created_by: user?.id || '',
-          question_bank_id: questionBank?.id
+          question_bank_id: questionBank?.id,
+          class_id: teacherClass?.id
         })
         .select()
         .single();
@@ -318,7 +325,7 @@ export const QuestionBank: React.FC = () => {
         <CardHeader>
           <CardTitle>Question Bank - {teacherSubject.name}</CardTitle>
           <p className="text-sm text-muted-foreground">
-            Create and manage questions for {teacherSubject.name}. All questions will automatically be assigned to this subject.
+            Create and manage questions for {teacherSubject.name} - {teacherClass?.name || 'All Classes'}. All questions will automatically be assigned to this subject and class.
           </p>
         </CardHeader>
       </Card>
@@ -391,11 +398,33 @@ export const QuestionBank: React.FC = () => {
                 Add Question
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Add New Question</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddQuestion} className="space-y-4">
+                <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
+                  <StaticFormLayout
+                    header={
+                      <DialogHeader>
+                        <DialogTitle>Add New Question</DialogTitle>
+                      </DialogHeader>
+                    }
+                    footer={
+                      <div className="p-6 border-t">
+                        <div className="flex gap-2">
+                          <Button 
+                            type="button" 
+                            variant="outline" 
+                            onClick={() => {
+                              setIsAddingQuestion(false);
+                              resetQuestionForm();
+                            }}
+                            className="flex-1"
+                          >
+                            Cancel
+                          </Button>
+                          <Button type="submit" className="flex-1">Add Question</Button>
+                        </div>
+                      </div>
+                    }
+                  >
+                    <form onSubmit={handleAddQuestion} className="space-y-4 p-6">
                 <div className="space-y-2">
                   <Label htmlFor="question_text">Question</Label>
                   <Textarea
@@ -496,25 +525,19 @@ export const QuestionBank: React.FC = () => {
                   </div>
                 )}
 
-                <div className="space-y-2">
-                  <Label htmlFor="explanation">Explanation (Optional)</Label>
-                  <Textarea
-                    id="explanation"
-                    value={questionForm.explanation}
-                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                    placeholder="Explain the correct answer..."
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button type="submit">Add Question</Button>
-                  <Button type="button" variant="outline" onClick={() => setIsAddingQuestion(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
-            </DialogContent>
+                 <div className="space-y-2">
+                   <Label htmlFor="explanation">Explanation (Optional)</Label>
+                   <Textarea
+                     id="explanation"
+                     value={questionForm.explanation}
+                     onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
+                     placeholder="Explain the correct answer..."
+                     rows={2}
+                   />
+                 </div>
+               </form>
+             </StaticFormLayout>
+           </DialogContent>
           </Dialog>
         </div>
       </div>
