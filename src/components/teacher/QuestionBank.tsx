@@ -235,7 +235,7 @@ export const QuestionBank: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6 h-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
         {/* Question Form */}
         <div className="h-full">
           <EnhancedQuestionForm
@@ -272,79 +272,77 @@ export const QuestionBank: React.FC = () => {
                 <div className="space-y-4">
                   {questions.map((question: any) => (
                     <Card key={question.id} className="p-4">
-                        <div className="space-y-2">
-                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
-                            <div className="flex-1">
-                              <h4 className="font-medium text-sm sm:text-base line-clamp-2">
-                                {question.question_text}
-                              </h4>
-                              <div className="flex flex-wrap items-center gap-1 sm:gap-2 mt-2">
-                                <Badge variant="outline" className={
-                                  question.difficulty_level === 'easy' ? 'text-green-600' :
-                                  question.difficulty_level === 'medium' ? 'text-yellow-600' :
-                                  'text-red-600'
-                                }>
-                                  {question.difficulty_level}
-                                </Badge>
-                                <Badge variant="secondary">
-                                  {question.question_type === 'mcq' ? 'Multiple Choice' :
-                                   question.question_type === 'true_false' ? 'True/False' :
-                                   question.question_type === 'fill_blank' ? 'Fill Blank' :
-                                   'Diagram'}
-                                </Badge>
-                                <Badge variant="outline">
-                                  {question.points} point{question.points !== 1 ? 's' : ''}
-                                </Badge>
+                      <div className="space-y-2">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h4 className="font-medium line-clamp-2">
+                              {question.question_text}
+                            </h4>
+                            <div className="flex items-center space-x-2 mt-2">
+                              <Badge variant="outline" className={
+                                question.difficulty_level === 'easy' ? 'text-green-600' :
+                                question.difficulty_level === 'medium' ? 'text-yellow-600' :
+                                'text-red-600'
+                              }>
+                                {question.difficulty_level}
+                              </Badge>
+                              <Badge variant="secondary">
+                                {question.question_type === 'mcq' ? 'Multiple Choice' :
+                                 question.question_type === 'true_false' ? 'True/False' :
+                                 question.question_type === 'fill_blank' ? 'Fill Blank' :
+                                 'Diagram'}
+                              </Badge>
+                              <Badge variant="outline">
+                                {question.points} point{question.points !== 1 ? 's' : ''}
+                              </Badge>
+                            </div>
+                            {question.question_banks?.subjects?.name && (
+                              <div className="text-xs text-muted-foreground mt-1">
+                                {question.question_banks.subjects.name} - {question.question_banks.classes?.name || 'All Classes'}
                               </div>
-                              {question.question_banks?.subjects?.name && (
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {question.question_banks.subjects.name} - {question.question_banks.classes?.name || 'All Classes'}
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button variant="destructive" size="sm">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {question.question_options && question.question_options.length > 0 && (
+                          <div className="text-sm text-muted-foreground">
+                            <div className="grid grid-cols-1 gap-1">
+                              {question.question_options
+                                .sort((a: any, b: any) => a.option_order - b.option_order)
+                                .slice(0, 2)
+                                .map((option: any, index: number) => (
+                                <div key={option.id} className="flex items-center space-x-1">
+                                  <span className={`w-4 h-4 rounded text-xs flex items-center justify-center ${
+                                    option.is_correct 
+                                      ? 'bg-green-100 text-green-800' 
+                                      : 'bg-gray-100 text-gray-600'
+                                  }`}>
+                                    {String.fromCharCode(65 + index)}
+                                  </span>
+                                  <span className={`line-clamp-1 ${option.is_correct ? 'font-medium' : ''}`}>
+                                    {option.option_text}
+                                  </span>
+                                  {option.is_correct && <CheckCircle className="h-3 w-3 text-green-600" />}
+                                </div>
+                              ))}
+                              {question.question_options.length > 2 && (
+                                <div className="text-xs text-gray-500">
+                                  +{question.question_options.length - 2} more options
                                 </div>
                               )}
                             </div>
-                            
-                            <div className="flex items-center space-x-2 shrink-0">
-                              <Button variant="outline" size="sm">
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only sm:not-sr-only sm:ml-1">Edit</span>
-                              </Button>
-                              <Button variant="destructive" size="sm">
-                                <Trash2 className="h-4 w-4" />
-                                <span className="sr-only sm:not-sr-only sm:ml-1">Delete</span>
-                              </Button>
-                            </div>
                           </div>
-                          
-                          {question.question_options && question.question_options.length > 0 && (
-                            <div className="text-sm text-muted-foreground">
-                              <div className="grid grid-cols-1 gap-1">
-                                {question.question_options
-                                  .sort((a: any, b: any) => a.option_order - b.option_order)
-                                  .slice(0, 2)
-                                  .map((option: any, index: number) => (
-                                  <div key={option.id} className="flex items-center space-x-1">
-                                    <span className={`w-4 h-4 rounded text-xs flex items-center justify-center ${
-                                      option.is_correct 
-                                        ? 'bg-green-100 text-green-800' 
-                                        : 'bg-gray-100 text-gray-600'
-                                    }`}>
-                                      {String.fromCharCode(65 + index)}
-                                    </span>
-                                    <span className={`line-clamp-1 text-xs sm:text-sm ${option.is_correct ? 'font-medium' : ''}`}>
-                                      {option.option_text}
-                                    </span>
-                                    {option.is_correct && <CheckCircle className="h-3 w-3 text-green-600" />}
-                                  </div>
-                                ))}
-                                {question.question_options.length > 2 && (
-                                  <div className="text-xs text-gray-500">
-                                    +{question.question_options.length - 2} more options
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-                        </div>
+                        )}
+                      </div>
                     </Card>
                   ))}
                 </div>
