@@ -191,6 +191,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const logout = async () => {
     try {
       console.log('Logout attempt...');
+      
+      // Clear localStorage items that might persist session data
+      localStorage.removeItem('supabase.auth.token');
+      localStorage.removeItem('sb-irrxmoqbgygyyzozifdl-auth-token');
+      
       // Check if we have a session before attempting logout
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -204,12 +209,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { error } = await supabase.auth.signOut();
       if (error) {
         console.log('Logout error:', error.message);
-        // Still clear state even if logout fails
-        setUser(null);
-        setSession(null);
-        return;
       }
-      console.log('Logout successful');
+      
+      // Always clear state after logout attempt
+      setUser(null);
+      setSession(null);
+      
+      console.log('Logout successful, state cleared');
     } catch (error: any) {
       console.log('Logout error:', error.message);
       // Always clear state on error to prevent stuck state

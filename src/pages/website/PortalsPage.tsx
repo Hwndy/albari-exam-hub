@@ -10,28 +10,28 @@ export const PortalsPage = () => {
       title: "Student Portal",
       description: "Access exam schedules, results, assignments, and academic resources",
       icon: GraduationCap,
-      link: "/login",
+      link: "/login?portal=true&role=student",
       features: ["View Exam Results", "Class Schedules", "Assignments", "Academic Calendar"]
     },
     {
       title: "Parent Portal",
       description: "Monitor your child's academic progress, attendance, and school activities",
       icon: Users,
-      link: "/login",
+      link: "/login?portal=true&role=parent",
       features: ["Child's Progress", "Fee Payment", "Communication", "Events Updates"]
     },
     {
       title: "Teacher Portal",
       description: "Manage classes, create exams, track student performance and communicate with parents",
       icon: UserCheck,
-      link: "/login",
+      link: "/login?portal=true&role=teacher",
       features: ["Class Management", "Exam Creation", "Grade Reports", "Student Records"]
     },
     {
       title: "Admin Portal",
       description: "Comprehensive school management system for administrators and staff",
       icon: Shield,
-      link: "/login",
+      link: "/login?portal=true&role=admin",
       features: ["User Management", "System Settings", "Reports", "School Analytics"]
     }
   ];

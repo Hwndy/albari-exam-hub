@@ -14,7 +14,12 @@ export const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
   const [tokenValidated, setTokenValidated] = useState(false);
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, logout } = useAuth();
+  
+  // Check if user came from portal and needs forced login
+  const searchParams = new URLSearchParams(window.location.search);
+  const isPortalAccess = searchParams.get('portal') === 'true';
+  const requestedRole = searchParams.get('role');
 
   useEffect(() => {
     // Fetch app settings to check if student registration is allowed
@@ -33,7 +38,14 @@ export const AuthPage = () => {
     fetchSettings();
   }, []);
 
-  // Redirect authenticated users to their dashboard
+  // Handle portal access - force logout if coming from portal
+  React.useEffect(() => {
+    if (isPortalAccess && isAuthenticated) {
+      logout();
+    }
+  }, [isPortalAccess, isAuthenticated, logout]);
+
+  // Redirect authenticated users to their dashboard (only if not from portal)
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -45,7 +57,8 @@ export const AuthPage = () => {
     );
   }
 
-  if (isAuthenticated && user) {
+  // Don't auto-redirect if user came from portal - force them to login
+  if (isAuthenticated && user && !isPortalAccess) {
     switch (user.role) {
       case 'student':
         return <Navigate to="/dashboard" replace />;
@@ -105,6 +118,13 @@ export const AuthPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
+        {isPortalAccess && (
+          <div className="mb-4 p-4 bg-primary/10 border border-primary/20 rounded-lg">
+            <p className="text-sm text-primary text-center">
+              Please sign in to access your {requestedRole || 'portal'}
+            </p>
+          </div>
+        )}
         {renderForm()}
       </div>
     </div>
