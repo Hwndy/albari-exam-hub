@@ -4,15 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Plus, Edit, Trash2, Search, Eye, Upload } from 'lucide-react';
+import { Plus, Edit, Trash2, Eye, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { BulkQuestionImport } from './BulkQuestionImport';
 import { QuestionCategorizer } from '../shared/QuestionCategorizer';
+import { EnhancedQuestionForm } from '../shared/EnhancedQuestionForm';
 
 interface Question {
   id: string;
@@ -34,6 +33,20 @@ interface QuestionOption {
   option_order: number;
 }
 
+interface QuestionFormData {
+  questionText: string;
+  questionType: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
+  options: Array<{id: string, text: string, isCorrect: boolean}>;
+  difficulty: 'easy' | 'medium' | 'hard';
+  points: number;
+  explanation: string;
+  mediaUrl: string;
+  formulaLatex: string;
+  subjectId: string;
+  classId: string;
+  correctAnswers: string[];
+}
+
 export const AdminQuestionBank: React.FC = () => {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
@@ -44,22 +57,8 @@ export const AdminQuestionBank: React.FC = () => {
   const [previewQuestion, setPreviewQuestion] = useState<Question | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { user } = useAuth();
 
-  const [questionForm, setQuestionForm] = useState({
-    question_text: '',
-    question_type: 'mcq' as 'mcq' | 'true_false' | 'fill_blank',
-    difficulty_level: 'medium' as 'easy' | 'medium' | 'hard',
-    points: 1,
-    subject_id: '',
-    class_id: '',
-    explanation: '',
-    options: [
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-      { text: '', isCorrect: false },
-    ]
-  });
 
   useEffect(() => {
     fetchData();
@@ -69,7 +68,7 @@ export const AdminQuestionBank: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch questions with subject info
+      // Fetch questions with subject and class info
       const { data: questionsData } = await supabase
         .from('questions')
         .select(`
@@ -77,7 +76,9 @@ export const AdminQuestionBank: React.FC = () => {
           question_options(*),
           question_banks(
             subject_id,
-            subjects(name)
+            class_id,
+            subjects(name),
+            classes(name)
           )
         `)
         .order('created_at', { ascending: false });
@@ -99,7 +100,7 @@ export const AdminQuestionBank: React.FC = () => {
           ...q,
           options: q.question_options?.sort((a: any, b: any) => a.option_order - b.option_order) || [],
           subject_name: q.question_banks?.subjects?.name || 'Unknown',
-          class_name: 'All Classes'
+          class_name: q.question_banks?.classes?.name || 'All Classes'
         }));
         setQuestions(formattedQuestions);
         setFilteredQuestions(formattedQuestions);
@@ -119,98 +120,90 @@ export const AdminQuestionBank: React.FC = () => {
     }
   };
 
-  const handleAddQuestion = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleAddQuestion = async (questionData: QuestionFormData) => {
     try {
-      if (!questionForm.subject_id) {
-        toast({
-          title: 'Error',
-          description: 'Please select a subject',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      if (questionForm.question_type === 'mcq') {
-        const hasCorrectAnswer = questionForm.options.some(opt => opt.isCorrect);
-        if (!hasCorrectAnswer) {
-          toast({
-            title: 'Error',
-            description: 'Please mark at least one option as correct',
-            variant: 'destructive',
-          });
-          return;
-        }
-      }
-
-      // Get or create question bank
-      let { data: questionBank } = await supabase
+      // Find existing question bank or create new one for this subject and class
+      let questionBankId = null;
+      
+      const { data: existingBanks } = await supabase
         .from('question_banks')
-        .select('*')
-        .eq('subject_id', questionForm.subject_id)
-        .single();
+        .select('id')
+        .eq('subject_id', questionData.subjectId)
+        .eq('class_id', questionData.classId)
+        .limit(1);
 
-      if (!questionBank) {
-        const selectedSubject = subjects.find(s => s.id === questionForm.subject_id);
+      if (existingBanks && existingBanks.length > 0) {
+        questionBankId = existingBanks[0].id;
+      } else {
+        // Create new question bank
+        const subject = subjects.find(s => s.id === questionData.subjectId);
+        const cls = classes.find(c => c.id === questionData.classId);
         
-        const { data: newBank } = await supabase
+        const { data: newQuestionBank, error: bankError } = await supabase
           .from('question_banks')
           .insert({
-            name: `${selectedSubject?.name} Question Bank`,
-            description: `Question bank for ${selectedSubject?.name}`,
-            subject_id: questionForm.subject_id,
-            created_by: (await supabase.auth.getUser()).data.user?.id || ''
+            name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
+            subject_id: questionData.subjectId,
+            class_id: questionData.classId,
+            created_by: user?.id,
           })
           .select()
           .single();
-        
-        questionBank = newBank;
+
+        if (bankError) throw bankError;
+        questionBankId = newQuestionBank?.id;
       }
 
-      // Create the question
-      const { data: questionData, error: questionError } = await supabase
+      // Insert question
+      const { data: newQuestion, error: questionError } = await supabase
         .from('questions')
         .insert({
-          question_text: questionForm.question_text,
-          question_type: questionForm.question_type,
-          difficulty_level: questionForm.difficulty_level,
-          points: questionForm.points,
-          explanation: questionForm.explanation || null,
-          created_by: (await supabase.auth.getUser()).data.user?.id || '',
-          question_bank_id: questionBank?.id
+          question_text: questionData.questionText,
+          question_type: questionData.questionType,
+          difficulty_level: questionData.difficulty,
+          points: questionData.points,
+          explanation: questionData.explanation,
+          media_url: questionData.mediaUrl || null,
+          formula_latex: questionData.formulaLatex || null,
+          question_bank_id: questionBankId,
+          class_id: questionData.classId,
+          created_by: user?.id,
         })
         .select()
         .single();
 
       if (questionError) throw questionError;
 
-      // Create options
-      if (questionForm.question_type === 'mcq' || questionForm.question_type === 'true_false') {
-        const optionsToInsert = questionForm.question_type === 'true_false'
-          ? [
-              { question_id: questionData.id, option_text: 'True', is_correct: questionForm.options[0].isCorrect, option_order: 1 },
-              { question_id: questionData.id, option_text: 'False', is_correct: questionForm.options[1].isCorrect, option_order: 2 }
-            ]
-          : questionForm.options
-              .filter(opt => opt.text.trim() !== '')
-              .map((opt, index) => ({
-                question_id: questionData.id,
-                option_text: opt.text,
-                is_correct: opt.isCorrect,
-                option_order: index + 1,
-              }));
+      // Insert question options
+      if (questionData.questionType === 'mcq' || questionData.questionType === 'true_false') {
+        const optionsData = questionData.options.map((option, index) => ({
+          question_id: newQuestion.id,
+          option_text: option.text,
+          is_correct: option.isCorrect,
+          option_order: index + 1,
+        }));
 
         const { error: optionsError } = await supabase
           .from('question_options')
-          .insert(optionsToInsert);
+          .insert(optionsData);
+
+        if (optionsError) throw optionsError;
+      } else if (questionData.questionType === 'fill_blank') {
+        const correctAnswersData = questionData.correctAnswers.map((answer, index) => ({
+          question_id: newQuestion.id,
+          option_text: answer,
+          is_correct: true,
+          option_order: index + 1,
+        }));
+
+        const { error: optionsError } = await supabase
+          .from('question_options')
+          .insert(correctAnswersData);
 
         if (optionsError) throw optionsError;
       }
 
       await fetchData();
-      setIsAddingQuestion(false);
-      resetQuestionForm();
       
       toast({
         title: 'Question Added',
@@ -252,33 +245,6 @@ export const AdminQuestionBank: React.FC = () => {
     }
   };
 
-  const resetQuestionForm = () => {
-    setQuestionForm({
-      question_text: '',
-      question_type: 'mcq',
-      difficulty_level: 'medium',
-      points: 1,
-      subject_id: '',
-      class_id: '',
-      explanation: '',
-      options: [
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-        { text: '', isCorrect: false },
-      ]
-    });
-  };
-
-  const updateOption = (index: number, field: 'text' | 'isCorrect', value: string | boolean) => {
-    const newOptions = [...questionForm.options];
-    if (field === 'isCorrect' && value === true && questionForm.question_type === 'true_false') {
-      newOptions.forEach((opt, i) => opt.isCorrect = i === index);
-    } else {
-      newOptions[index] = { ...newOptions[index], [field]: value };
-    }
-    setQuestionForm({ ...questionForm, options: newOptions });
-  };
 
   const handleFilterChange = (filtered: Question[]) => {
     setFilteredQuestions(filtered);
@@ -353,178 +319,13 @@ export const AdminQuestionBank: React.FC = () => {
                 onCancel={() => setIsAddingQuestion(false)}
               />
             ) : (
-              <form onSubmit={handleAddQuestion} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="subject">Subject *</Label>
-                    <Select
-                      value={questionForm.subject_id}
-                      onValueChange={(value) => setQuestionForm({ ...questionForm, subject_id: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="class">Class *</Label>
-                    <Select
-                      value={questionForm.class_id}
-                      onValueChange={(value) => setQuestionForm({ ...questionForm, class_id: value })}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select class" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes.map(cls => (
-                          <SelectItem key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="question_text">Question *</Label>
-                  <Textarea
-                    id="question_text"
-                    value={questionForm.question_text}
-                    onChange={(e) => setQuestionForm({ ...questionForm, question_text: e.target.value })}
-                    placeholder="Enter your question here..."
-                    required
-                    rows={3}
-                  />
-                </div>
-                
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="question_type">Question Type</Label>
-                    <Select
-                      value={questionForm.question_type}
-                      onValueChange={(value: 'mcq' | 'true_false' | 'fill_blank') =>
-                        setQuestionForm({ ...questionForm, question_type: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="mcq">Multiple Choice</SelectItem>
-                        <SelectItem value="true_false">True/False</SelectItem>
-                        <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty_level">Difficulty</Label>
-                    <Select
-                      value={questionForm.difficulty_level}
-                      onValueChange={(value: 'easy' | 'medium' | 'hard') =>
-                        setQuestionForm({ ...questionForm, difficulty_level: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="easy">Easy</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="hard">Hard</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="points">Points</Label>
-                    <Input
-                      id="points"
-                      type="number"
-                      value={questionForm.points}
-                      onChange={(e) => setQuestionForm({ ...questionForm, points: parseInt(e.target.value) || 1 })}
-                      min="1"
-                      max="10"
-                    />
-                  </div>
-                </div>
-
-                {(questionForm.question_type === 'mcq' || questionForm.question_type === 'true_false') && (
-                  <div className="space-y-4">
-                    <Label>Options</Label>
-                    {questionForm.question_type === 'true_false' ? (
-                      <RadioGroup 
-                        value={questionForm.options.findIndex(opt => opt.isCorrect).toString()}
-                        onValueChange={(value) => {
-                          const newOptions = [
-                            { text: 'True', isCorrect: value === '0' },
-                            { text: 'False', isCorrect: value === '1' }
-                          ];
-                          setQuestionForm({ ...questionForm, options: newOptions });
-                        }}
-                      >
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="0" id="true" />
-                          <Label htmlFor="true">True</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="1" id="false" />
-                          <Label htmlFor="false">False</Label>
-                        </div>
-                      </RadioGroup>
-                    ) : (
-                      <div className="space-y-3">
-                        {questionForm.options.map((option, index) => (
-                          <div key={index} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              checked={option.isCorrect}
-                              onChange={(e) => updateOption(index, 'isCorrect', e.target.checked)}
-                              className="rounded border-gray-300"
-                            />
-                            <Label className="text-sm font-medium">
-                              {String.fromCharCode(65 + index)}.
-                            </Label>
-                            <Input
-                              value={option.text}
-                              onChange={(e) => updateOption(index, 'text', e.target.value)}
-                              placeholder={`Option ${String.fromCharCode(65 + index)}`}
-                              required={index < 2}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  <Label htmlFor="explanation">Explanation (Optional)</Label>
-                  <Textarea
-                    id="explanation"
-                    value={questionForm.explanation}
-                    onChange={(e) => setQuestionForm({ ...questionForm, explanation: e.target.value })}
-                    placeholder="Explain the correct answer..."
-                    rows={2}
-                  />
-                </div>
-                
-                <div className="flex space-x-2">
-                  <Button type="submit">Add Question</Button>
-                  <Button type="button" variant="outline" onClick={() => setIsAddingQuestion(false)}>
-                    Cancel
-                  </Button>
-                </div>
-              </form>
+              <EnhancedQuestionForm
+                onAddQuestion={handleAddQuestion}
+                classes={classes}
+                subjects={subjects}
+                onCancel={() => setIsAddingQuestion(false)}
+                onSaveAndClose={() => setIsAddingQuestion(false)}
+              />
             )}
           </DialogContent>
         </Dialog>

@@ -242,6 +242,7 @@ export const QuestionBank: React.FC = () => {
             onAddQuestion={handleAddQuestion}
             classes={classes}
             subjects={subjects}
+            onSaveAndClose={() => {}} // No close action needed in teacher view
           />
         </div>
         
