@@ -16,6 +16,7 @@ import { ExamInstructionsPage } from '@/pages/ExamInstructionsPage';
 import { ExamPage } from '@/pages/ExamPage';
 import { ExamResultsPage } from '@/pages/ExamResultsPage';
 import NotFound from '@/pages/NotFound';
+import { WebsiteRouter } from '@/pages/website/WebsiteRouter';
 
 const queryClient = new QueryClient();
 
@@ -129,6 +130,9 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
+            
+            {/* Website routes - publicly accessible */}
+            <Route path="/website/*" element={<WebsiteRouter />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

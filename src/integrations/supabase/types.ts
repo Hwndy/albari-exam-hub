@@ -299,6 +299,93 @@ export type Database = {
           },
         ]
       }
+      gallery: {
+        Row: {
+          alt_text: string | null
+          category: string
+          created_at: string
+          created_by: string
+          description: string | null
+          display_order: number
+          id: string
+          image_url: string
+          is_featured: boolean
+          title: string
+        }
+        Insert: {
+          alt_text?: string | null
+          category?: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url: string
+          is_featured?: boolean
+          title: string
+        }
+        Update: {
+          alt_text?: string | null
+          category?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_featured?: boolean
+          title?: string
+        }
+        Relationships: []
+      }
+      news_articles: {
+        Row: {
+          category: string
+          content: string
+          created_at: string
+          created_by: string
+          event_date: string | null
+          excerpt: string | null
+          featured_image: string | null
+          id: string
+          is_published: boolean
+          published_at: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          content: string
+          created_at?: string
+          created_by: string
+          event_date?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          content?: string
+          created_at?: string
+          created_by?: string
+          event_date?: string | null
+          excerpt?: string | null
+          featured_image?: string | null
+          id?: string
+          is_published?: boolean
+          published_at?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       password_reset_otps: {
         Row: {
           created_at: string
@@ -569,6 +656,36 @@ export type Database = {
           },
         ]
       }
+      school_info: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          info_key: string
+          info_value: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          id?: string
+          info_key: string
+          info_value: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          info_key?: string
+          info_value?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       subject_assignments: {
         Row: {
           class_id: string | null
@@ -657,6 +774,161 @@ export type Database = {
           created_at?: string | null
           id?: string
           teacher_id?: string
+        }
+        Relationships: []
+      }
+      testimonials: {
+        Row: {
+          content: string
+          created_at: string
+          created_by: string
+          id: string
+          image_url: string | null
+          is_featured: boolean
+          is_published: boolean
+          name: string
+          rating: number | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          created_by: string
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          is_published?: boolean
+          name: string
+          rating?: number | null
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          created_by?: string
+          id?: string
+          image_url?: string | null
+          is_featured?: boolean
+          is_published?: boolean
+          name?: string
+          rating?: number | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      website_pages: {
+        Row: {
+          content: string | null
+          created_at: string
+          created_by: string
+          id: string
+          is_published: boolean
+          meta_description: string | null
+          meta_title: string | null
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          is_published?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          is_published?: boolean
+          meta_description?: string | null
+          meta_title?: string | null
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      website_sections: {
+        Row: {
+          content: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_active: boolean
+          page_id: string | null
+          section_order: number
+          section_type: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          section_order?: number
+          section_type: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          page_id?: string | null
+          section_order?: number
+          section_type?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "website_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "website_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      website_settings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          setting_key: string
+          setting_value: Json
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key: string
+          setting_value: Json
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          setting_key?: string
+          setting_value?: Json
+          updated_at?: string
         }
         Relationships: []
       }
