@@ -60,21 +60,24 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
         return;
       }
 
-      // Get or create question bank
+      // Get or create question bank - include both subject and class
       let { data: questionBank } = await supabase
         .from('question_banks')
         .select('*')
         .eq('subject_id', subjectId)
+        .eq('class_id', classId)
         .single();
 
       if (!questionBank) {
         const selectedSubject = subjects.find(s => s.id === subjectId);
+        const selectedClass = classes.find(c => c.id === classId);
         const { data: newBank } = await supabase
           .from('question_banks')
           .insert({
-            name: `${selectedSubject?.name} Question Bank`,
-            description: `Question bank for ${selectedSubject?.name}`,
+            name: `${selectedSubject?.name} - ${selectedClass?.name} Question Bank`,
+            description: `Question bank for ${selectedSubject?.name} in ${selectedClass?.name}`,
             subject_id: subjectId,
+            class_id: classId,
             created_by: (await supabase.auth.getUser()).data.user?.id || ''
           })
           .select()
@@ -103,7 +106,8 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
                 points: questionData.points,
                 explanation: questionData.explanation || null,
                 created_by: (await supabase.auth.getUser()).data.user?.id || '',
-                question_bank_id: questionBank?.id
+                question_bank_id: questionBank?.id,
+                class_id: classId
               })
               .select()
               .single();
