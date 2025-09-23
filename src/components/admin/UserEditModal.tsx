@@ -85,16 +85,32 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         `)
         .eq('student_id', user.user_id);
 
+      const { data: teacherClassAssignments } = await supabase
+        .from('teacher_class_assignments')
+        .select(`
+          class_id,
+          classes(name)
+        `)
+        .eq('teacher_id', user.user_id);
+
       setUserAssignments({
         subjects: subjectAssignments || [],
-        classes: classAssignments || []
+        classes: classAssignments || [],
+        teacherClasses: teacherClassAssignments || []
       });
 
       // Update form data with current assignments
+      let currentClasses = [];
+      if (user.role === 'student') {
+        currentClasses = classAssignments?.map(c => c.class_id) || [];
+      } else if (user.role === 'teacher') {
+        currentClasses = teacherClassAssignments?.map(c => c.class_id) || [];
+      }
+
       setFormData(prev => ({
         ...prev,
         subjects: subjectAssignments?.map(s => s.subject_id) || [],
-        classes: classAssignments?.map(c => c.class_id) || []
+        classes: currentClasses
       }));
 
     } catch (error: any) {
@@ -142,26 +158,46 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         if (passwordError) throw passwordError;
       }
 
-      // Update subject assignments for teachers
+      // Update assignments based on role
       if (formData.role === 'teacher') {
-        // Remove existing assignments
+        // Remove existing subject assignments
         await supabase
           .from('subject_assignments')
           .delete()
           .eq('user_id', user.user_id);
 
-        // Add new assignments
+        // Remove existing teacher class assignments
+        await supabase
+          .from('teacher_class_assignments')
+          .delete()
+          .eq('teacher_id', user.user_id);
+
+        // Add new subject assignments
         if (formData.subjects.length > 0) {
-          const assignments = formData.subjects.map(subjectId => ({
+          const subjectAssignments = formData.subjects.map(subjectId => ({
             user_id: user.user_id,
             subject_id: subjectId
           }));
 
-          const { error: assignError } = await supabase
+          const { error: subjectError } = await supabase
             .from('subject_assignments')
-            .insert(assignments);
+            .insert(subjectAssignments);
 
-          if (assignError) throw assignError;
+          if (subjectError) throw subjectError;
+        }
+
+        // Add new teacher class assignments
+        if (formData.classes.length > 0) {
+          const classAssignments = formData.classes.map(classId => ({
+            teacher_id: user.user_id,
+            class_id: classId
+          }));
+
+          const { error: classError } = await supabase
+            .from('teacher_class_assignments')
+            .insert(classAssignments);
+
+          if (classError) throw classError;
         }
       }
 
@@ -280,143 +316,99 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
           </TabsContent>
 
           <TabsContent value="assignments" className="space-y-4">
-            {formData.role === 'teacher' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center">
-                    <Book className="h-4 w-4 mr-2" />
-                    Subject Assignments
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Current Subjects</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {userAssignments.subjects?.map((assignment: any) => (
-                        <Badge key={assignment.subject_id} variant="secondary">
-                          {assignment.subjects?.name}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Assign New Subjects</Label>
-                    <Select
-                      value=""
-                      onValueChange={(value) => {
-                        if (!formData.subjects.includes(value)) {
-                          setFormData({
-                            ...formData,
-                            subjects: [...formData.subjects, value]
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subjects to assign" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects
-                          .filter(subject => !formData.subjects.includes(subject.id))
-                          .map(subject => (
-                          <SelectItem key={subject.id} value={subject.id}>
-                            {subject.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>New Assignments</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.subjects.map(subjectId => {
-                        const subject = subjects.find(s => s.id === subjectId);
-                        return (
-                          <Badge key={subjectId} variant="default" className="cursor-pointer"
-                                 onClick={() => {
-                                   setFormData({
-                                     ...formData,
-                                     subjects: formData.subjects.filter(id => id !== subjectId)
-                                   });
-                                 }}>
-                            {subject?.name} ×
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            {formData.role === 'student' && (
+              <div className="space-y-2">
+                <Label htmlFor="class">Class</Label>
+                <Select 
+                  value={formData.classes[0] || ''} 
+                  onValueChange={(value) => setFormData({ ...formData, classes: value ? [value] : [] })}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px] overflow-y-auto">
+                    {classes.length > 0 ? (
+                      classes.map((cls) => (
+                        <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                      ))
+                    ) : (
+                      <SelectItem value="no-classes" disabled>No classes available</SelectItem>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
             )}
 
-            {formData.role === 'student' && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>Class Assignments</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Current Classes</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {userAssignments.classes?.map((assignment: any) => (
-                        <Badge key={assignment.class_id} variant="secondary">
-                          {assignment.classes?.name}
-                        </Badge>
-                      ))}
-                    </div>
+            {formData.role === 'teacher' && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="classes">Classes</Label>
+                  <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                    {classes.length > 0 ? (
+                      classes.map((cls) => (
+                        <div key={cls.id} className="flex items-center space-x-2 py-1">
+                          <input
+                            type="checkbox"
+                            id={`edit-class-${cls.id}`}
+                            checked={formData.classes.includes(cls.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({ 
+                                  ...formData, 
+                                  classes: [...formData.classes, cls.id] 
+                                });
+                              } else {
+                                setFormData({ 
+                                  ...formData, 
+                                  classes: formData.classes.filter(id => id !== cls.id) 
+                                });
+                              }
+                            }}
+                            className="rounded border-input"
+                          />
+                          <label htmlFor={`edit-class-${cls.id}`} className="text-sm text-foreground cursor-pointer">{cls.name}</label>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground py-2">No classes available</div>
+                    )}
                   </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Assign New Classes</Label>
-                    <Select
-                      value=""
-                      onValueChange={(value) => {
-                        if (!formData.classes.includes(value)) {
-                          setFormData({
-                            ...formData,
-                            classes: [...formData.classes, value]
-                          });
-                        }
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select classes to assign" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {classes
-                          .filter(cls => !formData.classes.includes(cls.id))
-                          .map(cls => (
-                          <SelectItem key={cls.id} value={cls.id}>
-                            {cls.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="subjects">Subjects *</Label>
+                  <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                    {subjects.length > 0 ? (
+                      subjects.map((subject) => (
+                        <div key={subject.id} className="flex items-center space-x-2 py-1">
+                          <input
+                            type="checkbox"
+                            id={`edit-subject-${subject.id}`}
+                            checked={formData.subjects.includes(subject.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setFormData({ 
+                                  ...formData, 
+                                  subjects: [...formData.subjects, subject.id] 
+                                });
+                              } else {
+                                setFormData({ 
+                                  ...formData, 
+                                  subjects: formData.subjects.filter(id => id !== subject.id) 
+                                });
+                              }
+                            }}
+                            className="rounded border-input"
+                          />
+                          <label htmlFor={`edit-subject-${subject.id}`} className="text-sm text-foreground cursor-pointer">{subject.name}</label>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground py-2">No subjects available</div>
+                    )}
                   </div>
-
-                  <div className="space-y-2">
-                    <Label>New Assignments</Label>
-                    <div className="flex flex-wrap gap-2">
-                      {formData.classes.map(classId => {
-                        const cls = classes.find(c => c.id === classId);
-                        return (
-                          <Badge key={classId} variant="default" className="cursor-pointer"
-                                 onClick={() => {
-                                   setFormData({
-                                     ...formData,
-                                     classes: formData.classes.filter(id => id !== classId)
-                                   });
-                                 }}>
-                            {cls?.name} ×
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                </div>
+              </>
             )}
           </TabsContent>
 

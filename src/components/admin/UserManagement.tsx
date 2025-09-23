@@ -30,7 +30,8 @@ export const UserManagement = () => {
     password: '',
     role: 'student' as 'admin' | 'teacher' | 'student',
     classId: '',
-    subjectId: '',
+    classIds: [] as string[],
+    subjectIds: [] as string[]
   });
 
   useEffect(() => {
@@ -76,6 +77,25 @@ export const UserManagement = () => {
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Validate role-specific requirements
+    if (userForm.role === 'student' && !userForm.classId) {
+      toast({
+        title: 'Error',
+        description: 'Please select a class for the student',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (userForm.role === 'teacher' && userForm.subjectIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one subject for the teacher',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     try {
       // Use the create_user_with_profile function
       const { data, error } = await supabase.rpc('create_user_with_profile', {
@@ -104,6 +124,42 @@ export const UserManagement = () => {
       });
 
       if (authError) throw authError;
+
+      if (authData.user) {
+        // Handle role-specific assignments
+        if (userForm.role === 'student' && userForm.classId) {
+          await supabase
+            .from('class_assignments')
+            .insert({
+              student_id: authData.user.id,
+              class_id: userForm.classId
+            });
+        }
+
+        if (userForm.role === 'teacher') {
+          // Add subject assignments
+          if (userForm.subjectIds.length > 0) {
+            const subjectAssignments = userForm.subjectIds.map(subjectId => ({
+              user_id: authData.user.id,
+              subject_id: subjectId
+            }));
+            await supabase
+              .from('subject_assignments')
+              .insert(subjectAssignments);
+          }
+
+          // Add class assignments for teachers
+          if (userForm.classIds.length > 0) {
+            const classAssignments = userForm.classIds.map(classId => ({
+              teacher_id: authData.user.id,
+              class_id: classId
+            }));
+            await supabase
+              .from('teacher_class_assignments')
+              .insert(classAssignments);
+          }
+        }
+      }
 
       // If successful, refresh the profiles list
       await fetchData();
@@ -193,7 +249,8 @@ export const UserManagement = () => {
       password: '',
       role: 'student',
       classId: '',
-      subjectId: '',
+      classIds: [],
+      subjectIds: []
     });
   };
 
@@ -205,7 +262,8 @@ export const UserManagement = () => {
       password: '',
       role: profile.role as 'admin' | 'teacher' | 'student',
       classId: '',
-      subjectId: '',
+      classIds: [],
+      subjectIds: []
     });
   };
 
@@ -331,7 +389,7 @@ export const UserManagement = () => {
                 <Select
                   value={userForm.role}
                   onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                    setUserForm({ ...userForm, role: value })
+                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [] })
                   }
                 >
                   <SelectTrigger>
@@ -344,6 +402,101 @@ export const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {userForm.role === 'student' && (
+                <div className="space-y-2">
+                  <Label htmlFor="class">Class</Label>
+                  <Select 
+                    value={userForm.classId} 
+                    onValueChange={(value) => setUserForm({ ...userForm, classId: value })}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[200px] overflow-y-auto">
+                      {classes.length > 0 ? (
+                        classes.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>{cls.name}</SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="no-classes" disabled>No classes available</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {userForm.role === 'teacher' && (
+                <>
+                  <div className="space-y-2">
+                    <Label htmlFor="classes">Classes</Label>
+                    <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                      {classes.length > 0 ? (
+                        classes.map((cls) => (
+                          <div key={cls.id} className="flex items-center space-x-2 py-1">
+                            <input
+                              type="checkbox"
+                              id={`add-class-${cls.id}`}
+                              checked={userForm.classIds.includes(cls.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setUserForm({ 
+                                    ...userForm, 
+                                    classIds: [...userForm.classIds, cls.id] 
+                                  });
+                                } else {
+                                  setUserForm({ 
+                                    ...userForm, 
+                                    classIds: userForm.classIds.filter(id => id !== cls.id) 
+                                  });
+                                }
+                              }}
+                              className="rounded border-input"
+                            />
+                            <label htmlFor={`add-class-${cls.id}`} className="text-sm text-foreground cursor-pointer">{cls.name}</label>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground py-2">No classes available</div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="subjects">Subjects *</Label>
+                    <div className="border border-input rounded-md p-3 max-h-40 overflow-y-auto bg-background">
+                      {subjects.length > 0 ? (
+                        subjects.map((subject) => (
+                          <div key={subject.id} className="flex items-center space-x-2 py-1">
+                            <input
+                              type="checkbox"
+                              id={`add-subject-${subject.id}`}
+                              checked={userForm.subjectIds.includes(subject.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setUserForm({ 
+                                    ...userForm, 
+                                    subjectIds: [...userForm.subjectIds, subject.id] 
+                                  });
+                                } else {
+                                  setUserForm({ 
+                                    ...userForm, 
+                                    subjectIds: userForm.subjectIds.filter(id => id !== subject.id) 
+                                  });
+                                }
+                              }}
+                              className="rounded border-input"
+                            />
+                            <label htmlFor={`add-subject-${subject.id}`} className="text-sm text-foreground cursor-pointer">{subject.name}</label>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground py-2">No subjects available</div>
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
               <div className="flex space-x-2">
                 <Button type="submit">Add User</Button>
                 <Button type="button" variant="outline" onClick={() => setIsAddingUser(false)}>
