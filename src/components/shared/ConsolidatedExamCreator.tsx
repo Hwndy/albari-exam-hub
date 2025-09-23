@@ -15,6 +15,7 @@ import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Tar
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { EnhancedQuestionForm } from './EnhancedQuestionForm';
 
 interface QuestionOption {
   id: string;
