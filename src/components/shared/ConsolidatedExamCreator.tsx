@@ -26,11 +26,14 @@ interface QuestionOption {
 interface Question {
   id: string;
   questionText: string;
+  questionType: 'mcq' | 'true_false' | 'fill_blank' | 'diagram';
   options: QuestionOption[];
   difficultyLevel: 'easy' | 'medium' | 'hard';
   marks: number;
   explanation: string;
-  tags: string;
+  mediaUrl?: string;
+  formulaLatex?: string;
+  correctAnswers?: string[];
 }
 
 interface QuestionCriteria {
@@ -110,6 +113,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
   // Manual question creation
   const [questions, setQuestions] = useState<Question[]>([]);
+  const [showQuestionForm, setShowQuestionForm] = useState(false);
 
   // Question bank selection
   const [selectedQuestionIds, setSelectedQuestionIds] = useState<string[]>([]);
@@ -282,33 +286,27 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
   };
 
   // Manual question creation functions
-  const addQuestion = useCallback(() => {
+  const handleAddQuestion = (questionData: any) => {
     const newQuestion: Question = {
       id: `q-${Date.now()}-${Math.random()}`,
-      questionText: '',
-      options: [
-        { id: `opt-${Date.now()}-1`, text: '', isCorrect: false },
-        { id: `opt-${Date.now()}-2`, text: '', isCorrect: false },
-        { id: `opt-${Date.now()}-3`, text: '', isCorrect: false },
-        { id: `opt-${Date.now()}-4`, text: '', isCorrect: false },
-      ],
-      difficultyLevel: 'medium',
-      marks: 1,
-      explanation: '',
-      tags: '',
+      questionText: questionData.questionText,
+      questionType: questionData.questionType,
+      options: questionData.options,
+      difficultyLevel: questionData.difficulty,
+      marks: questionData.points,
+      explanation: questionData.explanation,
+      mediaUrl: questionData.mediaUrl,
+      formulaLatex: questionData.formulaLatex,
+      correctAnswers: questionData.correctAnswers,
     };
     setQuestions(prev => [...prev, newQuestion]);
-  }, []);
+    setShowQuestionForm(false);
+  };
 
   const removeQuestion = useCallback((questionId: string) => {
     setQuestions(prev => prev.filter(q => q.id !== questionId));
   }, []);
 
-  const updateQuestion = useCallback((questionId: string, field: keyof Question, value: any) => {
-    setQuestions(prev => prev.map(q => 
-      q.id === questionId ? { ...q, [field]: value } : q
-    ));
-  }, []);
 
   // Question bank selection functions
   const toggleQuestionSelection = (questionId: string) => {
@@ -447,13 +445,14 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     let questionsToSave: any[] = [];
 
     switch (activeTab) {
-      case 'manual':
+        case 'manual':
         // Create question bank and save manual questions
         const { data: questionBank } = await supabase
           .from('question_banks')
           .insert({
             name: `${metadata.title} - Questions`,
             subject_id: metadata.subjectId,
+            class_id: metadata.classId,
             created_by: user?.id,
           })
           .select()
@@ -465,26 +464,51 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             .from('questions')
             .insert({
               question_text: question.questionText,
-              question_type: 'mcq',
+              question_type: question.questionType,
               difficulty_level: question.difficultyLevel,
               points: question.marks,
               explanation: question.explanation,
+              media_url: question.mediaUrl,
+              formula_latex: question.formulaLatex,
               created_by: user?.id,
               question_bank_id: questionBank?.id,
+              class_id: metadata.classId,
             })
             .select()
             .single();
 
           if (questionRecord) {
-            // Save options
-            const optionsToInsert = question.options.map((opt, index) => ({
-              question_id: questionRecord.id,
-              option_text: opt.text,
-              is_correct: opt.isCorrect,
-              option_order: index + 1,
-            }));
+            // Save options based on question type
+            let optionsToInsert: any[] = [];
+            
+            if (question.questionType === 'mcq' || question.questionType === 'true_false') {
+              optionsToInsert = question.options.map((opt, index) => ({
+                question_id: questionRecord.id,
+                option_text: opt.text,
+                is_correct: opt.isCorrect,
+                option_order: index + 1,
+              }));
+            } else if (question.questionType === 'fill_blank') {
+              // For fill in the blank, save correct answers as options
+              optionsToInsert = question.correctAnswers?.map((answer, index) => ({
+                question_id: questionRecord.id,
+                option_text: answer,
+                is_correct: true,
+                option_order: index + 1,
+              })) || [];
+            } else if (question.questionType === 'diagram') {
+              // For diagram questions, save options if they exist (MCQ-style)
+              optionsToInsert = question.options.map((opt, index) => ({
+                question_id: questionRecord.id,
+                option_text: opt.text,
+                is_correct: opt.isCorrect,
+                option_order: index + 1,
+              }));
+            }
 
-            await supabase.from('question_options').insert(optionsToInsert);
+            if (optionsToInsert.length > 0) {
+              await supabase.from('question_options').insert(optionsToInsert);
+            }
 
             questionsToSave.push({
               exam_id: examId,
@@ -737,109 +761,96 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             </TabsContent>
 
             <TabsContent value="manual" className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-semibold">Manual Question Creation</h3>
-                <Button onClick={addQuestion}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </div>
-              
-              {questions.length === 0 ? (
-                <Card>
-                  <CardContent className="text-center py-8">
-                    <p className="text-muted-foreground">No questions added yet. Click "Add Question" to start.</p>
-                  </CardContent>
-                </Card>
-              ) : (
-                <div className="space-y-4">
-                  {questions.map((question, index) => (
-                    <Card key={question.id}>
-                      <CardHeader className="flex flex-row items-center justify-between">
-                        <CardTitle className="text-base">Question {index + 1}</CardTitle>
-                        <Button variant="outline" size="sm" onClick={() => removeQuestion(question.id)}>
-                          <X className="h-4 w-4" />
-                        </Button>
-                      </CardHeader>
-                      <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                          <Label>Question Text</Label>
-                          <Textarea
-                            value={question.questionText}
-                            onChange={(e) => updateQuestion(question.id, 'questionText', e.target.value)}
-                            placeholder="Enter question text"
-                          />
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <div className="space-y-2">
-                            <Label>Difficulty</Label>
-                            <Select
-                              value={question.difficultyLevel}
-                              onValueChange={(value: 'easy' | 'medium' | 'hard') => updateQuestion(question.id, 'difficultyLevel', value)}
-                            >
-                              <SelectTrigger>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="easy">Easy</SelectItem>
-                                <SelectItem value="medium">Medium</SelectItem>
-                                <SelectItem value="hard">Hard</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label>Marks</Label>
-                            <Input
-                              type="number"
-                              value={question.marks}
-                              onChange={(e) => updateQuestion(question.id, 'marks', parseInt(e.target.value) || 1)}
-                              min={1}
-                            />
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Options</Label>
-                          <div className="space-y-2">
-                            {question.options.map((option, optIndex) => (
-                              <div key={option.id} className="flex items-center space-x-2">
-                                <Checkbox
-                                  checked={option.isCorrect}
-                                  onCheckedChange={(checked) => {
-                                    const newOptions = question.options.map(opt => ({
-                                      ...opt,
-                                      isCorrect: opt.id === option.id ? !!checked : false
-                                    }));
-                                    updateQuestion(question.id, 'options', newOptions);
-                                  }}
-                                />
-                                <Input
-                                  placeholder={`Option ${String.fromCharCode(65 + optIndex)}`}
-                                  value={option.text}
-                                  onChange={(e) => {
-                                    const newOptions = question.options.map(opt =>
-                                      opt.id === option.id ? { ...opt, text: e.target.value } : opt
-                                    );
-                                    updateQuestion(question.id, 'options', newOptions);
-                                  }}
-                                />
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label>Explanation (Optional)</Label>
-                          <Textarea
-                            value={question.explanation}
-                            onChange={(e) => updateQuestion(question.id, 'explanation', e.target.value)}
-                            placeholder="Enter explanation for the correct answer"
-                          />
-                        </div>
+              {!showQuestionForm ? (
+                <>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Manual Question Creation</h3>
+                    <Button onClick={() => setShowQuestionForm(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Question
+                    </Button>
+                  </div>
+                  
+                  {questions.length === 0 ? (
+                    <Card>
+                      <CardContent className="text-center py-8">
+                        <p className="text-muted-foreground">No questions added yet. Click "Add Question" to start.</p>
                       </CardContent>
                     </Card>
-                  ))}
+                  ) : (
+                    <div className="space-y-4">
+                      {questions.map((question, index) => (
+                        <Card key={question.id}>
+                          <CardContent className="p-4">
+                            <div className="flex justify-between items-start">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <Badge variant="outline">{question.questionType.toUpperCase()}</Badge>
+                                  <Badge variant="secondary">{question.difficultyLevel}</Badge>
+                                  <span className="text-sm text-muted-foreground">{question.marks} points</span>
+                                </div>
+                                <p className="font-medium mb-2">{index + 1}. {question.questionText}</p>
+                                {question.mediaUrl && (
+                                  <div className="mb-2">
+                                    <img src={question.mediaUrl} alt="Question media" className="max-w-xs max-h-32 rounded border" />
+                                  </div>
+                                )}
+                                {question.formulaLatex && (
+                                  <div className="mb-2 p-2 bg-gray-50 rounded">
+                                    <code className="text-sm">{question.formulaLatex}</code>
+                                  </div>
+                                )}
+                                {question.questionType === 'mcq' || question.questionType === 'true_false' ? (
+                                  <ul className="text-sm space-y-1">
+                                    {question.options.map((opt, optIndex) => (
+                                      <li key={opt.id} className={`flex items-center gap-2 ${opt.isCorrect ? 'text-green-600 font-medium' : ''}`}>
+                                        <span className="min-w-0 flex-shrink-0">{String.fromCharCode(65 + optIndex)}.</span>
+                                        <span>{opt.text}</span>
+                                        {opt.isCorrect && <span className="text-xs">(Correct)</span>}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : question.questionType === 'fill_blank' && question.correctAnswers ? (
+                                  <div className="text-sm">
+                                    <span className="font-medium">Correct answers: </span>
+                                    {question.correctAnswers.join(', ')}
+                                  </div>
+                                ) : null}
+                                {question.explanation && (
+                                  <p className="text-sm text-muted-foreground mt-2">
+                                    <strong>Explanation:</strong> {question.explanation}
+                                  </p>
+                                )}
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeQuestion(question.id)}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-lg font-semibold">Create New Question</h3>
+                    <Button variant="outline" onClick={() => setShowQuestionForm(false)}>
+                      <X className="h-4 w-4 mr-2" />
+                      Cancel
+                    </Button>
+                  </div>
+                  <EnhancedQuestionForm
+                    onAddQuestion={handleAddQuestion}
+                    classes={classes}
+                    subjects={subjects}
+                    onCancel={() => setShowQuestionForm(false)}
+                  />
                 </div>
               )}
             </TabsContent>
