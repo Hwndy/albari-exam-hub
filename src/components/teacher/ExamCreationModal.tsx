@@ -594,8 +594,7 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
               <TabsTrigger value="metadata">
                 <FileText className="h-4 w-4 mr-2" />
@@ -957,27 +956,26 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
               </div>
             </ScrollArea>
           </TabsContent>
-        </Tabs>
-      </div>
-
-      <div className="flex justify-between items-center pt-6 border-t flex-shrink-0">
-        <Button variant="outline" onClick={() => handleOpenChange(false)}>
-          Cancel
-        </Button>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={saveDraft} disabled={saving}>
-            <Save className="h-4 w-4 mr-2" />
-            {editingExam ? 'Update' : 'Save Draft'}
-          </Button>
-          {!editingExam && (
-            <Button onClick={publishExam} disabled={saving}>
-              <Eye className="h-4 w-4 mr-2" />
-              Publish Exam
+        
+          <div className="flex justify-between items-center pt-6 border-t flex-shrink-0">
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
             </Button>
-          )}
-        </div>
-      </div>
-    </DialogContent>
-  </Dialog>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={saveDraft} disabled={saving}>
+                <Save className="h-4 w-4 mr-2" />
+                {editingExam ? 'Update' : 'Save Draft'}
+              </Button>
+              {!editingExam && (
+                <Button onClick={publishExam} disabled={saving}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Publish Exam
+                </Button>
+              )}
+            </div>
+          </div>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
 );
 };

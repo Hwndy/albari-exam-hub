@@ -547,24 +547,23 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       <DialogTrigger asChild>
         {trigger}
       </DialogTrigger>
-      <DialogContent className="max-w-6xl h-[90vh] flex flex-col overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle>
             {editingExam ? 'Edit Exam' : 'Create New Exam'}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 flex flex-col min-h-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
-              <TabsTrigger value="metadata">Details</TabsTrigger>
-              <TabsTrigger value="manual">Manual Questions</TabsTrigger>
-              <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
-              <TabsTrigger value="randomized">Randomized</TabsTrigger>
-            </TabsList>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
+          <TabsList className="grid w-full grid-cols-4 flex-shrink-0">
+            <TabsTrigger value="metadata">Details</TabsTrigger>
+            <TabsTrigger value="manual">Manual Questions</TabsTrigger>
+            <TabsTrigger value="question-bank">Question Bank</TabsTrigger>
+            <TabsTrigger value="randomized">Randomized</TabsTrigger>
+          </TabsList>
 
-            <div className="flex-1 mt-4">
-              <ScrollArea className="h-full">
+          <div className="flex-1 min-h-0 mt-4">
+            <ScrollArea className="h-full pr-4">
             <TabsContent value="metadata" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -989,29 +988,28 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                 </Card>
               )}
             </TabsContent>
-          </ScrollArea>
-        </div>
+            </ScrollArea>
+          </div>
 
-        <div className="flex justify-between items-center pt-4 border-t flex-shrink-0">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-muted-foreground">Total Questions:</span>
-            <Badge variant="outline">{getTotalQuestionCount()}</Badge>
+          <div className="flex justify-between items-center pt-4 border-t flex-shrink-0">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-muted-foreground">Total Questions:</span>
+              <Badge variant="outline">{getTotalQuestionCount()}</Badge>
+            </div>
+            <div className="flex space-x-2">
+              <Button variant="outline" onClick={() => handleOpenChange(false)}>
+                Cancel
+              </Button>
+              <Button onClick={() => saveExam('draft')} disabled={saving}>
+                {saving ? 'Saving...' : 'Save Draft'}
+              </Button>
+              <Button onClick={() => saveExam('published')} disabled={saving}>
+                {saving ? 'Publishing...' : 'Publish'}
+              </Button>
+            </div>
           </div>
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button onClick={() => saveExam('draft')} disabled={saving}>
-              {saving ? 'Saving...' : 'Save Draft'}
-            </Button>
-            <Button onClick={() => saveExam('published')} disabled={saving}>
-              {saving ? 'Publishing...' : 'Publish'}
-            </Button>
-          </div>
-        </div>
-      </Tabs>
-    </div>
-  </DialogContent>
-</Dialog>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
   );
 };
