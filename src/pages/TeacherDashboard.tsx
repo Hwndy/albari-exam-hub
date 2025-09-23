@@ -64,12 +64,14 @@ export const TeacherDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="exams" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-            <TabsTrigger value="exams">My Exams</TabsTrigger>
-            <TabsTrigger value="results">Student Results</TabsTrigger>
-            <TabsTrigger value="students">Create Student</TabsTrigger>
-            <TabsTrigger value="assignments">Class Assignments</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
+              <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">My Exams</TabsTrigger>
+              <TabsTrigger value="results" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Student Results</TabsTrigger>
+              <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>
+              <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Class Assignments</TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="exams" className="space-y-4">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

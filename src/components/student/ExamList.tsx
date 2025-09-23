@@ -253,46 +253,41 @@ export const ExamList: React.FC = () => {
               {activeExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/5 transition-colors space-y-4 lg:space-y-0"
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-2">
-                      <h3 className="font-semibold">{exam.title}</h3>
-                      <Badge variant={getStatusColor(exam.status)}>
-                        {getStatusIcon(exam.status)}
-                        <span className="ml-1 capitalize">{exam.status}</span>
-                      </Badge>
-                      {exam.session?.status === 'in_progress' && (
-                        <Badge variant="secondary">In Progress</Badge>
-                      )}
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                      <h3 className="font-semibold text-base lg:text-lg">{exam.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant={getStatusColor(exam.status)}>
+                          {getStatusIcon(exam.status)}
+                          <span className="ml-1 capitalize">{exam.status}</span>
+                        </Badge>
+                        {exam.session?.status === 'in_progress' && (
+                          <Badge variant="secondary">In Progress</Badge>
+                        )}
+                      </div>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:space-x-4 gap-2 lg:gap-0 text-sm text-muted-foreground">
                       {exam.subject_name && (
-                        <>
-                          <span className="flex items-center">
-                            <BookOpen className="h-3 w-3 mr-1" />
-                            {exam.subject_name}
-                          </span>
-                        </>
+                        <span className="flex items-center">
+                          <BookOpen className="h-3 w-3 mr-1 flex-shrink-0" />
+                          {exam.subject_name}
+                        </span>
                       )}
                       {exam.class_name && (
-                        <>
-                          <span>•</span>
-                          <span className="flex items-center">
-                            <Users className="h-3 w-3 mr-1" />
-                            {exam.class_name}
-                          </span>
-                        </>
+                        <span className="flex items-center">
+                          <Users className="h-3 w-3 mr-1 flex-shrink-0" />
+                          {exam.class_name}
+                        </span>
                       )}
-                      <span>•</span>
                       <span className="flex items-center">
-                        <Clock className="h-3 w-3 mr-1" />
+                        <Clock className="h-3 w-3 mr-1 flex-shrink-0" />
                         {exam.duration_minutes} minutes
                       </span>
-                      <span>•</span>
                       <span className="flex items-center">
-                        <FileText className="h-3 w-3 mr-1" />
+                        <FileText className="h-3 w-3 mr-1 flex-shrink-0" />
                         {exam.total_questions} questions
                       </span>
                     </div>
@@ -305,7 +300,7 @@ export const ExamList: React.FC = () => {
                     
                     {exam.session?.status === 'in_progress' && (
                       <div className="space-y-2">
-                        <div className="flex items-center space-x-4 text-sm">
+                        <div className="flex flex-col sm:flex-row sm:items-center space-y-1 sm:space-y-0 sm:space-x-4 text-sm">
                           <span>Progress: {exam.session.current_question_index + 1}/{exam.total_questions}</span>
                           <span className="flex items-center text-warning">
                             <Timer className="h-3 w-3 mr-1" />
@@ -320,17 +315,18 @@ export const ExamList: React.FC = () => {
                     )}
                     
                     {exam.start_date && exam.end_date && (
-                      <div className="flex items-center space-x-4 text-xs text-muted-foreground">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-muted-foreground">
                         <span>Available: {format(new Date(exam.start_date), 'PPP')}</span>
                         <span>Until: {format(new Date(exam.end_date), 'PPP')}</span>
                       </div>
                     )}
                   </div>
                   
-                  <div className="flex flex-col space-y-2">
+                  <div className="flex flex-col space-y-2 lg:ml-4">
                     <Button 
                       onClick={() => handleStartExam(exam.id)}
-                      className={exam.session?.status === 'in_progress' ? 'bg-warning hover:bg-warning/90' : ''}
+                      className={`w-full lg:w-auto ${exam.session?.status === 'in_progress' ? 'bg-warning hover:bg-warning/90' : ''}`}
+                      size="lg"
                     >
                       {exam.session?.status === 'in_progress' ? 'Resume' : 'Start'} Exam
                     </Button>
@@ -361,10 +357,10 @@ export const ExamList: React.FC = () => {
               {upcomingExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg opacity-75"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border border-border rounded-lg opacity-75 space-y-4 lg:space-y-0"
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                       <h3 className="font-semibold">{exam.title}</h3>
                       <Badge variant="secondary">
                         <Calendar className="h-3 w-3 mr-1" />
@@ -372,17 +368,10 @@ export const ExamList: React.FC = () => {
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:space-x-4 gap-2 lg:gap-0 text-sm text-muted-foreground">
                       {exam.subject_name && <span>{exam.subject_name}</span>}
-                      {exam.class_name && (
-                        <>
-                          <span>•</span>
-                          <span>{exam.class_name}</span>
-                        </>
-                      )}
-                      <span>•</span>
+                      {exam.class_name && <span>{exam.class_name}</span>}
                       <span>{exam.duration_minutes} minutes</span>
-                      <span>•</span>
                       <span>{exam.total_questions} questions</span>
                     </div>
                     
@@ -393,7 +382,7 @@ export const ExamList: React.FC = () => {
                     )}
                   </div>
                   
-                  <Button disabled variant="outline">
+                  <Button disabled variant="outline" className="w-full lg:w-auto" size="lg">
                     Not Yet Available
                   </Button>
                 </div>
@@ -417,10 +406,10 @@ export const ExamList: React.FC = () => {
               {completedExams.map((exam) => (
                 <div
                   key={exam.id}
-                  className="flex items-center justify-between p-4 border border-border rounded-lg"
+                  className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border border-border rounded-lg space-y-4 lg:space-y-0"
                 >
-                  <div className="flex-1 space-y-2">
-                    <div className="flex items-center space-x-2">
+                  <div className="flex-1 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
                       <h3 className="font-semibold">{exam.title}</h3>
                       <Badge variant="outline">
                         <CheckCircle className="h-3 w-3 mr-1" />
@@ -428,37 +417,30 @@ export const ExamList: React.FC = () => {
                       </Badge>
                     </div>
                     
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center lg:space-x-4 gap-2 lg:gap-0 text-sm text-muted-foreground">
                       {exam.subject_name && <span>{exam.subject_name}</span>}
-                      {exam.class_name && (
-                        <>
-                          <span>•</span>
-                          <span>{exam.class_name}</span>
-                        </>
-                      )}
-                      <span>•</span>
+                      {exam.class_name && <span>{exam.class_name}</span>}
                       <span>{exam.duration_minutes} minutes</span>
-                      <span>•</span>
                       <span>{exam.total_questions} questions</span>
                     </div>
                   </div>
                   
-                  <div className="text-right space-y-1">
+                  <div className="text-center lg:text-right space-y-2 lg:ml-4">
                     {exam.session?.total_score !== undefined && exam.session?.max_score !== undefined && (
                       <>
-                        <div className="text-lg font-bold">
+                        <div className="text-xl lg:text-2xl font-bold">
                           {exam.session.total_score}/{exam.session.max_score}
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-center lg:justify-end space-y-2 sm:space-y-0 sm:space-x-2">
                           <Progress 
                             value={exam.session.percentage || 0} 
-                            className="w-20"
+                            className="w-full sm:w-20"
                           />
                           <span className="text-sm font-medium">
                             {Math.round(exam.session.percentage || 0)}%
                           </span>
                         </div>
-                        <div className={`text-sm ${
+                        <div className={`text-sm font-medium ${
                           (exam.session.percentage || 0) >= exam.pass_mark 
                             ? 'text-success' 
                             : 'text-destructive'

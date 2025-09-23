@@ -254,17 +254,19 @@ export const AdminDashboard = () => {
 
         {/* Main Content Tabs */}
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 lg:grid-cols-9 gap-1">
-            <TabsTrigger value="overview" className="text-xs sm:text-sm">Overview</TabsTrigger>
-            <TabsTrigger value="exams" className="text-xs sm:text-sm">Exams</TabsTrigger>
-            <TabsTrigger value="results" className="text-xs sm:text-sm">Results</TabsTrigger>
-            <TabsTrigger value="users" className="text-xs sm:text-sm">Users</TabsTrigger>
-            <TabsTrigger value="classes" className="text-xs sm:text-sm">Classes</TabsTrigger>
-            <TabsTrigger value="subjects" className="text-xs sm:text-sm">Subjects</TabsTrigger>
-            <TabsTrigger value="questions" className="text-xs sm:text-sm">Questions</TabsTrigger>
-            <TabsTrigger value="monitor-logs" className="text-xs sm:text-sm">Monitor & Logs</TabsTrigger>
-            <TabsTrigger value="results-modal" className="text-xs sm:text-sm">All Results</TabsTrigger>
-          </TabsList>
+          <div className="overflow-x-auto">
+            <TabsList className="flex w-max min-w-full h-auto flex-wrap gap-1 p-1">
+              <TabsTrigger value="overview" className="text-xs px-2 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="exams" className="text-xs px-2 py-1.5 whitespace-nowrap">Exams</TabsTrigger>
+              <TabsTrigger value="results" className="text-xs px-2 py-1.5 whitespace-nowrap">Results</TabsTrigger>
+              <TabsTrigger value="users" className="text-xs px-2 py-1.5 whitespace-nowrap">Users</TabsTrigger>
+              <TabsTrigger value="classes" className="text-xs px-2 py-1.5 whitespace-nowrap">Classes</TabsTrigger>
+              <TabsTrigger value="subjects" className="text-xs px-2 py-1.5 whitespace-nowrap">Subjects</TabsTrigger>
+              <TabsTrigger value="questions" className="text-xs px-2 py-1.5 whitespace-nowrap">Questions</TabsTrigger>
+              <TabsTrigger value="monitor-logs" className="text-xs px-2 py-1.5 whitespace-nowrap">Monitor</TabsTrigger>
+              <TabsTrigger value="results-modal" className="text-xs px-2 py-1.5 whitespace-nowrap">All Results</TabsTrigger>
+            </TabsList>
+          </div>
 
           {/* Exams Tab */}
           <TabsContent value="exams" className="space-y-6">

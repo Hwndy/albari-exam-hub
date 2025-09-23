@@ -426,9 +426,214 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
         </div>
       </header>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <ResizablePanelGroup direction="horizontal" className="h-full">
+      {/* Conditional Rendering for Mobile vs Desktop */}
+      {isMobile ? (
+        // Import and use the mobile interface
+        <div className="flex-1">
+          {/* We'll render the mobile interface content here */}
+          <div className="flex flex-col h-full">
+            {/* Mobile Question Content */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <div className="max-w-2xl mx-auto">
+                {currentQ && (
+                  <Card className="border-none shadow-none">
+                    <CardContent className="p-0">
+                      <div className="space-y-6">
+                        {/* Question Header */}
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline" className="text-xs">
+                            {currentQ.subject} • {currentQ.difficulty}
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleFlag(currentQuestion)}
+                            className={flaggedQuestions.has(currentQuestion) ? 'text-warning' : ''}
+                          >
+                            <Flag className="h-4 w-4" />
+                            {flaggedQuestions.has(currentQuestion) ? 'Unflag' : 'Flag'}
+                          </Button>
+                        </div>
+
+                        {/* Question Text */}
+                        <div className="prose prose-sm max-w-none">
+                          <div 
+                            className="text-foreground leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: currentQ.question }}
+                          />
+                        </div>
+
+                        {/* Question Image */}
+                        {currentQ.media_url && (
+                          <div className="flex justify-center">
+                            <img 
+                              src={currentQ.media_url} 
+                              alt="Question diagram"
+                              className="max-w-full h-auto rounded-lg border"
+                            />
+                          </div>
+                        )}
+
+                        {/* Answer Options */}
+                        <div className="space-y-3">
+                          <RadioGroup
+                            value={answers[currentQ.id] || ''}
+                            onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
+                          >
+                            {Object.entries(currentQ.options || {}).map(([key, value]) => (
+                              <div key={key} className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
+                                <RadioGroupItem value={key} id={`option-${key}`} className="mt-0.5" />
+                                <Label 
+                                  htmlFor={`option-${key}`} 
+                                  className="flex-1 cursor-pointer leading-relaxed"
+                                >
+                                  <span className="font-medium text-primary mr-2">{key}.</span>
+                                  <span dangerouslySetInnerHTML={{ __html: value as string }} />
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile Navigation Footer */}
+            <div className="border-t bg-background/95 backdrop-blur p-4">
+              <div className="flex items-center justify-between mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+                  disabled={currentQuestion === 0}
+                  className="flex-1 mr-2"
+                >
+                  Previous
+                </Button>
+                <div className="text-xs text-center px-2">
+                  {currentQuestion + 1}/{questions.length}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))}
+                  disabled={currentQuestion === questions.length - 1}
+                  className="flex-1 ml-2"
+                >
+                  Next
+                </Button>
+              </div>
+              
+              {/* Quick Navigation */}
+              <div className="flex justify-center mb-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const sheet = document.getElementById('mobile-question-nav');
+                    if (sheet) sheet.style.display = 'block';
+                  }}
+                  className="text-xs"
+                >
+                  Question Navigation
+                </Button>
+              </div>
+
+              {/* Submit Button */}
+              <Button onClick={handleSubmit} variant="default" className="w-full">
+                Submit Exam
+              </Button>
+            </div>
+
+            {/* Mobile Question Navigation Sheet */}
+            <div id="mobile-question-nav" className="fixed inset-0 z-50 bg-background/95 backdrop-blur" style={{ display: 'none' }}>
+              <div className="flex flex-col h-full">
+                <div className="flex items-center justify-between p-4 border-b">
+                  <h3 className="font-semibold">Question Navigation</h3>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const sheet = document.getElementById('mobile-question-nav');
+                      if (sheet) sheet.style.display = 'none';
+                    }}
+                  >
+                    Close
+                  </Button>
+                </div>
+                
+                <ScrollArea className="flex-1 p-4">
+                  <div className="grid grid-cols-6 gap-2 mb-6">
+                    {questions.map((_, index) => {
+                      const status = getQuestionStatus(index);
+                      const isCurrent = index === currentQuestion;
+                      
+                      return (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className={`
+                            relative h-12 w-12 p-0 text-xs font-medium transition-all
+                            ${isCurrent 
+                              ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/20' 
+                              : status === 'answered'
+                                ? 'bg-success text-success-foreground'
+                                : status === 'flagged'
+                                  ? 'bg-warning text-warning-foreground'
+                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            }
+                          `}
+                          onClick={() => {
+                            setCurrentQuestion(index);
+                            const sheet = document.getElementById('mobile-question-nav');
+                            if (sheet) sheet.style.display = 'none';
+                          }}
+                        >
+                          <span className="absolute inset-0 flex items-center justify-center">
+                            {index + 1}
+                          </span>
+                          {flaggedQuestions.has(index) && (
+                            <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 text-warning fill-current" />
+                          )}
+                        </Button>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="space-y-3 text-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded bg-success"></div>
+                      <span>Answered ({Object.keys(answers).length})</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded bg-warning"></div>
+                      <span>Flagged ({flaggedQuestions.size})</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-4 h-4 rounded bg-muted"></div>
+                      <span>Unanswered ({questions.length - Object.keys(answers).length})</span>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        // Desktop Layout - Resizable Panels
+        <div className="flex-1 overflow-hidden">
+          <ResizablePanelGroup direction="horizontal" className="h-full">
+            {/* ... keep existing desktop code ... */}
+          </ResizablePanelGroup>
+        </div>
+      )}
+    </div>
+  );
           {/* Question Navigation Panel */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full bg-muted/30 border-r">

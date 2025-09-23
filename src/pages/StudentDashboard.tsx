@@ -108,58 +108,58 @@ export const StudentDashboard = () => {
     <DashboardLayout title="Student Dashboard">
       <div className="space-y-8">
         {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="p-1.5 sm:p-2 bg-primary/10 rounded-lg flex-shrink-0">
+                  <BookOpen className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.availableExams}</p>
-                  <p className="text-sm text-muted-foreground">Available Exams</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.availableExams}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Available Exams</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-success/10 rounded-lg">
-                  <Trophy className="h-6 w-6 text-success" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="p-1.5 sm:p-2 bg-success/10 rounded-lg flex-shrink-0">
+                  <Trophy className="h-4 w-4 sm:h-6 sm:w-6 text-success" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.completedExams}</p>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-warning/10 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-warning" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.averageScore}%</p>
-                  <p className="text-sm text-muted-foreground">Average Score</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.completedExams}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Completed</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <Clock className="h-6 w-6 text-primary" />
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="p-1.5 sm:p-2 bg-warning/10 rounded-lg flex-shrink-0">
+                  <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-warning" />
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.totalStudyTime} min</p>
-                  <p className="text-sm text-muted-foreground">Study Time</p>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.averageScore}%</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Average Score</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4 sm:p-6">
+              <div className="flex items-center space-x-2 sm:space-x-4">
+                <div className="p-1.5 sm:p-2 bg-accent/10 rounded-lg flex-shrink-0">
+                  <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xl sm:text-2xl font-bold">{stats.totalStudyTime} min</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">Study Time</p>
                 </div>
               </div>
             </CardContent>
