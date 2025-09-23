@@ -5,12 +5,12 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  allowedRoles?: ('admin' | 'teacher' | 'student')[];
+  allowedRoles?: ('admin' | 'teacher' | 'student' | 'parent')[];
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  allowedRoles = ['admin', 'teacher', 'student'],
+  allowedRoles = ['admin', 'teacher', 'student', 'parent'],
 }) => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const location = useLocation();

@@ -8,9 +8,10 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SessionMonitor } from '@/components/security/SessionMonitor';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { AdminDashboard } from '@/pages/AdminDashboard';
 import { StudentDashboard } from '@/pages/StudentDashboard';
 import { TeacherDashboard } from '@/pages/TeacherDashboard';
-import { AdminDashboard } from '@/pages/AdminDashboard';
+import { ParentDashboard } from '@/pages/ParentDashboard';
 import { AuthPage } from '@/pages/AuthPage';
 import { ExamInstructionsPage } from '@/pages/ExamInstructionsPage';
 import { ExamPage } from '@/pages/ExamPage';
@@ -48,6 +49,8 @@ const DashboardRouter = () => {
       return <TeacherDashboard />;
     case 'admin':
       return <AdminDashboard />;
+    case 'parent':
+      return <ParentDashboard />;
     default:
       console.error('Unknown user role:', user.role);
       return <Navigate to="/login" replace />;
