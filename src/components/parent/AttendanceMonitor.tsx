@@ -20,11 +20,6 @@ interface AttendanceRecord {
       name: string;
     };
   };
-  students: {
-    profiles: {
-      full_name: string;
-    };
-  } | null;
 }
 
 export const AttendanceMonitor = () => {
@@ -91,13 +86,6 @@ export const AttendanceMonitor = () => {
             period_number,
             subjects (
               name
-            )
-          ),
-          students (
-            id,
-            user_id,
-            profiles:user_id (
-              full_name
             )
           )
         `)
@@ -328,19 +316,14 @@ export const AttendanceMonitor = () => {
                         day: 'numeric'
                       })}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {record.attendance_sessions.subjects?.name} • Period {record.attendance_sessions.period_number}
-                    </div>
-                    {record.students?.profiles?.full_name && (
-                      <div className="text-xs text-muted-foreground">
-                        Student: {record.students.profiles.full_name}
-                      </div>
-                    )}
-                    {record.notes && (
-                      <div className="text-xs text-muted-foreground">
-                        Note: {record.notes}
-                      </div>
-                    )}
+                     <div className="text-sm text-muted-foreground">
+                       {record.attendance_sessions.subjects?.name} • Period {record.attendance_sessions.period_number}
+                     </div>
+                     {record.notes && (
+                       <div className="text-xs text-muted-foreground">
+                         Note: {record.notes}
+                       </div>
+                     )}
                   </div>
                   <div className="text-right space-y-2">
                     <Badge variant={getStatusBadgeVariant(record.status)}>

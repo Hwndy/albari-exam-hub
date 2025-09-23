@@ -15,14 +15,7 @@ interface Student {
   gender: string;
   status: string;
   user_id: string;
-  profiles: {
-    full_name: string;
-  } | null;
-  class_assignments: {
-    classes: {
-      name: string;
-    };
-  }[] | null;
+  full_name?: string;
 }
 
 export const StudentOverview = () => {
@@ -52,7 +45,7 @@ export const StudentOverview = () => {
         return;
       }
 
-      // Then get students through relationships
+      // Then get students through relationships  
       const { data: relationshipData, error: relationshipError } = await supabase
         .from('student_parent_relationships')
         .select(`
@@ -62,15 +55,7 @@ export const StudentOverview = () => {
             date_of_birth,
             gender,
             status,
-            user_id,
-            profiles:user_id (
-              full_name
-            ),
-            class_assignments (
-              classes (
-                name
-              )
-            )
+            user_id
           )
         `)
         .eq('parent_id', parentData.id);
@@ -89,7 +74,21 @@ export const StudentOverview = () => {
         ?.map(rel => rel.students)
         .filter(Boolean) || [];
       
-      setStudents(studentsData);
+      // Get profile names separately to avoid foreign key issues
+      if (studentsData.length > 0) {
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', studentsData.map(s => s.user_id));
+        
+        // Merge profile data with student data
+        studentsData.forEach((student: any) => {
+          const profile = profilesData?.find(p => p.user_id === student.user_id);
+          student.full_name = profile?.full_name || 'Unknown Student';
+        });
+      }
+      
+      setStudents(studentsData as Student[]);
     } catch (error) {
       console.error('Error in fetchStudents:', error);
       toast({
@@ -158,13 +157,13 @@ export const StudentOverview = () => {
           <CardHeader className="pb-3">
             <div className="flex items-center space-x-4">
               <Avatar className="h-12 w-12">
-                <AvatarImage src="" alt={student.profiles?.full_name} />
+                <AvatarImage src="" alt={student.full_name} />
                 <AvatarFallback className="bg-primary text-primary-foreground">
-                  {getStudentInitials(student.profiles?.full_name || 'Student')}
+                  {getStudentInitials(student.full_name || 'Student')}
                 </AvatarFallback>
               </Avatar>
               <div className="space-y-1">
-                <CardTitle className="text-lg">{student.profiles?.full_name}</CardTitle>
+                <CardTitle className="text-lg">{student.full_name}</CardTitle>
                 <CardDescription>
                   Admission: {student.admission_number}
                 </CardDescription>
@@ -186,7 +185,7 @@ export const StudentOverview = () => {
               <div className="flex items-center space-x-2 text-sm">
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  Class: {student.class_assignments?.[0]?.classes?.name || 'Not Assigned'}
+                  Class: Not Available
                 </span>
               </div>
               

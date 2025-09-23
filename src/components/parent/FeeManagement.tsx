@@ -22,11 +22,6 @@ interface FeePayment {
     due_date: string;
     academic_year: string;
   };
-  students: {
-    profiles: {
-      full_name: string;
-    };
-  } | null;
 }
 
 interface OutstandingFee {
@@ -105,13 +100,6 @@ export const FeeManagement = () => {
             amount,
             due_date,
             academic_year
-          ),
-          students (
-            id,
-            user_id,
-            profiles:user_id (
-              full_name
-            )
           )
         `)
         .in('student_id', studentIds)
@@ -363,9 +351,9 @@ export const FeeManagement = () => {
                 <div key={payment.id} className="flex items-center justify-between p-4 border rounded-lg">
                   <div className="space-y-1">
                     <div className="font-medium">{payment.fee_structures?.fee_type}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {payment.students?.profiles?.full_name}
-                    </div>
+                     <div className="text-sm text-muted-foreground">
+                       Academic Year: {payment.fee_structures?.academic_year}
+                     </div>
                     <div className="text-xs text-muted-foreground">
                       Paid: {new Date(payment.payment_date).toLocaleDateString()}
                     </div>

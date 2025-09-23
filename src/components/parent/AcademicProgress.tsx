@@ -20,11 +20,6 @@ interface GradeEntry {
   subjects: {
     name: string;
   };
-  students: {
-    profiles: {
-      full_name: string;
-    };
-  } | null;
 }
 
 export const AcademicProgress = () => {
@@ -87,13 +82,6 @@ export const AcademicProgress = () => {
           remarks,
           subjects (
             name
-          ),
-          students (
-            id,
-            user_id,
-            profiles:user_id (
-              full_name
-            )
           )
         `)
         .in('student_id', studentIds)
@@ -284,17 +272,12 @@ export const AcademicProgress = () => {
                   <div key={grade.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-1">
                       <div className="font-medium">{grade.assessment_name}</div>
-                      <div className="text-sm text-muted-foreground">
-                        {grade.subjects?.name} • {grade.assessment_type}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(grade.assessment_date).toLocaleDateString()}
-                      </div>
-                      {grade.students?.profiles?.full_name && (
-                        <div className="text-xs text-muted-foreground">
-                          Student: {grade.students.profiles.full_name}
-                        </div>
-                      )}
+                       <div className="text-sm text-muted-foreground">
+                         {grade.subjects?.name} • {grade.assessment_type}
+                       </div>
+                       <div className="text-xs text-muted-foreground">
+                         {new Date(grade.assessment_date).toLocaleDateString()}
+                       </div>
                     </div>
                     <div className="text-right space-y-2">
                       <Badge variant={getGradeBadgeVariant(percentage)}>

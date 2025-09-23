@@ -18,9 +18,6 @@ interface Announcement {
   target_audience: string[];
   attachments: any;
   created_by: string;
-  profiles: {
-    full_name: string;
-  } | null;
 }
 
 export const CommunicationHub = () => {
@@ -49,10 +46,7 @@ export const CommunicationHub = () => {
           expire_date,
           target_audience,
           attachments,
-          created_by,
-          profiles!announcements_created_by_fkey (
-            full_name
-          )
+          created_by
         `)
         .eq('is_published', true)
         .order('publish_date', { ascending: false });
@@ -148,10 +142,10 @@ export const CommunicationHub = () => {
                   className="text-sm text-gray-700 mb-3"
                   dangerouslySetInnerHTML={{ __html: announcement.content }}
                 />
-                <div className="flex justify-between items-center text-xs text-gray-500">
-                  <span>From: {announcement.profiles?.full_name}</span>
-                  <span>{new Date(announcement.publish_date).toLocaleDateString()}</span>
-                </div>
+                         <div className="flex justify-between items-center text-xs text-gray-500">
+                           <span>From School Admin</span>
+                           <span>{new Date(announcement.publish_date).toLocaleDateString()}</span>
+                         </div>
               </div>
             ))}
           </CardContent>
@@ -195,20 +189,20 @@ export const CommunicationHub = () => {
                       <div className="flex justify-between items-start mb-3">
                         <div className="space-y-1">
                           <h3 className="font-semibold">{announcement.title}</h3>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                            <span>From: {announcement.profiles?.full_name}</span>
-                            <span>•</span>
-                            <span>{new Date(announcement.publish_date).toLocaleDateString()}</span>
-                            {announcement.expire_date && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  Expires: {new Date(announcement.expire_date).toLocaleDateString()}
-                                </span>
-                              </>
-                            )}
-                          </div>
+                           <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                             <span>From School Admin</span>
+                             <span>•</span>
+                             <span>{new Date(announcement.publish_date).toLocaleDateString()}</span>
+                             {announcement.expire_date && (
+                               <>
+                                 <span>•</span>
+                                 <span className="flex items-center gap-1">
+                                   <Clock className="h-3 w-3" />
+                                   Expires: {new Date(announcement.expire_date).toLocaleDateString()}
+                                 </span>
+                               </>
+                             )}
+                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge variant={getPriorityBadgeVariant(announcement.priority)}>
