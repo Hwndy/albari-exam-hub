@@ -1,13 +1,13 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { WebsiteLayout } from '@/components/website/WebsiteLayout';
-import { HomePage } from '@/pages/website/HomePage';
-import { AboutPage } from '@/pages/website/AboutPage';
-import { SchoolLifePage } from '@/pages/website/SchoolLifePage';
-import { AdmissionsPage } from '@/pages/website/AdmissionsPage';
-import { NewsPage } from '@/pages/website/NewsPage';
-import { FacilitiesPage } from '@/pages/website/FacilitiesPage';
-import { PortalsPage } from '@/pages/website/PortalsPage';
+import { HomePage } from './HomePage';
+import { AboutPage } from './AboutPage';
+import { SchoolLifePage } from './SchoolLifePage';
+import { AdmissionsPage } from './AdmissionsPage';
+import { NewsPage } from './NewsPage';
+import { FacilitiesPage } from './FacilitiesPage';
+import { PortalsPage } from './PortalsPage';
 
 export const WebsiteRouter = () => {
   return (
