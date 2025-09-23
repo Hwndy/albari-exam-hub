@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { 
   Clock, 
   Flag, 
@@ -17,7 +18,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Circle,
-  AlertCircle
+  AlertCircle,
+  Menu,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Exam } from '@/types/exam';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -49,6 +53,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
   const [flaggedQuestions, setFlaggedQuestions] = useState<Set<number>>(new Set());
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [currentSection, setCurrentSection] = useState(0);
+  const [isNavOpen, setIsNavOpen] = useState(false);
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
@@ -376,7 +381,233 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
     setIsFullScreen(!isFullScreen);
   };
 
-  const examContent = (
+  if (isMobile) {
+    // Mobile Interface
+    return (
+      <div className="flex flex-col h-screen bg-background">
+        {/* Mobile Header */}
+        <header className="bg-card border-b shadow-sm px-4 py-3 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Sheet open={isNavOpen} onOpenChange={setIsNavOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Menu className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-80">
+                  <SheetHeader>
+                    <SheetTitle>Question Navigation</SheetTitle>
+                    <SheetDescription>
+                      {Object.keys(answers).length} of {questions.length} answered
+                    </SheetDescription>
+                  </SheetHeader>
+                  
+                  <ScrollArea className="h-[calc(100vh-120px)] mt-6">
+                    <div className="grid grid-cols-5 gap-2">
+                      {questions.map((_, index) => {
+                        const status = getQuestionStatus(index);
+                        const isCurrent = index === currentQuestion;
+                        
+                        return (
+                          <Button
+                            key={index}
+                            variant="outline"
+                            size="sm"
+                            className={`
+                              relative h-12 w-12 p-0 text-xs font-medium transition-all
+                              ${isCurrent 
+                                ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/20' 
+                                : status === 'answered'
+                                  ? 'bg-success text-success-foreground'
+                                  : status === 'flagged'
+                                    ? 'bg-warning text-warning-foreground'
+                                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                              }
+                            `}
+                            onClick={() => {
+                              setCurrentQuestion(index);
+                              setIsNavOpen(false);
+                            }}
+                          >
+                            <span className="absolute inset-0 flex items-center justify-center">
+                              {index + 1}
+                            </span>
+                            {flaggedQuestions.has(index) && (
+                              <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 text-orange-500 fill-current" />
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                    
+                    {/* Legend */}
+                    <div className="mt-6 space-y-3 text-sm">
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded bg-success"></div>
+                        <span>Answered ({Object.keys(answers).length})</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded bg-warning"></div>
+                        <span>Flagged ({flaggedQuestions.size})</span>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-4 h-4 rounded bg-muted"></div>
+                        <span>Unanswered ({questions.length - Object.keys(answers).length})</span>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                </SheetContent>
+              </Sheet>
+              
+              <div>
+                <h1 className="text-base font-bold text-primary truncate">{exam.title}</h1>
+                <p className="text-xs text-muted-foreground">
+                  Question {currentQuestion + 1} of {questions.length}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <div className="text-center">
+                <div className={`text-sm font-bold ${
+                  isTimeCritical 
+                    ? 'text-destructive animate-pulse' 
+                    : isTimeWarning 
+                      ? 'text-warning' 
+                      : 'text-primary'
+                }`}>
+                  {formatTime(timeRemaining)}
+                </div>
+                <div className="text-xs text-muted-foreground">Time Left</div>
+              </div>
+              
+              <Button 
+                onClick={onExit} 
+                variant="outline" 
+                size="sm"
+              >
+                Exit
+              </Button>
+            </div>
+          </div>
+        </header>
+
+        {/* Question Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="p-4 pb-20">
+            {currentQ && (
+              <Card className="border-none shadow-none">
+                <CardContent className="p-0">
+                  <div className="space-y-6">
+                    {/* Question Header */}
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="text-xs">
+                        {currentQ.subject} • {currentQ.difficulty}
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleFlag(currentQuestion)}
+                        className={flaggedQuestions.has(currentQuestion) ? 'text-warning' : ''}
+                      >
+                        <Flag className="h-4 w-4" />
+                        {flaggedQuestions.has(currentQuestion) ? 'Unflag' : 'Flag'}
+                      </Button>
+                    </div>
+
+                    {/* Question Text */}
+                    <div className="prose prose-sm max-w-none">
+                      <div 
+                        className="text-foreground leading-relaxed text-base"
+                        dangerouslySetInnerHTML={{ __html: currentQ.question }}
+                      />
+                    </div>
+
+                    {/* Question Image */}
+                    {currentQ.media_url && (
+                      <div className="flex justify-center">
+                        <img 
+                          src={currentQ.media_url} 
+                          alt="Question diagram"
+                          className="max-w-full h-auto rounded-lg border"
+                        />
+                      </div>
+                    )}
+
+                    {/* Answer Options */}
+                    <div className="space-y-3">
+                      <RadioGroup
+                        value={answers[currentQ.id] || ''}
+                        onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
+                      >
+                        {Object.entries(currentQ.options || {}).map(([key, value]) => (
+                          <div key={key} className="flex items-start space-x-3 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
+                            <RadioGroupItem value={key} id={`option-${key}`} className="mt-0.5 flex-shrink-0" />
+                            <Label 
+                              htmlFor={`option-${key}`} 
+                              className="flex-1 cursor-pointer leading-relaxed"
+                            >
+                              <span className="font-medium text-primary mr-2">{key}.</span>
+                              <span dangerouslySetInnerHTML={{ __html: value as string }} />
+                            </Label>
+                          </div>
+                        ))}
+                      </RadioGroup>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </main>
+
+        {/* Mobile Navigation Footer */}
+        <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur p-4 safe-area">
+          <div className="flex items-center justify-between mb-3">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
+              disabled={currentQuestion === 0}
+              className="flex items-center space-x-2"
+            >
+              <ChevronLeft className="h-4 w-4" />
+              <span>Previous</span>
+            </Button>
+            
+            <div className="text-xs text-center px-2 font-medium">
+              {currentQuestion + 1} / {questions.length}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))}
+              disabled={currentQuestion === questions.length - 1}
+              className="flex items-center space-x-2"
+            >
+              <span>Next</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="text-xs text-muted-foreground">
+              {Object.keys(answers).length} answered • {flaggedQuestions.size} flagged
+            </div>
+            
+            <Button onClick={handleSubmit} variant="default" size="sm">
+              Submit Exam
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Desktop Interface  
+  return (
     <div className={`${isFullScreen ? 'fixed inset-0 z-50 bg-background' : ''} flex flex-col h-screen`}>
       {/* Header */}
       <header className="bg-card border-b shadow-sm px-4 py-3 flex-shrink-0">
@@ -426,214 +657,9 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
         </div>
       </header>
 
-      {/* Conditional Rendering for Mobile vs Desktop */}
-      {isMobile ? (
-        // Import and use the mobile interface
-        <div className="flex-1">
-          {/* We'll render the mobile interface content here */}
-          <div className="flex flex-col h-full">
-            {/* Mobile Question Content */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="max-w-2xl mx-auto">
-                {currentQ && (
-                  <Card className="border-none shadow-none">
-                    <CardContent className="p-0">
-                      <div className="space-y-6">
-                        {/* Question Header */}
-                        <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-xs">
-                            {currentQ.subject} • {currentQ.difficulty}
-                          </Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFlag(currentQuestion)}
-                            className={flaggedQuestions.has(currentQuestion) ? 'text-warning' : ''}
-                          >
-                            <Flag className="h-4 w-4" />
-                            {flaggedQuestions.has(currentQuestion) ? 'Unflag' : 'Flag'}
-                          </Button>
-                        </div>
-
-                        {/* Question Text */}
-                        <div className="prose prose-sm max-w-none">
-                          <div 
-                            className="text-foreground leading-relaxed"
-                            dangerouslySetInnerHTML={{ __html: currentQ.question }}
-                          />
-                        </div>
-
-                        {/* Question Image */}
-                        {currentQ.media_url && (
-                          <div className="flex justify-center">
-                            <img 
-                              src={currentQ.media_url} 
-                              alt="Question diagram"
-                              className="max-w-full h-auto rounded-lg border"
-                            />
-                          </div>
-                        )}
-
-                        {/* Answer Options */}
-                        <div className="space-y-3">
-                          <RadioGroup
-                            value={answers[currentQ.id] || ''}
-                            onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
-                          >
-                            {Object.entries(currentQ.options || {}).map(([key, value]) => (
-                              <div key={key} className="flex items-start space-x-3 p-3 rounded-lg border hover:bg-accent/50 transition-colors">
-                                <RadioGroupItem value={key} id={`option-${key}`} className="mt-0.5" />
-                                <Label 
-                                  htmlFor={`option-${key}`} 
-                                  className="flex-1 cursor-pointer leading-relaxed"
-                                >
-                                  <span className="font-medium text-primary mr-2">{key}.</span>
-                                  <span dangerouslySetInnerHTML={{ __html: value as string }} />
-                                </Label>
-                              </div>
-                            ))}
-                          </RadioGroup>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-
-            {/* Mobile Navigation Footer */}
-            <div className="border-t bg-background/95 backdrop-blur p-4">
-              <div className="flex items-center justify-between mb-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
-                  disabled={currentQuestion === 0}
-                  className="flex-1 mr-2"
-                >
-                  Previous
-                </Button>
-                <div className="text-xs text-center px-2">
-                  {currentQuestion + 1}/{questions.length}
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))}
-                  disabled={currentQuestion === questions.length - 1}
-                  className="flex-1 ml-2"
-                >
-                  Next
-                </Button>
-              </div>
-              
-              {/* Quick Navigation */}
-              <div className="flex justify-center mb-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const sheet = document.getElementById('mobile-question-nav');
-                    if (sheet) sheet.style.display = 'block';
-                  }}
-                  className="text-xs"
-                >
-                  Question Navigation
-                </Button>
-              </div>
-
-              {/* Submit Button */}
-              <Button onClick={handleSubmit} variant="default" className="w-full">
-                Submit Exam
-              </Button>
-            </div>
-
-            {/* Mobile Question Navigation Sheet */}
-            <div id="mobile-question-nav" className="fixed inset-0 z-50 bg-background/95 backdrop-blur" style={{ display: 'none' }}>
-              <div className="flex flex-col h-full">
-                <div className="flex items-center justify-between p-4 border-b">
-                  <h3 className="font-semibold">Question Navigation</h3>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const sheet = document.getElementById('mobile-question-nav');
-                      if (sheet) sheet.style.display = 'none';
-                    }}
-                  >
-                    Close
-                  </Button>
-                </div>
-                
-                <ScrollArea className="flex-1 p-4">
-                  <div className="grid grid-cols-6 gap-2 mb-6">
-                    {questions.map((_, index) => {
-                      const status = getQuestionStatus(index);
-                      const isCurrent = index === currentQuestion;
-                      
-                      return (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className={`
-                            relative h-12 w-12 p-0 text-xs font-medium transition-all
-                            ${isCurrent 
-                              ? 'bg-primary text-primary-foreground border-primary ring-2 ring-primary/20' 
-                              : status === 'answered'
-                                ? 'bg-success text-success-foreground'
-                                : status === 'flagged'
-                                  ? 'bg-warning text-warning-foreground'
-                                  : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            }
-                          `}
-                          onClick={() => {
-                            setCurrentQuestion(index);
-                            const sheet = document.getElementById('mobile-question-nav');
-                            if (sheet) sheet.style.display = 'none';
-                          }}
-                        >
-                          <span className="absolute inset-0 flex items-center justify-center">
-                            {index + 1}
-                          </span>
-                          {flaggedQuestions.has(index) && (
-                            <Flag className="h-2 w-2 absolute -top-0.5 -right-0.5 text-warning fill-current" />
-                          )}
-                        </Button>
-                      );
-                    })}
-                  </div>
-                  
-                  {/* Legend */}
-                  <div className="space-y-3 text-sm">
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded bg-success"></div>
-                      <span>Answered ({Object.keys(answers).length})</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded bg-warning"></div>
-                      <span>Flagged ({flaggedQuestions.size})</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-4 h-4 rounded bg-muted"></div>
-                      <span>Unanswered ({questions.length - Object.keys(answers).length})</span>
-                    </div>
-                  </div>
-                </ScrollArea>
-              </div>
-            </div>
-          </div>
-        </div>
-      ) : (
-        // Desktop Layout - Resizable Panels
-        <div className="flex-1 overflow-hidden">
-          <ResizablePanelGroup direction="horizontal" className="h-full">
-            {/* ... keep existing desktop code ... */}
-          </ResizablePanelGroup>
-        </div>
-      )}
-    </div>
-  );
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        <ResizablePanelGroup direction="horizontal" className="h-full">
           {/* Question Navigation Panel */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={35}>
             <div className="h-full bg-muted/30 border-r">
@@ -713,170 +739,112 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                     <span className="text-muted-foreground">Unanswered</span>
                   </div>
                 </div>
-
-                {/* Stats */}
-                <div className="mt-4 pt-3 border-t space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Answered:</span>
-                    <Badge variant="secondary" className="h-5 text-xs">
-                      {Object.keys(answers).length}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Flagged:</span>
-                    <Badge variant="outline" className="h-5 text-xs">
-                      {flaggedQuestions.size}
-                    </Badge>
-                  </div>
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Remaining:</span>
-                    <Badge variant="destructive" className="h-5 text-xs">
-                      {questions.length - Object.keys(answers).length}
-                    </Badge>
-                  </div>
-                </div>
               </div>
             </div>
           </ResizablePanel>
 
-          <ResizableHandle withHandle />
+          <ResizableHandle />
 
           {/* Question Content Panel */}
-          <ResizablePanel defaultSize={75} minSize={65}>
+          <ResizablePanel defaultSize={75}>
             <div className="h-full flex flex-col">
-              <ScrollArea className="flex-1 p-6">
-                <div className="max-w-4xl mx-auto space-y-6">
-                  {/* Question Header */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold">Question {currentQuestion + 1}</h2>
-                      <p className="text-sm text-muted-foreground">
+              {/* Question Header */}
+              <div className="flex-shrink-0 p-4 border-b bg-background">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Badge variant="outline">
+                      Question {currentQuestion + 1} of {questions.length}
+                    </Badge>
+                    {currentQ && (
+                      <Badge variant="secondary">
                         {currentQ.subject} • {currentQ.difficulty}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleFlag(currentQuestion)}
-                      className={`${
-                        flaggedQuestions.has(currentQuestion) 
-                          ? 'bg-warning text-warning-foreground hover:bg-warning/90' 
-                          : ''
-                      }`}
-                    >
-                      <Flag className="h-4 w-4 mr-2" />
-                      {flaggedQuestions.has(currentQuestion) ? 'Unflag' : 'Flag'}
-                    </Button>
-                  </div>
-
-                   {/* Question Text */}
-                   <div className="bg-card rounded-lg p-6 border">
-                     <p className="text-lg leading-relaxed font-medium mb-4">
-                       {currentQ.question}
-                     </p>
-                     {/* Media Support */}
-                     {currentQ.media_url && (
-                       <div className="mt-4">
-                         {currentQ.media_url.match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
-                           <img 
-                             src={currentQ.media_url} 
-                             alt="Question media" 
-                             className="max-w-full h-auto rounded border"
-                           />
-                         ) : currentQ.media_url.match(/\.(mp3|wav|ogg)$/i) ? (
-                           <audio controls className="w-full">
-                             <source src={currentQ.media_url} />
-                           </audio>
-                         ) : null}
-                       </div>
-                     )}
-                   </div>
-
-                  {/* Answer Options */}
-                  <div className="space-y-4">
-                    {currentQ.type === 'true_false' ? (
-                      <div className="space-y-3">
-                         {Object.entries(currentQ.options || {}).map(([key, value]) => (
-                           <div
-                             key={key}
-                             className={`
-                               flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
-                               ${answers[currentQ.id] === key 
-                                 ? 'border-primary bg-primary/5 shadow-sm' 
-                                 : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                               }
-                             `}
-                             onClick={() => handleAnswerChange(currentQ.id, key)}
-                           >
-                             <Switch
-                               checked={answers[currentQ.id] === key}
-                               onCheckedChange={(checked) => {
-                                 if (checked) handleAnswerChange(currentQ.id, key);
-                               }}
-                             />
-                             <Label className="flex-1 text-base font-medium cursor-pointer">
-                               {String(value)}
-                             </Label>
-                           </div>
-                         ))}
-                      </div>
-                    ) : (
-                      <RadioGroup
-                        value={answers[currentQ.id] || ''}
-                        onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
-                        className="space-y-3"
-                      >
-                         {Object.entries(currentQ.options || {}).map(([key, value]) => (
-                           <div
-                             key={key}
-                             className={`
-                               flex items-center space-x-4 p-4 rounded-lg border-2 cursor-pointer transition-all
-                               ${answers[currentQ.id] === key 
-                                 ? 'border-primary bg-primary/5 shadow-sm' 
-                                 : 'border-border hover:border-primary/50 hover:bg-accent/30'
-                               }
-                             `}
-                           >
-                             <RadioGroupItem value={key} id={`option-${key}`} />
-                             <Label
-                               htmlFor={`option-${key}`}
-                               className="flex-1 text-base cursor-pointer"
-                             >
-                               <span className="font-bold mr-3 text-primary">{key}.</span>
-                               {String(value)}
-                             </Label>
-                           </div>
-                         ))}
-                      </RadioGroup>
+                      </Badge>
                     )}
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleFlag(currentQuestion)}
+                    className={flaggedQuestions.has(currentQuestion) ? 'text-warning' : ''}
+                  >
+                    <Flag className="h-4 w-4 mr-1" />
+                    {flaggedQuestions.has(currentQuestion) ? 'Unflag' : 'Flag'}
+                  </Button>
+                </div>
+              </div>
+
+              {/* Question Content */}
+              <ScrollArea className="flex-1">
+                <div className="p-6">
+                  {currentQ && (
+                    <div className="max-w-4xl mx-auto space-y-6">
+                      {/* Question Text */}
+                      <div className="prose prose-lg max-w-none">
+                        <div 
+                          className="text-foreground leading-relaxed"
+                          dangerouslySetInnerHTML={{ __html: currentQ.question }}
+                        />
+                      </div>
+
+                      {/* Question Image */}
+                      {currentQ.media_url && (
+                        <div className="flex justify-center">
+                          <img 
+                            src={currentQ.media_url} 
+                            alt="Question diagram"
+                            className="max-w-full h-auto rounded-lg border shadow-sm"
+                          />
+                        </div>
+                      )}
+
+                      {/* Answer Options */}
+                      <div className="space-y-4">
+                        <RadioGroup
+                          value={answers[currentQ.id] || ''}
+                          onValueChange={(value) => handleAnswerChange(currentQ.id, value)}
+                        >
+                          {Object.entries(currentQ.options || {}).map(([key, value]) => (
+                            <div key={key} className="flex items-start space-x-4 p-4 rounded-lg border hover:bg-accent/50 transition-colors">
+                              <RadioGroupItem value={key} id={`option-${key}`} className="mt-1" />
+                              <Label 
+                                htmlFor={`option-${key}`} 
+                                className="flex-1 cursor-pointer leading-relaxed"
+                              >
+                                <span className="font-medium text-primary mr-3 text-lg">{key}.</span>
+                                <span dangerouslySetInnerHTML={{ __html: value as string }} />
+                              </Label>
+                            </div>
+                          ))}
+                        </RadioGroup>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </ScrollArea>
 
               {/* Navigation Footer */}
-              <div className="p-6 bg-muted/30 border-t">
-                <div className="max-w-4xl mx-auto flex items-center justify-between">
+              <div className="flex-shrink-0 border-t bg-background p-4">
+                <div className="flex items-center justify-between">
                   <Button
                     variant="outline"
                     onClick={() => setCurrentQuestion(Math.max(0, currentQuestion - 1))}
                     disabled={currentQuestion === 0}
                   >
-                    Previous
+                    Previous Question
                   </Button>
                   
-                  <div className="flex space-x-3">
-                    {currentQuestion === questions.length - 1 ? (
-                      <Button onClick={handleSubmit} className="bg-success hover:bg-success/90">
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Submit Exam
-                      </Button>
-                    ) : (
-                      <Button 
-                        onClick={() => setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))}
-                      >
-                        Next
-                      </Button>
-                    )}
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setCurrentQuestion(Math.min(questions.length - 1, currentQuestion + 1))}
+                      disabled={currentQuestion === questions.length - 1}
+                    >
+                      Next Question
+                    </Button>
+                    
+                    <Button onClick={handleSubmit} variant="default" size="lg">
+                      Submit Exam
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -886,6 +854,4 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
       </div>
     </div>
   );
-
-  return examContent;
 };
