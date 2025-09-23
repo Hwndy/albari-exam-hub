@@ -302,7 +302,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       correctAnswers: questionData.correctAnswers,
     };
     setQuestions(prev => [...prev, newQuestion]);
-    setShowQuestionForm(false);
+    // Don't automatically close the form - let user decide
   };
 
   const removeQuestion = useCallback((questionId: string) => {
@@ -870,6 +870,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                     classes={classes}
                     subjects={subjects}
                     onCancel={() => setShowQuestionForm(false)}
+                    onSaveAndClose={() => setShowQuestionForm(false)}
                   />
                 </div>
               )}

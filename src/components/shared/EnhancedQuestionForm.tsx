@@ -41,6 +41,7 @@ interface EnhancedQuestionFormProps {
   subjects: Array<{id: string, name: string}>;
   existingQuestion?: any;
   onCancel?: () => void;
+  onSaveAndClose?: () => void;
 }
 
 export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
@@ -48,7 +49,8 @@ export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
   classes,
   subjects,
   existingQuestion,
-  onCancel
+  onCancel,
+  onSaveAndClose
 }) => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -287,9 +289,7 @@ export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
     return true;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
+  const handleSubmit = async (saveAndClose: boolean = false) => {
     if (!validateForm()) return;
 
     try {
@@ -311,27 +311,31 @@ export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
       onAddQuestion(questionData);
       
       if (!existingQuestion) {
-        // Reset form for new question
-        setFormData({
-          questionText: '',
-          questionType: 'mcq',
-          options: [
-            { id: '1', text: '', isCorrect: false },
-            { id: '2', text: '', isCorrect: false },
-            { id: '3', text: '', isCorrect: false },
-            { id: '4', text: '', isCorrect: false },
-          ],
-          difficulty: 'medium',
-          points: 1,
-          explanation: '',
-          mediaUrl: '',
-          formulaLatex: '',
-          subjectId: formData.subjectId, // Keep subject
-          classId: formData.classId, // Keep class
-          correctAnswers: []
-        });
-        setImageFile(null);
-        setImagePreview(null);
+        if (saveAndClose && onSaveAndClose) {
+          onSaveAndClose();
+        } else {
+          // Reset form for new question but keep subject and class
+          setFormData({
+            questionText: '',
+            questionType: 'mcq',
+            options: [
+              { id: '1', text: '', isCorrect: false },
+              { id: '2', text: '', isCorrect: false },
+              { id: '3', text: '', isCorrect: false },
+              { id: '4', text: '', isCorrect: false },
+            ],
+            difficulty: 'medium',
+            points: 1,
+            explanation: '',
+            mediaUrl: '',
+            formulaLatex: '',
+            subjectId: formData.subjectId, // Keep subject
+            classId: formData.classId, // Keep class
+            correctAnswers: []
+          });
+          setImageFile(null);
+          setImagePreview(null);
+        }
       }
       
       toast({
@@ -362,9 +366,29 @@ export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
           Cancel
         </Button>
       )}
-      <Button type="submit" className="flex-1">
-        {existingQuestion ? 'Update Question' : 'Add Question'}
-      </Button>
+      {existingQuestion ? (
+        <Button type="button" onClick={() => handleSubmit(true)} className="flex-1">
+          Update Question
+        </Button>
+      ) : (
+        <div className="flex space-x-2 flex-1">
+          <Button 
+            type="button" 
+            onClick={() => handleSubmit(false)}
+            variant="outline"
+            className="flex-1"
+          >
+            Add Another
+          </Button>
+          <Button 
+            type="button" 
+            onClick={() => handleSubmit(true)}
+            className="flex-1"
+          >
+            Save & Close
+          </Button>
+        </div>
+      )}
     </div>
   );
 
@@ -379,7 +403,7 @@ export const EnhancedQuestionForm: React.FC<EnhancedQuestionFormProps> = ({
         }
       >
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleSubmit(false); }} className="space-y-6">
             {/* Basic Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="space-y-2">
