@@ -175,8 +175,10 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             id,
             name,
             subject_id,
+            class_id,
             subjects(name)
-          )
+          ),
+          classes(name)
         `).order('created_at', { ascending: false })
       ]);
 
@@ -532,16 +534,23 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       case 'randomized':
         let questionOrder = 1;
         for (const c of criteria) {
-          const { data: questions } = await supabase
+          let questionQuery = supabase
             .from('questions')
             .select(`
               id,
               points,
-              question_banks!inner(subject_id)
+              question_banks!inner(subject_id, class_id)
             `)
             .eq('question_banks.subject_id', c.subjectId)
             .eq('difficulty_level', c.difficulty)
             .limit(c.count * 2);
+
+          // Apply class filtering for randomized generation
+          if (metadata.classId) {
+            questionQuery = questionQuery.or(`question_banks.class_id.is.null,question_banks.class_id.eq.${metadata.classId}`);
+          }
+
+          const { data: questions } = await questionQuery;
 
           const shuffled = questions?.sort(() => 0.5 - Math.random()) || [];
           const selectedQuestions = shuffled.slice(0, c.count);
@@ -563,9 +572,20 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     }
   };
 
-  const filteredQuestionBankQuestions = questionBankQuestions.filter(q => 
-    !metadata.subjectId || q.question_banks.subject_id === metadata.subjectId
-  );
+  const filteredQuestionBankQuestions = questionBankQuestions.filter(q => {
+    // Filter by subject
+    const subjectMatches = !metadata.subjectId || q.question_banks.subject_id === metadata.subjectId;
+    
+    // Filter by class - show questions that:
+    // 1. Have no class assigned (available to all classes), OR
+    // 2. Are assigned to the selected class, OR
+    // 3. When "All Classes" is selected, show all questions for the subject
+    const classMatches = !metadata.classId || 
+                        !q.question_banks.class_id || 
+                        q.question_banks.class_id === metadata.classId;
+    
+    return subjectMatches && classMatches;
+  });
 
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
@@ -867,6 +887,20 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                     <p className="text-muted-foreground">Please select a subject first to view available questions.</p>
                   </CardContent>
                 </Card>
+              ) : filteredQuestionBankQuestions.length === 0 ? (
+                <Card>
+                  <CardContent className="text-center py-8">
+                    <div className="space-y-2">
+                      <p className="text-muted-foreground">No questions available for the selected subject and class combination.</p>
+                      <p className="text-sm text-muted-foreground">
+                        {metadata.classId 
+                          ? `Try selecting "All Classes" or create questions for this specific class.`
+                          : `Create some questions first or select a different subject.`
+                        }
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
               ) : (
                 <div className="space-y-4">
                   {filteredQuestionBankQuestions.map((question) => (
@@ -880,11 +914,21 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                             />
                             <div className="space-y-2 flex-1">
                               <p className="font-medium">{question.question_text}</p>
-                              <div className="flex items-center space-x-2">
-                                <Badge variant="outline">{question.difficulty_level}</Badge>
-                                <Badge variant="secondary">{question.points} point(s)</Badge>
-                                <Badge variant="outline">{question.question_banks.subjects?.name}</Badge>
-                              </div>
+                               <div className="flex items-center space-x-2">
+                                 <Badge variant="outline">{question.difficulty_level}</Badge>
+                                 <Badge variant="secondary">{question.points} point(s)</Badge>
+                                 <Badge variant="outline">{question.question_banks.subjects?.name}</Badge>
+                                 {question.classes?.name && (
+                                   <Badge variant="outline" className="text-xs">
+                                     Class: {question.classes.name}
+                                   </Badge>
+                                 )}
+                                 {!question.question_banks.class_id && (
+                                   <Badge variant="outline" className="text-xs text-muted-foreground">
+                                     All Classes
+                                   </Badge>
+                                 )}
+                               </div>
                             </div>
                           </div>
                         </div>
