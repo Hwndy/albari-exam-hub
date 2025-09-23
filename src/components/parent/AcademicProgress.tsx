@@ -24,7 +24,7 @@ interface GradeEntry {
     profiles: {
       full_name: string;
     };
-  };
+  } | null;
 }
 
 export const AcademicProgress = () => {
@@ -89,7 +89,9 @@ export const AcademicProgress = () => {
             name
           ),
           students (
-            profiles (
+            id,
+            user_id,
+            profiles:user_id (
               full_name
             )
           )

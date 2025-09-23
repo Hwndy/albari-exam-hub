@@ -16,6 +16,7 @@ interface FeePayment {
   receipt_number: string;
   status: string;
   fee_structures: {
+    id: string;
     fee_type: string;
     amount: number;
     due_date: string;
@@ -25,7 +26,7 @@ interface FeePayment {
     profiles: {
       full_name: string;
     };
-  };
+  } | null;
 }
 
 interface OutstandingFee {
@@ -99,13 +100,16 @@ export const FeeManagement = () => {
           receipt_number,
           status,
           fee_structures (
+            id,
             fee_type,
             amount,
             due_date,
             academic_year
           ),
           students (
-            profiles (
+            id,
+            user_id,
+            profiles:user_id (
               full_name
             )
           )

@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface AttendanceRecord {
   id: string;
-  status: 'present' | 'absent' | 'late' | 'excused';
+  status: string;
   marked_at: string;
   notes?: string;
   attendance_sessions: {
@@ -24,7 +24,7 @@ interface AttendanceRecord {
     profiles: {
       full_name: string;
     };
-  };
+  } | null;
 }
 
 export const AttendanceMonitor = () => {
@@ -94,15 +94,16 @@ export const AttendanceMonitor = () => {
             )
           ),
           students (
-            profiles (
+            id,
+            user_id,
+            profiles:user_id (
               full_name
             )
           )
         `)
         .in('student_id', studentIds)
-        .gte('attendance_sessions.date', startDate.toISOString().split('T')[0])
-        .lte('attendance_sessions.date', endDate.toISOString().split('T')[0])
-        .order('attendance_sessions.date', { ascending: false });
+        .order('marked_at', { ascending: false })
+        .limit(50);
 
       if (attendanceError) {
         console.error('Error fetching attendance:', attendanceError);

@@ -12,7 +12,7 @@ interface Announcement {
   id: string;
   title: string;
   content: string;
-  priority: 'low' | 'normal' | 'high' | 'urgent';
+  priority: string;
   publish_date: string;
   expire_date: string;
   target_audience: string[];
@@ -20,7 +20,7 @@ interface Announcement {
   created_by: string;
   profiles: {
     full_name: string;
-  };
+  } | null;
 }
 
 export const CommunicationHub = () => {
@@ -50,13 +50,11 @@ export const CommunicationHub = () => {
           target_audience,
           attachments,
           created_by,
-          profiles:created_by (
+          profiles!announcements_created_by_fkey (
             full_name
           )
         `)
         .eq('is_published', true)
-        .or('target_audience.cs.{"parents"}, target_audience.cs.{"all"}')
-        .gte('expire_date', new Date().toISOString())
         .order('publish_date', { ascending: false });
 
       if (announcementsError) {

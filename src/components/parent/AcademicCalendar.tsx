@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 interface CalendarEvent {
   id: string;
-  event_type: 'holiday' | 'exam' | 'event' | 'meeting';
+  event_type: string;
   title: string;
   description: string;
   start_date: string;

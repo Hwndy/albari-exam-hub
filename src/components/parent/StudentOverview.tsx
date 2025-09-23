@@ -17,12 +17,12 @@ interface Student {
   user_id: string;
   profiles: {
     full_name: string;
-  };
+  } | null;
   class_assignments: {
     classes: {
       name: string;
     };
-  }[];
+  }[] | null;
 }
 
 export const StudentOverview = () => {
