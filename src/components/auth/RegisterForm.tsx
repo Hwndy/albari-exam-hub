@@ -174,7 +174,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const formFooter = (
     <div className="space-y-4">
-      <Button type="submit" className="w-full" disabled={isLoading}>
+      <Button type="submit" form="register-form" className="w-full" disabled={isLoading}>
         {isLoading ? <LoadingSpinner /> : (isAdminEdit ? 'Update Account' : 'Create Account')}
       </Button>
       {!isAdminEdit && (
@@ -202,7 +202,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         }
       >
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form id="register-form" onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="fullName">Full Name</Label>
             <Input
