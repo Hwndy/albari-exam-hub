@@ -119,18 +119,28 @@ export const GradebookSystem = () => {
     try {
       setIsLoading(true);
       
-      // Fetch teacher's class assignments
-      const { data: classAssignments, error: classError } = await supabase
+      const { data: assignments, error: assignmentsError } = await supabase
         .from('teacher_class_assignments')
-        .select(`
-          classes (
-            id,
-            name
-          )
-        `)
+        .select('class_id')
         .eq('teacher_id', user?.id);
 
-      if (classError) throw classError;
+      if (assignmentsError) throw assignmentsError;
+
+      if (!assignments || assignments.length === 0) {
+        setClasses([]);
+        return;
+      }
+
+      const classIds = assignments.map(a => a.class_id);
+      
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id, name')
+        .in('id', classIds);
+
+      if (classesError) throw classesError;
+
+      setClasses(classesData || []);
 
       // Fetch teacher's subject assignments
       const { data: subjectAssignments, error: subjectError } = await supabase
@@ -145,7 +155,7 @@ export const GradebookSystem = () => {
 
       if (subjectError) throw subjectError;
 
-      setClasses(classAssignments?.map(ca => ca.classes).filter(Boolean) || []);
+      setClasses(classesData || []);
       setSubjects(subjectAssignments?.map(sa => sa.subjects).filter(Boolean) || []);
     } catch (error) {
       console.error('Error fetching data:', error);
@@ -163,27 +173,49 @@ export const GradebookSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: classAssignments, error } = await supabase
+      const { data: assignments, error: assignmentsError } = await supabase
         .from('class_assignments')
-        .select(`
-          students (
-            id,
-            admission_number,
-            profiles:user_id (
-              full_name
-            )
-          )
-        `)
+        .select('student_id')
         .eq('class_id', selectedClass);
 
-      if (error) throw error;
+      if (assignmentsError) throw assignmentsError;
 
-      const studentsList = classAssignments?.map(ca => ca.students).filter(Boolean) || [];
-      setStudents(studentsList);
+      if (!assignments || assignments.length === 0) {
+        setStudents([]);
+        setBulkGrades({});
+        return;
+      }
+
+      const studentIds = assignments.map(a => a.student_id);
+      
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select('id, admission_number, user_id')
+        .in('id', studentIds);
+
+      if (studentsError) throw studentsError;
+
+      const userIds = studentsData?.map(s => s.user_id).filter(Boolean) || [];
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      const studentsWithProfiles = studentsData?.map(student => ({
+        ...student,
+        profiles: profilesData?.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' }
+      })) || [];
+
+      setStudents(studentsWithProfiles);
 
       // Initialize bulk grades for all students
       const initialBulkGrades: Record<string, { obtained_score: string; remarks: string }> = {};
-      studentsList.forEach(student => {
+      studentsWithProfiles.forEach(student => {
         initialBulkGrades[student.id] = { obtained_score: '', remarks: '' };
       });
       setBulkGrades(initialBulkGrades);
@@ -215,25 +247,34 @@ export const GradebookSystem = () => {
       if (error) throw error;
 
       // Fetch student details separately
-      const entriesWithStudents = await Promise.all(
-        (data || []).map(async (entry) => {
-          const { data: student } = await supabase
-            .from('students')
-            .select(`
-              admission_number,
-              profiles:user_id (
-                full_name
-              )
-            `)
-            .eq('id', entry.student_id)
-            .single();
+      const studentIds = [...new Set((data || []).map(entry => entry.student_id))];
+      
+      const { data: studentsData } = await supabase
+        .from('students')
+        .select('id, admission_number, user_id')
+        .in('id', studentIds);
 
-          return {
-            ...entry,
-            students: student
-          };
-        })
-      );
+      const userIds = studentsData?.map(s => s.user_id).filter(Boolean) || [];
+      
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      const entriesWithStudents = (data || []).map(entry => {
+        const student = studentsData?.find(s => s.id === entry.student_id);
+        const profile = profilesData?.find(p => p.user_id === student?.user_id);
+        
+        return {
+          ...entry,
+          students: {
+            admission_number: student?.admission_number || '',
+            profiles: {
+              full_name: profile?.full_name || 'Unknown'
+            }
+          }
+        };
+      });
 
       setGradebookEntries(entriesWithStudents);
     } catch (error) {

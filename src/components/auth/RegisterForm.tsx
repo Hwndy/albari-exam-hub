@@ -238,9 +238,10 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               <SelectTrigger className="w-full">
                 <SelectValue placeholder="Select your role" />
               </SelectTrigger>
-              <SelectContent className="bg-popover border shadow-lg z-50">
-                <SelectItem value="teacher">Teacher</SelectItem>
-                <SelectItem value="admin">Administrator</SelectItem>
+                <SelectContent className="bg-popover border shadow-lg z-50">
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
           </div>

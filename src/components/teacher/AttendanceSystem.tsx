@@ -182,23 +182,44 @@ export const AttendanceSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: classAssignments, error } = await supabase
+      const { data: assignments, error: assignmentsError } = await supabase
         .from('class_assignments')
-        .select(`
-          students (
-            id,
-            admission_number,
-            profiles:user_id (
-              full_name
-            )
-          )
-        `)
+        .select('student_id')
         .eq('class_id', selectedClass);
 
-      if (error) throw error;
+      if (assignmentsError) throw assignmentsError;
 
-      const studentsList = classAssignments?.map(ca => ca.students).filter(Boolean) || [];
-      setStudents(studentsList);
+      if (!assignments || assignments.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      const studentIds = assignments.map(a => a.student_id);
+      
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select('id, admission_number, user_id')
+        .in('id', studentIds);
+
+      if (studentsError) throw studentsError;
+
+      const userIds = studentsData?.map(s => s.user_id).filter(Boolean) || [];
+      
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, full_name')
+        .in('user_id', userIds);
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+      }
+
+      const studentsWithProfiles = studentsData?.map(student => ({
+        ...student,
+        profiles: profilesData?.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' }
+      })) || [];
+
+      setStudents(studentsWithProfiles);
     } catch (error) {
       console.error('Error fetching students:', error);
       toast({
