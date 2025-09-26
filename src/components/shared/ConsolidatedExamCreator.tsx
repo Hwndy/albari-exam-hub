@@ -59,6 +59,7 @@ interface ExamMetadata {
   showResultsImmediately: boolean;
   sequentialNavigation: boolean;
   allowQuestionFlagging: boolean;
+  questionsPerStudent: number;
 }
 
 interface ConsolidatedExamCreatorProps {
@@ -109,6 +110,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     showResultsImmediately: false,
     sequentialNavigation: false,
     allowQuestionFlagging: true,
+    questionsPerStudent: 20,
   });
 
   // Manual question creation
@@ -224,6 +226,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       showResultsImmediately: editingExam.show_results_immediately ?? false,
       sequentialNavigation: editingExam.sequential_navigation ?? false,
       allowQuestionFlagging: editingExam.allow_question_flagging ?? true,
+      questionsPerStudent: editingExam.questions_per_student ?? 20,
     });
 
     if (editingExam.id) {
@@ -280,6 +283,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       showResultsImmediately: false,
       sequentialNavigation: false,
       allowQuestionFlagging: true,
+      questionsPerStudent: 20,
     });
     setQuestions([]);
     setSelectedQuestionIds([]);
@@ -375,6 +379,9 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
     setSaving(true);
     try {
+      const poolSize = totalQuestions;
+      const qps = Math.min(metadata.questionsPerStudent || poolSize, poolSize);
+
       const examData = {
         title: metadata.title,
         description: metadata.description,
@@ -383,6 +390,8 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         class_id: metadata.classId || null,
         duration_minutes: metadata.duration,
         total_questions: totalQuestions,
+        questions_per_student: qps,
+        question_pool_size: poolSize,
         pass_mark: metadata.passMarks,
         start_date: metadata.startDate ? new Date(metadata.startDate).toISOString() : null,
         end_date: metadata.endDate ? new Date(metadata.endDate).toISOString() : null,
@@ -721,6 +730,20 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                       min={10}
                       step={5}
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Questions per Student: {Math.min(metadata.questionsPerStudent, getTotalQuestionCount())} (from pool of {getTotalQuestionCount()})</Label>
+                    <Slider
+                      value={[Math.min(metadata.questionsPerStudent, getTotalQuestionCount() || 1)]}
+                      onValueChange={([value]) => setMetadata({ ...metadata, questionsPerStudent: value })}
+                      max={Math.max(getTotalQuestionCount(), 1)}
+                      min={1}
+                      step={1}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Each student will see a unique set of {Math.min(metadata.questionsPerStudent, getTotalQuestionCount())} questions from the total pool.
+                    </p>
                   </div>
 
                   <div className="space-y-4">
