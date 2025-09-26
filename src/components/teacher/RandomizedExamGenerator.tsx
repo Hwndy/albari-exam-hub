@@ -46,6 +46,7 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
   const [passmark, setPassmark] = useState([50]);
   const [classId, setClassId] = useState('');
   const [classes, setClasses] = useState<any[]>([]);
+  const [questionsPerStudent, setQuestionsPerStudent] = useState([20]);
   const [generating, setGenerating] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -182,6 +183,8 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
           duration_minutes: duration[0],
           pass_mark: passmark[0],
           total_questions: getTotalQuestions(),
+          questions_per_student: questionsPerStudent[0],
+          question_pool_size: getTotalQuestions(),
           class_id: classId || null,
           created_by: user?.id || '',
           status: 'draft',
@@ -254,6 +257,7 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
     setCriteria([]);
     setDuration([60]);
     setPassmark([50]);
+    setQuestionsPerStudent([20]);
     setClassId('');
     onClose();
   };
@@ -337,10 +341,25 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
                   />
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Question Criteria */}
+              <div className="space-y-2">
+                <Label>Questions per Student: {questionsPerStudent[0]} (from pool of {getTotalQuestions()})</Label>
+                <Slider
+                  value={questionsPerStudent}
+                  onValueChange={setQuestionsPerStudent}
+                  max={getTotalQuestions()}
+                  min={1}
+                  step={1}
+                  className="w-full"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Each student will receive {questionsPerStudent[0]} randomly selected questions from the total pool of {getTotalQuestions()} questions.
+                </p>
+               </div>
+             </CardContent>
+           </Card>
+
+           {/* Question Criteria */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle className="text-lg">Question Selection Criteria</CardTitle>

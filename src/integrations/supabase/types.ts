@@ -426,6 +426,8 @@ export type Database = {
           id: string
           instructions: string | null
           pass_mark: number
+          question_pool_size: number | null
+          questions_per_student: number | null
           randomize_questions: boolean
           sequential_navigation: boolean
           show_results_immediately: boolean
@@ -449,6 +451,8 @@ export type Database = {
           id?: string
           instructions?: string | null
           pass_mark?: number
+          question_pool_size?: number | null
+          questions_per_student?: number | null
           randomize_questions?: boolean
           sequential_navigation?: boolean
           show_results_immediately?: boolean
@@ -472,6 +476,8 @@ export type Database = {
           id?: string
           instructions?: string | null
           pass_mark?: number
+          question_pool_size?: number | null
+          questions_per_student?: number | null
           randomize_questions?: boolean
           sequential_navigation?: boolean
           show_results_immediately?: boolean

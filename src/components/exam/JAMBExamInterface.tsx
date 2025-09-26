@@ -83,6 +83,13 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
           }
         }
 
+        // Get exam details to check if questions_per_student is set
+        const { data: examData } = await supabase
+          .from('exams')
+          .select('questions_per_student, question_pool_size')
+          .eq('id', exam.id)
+          .single();
+
         const { data: examQuestions, error } = await supabase
           .from('exam_questions')
           .select(`
@@ -100,7 +107,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
 
         if (error) throw error;
 
-        const formattedQuestions = examQuestions?.map((eq: any) => ({
+        let formattedQuestions = examQuestions?.map((eq: any) => ({
           id: eq.questions.id,
           question: eq.questions.question_text,
           options: eq.questions.question_options
@@ -122,6 +129,40 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
           explanation: eq.questions.explanation,
           media_url: eq.questions.media_url,
         })) || [];
+
+        // If questions_per_student is set, randomly select that number of questions
+        if (examData?.questions_per_student && formattedQuestions.length > examData.questions_per_student) {
+          // Create a deterministic seed based on user ID and exam ID for consistency
+          const seed = user?.id + exam.id;
+          let hash = 0;
+          for (let i = 0; i < seed.length; i++) {
+            const char = seed.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+          }
+          
+          // Use seeded random to ensure same questions for same user
+          const seededRandom = (function(seed: number) {
+            let m = 0x80000000; // 2**31
+            let a = 1103515245;
+            let c = 12345;
+            let state = seed ? seed : Math.floor(Math.random() * (m - 1));
+            return function() {
+              state = (a * state + c) % m;
+              return state / (m - 1);
+            };
+          })(Math.abs(hash));
+          
+          // Shuffle with seeded random
+          const shuffled = [...formattedQuestions];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(seededRandom() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          
+          formattedQuestions = shuffled.slice(0, examData.questions_per_student);
+          console.log(`Selected ${examData.questions_per_student} questions from pool of ${shuffled.length}`);
+        }
 
         setQuestions(formattedQuestions);
       } catch (error) {
