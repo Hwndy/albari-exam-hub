@@ -59,6 +59,318 @@ export type Database = {
         }
         Relationships: []
       }
+      admission_applications: {
+        Row: {
+          address: Json
+          admission_date: string | null
+          admitted_to_class_id: string | null
+          allergies: string | null
+          application_date: string
+          application_number: string
+          applying_for_class_id: string | null
+          blood_group: string | null
+          created_at: string
+          date_of_birth: string
+          email: string
+          first_name: string
+          gender: string
+          id: string
+          last_name: string
+          lga: string | null
+          medical_conditions: string | null
+          middle_name: string | null
+          nationality: string | null
+          parent_guardian_info: Json
+          phone: string
+          previous_class: string | null
+          previous_school: string | null
+          religion: string | null
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          special_needs: string | null
+          state_of_origin: string | null
+          status: Database["public"]["Enums"]["admission_status"]
+          student_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          address: Json
+          admission_date?: string | null
+          admitted_to_class_id?: string | null
+          allergies?: string | null
+          application_date?: string
+          application_number: string
+          applying_for_class_id?: string | null
+          blood_group?: string | null
+          created_at?: string
+          date_of_birth: string
+          email: string
+          first_name: string
+          gender: string
+          id?: string
+          last_name: string
+          lga?: string | null
+          medical_conditions?: string | null
+          middle_name?: string | null
+          nationality?: string | null
+          parent_guardian_info: Json
+          phone: string
+          previous_class?: string | null
+          previous_school?: string | null
+          religion?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          special_needs?: string | null
+          state_of_origin?: string | null
+          status?: Database["public"]["Enums"]["admission_status"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: Json
+          admission_date?: string | null
+          admitted_to_class_id?: string | null
+          allergies?: string | null
+          application_date?: string
+          application_number?: string
+          applying_for_class_id?: string | null
+          blood_group?: string | null
+          created_at?: string
+          date_of_birth?: string
+          email?: string
+          first_name?: string
+          gender?: string
+          id?: string
+          last_name?: string
+          lga?: string | null
+          medical_conditions?: string | null
+          middle_name?: string | null
+          nationality?: string | null
+          parent_guardian_info?: Json
+          phone?: string
+          previous_class?: string | null
+          previous_school?: string | null
+          religion?: string | null
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          special_needs?: string | null
+          state_of_origin?: string | null
+          status?: Database["public"]["Enums"]["admission_status"]
+          student_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_applications_admitted_to_class_id_fkey"
+            columns: ["admitted_to_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_applications_applying_for_class_id_fkey"
+            columns: ["applying_for_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_applications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_documents: {
+        Row: {
+          application_id: string
+          document_name: string
+          document_type: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          uploaded_at: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          application_id: string
+          document_name: string
+          document_type: string
+          file_size?: number | null
+          file_url: string
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          application_id?: string
+          document_name?: string
+          document_type?: string
+          file_size?: number | null
+          file_url?: string
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_documents_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_interviews: {
+        Row: {
+          application_id: string
+          created_at: string
+          feedback: string | null
+          id: string
+          interview_type: string
+          interviewer_id: string | null
+          location: string | null
+          scheduled_date: string
+          score: number | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          application_id: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interview_type?: string
+          interviewer_id?: string | null
+          location?: string | null
+          scheduled_date: string
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          application_id?: string
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          interview_type?: string
+          interviewer_id?: string | null
+          location?: string | null
+          scheduled_date?: string
+          score?: number | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_interviews_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_payments: {
+        Row: {
+          amount: number
+          application_id: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          payment_method: string | null
+          payment_reference: string | null
+          payment_type: string
+          status: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          application_id: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_type?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          application_id?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          payment_method?: string | null
+          payment_reference?: string | null
+          payment_type?: string
+          status?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_payments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_workflow_logs: {
+        Row: {
+          application_id: string
+          changed_by: string | null
+          created_at: string
+          from_status: Database["public"]["Enums"]["admission_status"] | null
+          id: string
+          notes: string | null
+          to_status: Database["public"]["Enums"]["admission_status"]
+        }
+        Insert: {
+          application_id: string
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["admission_status"] | null
+          id?: string
+          notes?: string | null
+          to_status: Database["public"]["Enums"]["admission_status"]
+        }
+        Update: {
+          application_id?: string
+          changed_by?: string | null
+          created_at?: string
+          from_status?: Database["public"]["Enums"]["admission_status"] | null
+          id?: string
+          notes?: string | null
+          to_status?: Database["public"]["Enums"]["admission_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_workflow_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       announcements: {
         Row: {
           attachments: Json | null
@@ -1186,28 +1498,43 @@ export type Database = {
       }
       student_parent_relationships: {
         Row: {
+          access_level: string | null
+          can_view_attendance: boolean | null
+          can_view_fees: boolean | null
+          can_view_grades: boolean | null
           created_at: string | null
           id: string
           is_emergency_contact: boolean | null
           is_primary_contact: boolean | null
+          notification_preferences: Json | null
           parent_id: string | null
           relationship_type: string | null
           student_id: string | null
         }
         Insert: {
+          access_level?: string | null
+          can_view_attendance?: boolean | null
+          can_view_fees?: boolean | null
+          can_view_grades?: boolean | null
           created_at?: string | null
           id?: string
           is_emergency_contact?: boolean | null
           is_primary_contact?: boolean | null
+          notification_preferences?: Json | null
           parent_id?: string | null
           relationship_type?: string | null
           student_id?: string | null
         }
         Update: {
+          access_level?: string | null
+          can_view_attendance?: boolean | null
+          can_view_fees?: boolean | null
+          can_view_grades?: boolean | null
           created_at?: string | null
           id?: string
           is_emergency_contact?: boolean | null
           is_primary_contact?: boolean | null
+          notification_preferences?: Json | null
           parent_id?: string | null
           relationship_type?: string | null
           student_id?: string | null
@@ -1410,6 +1737,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       website_pages: {
         Row: {
           content: string | null
@@ -1553,7 +1904,18 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: string
       }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      is_admin_v2: {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
@@ -1561,8 +1923,22 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_teacher_v2: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
     }
     Enums: {
+      admission_status:
+        | "submitted"
+        | "under_review"
+        | "interview_scheduled"
+        | "accepted"
+        | "rejected"
+        | "payment_pending"
+        | "enrolled"
+        | "withdrawn"
+      app_role: "admin" | "teacher" | "student" | "parent"
       difficulty_level: "easy" | "medium" | "hard"
       exam_status: "draft" | "published" | "archived"
       question_type: "mcq" | "true_false" | "fill_blank" | "diagram"
@@ -1694,6 +2070,17 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      admission_status: [
+        "submitted",
+        "under_review",
+        "interview_scheduled",
+        "accepted",
+        "rejected",
+        "payment_pending",
+        "enrolled",
+        "withdrawn",
+      ],
+      app_role: ["admin", "teacher", "student", "parent"],
       difficulty_level: ["easy", "medium", "hard"],
       exam_status: ["draft", "published", "archived"],
       question_type: ["mcq", "true_false", "fill_blank", "diagram"],
