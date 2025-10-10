@@ -223,86 +223,144 @@ export const AdmissionForm = () => {
       }
 
       setIsSubmitting(true);
-      
-      const applicationNumber = generateApplicationNumber();
-      
-      // Prepare submission data
-      const submissionData = {
-        application_number: applicationNumber,
-        status: 'submitted',
-        personal_info: {
-          first_name: formData.first_name,
-          last_name: formData.last_name,
-          middle_name: formData.middle_name,
-          date_of_birth: formData.date_of_birth ? format(formData.date_of_birth, 'yyyy-MM-dd') : null,
-          gender: formData.gender,
-          nationality: formData.nationality,
-          state_of_origin: formData.state_of_origin,
-          lga: formData.lga
+
+      // Get class ID if applying for a specific class
+      const { data: classData } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('name', formData.applying_for_class)
+        .maybeSingle();
+
+      // Prepare parent/guardian information
+      const parentGuardianInfo = {
+        father: {
+          name: formData.father_name,
+          occupation: formData.father_occupation,
+          phone: formData.father_phone,
+          email: formData.father_email
         },
-        contact_info: {
-          address: formData.address,
-          city: formData.city,
-          state: formData.state,
-          postal_code: formData.postal_code,
-          phone: formData.phone,
-          email: formData.email
+        mother: {
+          name: formData.mother_name,
+          occupation: formData.mother_occupation,
+          phone: formData.mother_phone,
+          email: formData.mother_email
         },
-        academic_info: {
-          applying_for_class: formData.applying_for_class,
-          previous_school: formData.previous_school,
-          previous_class: formData.previous_class,
-          reason_for_leaving: formData.reason_for_leaving
+        guardian: {
+          name: formData.guardian_name,
+          relationship: formData.guardian_relationship,
+          phone: formData.guardian_phone,
+          email: formData.guardian_email
         },
-        parent_info: {
-          father: {
-            name: formData.father_name,
-            occupation: formData.father_occupation,
-            phone: formData.father_phone,
-            email: formData.father_email
-          },
-          mother: {
-            name: formData.mother_name,
-            occupation: formData.mother_occupation,
-            phone: formData.mother_phone,
-            email: formData.mother_email
-          },
-          guardian: {
-            name: formData.guardian_name,
-            relationship: formData.guardian_relationship,
-            phone: formData.guardian_phone,
-            email: formData.guardian_email
-          }
-        },
-        medical_info: {
-          blood_group: formData.blood_group,
-          allergies: formData.allergies,
-          medical_conditions: formData.medical_conditions,
-          emergency_contact: {
-            name: formData.emergency_contact_name,
-            phone: formData.emergency_contact_phone,
-            relationship: formData.emergency_contact_relationship
-          }
-        },
-        submitted_at: new Date().toISOString()
+        emergency_contact: {
+          name: formData.emergency_contact_name,
+          phone: formData.emergency_contact_phone,
+          relationship: formData.emergency_contact_relationship
+        }
       };
 
-      // For now, we'll store this in a generic table or create a specific admissions table
-      // Since we don't have an admissions table yet, let's create a simple storage solution
-      const { data, error } = await supabase
-        .from('app_settings')
-        .insert({
-          setting_key: `admission_application_${applicationNumber}`,
-          setting_value: submissionData
-        });
+      // Prepare address
+      const addressData = {
+        street: formData.address,
+        city: formData.city,
+        state: formData.state,
+        postal_code: formData.postal_code
+      };
 
-      if (error) throw error;
+      // Insert admission application
+      const { data: applicationData, error: applicationError } = await supabase
+        .from('admission_applications')
+        .insert([{
+          application_number: 'TEMP',
+          first_name: formData.first_name,
+          middle_name: formData.middle_name || null,
+          last_name: formData.last_name,
+          date_of_birth: formData.date_of_birth ? format(formData.date_of_birth, 'yyyy-MM-dd') : null,
+          gender: formData.gender,
+          blood_group: formData.blood_group || null,
+          state_of_origin: formData.state_of_origin || null,
+          lga: formData.lga || null,
+          nationality: formData.nationality,
+          religion: null,
+          email: formData.email,
+          phone: formData.phone,
+          address: addressData,
+          previous_school: formData.previous_school || null,
+          previous_class: formData.previous_class || null,
+          applying_for_class_id: classData?.id || null,
+          parent_guardian_info: parentGuardianInfo,
+          medical_conditions: formData.medical_conditions || null,
+          allergies: formData.allergies || null,
+          special_needs: null
+        }])
+        .select()
+        .single();
 
-      setSubmissionId(applicationNumber);
+      if (applicationError) throw applicationError;
+
+      // Upload documents if any
+      if (formData.documents.birth_certificate || formData.documents.previous_result || 
+          formData.documents.passport_photos || formData.documents.medical_report) {
+        
+        const documentsToUpload = [];
+        
+        if (formData.documents.birth_certificate) {
+          documentsToUpload.push({
+            type: 'birth_certificate',
+            file: formData.documents.birth_certificate
+          });
+        }
+        if (formData.documents.previous_result) {
+          documentsToUpload.push({
+            type: 'previous_result',
+            file: formData.documents.previous_result
+          });
+        }
+        if (formData.documents.passport_photos) {
+          documentsToUpload.push({
+            type: 'passport_photos',
+            file: formData.documents.passport_photos
+          });
+        }
+        if (formData.documents.medical_report) {
+          documentsToUpload.push({
+            type: 'medical_report',
+            file: formData.documents.medical_report
+          });
+        }
+
+        // Upload each document
+        for (const doc of documentsToUpload) {
+          const fileExt = doc.file.name.split('.').pop();
+          const fileName = `${applicationData.id}/${doc.type}.${fileExt}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('admission-documents')
+            .upload(fileName, doc.file);
+
+          if (!uploadError) {
+            const { data: { publicUrl } } = supabase.storage
+              .from('admission-documents')
+              .getPublicUrl(fileName);
+
+            await supabase
+              .from('admission_documents')
+              .insert({
+                application_id: applicationData.id,
+                document_type: doc.type,
+                document_name: doc.file.name,
+                file_url: publicUrl,
+                file_size: doc.file.size,
+                mime_type: doc.file.type
+              });
+          }
+        }
+      }
+
+      setSubmissionId(applicationData.application_number);
       
       toast({
         title: 'Application Submitted Successfully!',
-        description: `Your application number is ${applicationNumber}. Please save this for future reference.`,
+        description: `Your application number is ${applicationData.application_number}. Please save this for future reference.`,
       });
 
     } catch (error: any) {
