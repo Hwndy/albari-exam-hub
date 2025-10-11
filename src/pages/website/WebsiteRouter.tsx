@@ -8,6 +8,7 @@ import { AdmissionsPage } from './AdmissionsPage';
 import { NewsPage } from './NewsPage';
 import { FacilitiesPage } from './FacilitiesPage';
 import { PortalsPage } from './PortalsPage';
+import { TrackApplicationPage } from './TrackApplicationPage';
 
 export const WebsiteRouter = () => {
   return (
@@ -17,6 +18,7 @@ export const WebsiteRouter = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/school-life" element={<SchoolLifePage />} />
         <Route path="/admissions" element={<AdmissionsPage />} />
+        <Route path="/track-application" element={<TrackApplicationPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />

@@ -356,6 +356,19 @@ export const AdmissionForm = () => {
         }
       }
 
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-admission-notification', {
+          body: {
+            application_id: applicationData.id,
+            notification_type: 'submitted',
+          },
+        });
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+        // Don't fail the submission if notification fails
+      }
+
       setSubmissionId(applicationData.application_number);
       
       toast({

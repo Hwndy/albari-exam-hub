@@ -58,6 +58,15 @@ verify_jwt = false
 [functions.verify-otp] 
 verify_jwt = false
 
+[functions.initialize-admission-payment]
+verify_jwt = false
+
+[functions.verify-admission-payment]
+verify_jwt = false
+
+[functions.send-admission-notification]
+verify_jwt = false
+
 [edge-runtime]
 enabled = true
 port = 54330

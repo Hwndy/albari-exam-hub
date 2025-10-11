@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
+import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
 
 type AdmissionStatus = 'submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected' | 'payment_pending' | 'enrolled' | 'withdrawn';
 
@@ -86,9 +87,22 @@ export const AdmissionManagement = () => {
 
       if (error) throw error;
 
+      // Send notification email
+      try {
+        await supabase.functions.invoke('send-admission-notification', {
+          body: {
+            application_id: applicationId,
+            notification_type: newStatus,
+          },
+        });
+      } catch (notifError) {
+        console.error('Error sending notification:', notifError);
+        // Don't fail the status update if notification fails
+      }
+
       toast({
         title: 'Status Updated',
-        description: `Application ${newStatus} successfully`,
+        description: `Application ${newStatus} successfully. Notification sent to applicant.`,
       });
 
       fetchApplications();
@@ -161,9 +175,24 @@ export const AdmissionManagement = () => {
         })
         .eq('id', application.id);
 
+      // Send enrollment notification
+      try {
+        await supabase.functions.invoke('send-admission-notification', {
+          body: {
+            application_id: application.id,
+            notification_type: 'enrolled',
+            additional_data: {
+              admission_number: application.application_number,
+            },
+          },
+        });
+      } catch (notifError) {
+        console.error('Error sending enrollment notification:', notifError);
+      }
+
       toast({
         title: 'Student Enrolled',
-        description: 'Student account created successfully',
+        description: 'Student account created and welcome email sent successfully',
       });
 
       fetchApplications();
@@ -423,13 +452,15 @@ export const AdmissionManagement = () => {
                             )}
                             {selectedApplication.status === 'under_review' && (
                               <>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => updateApplicationStatus(selectedApplication.id, 'interview_scheduled')}
-                                  disabled={actionLoading}
-                                >
-                                  Schedule Interview
-                                </Button>
+                                <InterviewScheduler
+                                  applicationId={selectedApplication.id}
+                                  onScheduled={fetchApplications}
+                                  trigger={
+                                    <Button variant="outline" disabled={actionLoading}>
+                                      Schedule Interview
+                                    </Button>
+                                  }
+                                />
                                 <Button
                                   onClick={() => updateApplicationStatus(selectedApplication.id, 'accepted')}
                                   disabled={actionLoading}
