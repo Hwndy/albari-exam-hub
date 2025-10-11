@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { StudentOverview } from '@/components/parent/StudentOverview';
 import { AcademicProgress } from '@/components/parent/AcademicProgress';
 import { AttendanceMonitor } from '@/components/parent/AttendanceMonitor';
-import { FeeManagement } from '@/components/parent/FeeManagement';
+import { FeeManagementEnhanced } from '@/components/parent/FeeManagementEnhanced';
 import { CommunicationHub } from '@/components/parent/CommunicationHub';
 import { AcademicCalendar } from '@/components/parent/AcademicCalendar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -96,7 +96,7 @@ export const ParentDashboard = () => {
           </TabsContent>
 
           <TabsContent value="fees" className="space-y-4">
-            <FeeManagement />
+            <FeeManagementEnhanced />
           </TabsContent>
 
           <TabsContent value="communication" className="space-y-4">

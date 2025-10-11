@@ -36,14 +36,9 @@ USING (
   )
 );
 
-CREATE POLICY "Users can upload to their own application folder"
+CREATE POLICY "Public can upload application documents"
 ON storage.objects
 FOR INSERT
 WITH CHECK (
-  bucket_id = 'admission-documents' AND
-  EXISTS (
-    SELECT 1 FROM public.admission_applications aa
-    WHERE aa.email = (SELECT email FROM auth.users WHERE id = auth.uid())
-    AND (storage.foldername(name))[1] = aa.id::text
-  )
+  bucket_id = 'admission-documents'
 );

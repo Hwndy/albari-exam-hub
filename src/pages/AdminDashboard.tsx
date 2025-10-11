@@ -17,6 +17,7 @@ import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCre
 import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
+import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -257,6 +258,7 @@ export const AdminDashboard = () => {
           <div className="overflow-x-auto">
             <TabsList className="flex w-max min-w-full h-auto flex-wrap gap-1 p-1">
               <TabsTrigger value="overview" className="text-xs px-2 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
+              <TabsTrigger value="admissions" className="text-xs px-2 py-1.5 whitespace-nowrap">Admissions</TabsTrigger>
               <TabsTrigger value="exams" className="text-xs px-2 py-1.5 whitespace-nowrap">Exams</TabsTrigger>
               <TabsTrigger value="results" className="text-xs px-2 py-1.5 whitespace-nowrap">Results</TabsTrigger>
               <TabsTrigger value="users" className="text-xs px-2 py-1.5 whitespace-nowrap">Users</TabsTrigger>
@@ -267,6 +269,11 @@ export const AdminDashboard = () => {
               <TabsTrigger value="results-modal" className="text-xs px-2 py-1.5 whitespace-nowrap">All Results</TabsTrigger>
             </TabsList>
           </div>
+
+          {/* Admissions Tab */}
+          <TabsContent value="admissions" className="space-y-6">
+            <AdmissionManagement />
+          </TabsContent>
 
           {/* Exams Tab */}
           <TabsContent value="exams" className="space-y-6">
