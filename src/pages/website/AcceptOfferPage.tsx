@@ -46,9 +46,9 @@ export const AcceptOfferPage = () => {
     try {
       const offerResponse = await supabase
         .from('admission_offers')
-        .select('*')
+        .select('id, application_id, acceptance_deadline, status, accepted_at, declined_at')
         .eq('acceptance_token', token)
-        .single();
+        .maybeSingle();
 
       if (offerResponse.error) throw offerResponse.error;
       const offerData = offerResponse.data;
@@ -58,7 +58,7 @@ export const AcceptOfferPage = () => {
           .from('admission_applications')
           .select('id, application_number, first_name, last_name, email, admitted_to_class_id')
           .eq('id', offerData.application_id)
-          .single();
+          .maybeSingle();
         
         const appData = appResponse.data;
 
@@ -68,7 +68,7 @@ export const AcceptOfferPage = () => {
             .from('classes')
             .select('name')
             .eq('id', appData.admitted_to_class_id)
-            .single();
+            .maybeSingle();
           if (classResponse.data) className = classResponse.data.name;
         }
 
