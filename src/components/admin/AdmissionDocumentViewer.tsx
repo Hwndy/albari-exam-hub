@@ -40,9 +40,17 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
         .eq("application_id", applicationId)
         .order("uploaded_at", { ascending: false });
 
-      if (error) throw error;
-      setDocuments(data || []);
+      if (error) {
+        if (error.code === '42501') {
+          toast.error("Permission denied. Please ensure you're logged in as an admin.");
+        } else {
+          throw error;
+        }
+      } else {
+        setDocuments(data || []);
+      }
     } catch (error: any) {
+      console.error('Error fetching documents:', error);
       toast.error("Failed to load documents: " + error.message);
     } finally {
       setLoading(false);

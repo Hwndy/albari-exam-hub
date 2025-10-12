@@ -51,7 +51,7 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
       scheduledDate.setHours(parseInt(hours), parseInt(minutes));
 
       // Create interview record
-      const { error: interviewError } = await supabase
+      const { data: interviewData, error: interviewError } = await supabase
         .from('admission_interviews')
         .insert({
           application_id: applicationId,
@@ -59,7 +59,9 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
           interview_type: interviewType,
           location: location,
           status: 'scheduled',
-        });
+        })
+        .select()
+        .single();
 
       if (interviewError) throw interviewError;
 

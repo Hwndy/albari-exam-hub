@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { AdminSidebar } from '@/components/ui/admin-sidebar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp, Plus, Award } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -156,9 +159,18 @@ export const AdminDashboard = () => {
     }
   };
 
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'overview';
+  const activeSubTab = searchParams.get('subtab') || 'applications';
+
   return (
-    <DashboardLayout title="Admin Dashboard">
-      <div className="space-y-8">
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full">
+        <AdminSidebar />
+        <DashboardLayout title="Admin Dashboard">
+          <div className="space-y-8">
+            <SidebarTrigger className="mb-4" />
         {/* Stats Overview */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -260,8 +272,8 @@ export const AdminDashboard = () => {
           </Card>
         </div>
 
-        {/* Main Content Tabs */}
-        <Tabs defaultValue="overview" className="space-y-6">
+        {/* Main Content - Now controlled by sidebar */}
+        <Tabs value={activeTab} className="space-y-6">
           <div className="overflow-x-auto">
             <TabsList className="flex w-max min-w-full h-auto flex-wrap gap-1 p-1">
               <TabsTrigger value="overview" className="text-xs px-2 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
@@ -280,7 +292,7 @@ export const AdminDashboard = () => {
 
           {/* Admissions Tab */}
           <TabsContent value="admissions" className="space-y-6">
-            <Tabs defaultValue="applications" className="space-y-4">
+            <Tabs value={activeSubTab} className="space-y-4">
               <TabsList>
                 <TabsTrigger value="applications">Applications</TabsTrigger>
                 <TabsTrigger value="sessions">Sessions</TabsTrigger>
@@ -460,7 +472,9 @@ export const AdminDashboard = () => {
           open={resultsModalOpen}
           onOpenChange={setResultsModalOpen}
         />
+          </div>
+        </DashboardLayout>
       </div>
-    </DashboardLayout>
+    </SidebarProvider>
   );
 };

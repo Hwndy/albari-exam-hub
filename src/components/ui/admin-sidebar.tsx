@@ -1,0 +1,186 @@
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
+import {
+  LayoutDashboard,
+  Users,
+  School,
+  BookOpen,
+  FileText,
+  Award,
+  Settings,
+  Mail,
+  Activity,
+  ChevronDown,
+  GraduationCap,
+  UserCog,
+  ClipboardList,
+} from "lucide-react";
+
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+  useSidebar,
+} from "@/components/ui/sidebar";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+
+const menuItems = [
+  {
+    title: "Dashboard",
+    icon: LayoutDashboard,
+    value: "overview",
+  },
+  {
+    title: "Admissions",
+    icon: GraduationCap,
+    value: "admissions",
+    sub: [
+      { title: "Applications", value: "applications" },
+      { title: "Sessions", value: "sessions" },
+      { title: "Payments", value: "payments" },
+      { title: "Entrance Exams", value: "entrance-exams" },
+      { title: "Decisions", value: "decisions" },
+      { title: "Analytics", value: "analytics" },
+    ],
+  },
+  {
+    title: "Academic",
+    icon: BookOpen,
+    value: "academic",
+    sub: [
+      { title: "Exams", value: "exams" },
+      { title: "Results", value: "results" },
+      { title: "Questions", value: "questions" },
+      { title: "Classes", value: "classes" },
+      { title: "Subjects", value: "subjects" },
+    ],
+  },
+  {
+    title: "Users",
+    icon: Users,
+    value: "users",
+  },
+  {
+    title: "System",
+    icon: Settings,
+    value: "system",
+    sub: [
+      { title: "Email Logs", value: "email-logs" },
+      { title: "Monitor", value: "monitor-logs" },
+      { title: "All Results", value: "results-modal" },
+    ],
+  },
+];
+
+export function AdminSidebar() {
+  const { state } = useSidebar();
+  const collapsed = state === "collapsed";
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const currentTab = searchParams.get("tab") || "overview";
+  const currentSubTab = searchParams.get("subtab");
+  
+  const [openGroups, setOpenGroups] = useState<string[]>(["admissions", "academic", "system"]);
+
+  const navigate = useNavigate();
+
+  const isActive = (value: string, subValue?: string) => {
+    if (subValue) {
+      return currentTab === value && currentSubTab === subValue;
+    }
+    return currentTab === value;
+  };
+
+  const handleNavigation = (value: string, subValue?: string) => {
+    if (subValue) {
+      navigate(`/admin?tab=${value}&subtab=${subValue}`);
+    } else {
+      navigate(`/admin?tab=${value}`);
+    }
+  };
+
+  const toggleGroup = (value: string) => {
+    setOpenGroups((prev) =>
+      prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]
+    );
+  };
+
+  return (
+    <Sidebar collapsible="icon" className={collapsed ? "w-14" : "w-60"}>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {menuItems.map((item) =>
+                item.sub ? (
+                  <Collapsible
+                    key={item.value}
+                    open={openGroups.includes(item.value)}
+                    onOpenChange={() => toggleGroup(item.value)}
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton
+                          className={isActive(item.value) ? "bg-accent" : ""}
+                        >
+                          <item.icon className="h-4 w-4" />
+                          {!collapsed && (
+                            <>
+                              <span>{item.title}</span>
+                              <ChevronDown
+                                className={`ml-auto h-4 w-4 transition-transform ${
+                                  openGroups.includes(item.value) ? "rotate-180" : ""
+                                }`}
+                              />
+                            </>
+                          )}
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.sub.map((subItem) => (
+                            <SidebarMenuSubItem key={subItem.value}>
+                              <SidebarMenuSubButton
+                                onClick={() => handleNavigation(item.value, subItem.value)}
+                                className={
+                                  isActive(item.value, subItem.value)
+                                    ? "bg-accent font-medium"
+                                    : ""
+                                }
+                              >
+                                <span>{subItem.title}</span>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
+                ) : (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation(item.value)}
+                      className={isActive(item.value) ? "bg-accent font-medium" : ""}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )
+              )}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+    </Sidebar>
+  );
+}

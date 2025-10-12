@@ -182,10 +182,10 @@ export const InterviewFeedbackForm: React.FC<InterviewFeedbackFormProps> = ({
                 <SelectValue placeholder="Select recommendation" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Strongly Recommend">Strongly Recommend</SelectItem>
-                <SelectItem value="Recommend">Recommend</SelectItem>
-                <SelectItem value="Neutral">Neutral</SelectItem>
-                <SelectItem value="Do Not Recommend">Do Not Recommend</SelectItem>
+                <SelectItem value="strong_accept">Strongly Recommend</SelectItem>
+                <SelectItem value="accept">Recommend</SelectItem>
+                <SelectItem value="neutral">Neutral</SelectItem>
+                <SelectItem value="reject">Do Not Recommend</SelectItem>
               </SelectContent>
             </Select>
           </div>

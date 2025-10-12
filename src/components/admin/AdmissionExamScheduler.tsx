@@ -172,7 +172,10 @@ export const AdmissionExamScheduler = () => {
             </DialogContent>
           </Dialog>
           
-          <Button onClick={() => window.location.href = '/admin?tab=exams'}>
+          <Button onClick={() => {
+            // Stay in the current context, open exam creator
+            toast.info("Please use the Create Exam button and set category to 'Entrance' for admission exams");
+          }}>
             <Plus className="h-4 w-4 mr-2" />
             Create Entrance Exam
           </Button>

@@ -35,6 +35,23 @@ export const InterviewPanelManager: React.FC<InterviewPanelManagerProps> = ({
 
   const loadData = async () => {
     try {
+      // First check if interview exists
+      const { data: interview } = await supabase
+        .from('admission_interviews')
+        .select('id')
+        .eq('id', interviewId)
+        .single();
+
+      if (!interview) {
+        toast({
+          title: 'Error',
+          description: 'Interview not found. Please schedule an interview first.',
+          variant: 'destructive',
+        });
+        setOpen(false);
+        return;
+      }
+
       // Load staff with admin or teacher roles
       const { data: profiles } = await supabase
         .from('profiles')
@@ -56,6 +73,11 @@ export const InterviewPanelManager: React.FC<InterviewPanelManagerProps> = ({
       if (panel) setPanelMembers(panel);
     } catch (error) {
       console.error('Error loading data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load interview data',
+        variant: 'destructive',
+      });
     }
   };
 
