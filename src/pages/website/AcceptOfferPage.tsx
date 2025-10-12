@@ -44,37 +44,52 @@ export const AcceptOfferPage = () => {
 
   const loadOfferDetails = async () => {
     try {
-      const offerResponse = await supabase
+      const { data: offerData, error: offerError } = await supabase
         .from('admission_offers')
         .select('id, application_id, acceptance_deadline, status, accepted_at, declined_at')
         .eq('acceptance_token', token)
         .maybeSingle();
 
-      if (offerResponse.error) throw offerResponse.error;
-      const offerData = offerResponse.data;
+      if (offerError) throw offerError;
 
       if (offerData) {
-        const appResponse = await supabase
+        const { data: appData, error: appError } = await supabase
           .from('admission_applications')
           .select('id, application_number, first_name, last_name, email, admitted_to_class_id')
           .eq('id', offerData.application_id)
           .maybeSingle();
         
-        const appData = appResponse.data;
+        if (appError) throw appError;
 
         let className = 'N/A';
         if (appData?.admitted_to_class_id) {
-          const classResponse = await supabase
+          const { data: classData } = await supabase
             .from('classes')
             .select('name')
             .eq('id', appData.admitted_to_class_id)
             .maybeSingle();
-          if (classResponse.data) className = classResponse.data.name;
+          if (classData) className = classData.name;
         }
 
-        setOffer(offerData as OfferData);
+        setOffer({
+          id: offerData.id,
+          application_id: offerData.application_id,
+          acceptance_deadline: offerData.acceptance_deadline,
+          status: offerData.status,
+          accepted_at: offerData.accepted_at,
+          declined_at: offerData.declined_at,
+        });
+
         if (appData) {
-          setApplication({ ...appData, classes: { name: className } } as ApplicationData);
+          setApplication({
+            id: appData.id,
+            application_number: appData.application_number,
+            first_name: appData.first_name,
+            last_name: appData.last_name,
+            email: appData.email,
+            admitted_to_class_id: appData.admitted_to_class_id,
+            classes: { name: className },
+          });
         }
       }
     } catch (error) {

@@ -341,9 +341,11 @@ export type Database = {
         Row: {
           acceptance_deadline: string
           acceptance_fee: number
+          acceptance_token: string | null
           accepted_at: string | null
           application_id: string
           created_at: string
+          declined_at: string | null
           id: string
           offer_letter_url: string | null
           offered_class_id: string | null
@@ -353,9 +355,11 @@ export type Database = {
         Insert: {
           acceptance_deadline: string
           acceptance_fee: number
+          acceptance_token?: string | null
           accepted_at?: string | null
           application_id: string
           created_at?: string
+          declined_at?: string | null
           id?: string
           offer_letter_url?: string | null
           offered_class_id?: string | null
@@ -365,9 +369,11 @@ export type Database = {
         Update: {
           acceptance_deadline?: string
           acceptance_fee?: number
+          acceptance_token?: string | null
           accepted_at?: string | null
           application_id?: string
           created_at?: string
+          declined_at?: string | null
           id?: string
           offer_letter_url?: string | null
           offered_class_id?: string | null
