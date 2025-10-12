@@ -266,11 +266,17 @@ export const AdmissionForm = () => {
         postal_code: formData.postal_code
       };
 
+      // Generate a client-side UUID and application number for the submission
+      // This allows us to reference the application without needing to SELECT it back
+      const applicationId = crypto.randomUUID();
+      const applicationNumber = `ALB${Date.now().toString().slice(-8)}`;
+
       // Insert admission application
-      const { data: applicationData, error: applicationError } = await supabase
+      const { error: applicationError } = await supabase
         .from('admission_applications')
         .insert([{
-          application_number: 'TEMP',
+          id: applicationId,
+          application_number: applicationNumber,
           first_name: formData.first_name,
           middle_name: formData.middle_name || null,
           last_name: formData.last_name,
@@ -291,9 +297,7 @@ export const AdmissionForm = () => {
           medical_conditions: formData.medical_conditions || null,
           allergies: formData.allergies || null,
           special_needs: null
-        }])
-        .select()
-        .single();
+        }]);
 
       if (applicationError) throw applicationError;
 
@@ -331,7 +335,7 @@ export const AdmissionForm = () => {
         // Upload each document
         for (const doc of documentsToUpload) {
           const fileExt = doc.file.name.split('.').pop();
-          const fileName = `${applicationData.id}/${doc.type}.${fileExt}`;
+          const fileName = `${applicationId}/${doc.type}.${fileExt}`;
           
           const { error: uploadError } = await supabase.storage
             .from('admission-documents')
@@ -345,7 +349,7 @@ export const AdmissionForm = () => {
             await supabase
               .from('admission_documents')
               .insert({
-                application_id: applicationData.id,
+                application_id: applicationId,
                 document_type: doc.type,
                 document_name: doc.file.name,
                 file_url: publicUrl,
@@ -360,7 +364,7 @@ export const AdmissionForm = () => {
       try {
         await supabase.functions.invoke('send-admission-notification', {
           body: {
-            application_id: applicationData.id,
+            application_id: applicationId,
             notification_type: 'submitted',
           },
         });
@@ -369,11 +373,11 @@ export const AdmissionForm = () => {
         // Don't fail the submission if notification fails
       }
 
-      setSubmissionId(applicationData.application_number);
+      setSubmissionId(applicationNumber);
       
       toast({
         title: 'Application Submitted Successfully!',
-        description: `Your application number is ${applicationData.application_number}. Please save this for future reference.`,
+        description: `Your application number is ${applicationNumber}. Please save this for future reference.`,
       });
 
     } catch (error: any) {
