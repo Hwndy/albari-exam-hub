@@ -3,17 +3,10 @@ import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
-  School,
   BookOpen,
-  FileText,
-  Award,
   Settings,
-  Mail,
-  Activity,
-  ChevronDown,
   GraduationCap,
-  UserCog,
-  ClipboardList,
+  ChevronDown,
 } from "lucide-react";
 
 import {
@@ -30,6 +23,12 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 const menuItems = [
@@ -96,6 +95,10 @@ export function AdminSidebar() {
     if (subValue) {
       return currentTab === value && currentSubTab === subValue;
     }
+    return currentTab === value && !currentSubTab;
+  };
+
+  const isParentActive = (value: string) => {
     return currentTab === value;
   };
 
@@ -114,69 +117,91 @@ export function AdminSidebar() {
   };
 
   return (
-    <Sidebar collapsible="icon" className={collapsed ? "w-14" : "w-60"}>
+    <Sidebar collapsible="icon" className={collapsed ? "w-14" : "w-64"}>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>
+          {!collapsed && <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) =>
-                item.sub ? (
-                  <Collapsible
-                    key={item.value}
-                    open={openGroups.includes(item.value)}
-                    onOpenChange={() => toggleGroup(item.value)}
-                  >
-                    <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                        <SidebarMenuButton
-                          className={isActive(item.value) ? "bg-accent" : ""}
-                        >
-                          <item.icon className="h-4 w-4" />
-                          {!collapsed && (
-                            <>
-                              <span>{item.title}</span>
-                              <ChevronDown
-                                className={`ml-auto h-4 w-4 transition-transform ${
-                                  openGroups.includes(item.value) ? "rotate-180" : ""
-                                }`}
-                              />
-                            </>
-                          )}
-                        </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent>
-                        <SidebarMenuSub>
-                          {item.sub.map((subItem) => (
-                            <SidebarMenuSubItem key={subItem.value}>
-                              <SidebarMenuSubButton
-                                onClick={() => handleNavigation(item.value, subItem.value)}
-                                className={
-                                  isActive(item.value, subItem.value)
-                                    ? "bg-accent font-medium"
-                                    : ""
-                                }
-                              >
-                                <span>{subItem.title}</span>
-                              </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                          ))}
-                        </SidebarMenuSub>
-                      </CollapsibleContent>
-                    </SidebarMenuItem>
-                  </Collapsible>
-                ) : (
-                  <SidebarMenuItem key={item.value}>
-                    <SidebarMenuButton
-                      onClick={() => handleNavigation(item.value)}
-                      className={isActive(item.value) ? "bg-accent font-medium" : ""}
+              <TooltipProvider>
+                {menuItems.map((item) =>
+                  item.sub ? (
+                    <Collapsible
+                      key={item.value}
+                      open={!collapsed && openGroups.includes(item.value)}
+                      onOpenChange={() => !collapsed && toggleGroup(item.value)}
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                )
-              )}
+                      <SidebarMenuItem>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <CollapsibleTrigger asChild>
+                              <SidebarMenuButton
+                                className={isParentActive(item.value) ? "bg-accent" : ""}
+                              >
+                                <item.icon className="h-4 w-4" />
+                                {!collapsed && (
+                                  <>
+                                    <span>{item.title}</span>
+                                    <ChevronDown
+                                      className={`ml-auto h-4 w-4 transition-transform ${
+                                        openGroups.includes(item.value) ? "rotate-180" : ""
+                                      }`}
+                                    />
+                                  </>
+                                )}
+                              </SidebarMenuButton>
+                            </CollapsibleTrigger>
+                          </TooltipTrigger>
+                          {collapsed && (
+                            <TooltipContent side="right">
+                              <p>{item.title}</p>
+                            </TooltipContent>
+                          )}
+                        </Tooltip>
+                        {!collapsed && (
+                          <CollapsibleContent>
+                            <SidebarMenuSub>
+                              {item.sub.map((subItem) => (
+                                <SidebarMenuSubItem key={subItem.value}>
+                                  <SidebarMenuSubButton
+                                    onClick={() => handleNavigation(item.value, subItem.value)}
+                                    className={
+                                      isActive(item.value, subItem.value)
+                                        ? "bg-accent font-medium"
+                                        : ""
+                                    }
+                                  >
+                                    <span>{subItem.title}</span>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              ))}
+                            </SidebarMenuSub>
+                          </CollapsibleContent>
+                        )}
+                      </SidebarMenuItem>
+                    </Collapsible>
+                  ) : (
+                    <SidebarMenuItem key={item.value}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <SidebarMenuButton
+                            onClick={() => handleNavigation(item.value)}
+                            className={isActive(item.value) ? "bg-accent font-medium" : ""}
+                          >
+                            <item.icon className="h-4 w-4" />
+                            {!collapsed && <span>{item.title}</span>}
+                          </SidebarMenuButton>
+                        </TooltipTrigger>
+                        {collapsed && (
+                          <TooltipContent side="right">
+                            <p>{item.title}</p>
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    </SidebarMenuItem>
+                  )
+                )}
+              </TooltipProvider>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

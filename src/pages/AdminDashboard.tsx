@@ -1,22 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp, Plus, Award } from 'lucide-react';
+import { Logo } from '@/components/shared/Logo';
+import { useAuth } from '@/contexts/AuthContext';
+import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
-import { AuditLogs } from '@/components/admin/AuditLogs';
-import { EnhancedAuditLogs } from '@/components/admin/EnhancedAuditLogs';
-import { LiveExamMonitor } from '@/components/admin/LiveExamMonitor';
 import { EnhancedLiveMonitor } from '@/components/admin/EnhancedLiveMonitor';
 import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
-import { EnhancedQuestionCreator } from '@/components/admin/EnhancedQuestionCreator';
-import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
@@ -28,7 +24,6 @@ import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoar
 import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
 import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
 import { EmailTestingPanel } from '@/components/admin/EmailTestingPanel';
-import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -70,6 +65,12 @@ export const AdminDashboard = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const { toast } = useToast();
+  const { user, logout } = useAuth();
+
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const activeTab = searchParams.get('tab') || 'overview';
+  const activeSubTab = searchParams.get('subtab');
 
   useEffect(() => {
     fetchDashboardData();
@@ -159,271 +160,142 @@ export const AdminDashboard = () => {
     }
   };
 
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
-  const activeTab = searchParams.get('tab') || 'overview';
-  const activeSubTab = searchParams.get('subtab') || 'applications';
+  const getPageTitle = () => {
+    if (activeTab === 'overview') return 'Dashboard Overview';
+    if (activeTab === 'admissions') {
+      const titles: Record<string, string> = {
+        'applications': 'Admission Applications',
+        'sessions': 'Admission Sessions',
+        'payments': 'Payment Verification',
+        'entrance-exams': 'Entrance Exams',
+        'decisions': 'Decision Board',
+        'analytics': 'Admission Analytics',
+      };
+      return titles[activeSubTab || 'applications'] || 'Admissions';
+    }
+    if (activeTab === 'academic') {
+      const titles: Record<string, string> = {
+        'exams': 'Exam Management',
+        'results': 'Student Results',
+        'questions': 'Question Bank',
+        'classes': 'Class Management',
+        'subjects': 'Subject Management',
+      };
+      return titles[activeSubTab || 'exams'] || 'Academic';
+    }
+    if (activeTab === 'users') return 'User Management';
+    if (activeTab === 'system') {
+      const titles: Record<string, string> = {
+        'email-logs': 'Email Logs',
+        'monitor-logs': 'Live Monitor',
+        'results-modal': 'All Results',
+      };
+      return titles[activeSubTab || 'email-logs'] || 'System';
+    }
+    return 'Admin Dashboard';
+  };
 
-  return (
-    <SidebarProvider>
-      <div className="flex min-h-screen w-full">
-        <AdminSidebar />
-        <DashboardLayout title="Admin Dashboard">
-          <div className="space-y-8">
-            <SidebarTrigger className="mb-4" />
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+  const renderContent = () => {
+    if (activeTab === 'overview') {
+      return (
+        <div className="space-y-6">
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
+            <CardHeader>
+              <CardTitle>Recent Exams</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {isLoading ? (
+                <div className="space-y-4">
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} className="animate-pulse">
+                      <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                      <div className="h-3 bg-muted rounded w-1/2"></div>
+                    </div>
+                  ))}
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalStudents}</p>
-                  <p className="text-sm text-muted-foreground">Students</p>
+              ) : recentExams.length > 0 ? (
+                <div className="space-y-4">
+                  {recentExams.map((exam) => (
+                    <Card key={exam.id} className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-semibold">{exam.title}</h3>
+                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+                            <span>{exam.subject}</span>
+                            <span>•</span>
+                            <span>{exam.class}</span>
+                            <span>•</span>
+                            <span>{exam.duration_minutes} min</span>
+                            <span>•</span>
+                            <span>{exam.total_questions} questions</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
+                              {exam.status}
+                            </Badge>
+                            <span className="text-sm text-muted-foreground">
+                              {new Date(exam.created_at).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <Shield className="h-6 w-6 text-emerald-600" />
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  No recent exams found
                 </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalTeachers}</p>
-                  <p className="text-sm text-muted-foreground">Teachers</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-orange-100 rounded-lg">
-                  <School className="h-6 w-6 text-orange-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalClasses}</p>
-                  <p className="text-sm text-muted-foreground">Classes</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <BookOpen className="h-6 w-6 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalSubjects}</p>
-                  <p className="text-sm text-muted-foreground">Subjects</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <FileText className="h-6 w-6 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : `${stats.activeExams}/${stats.totalExams}`}</p>
-                  <p className="text-sm text-muted-foreground">Active Exams</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-indigo-100 rounded-lg">
-                  <TrendingUp className="h-6 w-6 text-indigo-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalQuestions}</p>
-                  <p className="text-sm text-muted-foreground">Questions</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-2 bg-green-100 rounded-lg">
-                  <Clock className="h-6 w-6 text-green-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{isLoading ? '...' : stats.activeSessions}</p>
-                  <p className="text-sm text-muted-foreground">Live Sessions</p>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
         </div>
+      );
+    }
 
-        {/* Main Content - Now controlled by sidebar */}
-        <Tabs value={activeTab} className="space-y-6">
-          <div className="overflow-x-auto">
-            <TabsList className="flex w-max min-w-full h-auto flex-wrap gap-1 p-1">
-              <TabsTrigger value="overview" className="text-xs px-2 py-1.5 whitespace-nowrap">Overview</TabsTrigger>
-              <TabsTrigger value="admissions" className="text-xs px-2 py-1.5 whitespace-nowrap">Admissions</TabsTrigger>
-              <TabsTrigger value="exams" className="text-xs px-2 py-1.5 whitespace-nowrap">Exams</TabsTrigger>
-              <TabsTrigger value="results" className="text-xs px-2 py-1.5 whitespace-nowrap">Results</TabsTrigger>
-              <TabsTrigger value="users" className="text-xs px-2 py-1.5 whitespace-nowrap">Users</TabsTrigger>
-              <TabsTrigger value="classes" className="text-xs px-2 py-1.5 whitespace-nowrap">Classes</TabsTrigger>
-              <TabsTrigger value="subjects" className="text-xs px-2 py-1.5 whitespace-nowrap">Subjects</TabsTrigger>
-              <TabsTrigger value="questions" className="text-xs px-2 py-1.5 whitespace-nowrap">Questions</TabsTrigger>
-              <TabsTrigger value="email-logs" className="text-xs px-2 py-1.5 whitespace-nowrap">Email Logs</TabsTrigger>
-              <TabsTrigger value="monitor-logs" className="text-xs px-2 py-1.5 whitespace-nowrap">Monitor</TabsTrigger>
-              <TabsTrigger value="results-modal" className="text-xs px-2 py-1.5 whitespace-nowrap">All Results</TabsTrigger>
-            </TabsList>
-          </div>
+    if (activeTab === 'admissions') {
+      switch (activeSubTab) {
+        case 'sessions': return <AdmissionSessionManager />;
+        case 'payments': return <AdmissionPaymentVerification />;
+        case 'entrance-exams': return <AdmissionExamScheduler />;
+        case 'decisions': return <AdmissionDecisionBoard />;
+        case 'analytics': return <AdmissionAnalytics />;
+        default: return <AdmissionManagement />;
+      }
+    }
 
-          {/* Admissions Tab */}
-          <TabsContent value="admissions" className="space-y-6">
-            <Tabs value={activeSubTab} className="space-y-4">
-              <TabsList>
-                <TabsTrigger value="applications">Applications</TabsTrigger>
-                <TabsTrigger value="sessions">Sessions</TabsTrigger>
-                <TabsTrigger value="payments">Payments</TabsTrigger>
-                <TabsTrigger value="entrance-exams">Entrance Exams</TabsTrigger>
-                <TabsTrigger value="decisions">Decisions</TabsTrigger>
-                <TabsTrigger value="analytics">Analytics</TabsTrigger>
-              </TabsList>
-              
-              <TabsContent value="applications">
-                <AdmissionManagement />
-              </TabsContent>
-              
-              <TabsContent value="sessions">
-                <AdmissionSessionManager />
-              </TabsContent>
-              
-              <TabsContent value="payments">
-                <AdmissionPaymentVerification />
-              </TabsContent>
-              
-              <TabsContent value="entrance-exams">
-                <AdmissionExamScheduler />
-              </TabsContent>
-              
-              <TabsContent value="decisions">
-                <AdmissionDecisionBoard />
-              </TabsContent>
-              
-              <TabsContent value="analytics">
-                <AdmissionAnalytics />
-              </TabsContent>
-            </Tabs>
-          </TabsContent>
+    if (activeTab === 'academic') {
+      switch (activeSubTab) {
+        case 'results': return <AdminStudentResults />;
+        case 'questions': return <AdminQuestionBank />;
+        case 'classes': return <ClassManagement />;
+        case 'subjects': return <SubjectManagement />;
+        default: return <ExamManagement />;
+      }
+    }
 
-          {/* Exams Tab */}
-          <TabsContent value="exams" className="space-y-6">
-            <ConsolidatedExamCreator
-              trigger={
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create New Exam
-                </Button>
-              }
-              onExamCreated={fetchDashboardData}
-            />
-            <ExamManagement />
-          </TabsContent>
+    if (activeTab === 'users') {
+      return <UserManagement />;
+    }
 
-          {/* Results Tab */}
-          <TabsContent value="results" className="space-y-6">
-            <AdminStudentResults />
-          </TabsContent>
-
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Exams</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse">
-                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                      </div>
-                    ))}
-                  </div>
-                ) : recentExams.length > 0 ? (
-                  <div className="space-y-4">
-                    {recentExams.map((exam) => (
-                      <Card key={exam.id} className="p-4">
-                        <div className="flex justify-between items-start">
-                          <div className="space-y-2">
-                            <h3 className="text-lg font-semibold">{exam.title}</h3>
-                            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                              <span>{exam.subject}</span>
-                              <span>•</span>
-                              <span>{exam.class}</span>
-                              <span>•</span>
-                              <span>{exam.duration_minutes} minutes</span>
-                              <span>•</span>
-                              <span>{exam.total_questions} questions</span>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
-                                {exam.status}
-                              </Badge>
-                              <span className="text-sm text-muted-foreground">
-                                Created: {new Date(exam.created_at).toLocaleDateString()}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No recent exams found
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Users Tab */}
-          <TabsContent value="users" className="space-y-6">
-            <UserManagement />
-          </TabsContent>
-
-          {/* Classes Tab */}
-          <TabsContent value="classes" className="space-y-6">
-            <ClassManagement />
-          </TabsContent>
-
-          {/* Subjects Tab */}
-          <TabsContent value="subjects" className="space-y-6">
-            <SubjectManagement />
-          </TabsContent>
-
-          {/* Questions Tab */}
-          <TabsContent value="questions" className="space-y-6">
-            <AdminQuestionBank />
-            <EnhancedQuestionCreator />
-          </TabsContent>
-
-          {/* Email Logs Tab */}
-          <TabsContent value="email-logs" className="space-y-6">
+    if (activeTab === 'system') {
+      switch (activeSubTab) {
+        case 'monitor-logs': return <EnhancedLiveMonitor />;
+        case 'results-modal': 
+          return (
+            <>
+              <AdminResultsModal open={resultsModalOpen} onOpenChange={setResultsModalOpen} />
+              {!resultsModalOpen && (
+                <div className="flex items-center justify-center py-12">
+                  <Button onClick={() => setResultsModalOpen(true)} size="lg">
+                    View All Exam Results
+                  </Button>
+                </div>
+              )}
+            </>
+          );
+        default: 
+          return (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">
                 <EmailLogsViewer />
@@ -432,48 +304,147 @@ export const AdminDashboard = () => {
                 <EmailTestingPanel />
               </div>
             </div>
-          </TabsContent>
+          );
+      }
+    }
 
-          {/* Combined Monitor & Logs Tab */}
-          <TabsContent value="monitor-logs" className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Live Monitor</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EnhancedLiveMonitor />
-                </CardContent>
-              </Card>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Audit Logs</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <EnhancedAuditLogs />
-                </CardContent>
-              </Card>
+    return null;
+  };
+
+  return (
+    <SidebarProvider>
+      <div className="flex min-h-screen w-full bg-background">
+        <AdminSidebar />
+        
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Header */}
+          <header className="sticky top-0 z-10 border-b bg-card">
+            <div className="flex items-center justify-between px-4 lg:px-6 py-3">
+              <div className="flex items-center gap-4">
+                <SidebarTrigger />
+                <Logo className="h-8" />
+                <h1 className="hidden sm:block text-lg font-semibold">{getPageTitle()}</h1>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="hidden sm:inline text-sm text-muted-foreground">{user?.email}</span>
+                <Button variant="outline" size="sm" onClick={logout}>
+                  Logout
+                </Button>
+              </div>
             </div>
-          </TabsContent>
+          </header>
 
-          {/* All Results Tab */}
-          <TabsContent value="results-modal" className="space-y-6">
-            <div className="text-center">
-              <Button onClick={() => setResultsModalOpen(true)} size="lg">
-                <Award className="w-4 h-4 mr-2" />
-                View All Exam Results
-              </Button>
+          {/* Main Content */}
+          <main className="flex-1 overflow-auto">
+            <div className="container mx-auto p-4 lg:p-6 space-y-6">
+              {/* Stats Grid - Only on Overview */}
+              {activeTab === 'overview' && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Users className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalStudents}</p>
+                          <p className="text-sm text-muted-foreground">Students</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-secondary/10 rounded-lg">
+                          <Shield className="h-6 w-6 text-secondary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalTeachers}</p>
+                          <p className="text-sm text-muted-foreground">Teachers</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-accent/10 rounded-lg">
+                          <School className="h-6 w-6 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalClasses}</p>
+                          <p className="text-sm text-muted-foreground">Classes</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <BookOpen className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalSubjects}</p>
+                          <p className="text-sm text-muted-foreground">Subjects</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-secondary/10 rounded-lg">
+                          <FileText className="h-6 w-6 text-secondary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : `${stats.activeExams}/${stats.totalExams}`}</p>
+                          <p className="text-sm text-muted-foreground">Active Exams</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-accent/10 rounded-lg">
+                          <TrendingUp className="h-6 w-6 text-accent-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalQuestions}</p>
+                          <p className="text-sm text-muted-foreground">Questions</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardContent className="p-6">
+                      <div className="flex items-center space-x-4">
+                        <div className="p-2 bg-primary/10 rounded-lg">
+                          <Clock className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.activeSessions}</p>
+                          <p className="text-sm text-muted-foreground">Live Sessions</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+
+              {/* Content */}
+              {renderContent()}
             </div>
-          </TabsContent>
-        </Tabs>
-
-        {/* Results Modal */}
-        <AdminResultsModal
-          open={resultsModalOpen}
-          onOpenChange={setResultsModalOpen}
-        />
-          </div>
-        </DashboardLayout>
+          </main>
+        </div>
       </div>
     </SidebarProvider>
   );
