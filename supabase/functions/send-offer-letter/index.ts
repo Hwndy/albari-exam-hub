@@ -92,7 +92,7 @@ serve(async (req) => {
       throw new Error(`Failed to create offer: ${offerError.message}`);
     }
 
-    const acceptanceUrl = `${FRONTEND_URL}/accept-offer/${acceptanceToken}`;
+    const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;
     
     const emailSubject = `🎉 Admission Offer - ${application.application_number}`;
     const emailHtml = `

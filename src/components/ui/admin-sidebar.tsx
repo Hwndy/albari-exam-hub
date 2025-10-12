@@ -7,6 +7,7 @@ import {
   Settings,
   GraduationCap,
   ChevronDown,
+  Globe,
 } from "lucide-react";
 
 import {
@@ -68,6 +69,18 @@ const menuItems = [
     value: "users",
   },
   {
+    title: "Website",
+    icon: Globe,
+    value: "website",
+    sub: [
+      { title: "News & Articles", value: "news" },
+      { title: "Gallery", value: "gallery" },
+      { title: "Testimonials", value: "testimonials" },
+      { title: "School Info", value: "school-info" },
+      { title: "Site Settings", value: "site-settings" },
+    ],
+  },
+  {
     title: "System",
     icon: Settings,
     value: "system",
@@ -87,7 +100,7 @@ export function AdminSidebar() {
   const currentTab = searchParams.get("tab") || "overview";
   const currentSubTab = searchParams.get("subtab");
   
-  const [openGroups, setOpenGroups] = useState<string[]>(["admissions", "academic", "system"]);
+  const [openGroups, setOpenGroups] = useState<string[]>(["admissions", "academic", "website", "system"]);
 
   const navigate = useNavigate();
 

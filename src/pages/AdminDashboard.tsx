@@ -24,6 +24,11 @@ import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoar
 import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
 import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
 import { EmailTestingPanel } from '@/components/admin/EmailTestingPanel';
+import { NewsManager } from '@/components/admin/CMS/NewsManager';
+import { GalleryManager } from '@/components/admin/CMS/GalleryManager';
+import { TestimonialManager } from '@/components/admin/CMS/TestimonialManager';
+import { SchoolInfoEditor } from '@/components/admin/CMS/SchoolInfoEditor';
+import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -184,6 +189,16 @@ export const AdminDashboard = () => {
       return titles[activeSubTab || 'exams'] || 'Academic';
     }
     if (activeTab === 'users') return 'User Management';
+    if (activeTab === 'website') {
+      const titles: Record<string, string> = {
+        'news': 'News & Articles',
+        'gallery': 'Gallery Manager',
+        'testimonials': 'Testimonials',
+        'school-info': 'School Information',
+        'site-settings': 'Site Settings',
+      };
+      return titles[activeSubTab || 'news'] || 'Website CMS';
+    }
     if (activeTab === 'system') {
       const titles: Record<string, string> = {
         'email-logs': 'Email Logs',
@@ -276,6 +291,16 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'users') {
       return <UserManagement />;
+    }
+
+    if (activeTab === 'website') {
+      switch (activeSubTab) {
+        case 'gallery': return <GalleryManager />;
+        case 'testimonials': return <TestimonialManager />;
+        case 'school-info': return <SchoolInfoEditor />;
+        case 'site-settings': return <SiteSettingsEditor />;
+        default: return <NewsManager />;
+      }
     }
 
     if (activeTab === 'system') {
