@@ -76,32 +76,34 @@ serve(async (req) => {
     // Generate acceptance token
     const acceptanceToken = crypto.randomUUID();
 
-    // Create offer record
+    // Create offer record with acceptance fee
     const { error: offerError } = await supabase
       .from("admission_offers")
       .insert({
         application_id,
         acceptance_deadline,
         acceptance_token: acceptanceToken,
+        acceptance_fee: 50000,
         status: "pending",
       });
 
     if (offerError) {
       console.error("Error creating offer:", offerError);
+      throw new Error(`Failed to create offer: ${offerError.message}`);
     }
 
     const acceptanceUrl = `${FRONTEND_URL}/accept-offer/${acceptanceToken}`;
     
-    const emailSubject = `Admission Offer - ${application.application_number}`;
+    const emailSubject = `🎉 Admission Offer - ${application.application_number}`;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #2563eb;">Congratulations!</h1>
+        <h1 style="color: #2563eb;">🎉 Congratulations!</h1>
         <p>Dear ${application.first_name} ${application.last_name},</p>
         
-        <p>We are pleased to inform you that you have been offered admission to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
+        <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
         
         <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3>Admission Details:</h3>
+          <h3 style="margin-top: 0;">Admission Details:</h3>
           <ul style="list-style: none; padding: 0;">
             <li><strong>Application Number:</strong> ${application.application_number}</li>
             <li><strong>Class:</strong> ${application.classes?.name || 'N/A'}</li>
@@ -112,19 +114,32 @@ serve(async (req) => {
 
         <p><strong>Next Steps:</strong></p>
         <ol>
-          <li>Review the admission offer</li>
-          <li>Accept or decline the offer using the link below</li>
-          <li>If accepted, pay the acceptance fee to complete enrollment</li>
+          <li>Click the button below to accept or decline your offer</li>
+          <li>If you accept, you'll be directed to pay the acceptance fee</li>
+          <li>Complete the enrollment process after payment confirmation</li>
         </ol>
 
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${acceptanceUrl}" style="background: #2563eb; color: white; padding: 12px 30px; text-decoration: none; border-radius: 6px; display: inline-block;">
-            View and Accept Offer
+          <a href="${acceptanceUrl}" style="background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin-bottom: 10px;">
+            Accept Offer & Pay Fee
           </a>
+          <p style="margin-top: 15px; color: #6b7280; font-size: 14px;">
+            The acceptance page includes a secure payment button
+          </p>
+        </div>
+
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
+          <p style="margin: 0; color: #92400e;">
+            <strong>⚠️ Important:</strong> You must accept and pay the acceptance fee by <strong>${new Date(acceptance_deadline).toLocaleDateString()}</strong> to secure your place.
+          </p>
         </div>
 
         <p style="color: #6b7280; font-size: 14px;">
-          If you have any questions, please contact our admissions office at admissions@albari.edu.ng
+          If you have any questions, please contact our admissions office at <a href="mailto:admissions@albari.edu.ng" style="color: #2563eb;">admissions@albari.edu.ng</a>
+        </p>
+
+        <p style="margin-top: 20px;">
+          Welcome to the Al-Bari College family!
         </p>
 
         <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">

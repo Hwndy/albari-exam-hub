@@ -206,9 +206,10 @@ serve(async (req) => {
       status: 'pending' as const,
     };
 
+    let emailResult;
     try {
       // Send email with retry
-      const emailResult = await sendEmailWithRetry(resend, {
+      emailResult = await sendEmailWithRetry(resend, {
         from: "Al-Bari College <onboarding@resend.dev>",
         to: [application.email],
         subject: template.subject,
@@ -236,8 +237,6 @@ serve(async (req) => {
       console.error("Failed to send notification email:", emailError);
       throw new Error(`Failed to send email: ${emailError.message}`);
     }
-
-    console.log("Email sent successfully:", emailResult);
 
     return new Response(
       JSON.stringify({

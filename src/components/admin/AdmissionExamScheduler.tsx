@@ -69,33 +69,60 @@ export const AdmissionExamScheduler = () => {
       return;
     }
 
+    setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        toast.error("You must be logged in to assign applicants");
+        return;
+      }
+
+      console.log('Assigning applicants:', {
+        exam_id: selectedExam,
+        applicants: selectedApplicants,
+        assigned_by: user.id
+      });
 
       const assignments = selectedApplicants.map((appId) => ({
         application_id: appId,
         exam_id: selectedExam,
-        assigned_by: user?.id,
+        assigned_by: user.id,
       }));
 
-      const { error } = await supabase
+      const { error: insertError, data: insertData } = await supabase
         .from("admission_exam_assignments")
-        .insert(assignments);
+        .insert(assignments)
+        .select();
 
-      if (error) throw error;
+      if (insertError) {
+        console.error('Insert error:', insertError);
+        throw new Error(`Failed to assign applicants: ${insertError.message}`);
+      }
+
+      console.log('Assignments created:', insertData);
 
       // Update application status to interview_scheduled after exam assignment
-      await supabase
+      const { error: updateError } = await supabase
         .from("admission_applications")
         .update({ status: "interview_scheduled" })
         .in("id", selectedApplicants);
 
-      toast.success(`${selectedApplicants.length} applicants assigned to exam successfully`);
+      if (updateError) {
+        console.error('Update error:', updateError);
+        toast.warning(`Applicants assigned but status update failed: ${updateError.message}`);
+      }
+
+      toast.success(`✅ Successfully assigned ${selectedApplicants.length} applicant(s) to exam`);
       setIsAssignOpen(false);
       setSelectedApplicants([]);
+      setSelectedExam(null);
       fetchEligibleApplicants();
     } catch (error: any) {
-      toast.error("Failed to assign applicants: " + error.message);
+      console.error('Assignment error:', error);
+      toast.error(`Failed to assign applicants: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
