@@ -18,6 +18,7 @@ import { ExamPage } from '@/pages/ExamPage';
 import { ExamResultsPage } from '@/pages/ExamResultsPage';
 import NotFound from '@/pages/NotFound';
 import { WebsiteRouter } from '@/pages/website/WebsiteRouter';
+import { TrackApplicationPage } from '@/pages/website/TrackApplicationPage';
 
 const queryClient = new QueryClient();
 
@@ -136,6 +137,7 @@ const App = () => (
             
             {/* Website routes - publicly accessible */}
             <Route path="/website/*" element={<WebsiteRouter />} />
+            <Route path="/track-application" element={<TrackApplicationPage />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
