@@ -14,6 +14,9 @@ import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, Map
 import { format } from 'date-fns';
 import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
 import { AdmissionDocumentViewer } from '@/components/admin/AdmissionDocumentViewer';
+import { OfferLetterGenerator } from '@/components/admin/OfferLetterGenerator';
+import { InterviewPanelManager } from '@/components/admin/InterviewPanelManager';
+import { InterviewFeedbackForm } from '@/components/admin/InterviewFeedbackForm';
 
 type AdmissionStatus = 'submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected' | 'payment_pending' | 'enrolled' | 'withdrawn';
 
@@ -476,13 +479,23 @@ export const AdmissionManagement = () => {
                                 </Button>
                               </>
                             )}
+                            {selectedApplication.status === 'interview_scheduled' && (
+                              <>
+                                <InterviewPanelManager
+                                  interviewId={selectedApplication.id}
+                                  onUpdate={fetchApplications}
+                                />
+                                <InterviewFeedbackForm
+                                  interviewId={selectedApplication.id}
+                                  onSubmit={fetchApplications}
+                                />
+                              </>
+                            )}
                             {selectedApplication.status === 'accepted' && (
-                              <Button
-                                onClick={() => enrollStudent(selectedApplication)}
-                                disabled={actionLoading}
-                              >
-                                Enroll Student
-                              </Button>
+                              <OfferLetterGenerator
+                                applicationId={selectedApplication.id}
+                                onSent={fetchApplications}
+                              />
                             )}
                           </div>
                         </div>

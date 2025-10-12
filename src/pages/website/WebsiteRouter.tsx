@@ -10,6 +10,7 @@ import { FacilitiesPage } from './FacilitiesPage';
 import { PortalsPage } from './PortalsPage';
 import { TrackApplicationPage } from './TrackApplicationPage';
 import { ApplyPage } from './ApplyPage';
+import { AcceptOfferPage } from './AcceptOfferPage';
 
 export const WebsiteRouter = () => {
   return (
@@ -21,6 +22,7 @@ export const WebsiteRouter = () => {
         <Route path="/admissions" element={<AdmissionsPage />} />
         <Route path="/admissions/apply" element={<ApplyPage />} />
         <Route path="/track-application" element={<TrackApplicationPage />} />
+        <Route path="/accept-offer/:token" element={<AcceptOfferPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />

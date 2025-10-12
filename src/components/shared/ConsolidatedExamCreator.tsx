@@ -60,6 +60,7 @@ interface ExamMetadata {
   sequentialNavigation: boolean;
   allowQuestionFlagging: boolean;
   questionsPerStudent: number;
+  examCategory: 'regular' | 'entrance';
 }
 
 interface ConsolidatedExamCreatorProps {
@@ -111,6 +112,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     sequentialNavigation: false,
     allowQuestionFlagging: true,
     questionsPerStudent: 20,
+    examCategory: 'regular',
   });
 
   // Manual question creation
@@ -227,6 +229,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       sequentialNavigation: editingExam.sequential_navigation ?? false,
       allowQuestionFlagging: editingExam.allow_question_flagging ?? true,
       questionsPerStudent: editingExam.questions_per_student ?? 20,
+      examCategory: editingExam.exam_category || 'regular',
     });
 
     if (editingExam.id) {
@@ -284,6 +287,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       sequentialNavigation: false,
       allowQuestionFlagging: true,
       questionsPerStudent: 20,
+      examCategory: 'regular',
     });
     setQuestions([]);
     setSelectedQuestionIds([]);
@@ -401,6 +405,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         show_results_immediately: metadata.showResultsImmediately,
         sequential_navigation: metadata.sequentialNavigation,
         allow_question_flagging: metadata.allowQuestionFlagging,
+        exam_category: metadata.examCategory,
         status,
         created_by: user?.id,
       };
@@ -653,6 +658,23 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
+                      <Label htmlFor="examCategory">Exam Category</Label>
+                      <Select value={metadata.examCategory} onValueChange={(value) => setMetadata({ ...metadata, examCategory: value as 'regular' | 'entrance' })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="regular">Regular Exam</SelectItem>
+                          <SelectItem value="entrance">Entrance Exam</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {metadata.examCategory === 'entrance' && (
+                        <p className="text-xs text-muted-foreground">
+                          Entrance exams should use question bank for standardized testing
+                        </p>
+                      )}
+                    </div>
+                    <div className="space-y-2">
                       <Label htmlFor="class">Class</Label>
                       <Select value={metadata.classId || "all"} onValueChange={(value) => setMetadata({ ...metadata, classId: value === "all" ? "" : value })}>
                         <SelectTrigger>
@@ -668,16 +690,17 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Duration: {metadata.duration} minutes</Label>
-                      <Slider
-                        value={[metadata.duration]}
-                        onValueChange={([value]) => setMetadata({ ...metadata, duration: value })}
-                        max={240}
-                        min={15}
-                        step={15}
-                      />
-                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Duration: {metadata.duration} minutes</Label>
+                    <Slider
+                      value={[metadata.duration]}
+                      onValueChange={([value]) => setMetadata({ ...metadata, duration: value })}
+                      max={240}
+                      min={15}
+                      step={15}
+                    />
                   </div>
 
                   <div className="space-y-2">
