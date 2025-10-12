@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
 import { AdmissionDocumentViewer } from '@/components/admin/AdmissionDocumentViewer';
 import { OfferLetterGenerator } from '@/components/admin/OfferLetterGenerator';
+import { RejectionNotifier } from '@/components/admin/RejectionNotifier';
 import { InterviewPanelManager } from '@/components/admin/InterviewPanelManager';
 import { InterviewFeedbackForm } from '@/components/admin/InterviewFeedbackForm';
 
@@ -479,6 +480,10 @@ export const AdmissionManagement = () => {
                                       Schedule Interview
                                     </Button>
                                   }
+                                />
+                                <RejectionNotifier
+                                  applicationId={selectedApplication.id}
+                                  onRejected={fetchApplications}
                                 />
                                 <Button
                                   onClick={() => updateApplicationStatus(selectedApplication.id, 'accepted')}

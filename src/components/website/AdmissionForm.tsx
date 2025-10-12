@@ -79,6 +79,7 @@ export const AdmissionForm = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionId, setSubmissionId] = useState<string | null>(null);
+  const [applicationId, setApplicationId] = useState<string | null>(null);
   
   const [formData, setFormData] = useState<AdmissionFormData>({
     first_name: '',
@@ -383,6 +384,7 @@ export const AdmissionForm = () => {
       }
 
       setSubmissionId(applicationNumber);
+      setApplicationId(applicationId);
       
       toast({
         title: 'Application Submitted Successfully!',
@@ -403,7 +405,32 @@ export const AdmissionForm = () => {
 
   const progress = ((currentStep + 1) / steps.length) * 100;
 
-  if (submissionId) {
+  if (submissionId && applicationId) {
+    const handlePayment = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('initialize-admission-payment', {
+          body: {
+            application_id: applicationId,
+            amount: 10000,
+            email: formData.email,
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data?.authorization_url) {
+          window.location.href = data.authorization_url;
+        }
+      } catch (error: any) {
+        console.error('Payment error:', error);
+        toast({
+          title: 'Payment Error',
+          description: 'Failed to initialize payment. Please try again or contact admissions.',
+          variant: 'destructive',
+        });
+      }
+    };
+
     return (
       <div className="max-w-2xl mx-auto p-6">
         <Card>
@@ -420,6 +447,18 @@ export const AdmissionForm = () => {
                 Please save this number for future reference and tracking.
               </p>
             </div>
+            
+            <div className="bg-primary/10 p-4 rounded-lg mb-6">
+              <p className="font-semibold text-primary mb-2">Next Step: Pay Application Fee</p>
+              <p className="text-sm text-muted-foreground mb-4">
+                Complete your application by paying the ₦10,000 application fee.
+              </p>
+              <Button onClick={handlePayment} size="lg" className="w-full sm:w-auto">
+                <CreditCard className="h-5 w-5 mr-2" />
+                Proceed to Payment
+              </Button>
+            </div>
+
             <div className="space-y-2 text-sm text-muted-foreground">
               <p>• You will receive a confirmation email within 24 hours</p>
               <p>• Entrance examination dates will be communicated via email/phone</p>

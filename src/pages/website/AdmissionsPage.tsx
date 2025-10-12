@@ -65,11 +65,18 @@ export const AdmissionsPage = () => {
               We welcome bright, motivated students who are ready to embrace our culture of 
               excellence, integrity, and character development. Start your application today.
             </p>
-            <Button size="lg" asChild>
-              <Link to="/website/admissions/apply">
-                Start Application <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button size="lg" asChild>
+                <Link to="/website/admissions/apply">
+                  Start Application <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/website/track-application">
+                  Track Application
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </section>
@@ -301,6 +308,11 @@ export const AdmissionsPage = () => {
               <Button size="lg" asChild>
                 <Link to="/website/admissions/apply">
                   Apply Online <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/website/track-application">
+                  Track Application
                 </Link>
               </Button>
               <Button variant="outline" size="lg">

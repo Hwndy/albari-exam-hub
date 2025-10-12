@@ -64,11 +64,7 @@ serve(async (req) => {
       .from("admission_applications")
       .select(`
         *,
-        classes:admitted_to_class_id(name),
-        admission_sessions:applying_for_class_id(
-          session_name,
-          application_fee
-        )
+        classes:applying_for_class_id(name)
       `)
       .eq("id", application_id)
       .single();
@@ -109,7 +105,6 @@ serve(async (req) => {
           <ul style="list-style: none; padding: 0;">
             <li><strong>Application Number:</strong> ${application.application_number}</li>
             <li><strong>Class:</strong> ${application.classes?.name || 'N/A'}</li>
-            <li><strong>Session:</strong> ${application.admission_sessions?.session_name || 'N/A'}</li>
             <li><strong>Acceptance Fee:</strong> ₦50,000</li>
             <li><strong>Deadline:</strong> ${new Date(acceptance_deadline).toLocaleDateString()}</li>
           </ul>

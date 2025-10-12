@@ -39,6 +39,19 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
 
     setLoading(true);
     try {
+      // Send acceptance notification first
+      try {
+        await supabase.functions.invoke('send-admission-notification', {
+          body: {
+            application_id: applicationId,
+            notification_type: 'accepted',
+          },
+        });
+      } catch (notifError) {
+        console.error('Acceptance notification failed:', notifError);
+      }
+
+      // Then send the offer letter
       const { error } = await supabase.functions.invoke('send-offer-letter', {
         body: {
           application_id: applicationId,
