@@ -18,6 +18,11 @@ import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
 import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
+import { AdmissionSessionManager } from '@/components/admin/AdmissionSessionManager';
+import { AdmissionPaymentVerification } from '@/components/admin/AdmissionPaymentVerification';
+import { AdmissionExamScheduler } from '@/components/admin/AdmissionExamScheduler';
+import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoard';
+import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -272,7 +277,40 @@ export const AdminDashboard = () => {
 
           {/* Admissions Tab */}
           <TabsContent value="admissions" className="space-y-6">
-            <AdmissionManagement />
+            <Tabs defaultValue="applications" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="applications">Applications</TabsTrigger>
+                <TabsTrigger value="sessions">Sessions</TabsTrigger>
+                <TabsTrigger value="payments">Payments</TabsTrigger>
+                <TabsTrigger value="entrance-exams">Entrance Exams</TabsTrigger>
+                <TabsTrigger value="decisions">Decisions</TabsTrigger>
+                <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="applications">
+                <AdmissionManagement />
+              </TabsContent>
+              
+              <TabsContent value="sessions">
+                <AdmissionSessionManager />
+              </TabsContent>
+              
+              <TabsContent value="payments">
+                <AdmissionPaymentVerification />
+              </TabsContent>
+              
+              <TabsContent value="entrance-exams">
+                <AdmissionExamScheduler />
+              </TabsContent>
+              
+              <TabsContent value="decisions">
+                <AdmissionDecisionBoard />
+              </TabsContent>
+              
+              <TabsContent value="analytics">
+                <AdmissionAnalytics />
+              </TabsContent>
+            </Tabs>
           </TabsContent>
 
           {/* Exams Tab */}

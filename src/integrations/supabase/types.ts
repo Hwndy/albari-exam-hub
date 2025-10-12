@@ -69,6 +69,7 @@ export type Database = {
           application_number: string
           applying_for_class_id: string | null
           blood_group: string | null
+          combined_score: number | null
           created_at: string
           date_of_birth: string
           email: string
@@ -78,6 +79,7 @@ export type Database = {
           last_name: string
           lga: string | null
           medical_conditions: string | null
+          merit_rank: number | null
           middle_name: string | null
           nationality: string | null
           parent_guardian_info: Json
@@ -103,6 +105,7 @@ export type Database = {
           application_number: string
           applying_for_class_id?: string | null
           blood_group?: string | null
+          combined_score?: number | null
           created_at?: string
           date_of_birth: string
           email: string
@@ -112,6 +115,7 @@ export type Database = {
           last_name: string
           lga?: string | null
           medical_conditions?: string | null
+          merit_rank?: number | null
           middle_name?: string | null
           nationality?: string | null
           parent_guardian_info: Json
@@ -137,6 +141,7 @@ export type Database = {
           application_number?: string
           applying_for_class_id?: string | null
           blood_group?: string | null
+          combined_score?: number | null
           created_at?: string
           date_of_birth?: string
           email?: string
@@ -146,6 +151,7 @@ export type Database = {
           last_name?: string
           lga?: string | null
           medical_conditions?: string | null
+          merit_rank?: number | null
           middle_name?: string | null
           nationality?: string | null
           parent_guardian_info?: Json
@@ -236,8 +242,48 @@ export type Database = {
           },
         ]
       }
+      admission_exam_assignments: {
+        Row: {
+          application_id: string
+          assigned_at: string
+          assigned_by: string | null
+          exam_id: string
+          id: string
+        }
+        Insert: {
+          application_id: string
+          assigned_at?: string
+          assigned_by?: string | null
+          exam_id: string
+          id?: string
+        }
+        Update: {
+          application_id?: string
+          assigned_at?: string
+          assigned_by?: string | null
+          exam_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_exam_assignments_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_exam_assignments_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       admission_interviews: {
         Row: {
+          aggregate_score: number | null
           application_id: string
           created_at: string
           feedback: string | null
@@ -245,12 +291,14 @@ export type Database = {
           interview_type: string
           interviewer_id: string | null
           location: string | null
+          panel_decision: string | null
           scheduled_date: string
           score: number | null
           status: string
           updated_at: string
         }
         Insert: {
+          aggregate_score?: number | null
           application_id: string
           created_at?: string
           feedback?: string | null
@@ -258,12 +306,14 @@ export type Database = {
           interview_type?: string
           interviewer_id?: string | null
           location?: string | null
+          panel_decision?: string | null
           scheduled_date: string
           score?: number | null
           status?: string
           updated_at?: string
         }
         Update: {
+          aggregate_score?: number | null
           application_id?: string
           created_at?: string
           feedback?: string | null
@@ -271,6 +321,7 @@ export type Database = {
           interview_type?: string
           interviewer_id?: string | null
           location?: string | null
+          panel_decision?: string | null
           scheduled_date?: string
           score?: number | null
           status?: string
@@ -282,6 +333,60 @@ export type Database = {
             columns: ["application_id"]
             isOneToOne: false
             referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admission_offers: {
+        Row: {
+          acceptance_deadline: string
+          acceptance_fee: number
+          accepted_at: string | null
+          application_id: string
+          created_at: string
+          id: string
+          offer_letter_url: string | null
+          offered_class_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          acceptance_deadline: string
+          acceptance_fee: number
+          accepted_at?: string | null
+          application_id: string
+          created_at?: string
+          id?: string
+          offer_letter_url?: string | null
+          offered_class_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          acceptance_deadline?: string
+          acceptance_fee?: number
+          accepted_at?: string | null
+          application_id?: string
+          created_at?: string
+          id?: string
+          offer_letter_url?: string | null
+          offered_class_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admission_offers_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: true
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_offers_offered_class_id_fkey"
+            columns: ["offered_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
             referencedColumns: ["id"]
           },
         ]
@@ -332,6 +437,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      admission_sessions: {
+        Row: {
+          academic_year: string
+          application_fee: number
+          classes_open: Json
+          created_at: string
+          created_by: string | null
+          end_date: string
+          id: string
+          max_applicants: number | null
+          required_documents: Json
+          session_name: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year: string
+          application_fee: number
+          classes_open?: Json
+          created_at?: string
+          created_by?: string | null
+          end_date: string
+          id?: string
+          max_applicants?: number | null
+          required_documents?: Json
+          session_name: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string
+          application_fee?: number
+          classes_open?: Json
+          created_at?: string
+          created_by?: string | null
+          end_date?: string
+          id?: string
+          max_applicants?: number | null
+          required_documents?: Json
+          session_name?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       admission_workflow_logs: {
         Row: {
@@ -735,6 +888,7 @@ export type Database = {
           description: string | null
           duration_minutes: number
           end_date: string | null
+          exam_category: string | null
           id: string
           instructions: string | null
           pass_mark: number
@@ -760,6 +914,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number
           end_date?: string | null
+          exam_category?: string | null
           id?: string
           instructions?: string | null
           pass_mark?: number
@@ -785,6 +940,7 @@ export type Database = {
           description?: string | null
           duration_minutes?: number
           end_date?: string | null
+          exam_category?: string | null
           id?: string
           instructions?: string | null
           pass_mark?: number
@@ -1022,6 +1178,90 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "subjects"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      interview_feedback: {
+        Row: {
+          comments: string | null
+          created_at: string
+          id: string
+          interview_id: string
+          panel_member_id: string
+          ratings: Json
+          recommendation: string | null
+        }
+        Insert: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          interview_id: string
+          panel_member_id: string
+          ratings?: Json
+          recommendation?: string | null
+        }
+        Update: {
+          comments?: string | null
+          created_at?: string
+          id?: string
+          interview_id?: string
+          panel_member_id?: string
+          ratings?: Json
+          recommendation?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_feedback_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "admission_interviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_feedback_panel_member_id_fkey"
+            columns: ["panel_member_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      interview_panels: {
+        Row: {
+          assigned_at: string
+          id: string
+          interview_id: string
+          interviewer_id: string
+          role: string | null
+        }
+        Insert: {
+          assigned_at?: string
+          id?: string
+          interview_id: string
+          interviewer_id: string
+          role?: string | null
+        }
+        Update: {
+          assigned_at?: string
+          id?: string
+          interview_id?: string
+          interviewer_id?: string
+          role?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_panels_interview_id_fkey"
+            columns: ["interview_id"]
+            isOneToOne: false
+            referencedRelation: "admission_interviews"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "interview_panels_interviewer_id_fkey"
+            columns: ["interviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["user_id"]
           },
         ]
       }

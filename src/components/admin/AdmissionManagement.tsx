@@ -13,6 +13,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
+import { AdmissionDocumentViewer } from '@/components/admin/AdmissionDocumentViewer';
 
 type AdmissionStatus = 'submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected' | 'payment_pending' | 'enrolled' | 'withdrawn';
 
@@ -416,6 +417,12 @@ export const AdmissionManagement = () => {
                                 </div>
                               )}
                             </div>
+                          </div>
+
+                          {/* Documents */}
+                          <div>
+                            <h4 className="font-semibold mb-3">Uploaded Documents</h4>
+                            <AdmissionDocumentViewer applicationId={selectedApplication.id} />
                           </div>
 
                           {/* Review Notes */}
