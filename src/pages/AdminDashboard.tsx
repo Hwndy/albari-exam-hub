@@ -23,6 +23,8 @@ import { AdmissionPaymentVerification } from '@/components/admin/AdmissionPaymen
 import { AdmissionExamScheduler } from '@/components/admin/AdmissionExamScheduler';
 import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoard';
 import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
+import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
+import { EmailTestingPanel } from '@/components/admin/EmailTestingPanel';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -270,6 +272,7 @@ export const AdminDashboard = () => {
               <TabsTrigger value="classes" className="text-xs px-2 py-1.5 whitespace-nowrap">Classes</TabsTrigger>
               <TabsTrigger value="subjects" className="text-xs px-2 py-1.5 whitespace-nowrap">Subjects</TabsTrigger>
               <TabsTrigger value="questions" className="text-xs px-2 py-1.5 whitespace-nowrap">Questions</TabsTrigger>
+              <TabsTrigger value="email-logs" className="text-xs px-2 py-1.5 whitespace-nowrap">Email Logs</TabsTrigger>
               <TabsTrigger value="monitor-logs" className="text-xs px-2 py-1.5 whitespace-nowrap">Monitor</TabsTrigger>
               <TabsTrigger value="results-modal" className="text-xs px-2 py-1.5 whitespace-nowrap">All Results</TabsTrigger>
             </TabsList>
@@ -405,6 +408,18 @@ export const AdminDashboard = () => {
           <TabsContent value="questions" className="space-y-6">
             <AdminQuestionBank />
             <EnhancedQuestionCreator />
+          </TabsContent>
+
+          {/* Email Logs Tab */}
+          <TabsContent value="email-logs" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2">
+                <EmailLogsViewer />
+              </div>
+              <div>
+                <EmailTestingPanel />
+              </div>
+            </div>
           </TabsContent>
 
           {/* Combined Monitor & Logs Tab */}

@@ -92,21 +92,30 @@ export const AdmissionManagement = () => {
       if (error) throw error;
 
       // Send notification email
+      let emailSent = true;
       try {
-        await supabase.functions.invoke('send-admission-notification', {
+        const { error: emailError } = await supabase.functions.invoke('send-admission-notification', {
           body: {
             application_id: applicationId,
             notification_type: newStatus,
           },
         });
+
+        if (emailError) {
+          console.error('Email notification failed:', emailError);
+          emailSent = false;
+        }
       } catch (notifError) {
         console.error('Error sending notification:', notifError);
-        // Don't fail the status update if notification fails
+        emailSent = false;
       }
 
       toast({
         title: 'Status Updated',
-        description: `Application ${newStatus} successfully. Notification sent to applicant.`,
+        description: emailSent 
+          ? `Application ${newStatus} successfully. Notification sent to applicant.`
+          : `Application ${newStatus} successfully. Note: Email notification failed to send.`,
+        variant: emailSent ? 'default' : 'default',
       });
 
       fetchApplications();

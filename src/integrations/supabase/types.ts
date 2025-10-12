@@ -770,6 +770,59 @@ export type Database = {
         }
         Relationships: []
       }
+      email_logs: {
+        Row: {
+          application_id: string | null
+          created_at: string | null
+          email_type: string
+          error_message: string | null
+          id: string
+          recipient_email: string
+          resend_id: string | null
+          retry_count: number | null
+          sent_at: string | null
+          status: string
+          subject: string
+          updated_at: string | null
+        }
+        Insert: {
+          application_id?: string | null
+          created_at?: string | null
+          email_type: string
+          error_message?: string | null
+          id?: string
+          recipient_email: string
+          resend_id?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          subject: string
+          updated_at?: string | null
+        }
+        Update: {
+          application_id?: string | null
+          created_at?: string | null
+          email_type?: string
+          error_message?: string | null
+          id?: string
+          recipient_email?: string
+          resend_id?: string | null
+          retry_count?: number | null
+          sent_at?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "email_logs_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "admission_applications"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exam_questions: {
         Row: {
           created_at: string

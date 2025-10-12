@@ -9,10 +9,40 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://irrxmoqbgygyyzozifdl.lovable.app";
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
 
 interface OfferLetterRequest {
   application_id: string;
   acceptance_deadline: string;
+}
+
+// Helper function to send email with retry logic
+async function sendEmailWithRetry(emailData: any, maxRetries = MAX_RETRIES): Promise<any> {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await resend.emails.send(emailData);
+      return result;
+    } catch (error) {
+      console.error(`Email send attempt ${attempt + 1} failed:`, error);
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+// Helper function to log email attempts
+async function logEmail(supabase: any, logData: any) {
+  try {
+    await supabase.from('email_logs').insert(logData);
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
 }
 
 serve(async (req) => {
@@ -64,8 +94,9 @@ serve(async (req) => {
       console.error("Error creating offer:", offerError);
     }
 
-    const acceptanceUrl = `${Deno.env.get("SUPABASE_URL")?.replace("https://", "https://www.")}/accept-offer/${acceptanceToken}`;
+    const acceptanceUrl = `${FRONTEND_URL}/accept-offer/${acceptanceToken}`;
     
+    const emailSubject = `Admission Offer - ${application.application_number}`;
     const emailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h1 style="color: #2563eb;">Congratulations!</h1>
@@ -109,14 +140,45 @@ serve(async (req) => {
       </div>
     `;
 
-    const emailResult = await resend.emails.send({
-      from: "Al-Bari College Admissions <admissions@albari.edu.ng>",
-      to: [application.email],
-      subject: `Admission Offer - ${application.application_number}`,
-      html: emailHtml,
-    });
+    // Log email attempt
+    const emailLogData = {
+      recipient_email: application.email,
+      email_type: 'admission_offer',
+      subject: emailSubject,
+      application_id: application_id,
+      status: 'pending',
+    };
+    
+    let emailResult;
+    try {
+      emailResult = await sendEmailWithRetry({
+        from: "Al-Bari College <onboarding@resend.dev>",
+        to: [application.email],
+        subject: emailSubject,
+        html: emailHtml,
+      });
 
-    console.log("Offer letter sent:", emailResult);
+      // Update log with success
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'sent',
+        resend_id: emailResult.id,
+        sent_at: new Date().toISOString(),
+      });
+
+      console.log("Offer letter sent successfully:", emailResult);
+    } catch (error: any) {
+      // Update log with failure
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'failed',
+        error_message: error.message,
+        retry_count: MAX_RETRIES,
+      });
+      
+      console.error("Failed to send offer letter after retries:", error);
+      throw new Error(`Failed to send email: ${error.message}`);
+    }
 
     return new Response(
       JSON.stringify({

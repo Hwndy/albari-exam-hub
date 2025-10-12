@@ -2,6 +2,36 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+// Helper function to send email with retry logic
+async function sendEmailWithRetry(resend: any, emailData: any, maxRetries = MAX_RETRIES): Promise<any> {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await resend.emails.send(emailData);
+      return result;
+    } catch (error) {
+      console.error(`Email send attempt ${attempt + 1} failed:`, error);
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+// Helper function to log email attempts
+async function logEmail(supabase: any, logData: any) {
+  try {
+    await supabase.from('email_logs').insert(logData);
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -167,16 +197,43 @@ serve(async (req) => {
 
     const template = emailTemplates[notification_type](emailData);
 
-    // Send email
-    const { data: emailResult, error: emailError } = await resend.emails.send({
-      from: "Al-Bari College <admissions@albari.edu.ng>",
-      to: [application.email],
+    // Log email attempt
+    const emailLogData = {
+      recipient_email: application.email,
+      email_type: `admission_${notification_type}`,
       subject: template.subject,
-      html: template.html,
-    });
+      application_id: application_id,
+      status: 'pending' as const,
+    };
 
-    if (emailError) {
-      console.error("Error sending email:", emailError);
+    try {
+      // Send email with retry
+      const emailResult = await sendEmailWithRetry(resend, {
+        from: "Al-Bari College <onboarding@resend.dev>",
+        to: [application.email],
+        subject: template.subject,
+        html: template.html,
+      });
+
+      // Update log with success
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'sent' as const,
+        resend_id: emailResult.id,
+        sent_at: new Date().toISOString(),
+      });
+
+      console.log("Notification email sent successfully:", emailResult);
+    } catch (emailError: any) {
+      // Update log with failure
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'failed' as const,
+        error_message: emailError.message,
+        retry_count: MAX_RETRIES,
+      });
+
+      console.error("Failed to send notification email:", emailError);
       throw new Error(`Failed to send email: ${emailError.message}`);
     }
 

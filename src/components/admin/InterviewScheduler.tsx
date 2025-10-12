@@ -72,8 +72,9 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
       if (updateError) throw updateError;
 
       // Send notification
+      let emailSent = true;
       try {
-        await supabase.functions.invoke('send-admission-notification', {
+        const { error: emailError } = await supabase.functions.invoke('send-admission-notification', {
           body: {
             application_id: applicationId,
             notification_type: 'interview_scheduled',
@@ -84,13 +85,22 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
             },
           },
         });
+
+        if (emailError) {
+          console.error('Email notification failed:', emailError);
+          emailSent = false;
+        }
       } catch (notifError) {
         console.error('Error sending notification:', notifError);
+        emailSent = false;
       }
 
       toast({
         title: 'Interview Scheduled',
-        description: 'Interview has been scheduled and applicant notified',
+        description: emailSent
+          ? 'Interview has been scheduled and applicant notified'
+          : 'Interview scheduled. Note: Email notification failed to send.',
+        variant: emailSent ? 'default' : 'default',
       });
 
       setOpen(false);

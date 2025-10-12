@@ -362,12 +362,21 @@ export const AdmissionForm = () => {
 
       // Send notification email
       try {
-        await supabase.functions.invoke('send-admission-notification', {
+        const { error: emailError } = await supabase.functions.invoke('send-admission-notification', {
           body: {
             application_id: applicationId,
             notification_type: 'submitted',
           },
         });
+
+        if (emailError) {
+          console.error('Email notification failed:', emailError);
+          toast({
+            title: 'Application Submitted',
+            description: 'Your application was submitted successfully, but we could not send the confirmation email. Please save your application number.',
+            variant: 'default',
+          });
+        }
       } catch (notifError) {
         console.error('Error sending notification:', notifError);
         // Don't fail the submission if notification fails

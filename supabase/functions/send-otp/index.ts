@@ -155,13 +155,44 @@ const handler = async (req: Request): Promise<Response> => {
       `;
     }
 
-    // Send email via Resend
-    const emailResponse = await resend.emails.send({
-      from: "ALBARI CBT System <noreply@resend.dev>",
-      to: [email],
+    // Log email attempt
+    const emailLogData = {
+      recipient_email: email,
+      email_type: `otp_${type}`,
       subject: subject,
-      html: htmlContent,
-    });
+      status: 'pending' as const,
+    };
+
+    try {
+      // Send email with retry via Resend
+      const emailResponse = await sendEmailWithRetry({
+        from: "Al-Bari College <onboarding@resend.dev>",
+        to: [email],
+        subject: subject,
+        html: htmlContent,
+      });
+
+      // Update log with success
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'sent' as const,
+        resend_id: emailResponse.id,
+        sent_at: new Date().toISOString(),
+      });
+
+      console.log("OTP email sent successfully:", emailResponse);
+    } catch (emailError: any) {
+      // Update log with failure
+      await logEmail(supabase, {
+        ...emailLogData,
+        status: 'failed' as const,
+        error_message: emailError.message,
+        retry_count: MAX_RETRIES,
+      });
+
+      console.error("Failed to send OTP email:", emailError);
+      throw new Error(`Failed to send OTP email: ${emailError.message}`);
+    }
 
     console.log("OTP email sent successfully:", emailResponse);
 
