@@ -2210,6 +2210,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      interview_exists: {
+        Args: { interview_uuid: string }
+        Returns: boolean
+      }
       is_admin: {
         Args: Record<PropertyKey, never>
         Returns: boolean
