@@ -66,7 +66,7 @@ export const AdmissionsPage = () => {
               excellence, integrity, and character development. Start your application today.
             </p>
             <Button size="lg" asChild>
-              <Link to="/login">
+              <Link to="/website/admissions/apply">
                 Start Application <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
             </Button>
@@ -299,7 +299,7 @@ export const AdmissionsPage = () => {
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <Button size="lg" asChild>
-                <Link to="/login">
+                <Link to="/website/admissions/apply">
                   Apply Online <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
