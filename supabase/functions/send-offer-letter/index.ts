@@ -84,7 +84,7 @@ serve(async (req) => {
         acceptance_deadline,
         acceptance_token: acceptanceToken,
         acceptance_fee: 50000,
-        status: "pending",
+        status: "sent",
       });
 
     if (offerError) {
