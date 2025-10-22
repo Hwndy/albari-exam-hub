@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { Resend } from "npm:resend@2.0.0";
+import { jsPDF } from "npm:jspdf@2.5.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -46,6 +47,157 @@ async function logEmail(supabase: any, logData: any) {
   }
 }
 
+// Function to generate offer letter PDF
+async function generateOfferLetterPDF(application: any, acceptanceDeadline: string): Promise<Uint8Array> {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  let yPos = 20;
+
+  // Header
+  doc.setFillColor(37, 99, 235);
+  doc.rect(0, 0, pageWidth, 40, 'F');
+  
+  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(24);
+  doc.setFont('helvetica', 'bold');
+  doc.text('AL-BARI COLLEGE', pageWidth / 2, 20, { align: 'center' });
+  
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Excellence in Education', pageWidth / 2, 30, { align: 'center' });
+  
+  yPos = 60;
+
+  // Title
+  doc.setTextColor(37, 99, 235);
+  doc.setFontSize(18);
+  doc.setFont('helvetica', 'bold');
+  doc.text('ADMISSION OFFER LETTER', pageWidth / 2, yPos, { align: 'center' });
+  
+  yPos += 20;
+
+  // Date
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Date: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
+  
+  yPos += 15;
+
+  // Application Number
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Application Number: ${application.application_number}`, 20, yPos);
+  
+  yPos += 15;
+
+  // Greeting
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Dear ${application.first_name} ${application.last_name},`, 20, yPos);
+  
+  yPos += 15;
+
+  // Body
+  const bodyText = `We are pleased to inform you that you have been offered admission to Al-Bari College for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.`;
+  const splitBody = doc.splitTextToSize(bodyText, pageWidth - 40);
+  doc.text(splitBody, 20, yPos);
+  yPos += splitBody.length * 7 + 10;
+
+  // Admission Details Box
+  doc.setDrawColor(37, 99, 235);
+  doc.setLineWidth(0.5);
+  doc.rect(15, yPos, pageWidth - 30, 50);
+  
+  yPos += 10;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('ADMISSION DETAILS', 20, yPos);
+  
+  yPos += 10;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
+  
+  yPos += 7;
+  doc.text(`Acceptance Fee: ₦50,000.00`, 20, yPos);
+  
+  yPos += 7;
+  doc.setTextColor(220, 38, 38);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Acceptance Deadline: ${new Date(acceptanceDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
+  
+  yPos += 20;
+  doc.setTextColor(0, 0, 0);
+  doc.setFont('helvetica', 'normal');
+
+  // Next Steps
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('NEXT STEPS:', 20, yPos);
+  
+  yPos += 10;
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  const steps = [
+    '1. Accept this admission offer online or via email',
+    '2. Pay the acceptance fee of ₦50,000 before the deadline',
+    '3. Complete the enrollment process',
+    '4. Receive your student login credentials'
+  ];
+  
+  steps.forEach(step => {
+    doc.text(step, 20, yPos);
+    yPos += 7;
+  });
+
+  yPos += 10;
+
+  // Important Notice
+  doc.setFillColor(254, 243, 199);
+  doc.rect(15, yPos, pageWidth - 30, 20, 'F');
+  doc.setDrawColor(234, 179, 8);
+  doc.rect(15, yPos, pageWidth - 30, 20);
+  
+  yPos += 7;
+  doc.setTextColor(113, 63, 18);
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('IMPORTANT:', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  const importantText = `You must accept and pay the acceptance fee by ${new Date(acceptanceDeadline).toLocaleDateString('en-GB')} to secure your place.`;
+  const splitImportant = doc.splitTextToSize(importantText, pageWidth - 50);
+  doc.text(splitImportant, 55, yPos);
+  
+  yPos += 25;
+  doc.setTextColor(0, 0, 0);
+
+  // Closing
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Welcome to the Al-Bari College family!', 20, yPos);
+  
+  yPos += 15;
+  doc.text('Sincerely,', 20, yPos);
+  
+  yPos += 15;
+  doc.setFont('helvetica', 'bold');
+  doc.text('Admissions Office', 20, yPos);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Al-Bari College', 20, yPos + 5);
+
+  // Footer
+  const footerY = doc.internal.pageSize.getHeight() - 20;
+  doc.setFillColor(249, 250, 251);
+  doc.rect(0, footerY - 5, pageWidth, 25, 'F');
+  
+  doc.setFontSize(8);
+  doc.setTextColor(107, 114, 128);
+  doc.text('Al-Bari College | Excellence in Education', pageWidth / 2, footerY, { align: 'center' });
+  doc.text('This is an official admission offer letter.', pageWidth / 2, footerY + 5, { align: 'center' });
+  doc.text(`Generated on ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, footerY + 10, { align: 'center' });
+
+  return doc.output('arraybuffer') as Uint8Array;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -77,7 +229,35 @@ serve(async (req) => {
     // Generate acceptance token
     const acceptanceToken = crypto.randomUUID();
 
-    // Create offer record with acceptance fee
+    // Generate PDF
+    console.log("Generating offer letter PDF...");
+    const pdfBuffer = await generateOfferLetterPDF(application, acceptance_deadline);
+    
+    // Upload PDF to storage
+    const pdfFileName = `${application.application_number}_offer_letter.pdf`;
+    const { data: uploadData, error: uploadError } = await supabase
+      .storage
+      .from('admission-documents')
+      .upload(`offer-letters/${pdfFileName}`, pdfBuffer, {
+        contentType: 'application/pdf',
+        upsert: true,
+      });
+
+    if (uploadError) {
+      console.error("Error uploading PDF:", uploadError);
+      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+    }
+
+    // Get public URL for the PDF
+    const { data: urlData } = supabase
+      .storage
+      .from('admission-documents')
+      .getPublicUrl(`offer-letters/${pdfFileName}`);
+
+    const offerLetterUrl = urlData.publicUrl;
+    console.log("PDF uploaded successfully:", offerLetterUrl);
+
+    // Create offer record with acceptance fee and PDF URL
     const { error: offerError } = await supabase
       .from("admission_offers")
       .insert({
@@ -86,6 +266,7 @@ serve(async (req) => {
         acceptance_token: acceptanceToken,
         acceptance_fee: 50000,
         status: "sent",
+        offer_letter_url: offerLetterUrl,
       });
 
     if (offerError) {
@@ -169,6 +350,12 @@ serve(async (req) => {
                 The acceptance page includes a secure payment button
               </p>
             </div>
+
+            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; text-align: center; margin: 25px 0;">
+              <p style="margin: 0; color: #1e40af; font-size: 13px;">
+                📎 Your official offer letter is attached to this email as a PDF document.
+              </p>
+            </div>
         <p>Dear ${application.first_name} ${application.last_name},</p>
         
         <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
@@ -243,11 +430,21 @@ serve(async (req) => {
     
     let emailResult;
     try {
+      // Convert PDF buffer to base64 for email attachment
+      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+      
       emailResult = await sendEmailWithRetry({
         from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [application.email],
         subject: emailSubject,
         html: emailHtml,
+        attachments: [
+          {
+            filename: pdfFileName,
+            content: pdfBase64,
+            type: 'application/pdf',
+          },
+        ],
       });
 
       // Update log with success
