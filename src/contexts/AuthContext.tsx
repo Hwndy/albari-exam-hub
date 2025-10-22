@@ -38,41 +38,63 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile from our database asynchronously
+          // Fetch user profile and role from database asynchronously
           setTimeout(async () => {
             if (!mounted) return;
             
             try {
-              const { data: profile, error } = await supabase
+              console.log('🔍 Fetching profile and role for user:', session.user.id);
+              
+              // Fetch profile from profiles table
+              const { data: profile, error: profileError } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('user_id', session.user.id)
                 .single();
-                
+              
               if (!mounted) return;
-                
-              if (error) {
-                console.error('Profile fetch error:', error);
-                // Create a basic user object even if profile fetch fails
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email!,
-                  name: session.user.email!,
-                  role: 'student', // Default role
-                  createdAt: new Date().toISOString(),
-                });
-              } else if (profile) {
-                setUser({
-                  id: session.user.id,
-                  email: session.user.email!,
-                  name: profile.full_name || session.user.email!,
-                  role: profile.role as 'admin' | 'teacher' | 'student',
-                  createdAt: profile.created_at,
-                });
+              
+              if (profileError) {
+                console.error('❌ Profile fetch error:', profileError);
+              } else {
+                console.log('✅ Profile fetched:', profile);
               }
-            } catch (error) {
-              console.error('Profile fetch failed:', error);
+              
+              // Fetch role from user_roles table
+              const { data: roleData, error: roleError } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', session.user.id)
+                .single();
+              
               if (!mounted) return;
+              
+              if (roleError) {
+                console.error('❌ Role fetch error:', roleError);
+              } else {
+                console.log('✅ Role fetched:', roleData);
+              }
+              
+              // Determine role (default to 'student' if not found)
+              const userRole = roleData?.role || 'student';
+              console.log('📝 Final role assigned:', userRole);
+              
+              // Create user object
+              const userObject = {
+                id: session.user.id,
+                email: session.user.email!,
+                name: profile?.full_name || session.user.email!,
+                role: userRole as 'admin' | 'teacher' | 'student' | 'parent',
+                createdAt: profile?.created_at || new Date().toISOString(),
+              };
+              
+              console.log('👤 User object created:', userObject);
+              setUser(userObject);
+              
+            } catch (error) {
+              console.error('❌ Auth state change error:', error);
+              if (!mounted) return;
+              
               // Fallback user object
               setUser({
                 id: session.user.id,

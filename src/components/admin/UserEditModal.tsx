@@ -46,17 +46,6 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
   useEffect(() => {
     if (user && isOpen) {
-      setFormData({
-        full_name: user.full_name,
-        email: '',
-        role: user.role as 'admin' | 'teacher' | 'student',
-        password: '',
-        isActive: true,
-        notes: '',
-        subjects: [],
-        classes: []
-      });
-      
       fetchUserData();
       fetchSystemData();
     }
@@ -66,6 +55,19 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
     if (!user) return;
 
     try {
+      // Fetch user role from user_roles table
+      const { data: roleData, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.user_id)
+        .single();
+
+      if (roleError) {
+        console.error('Error fetching user role:', roleError);
+      }
+
+      const userRole = roleData?.role || 'student';
+
       // Fetch user assignments
       const { data: subjectAssignments } = await supabase
         .from('subject_assignments')
@@ -101,17 +103,22 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
       // Update form data with current assignments
       let currentClasses = [];
-      if (user.role === 'student') {
+      if (userRole === 'student') {
         currentClasses = classAssignments?.map(c => c.class_id) || [];
-      } else if (user.role === 'teacher') {
+      } else if (userRole === 'teacher') {
         currentClasses = teacherClassAssignments?.map(c => c.class_id) || [];
       }
 
-      setFormData(prev => ({
-        ...prev,
+      setFormData({
+        full_name: user.full_name,
+        email: '',
+        role: userRole as 'admin' | 'teacher' | 'student',
+        password: '',
+        isActive: true,
+        notes: '',
         subjects: subjectAssignments?.map(s => s.subject_id) || [],
         classes: currentClasses
-      }));
+      });
 
     } catch (error: any) {
       console.error('Error fetching user data:', error);
@@ -138,16 +145,23 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
     try {
       setLoading(true);
 
-      // Update profile
+      // Update profile (name only, role is in user_roles table)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          full_name: formData.full_name,
-          role: formData.role
+          full_name: formData.full_name
         })
         .eq('id', user.id);
 
       if (profileError) throw profileError;
+
+      // Update role in user_roles table
+      const { error: roleError } = await supabase
+        .from('user_roles')
+        .update({ role: formData.role })
+        .eq('user_id', user.user_id);
+
+      if (roleError) throw roleError;
 
       // Update password if provided
       if (formData.password.trim()) {

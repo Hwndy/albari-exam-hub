@@ -42,6 +42,20 @@ const DashboardRouter = () => {
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+
+  // Handle undefined role
+  if (!user.role) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-bold text-destructive">Role Not Found</h1>
+          <p className="text-muted-foreground">
+            Your account role could not be determined. Please contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
   
   switch (user.role) {
     case 'student':
