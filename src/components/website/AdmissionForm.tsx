@@ -571,6 +571,13 @@ export const AdmissionForm = () => {
                           selected={formData.date_of_birth}
                           onSelect={(date) => updateFormData('date_of_birth', date)}
                           initialFocus
+                          disabled={(date) => 
+                            date > new Date() || date < new Date("1900-01-01")
+                          }
+                          defaultMonth={new Date(2010, 0)}
+                          captionLayout="dropdown-buttons"
+                          fromYear={1950}
+                          toYear={new Date().getFullYear()}
                           className="pointer-events-auto"
                         />
                       </PopoverContent>
