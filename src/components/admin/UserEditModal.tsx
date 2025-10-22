@@ -12,12 +12,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Shield, Book, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { ProfileWithRole } from '@/types/auth';
+import { Profile } from '@/types/auth';
 
 interface UserEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  user: ProfileWithRole | null;
+  user: Profile | null;
   onUserUpdated: () => void;
 }
 

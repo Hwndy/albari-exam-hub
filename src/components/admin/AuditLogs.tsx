@@ -92,7 +92,7 @@ export const AuditLogs: React.FC = () => {
         const userIds = [...new Set(sessions.map(s => s.student_id))];
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name')
+          .select('user_id, full_name, role')
           .in('user_id', userIds);
 
         const profileMap = profiles?.reduce((acc, p) => {
@@ -134,7 +134,7 @@ export const AuditLogs: React.FC = () => {
         const creatorIds = [...new Set(exams.map(e => e.created_by))];
         const { data: creatorProfiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name')
+          .select('user_id, full_name, role')
           .in('user_id', creatorIds);
 
         const creatorMap = creatorProfiles?.reduce((acc, p) => {
@@ -175,7 +175,7 @@ export const AuditLogs: React.FC = () => {
         const questionCreatorIds = [...new Set(questions.map(q => q.created_by))];
         const { data: questionProfiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name')
+          .select('user_id, full_name, role')
           .in('user_id', questionCreatorIds);
 
         const questionCreatorMap = questionProfiles?.reduce((acc, p) => {

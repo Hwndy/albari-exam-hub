@@ -602,121 +602,6 @@ export type Database = {
         }
         Relationships: []
       }
-      assessment_types: {
-        Row: {
-          class_id: string | null
-          created_at: string
-          created_by: string | null
-          description: string | null
-          id: string
-          name: string
-          subject_id: string | null
-          updated_at: string
-          weight: number
-        }
-        Insert: {
-          class_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name: string
-          subject_id?: string | null
-          updated_at?: string
-          weight?: number
-        }
-        Update: {
-          class_id?: string | null
-          created_at?: string
-          created_by?: string | null
-          description?: string | null
-          id?: string
-          name?: string
-          subject_id?: string | null
-          updated_at?: string
-          weight?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessment_types_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessment_types_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      assessments: {
-        Row: {
-          assessment_type_id: string
-          class_id: string
-          created_at: string
-          description: string | null
-          due_date: string | null
-          id: string
-          max_score: number
-          subject_id: string
-          teacher_id: string | null
-          title: string
-          updated_at: string
-        }
-        Insert: {
-          assessment_type_id: string
-          class_id: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          max_score: number
-          subject_id: string
-          teacher_id?: string | null
-          title: string
-          updated_at?: string
-        }
-        Update: {
-          assessment_type_id?: string
-          class_id?: string
-          created_at?: string
-          description?: string | null
-          due_date?: string | null
-          id?: string
-          max_score?: number
-          subject_id?: string
-          teacher_id?: string | null
-          title?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "assessments_assessment_type_id_fkey"
-            columns: ["assessment_type_id"]
-            isOneToOne: false
-            referencedRelation: "assessment_types"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessments_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "assessments_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       attendance_sessions: {
         Row: {
           class_id: string | null
@@ -858,84 +743,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
-          },
-        ]
-      }
-      class_timetables: {
-        Row: {
-          class_id: string | null
-          created_at: string | null
-          day_of_week: number
-          id: string
-          notes: string | null
-          period_id: string | null
-          room_id: string | null
-          subject_id: string | null
-          teacher_id: string | null
-          template_id: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          class_id?: string | null
-          created_at?: string | null
-          day_of_week: number
-          id?: string
-          notes?: string | null
-          period_id?: string | null
-          room_id?: string | null
-          subject_id?: string | null
-          teacher_id?: string | null
-          template_id?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          class_id?: string | null
-          created_at?: string | null
-          day_of_week?: number
-          id?: string
-          notes?: string | null
-          period_id?: string | null
-          room_id?: string | null
-          subject_id?: string | null
-          teacher_id?: string | null
-          template_id?: string | null
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "class_timetables_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_timetables_period_id_fkey"
-            columns: ["period_id"]
-            isOneToOne: false
-            referencedRelation: "periods"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_timetables_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "rooms"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_timetables_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "class_timetables_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "timetable_templates"
-            referencedColumns: ["id"]
           },
         ]
       }
@@ -1363,67 +1170,6 @@ export type Database = {
         }
         Relationships: []
       }
-      grade_comments: {
-        Row: {
-          academic_year: string
-          class_id: string
-          comment: string
-          created_at: string
-          created_by: string | null
-          id: string
-          student_id: string
-          subject_id: string
-          term: string
-          updated_at: string
-        }
-        Insert: {
-          academic_year: string
-          class_id: string
-          comment: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          student_id: string
-          subject_id: string
-          term: string
-          updated_at?: string
-        }
-        Update: {
-          academic_year?: string
-          class_id?: string
-          comment?: string
-          created_at?: string
-          created_by?: string | null
-          id?: string
-          student_id?: string
-          subject_id?: string
-          term?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "grade_comments_class_id_fkey"
-            columns: ["class_id"]
-            isOneToOne: false
-            referencedRelation: "classes"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "grade_comments_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "grade_comments_subject_id_fkey"
-            columns: ["subject_id"]
-            isOneToOne: false
-            referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       gradebook_entries: {
         Row: {
           assessment_date: string | null
@@ -1490,57 +1236,6 @@ export type Database = {
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      grades: {
-        Row: {
-          assessment_id: string
-          created_at: string
-          feedback: string | null
-          graded_at: string | null
-          graded_by: string | null
-          id: string
-          score: number
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          assessment_id: string
-          created_at?: string
-          feedback?: string | null
-          graded_at?: string | null
-          graded_by?: string | null
-          id?: string
-          score: number
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          assessment_id?: string
-          created_at?: string
-          feedback?: string | null
-          graded_at?: string | null
-          graded_by?: string | null
-          id?: string
-          score?: number
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "grades_assessment_id_fkey"
-            columns: ["assessment_id"]
-            isOneToOne: false
-            referencedRelation: "assessments"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "grades_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -1785,55 +1480,12 @@ export type Database = {
         }
         Relationships: []
       }
-      periods: {
-        Row: {
-          created_at: string | null
-          end_time: string
-          id: string
-          is_teaching_period: boolean | null
-          period_name: string | null
-          period_number: number
-          period_type: string | null
-          start_time: string
-          template_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          end_time: string
-          id?: string
-          is_teaching_period?: boolean | null
-          period_name?: string | null
-          period_number: number
-          period_type?: string | null
-          start_time: string
-          template_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          end_time?: string
-          id?: string
-          is_teaching_period?: boolean | null
-          period_name?: string | null
-          period_number?: number
-          period_type?: string | null
-          start_time?: string
-          template_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "periods_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "timetable_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       profiles: {
         Row: {
           created_at: string
           full_name: string
           id: string
+          role: string
           updated_at: string
           user_id: string
         }
@@ -1841,6 +1493,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          role: string
           updated_at?: string
           user_id: string
         }
@@ -1848,6 +1501,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          role?: string
           updated_at?: string
           user_id?: string
         }
@@ -2065,75 +1719,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      rate_limits: {
-        Row: {
-          action: string
-          attempts: number | null
-          blocked_until: string | null
-          created_at: string | null
-          id: string
-          identifier: string
-          updated_at: string | null
-          window_start: string | null
-        }
-        Insert: {
-          action: string
-          attempts?: number | null
-          blocked_until?: string | null
-          created_at?: string | null
-          id?: string
-          identifier: string
-          updated_at?: string | null
-          window_start?: string | null
-        }
-        Update: {
-          action?: string
-          attempts?: number | null
-          blocked_until?: string | null
-          created_at?: string | null
-          id?: string
-          identifier?: string
-          updated_at?: string | null
-          window_start?: string | null
-        }
-        Relationships: []
-      }
-      rooms: {
-        Row: {
-          capacity: number | null
-          created_at: string | null
-          facilities: Json | null
-          id: string
-          is_active: boolean | null
-          room_name: string | null
-          room_number: string
-          room_type: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          capacity?: number | null
-          created_at?: string | null
-          facilities?: Json | null
-          id?: string
-          is_active?: boolean | null
-          room_name?: string | null
-          room_number: string
-          room_type?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          capacity?: number | null
-          created_at?: string | null
-          facilities?: Json | null
-          id?: string
-          is_active?: boolean | null
-          room_name?: string | null
-          room_number?: string
-          room_type?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
       }
       school_info: {
         Row: {
@@ -2451,45 +2036,6 @@ export type Database = {
         }
         Relationships: []
       }
-      timetable_templates: {
-        Row: {
-          academic_year: string
-          created_at: string | null
-          created_by: string | null
-          effective_from: string
-          effective_to: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          term: string
-          updated_at: string | null
-        }
-        Insert: {
-          academic_year: string
-          created_at?: string | null
-          created_by?: string | null
-          effective_from: string
-          effective_to?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          term: string
-          updated_at?: string | null
-        }
-        Update: {
-          academic_year?: string
-          created_at?: string | null
-          created_by?: string | null
-          effective_from?: string
-          effective_to?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          term?: string
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
       user_roles: {
         Row: {
           created_at: string
@@ -2636,22 +2182,7 @@ export type Database = {
         Args: { session_id_param: string }
         Returns: Json
       }
-      check_timetable_conflict: {
-        Args: {
-          p_day_of_week: number
-          p_exclude_id?: string
-          p_period_id: string
-          p_room_id: string
-          p_teacher_id: string
-          p_template_id: string
-        }
-        Returns: Json
-      }
       cleanup_expired_otps: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

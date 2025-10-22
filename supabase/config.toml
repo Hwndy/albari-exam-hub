@@ -1,13 +1,13 @@
 project_id = "irrxmoqbgygyyzozifdl"
 
 [functions.initialize-admission-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-admission-payment]
 verify_jwt = false
 
 [functions.initialize-acceptance-payment]
-verify_jwt = true
+verify_jwt = false
 
 [functions.verify-acceptance-payment]
 verify_jwt = false

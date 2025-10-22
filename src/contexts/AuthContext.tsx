@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthState, LoginCredentials } from '@/types/auth';
-import { logger } from '@/lib/logger';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -21,40 +20,6 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-  // Helper function to fetch user role with proper error handling
-  const fetchUserRole = async (userId: string): Promise<'admin' | 'teacher' | 'student' | 'parent'> => {
-    try {
-      console.log('🔍 Fetching role for user:', userId);
-      logger.debug('Fetching role for user:', userId);
-      
-      const { data: roleData, error: roleError } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      if (roleError) {
-        console.error('❌ Role fetch error:', roleError);
-        logger.error('Role fetch error:', roleError);
-        throw roleError;
-      }
-      
-      if (!roleData) {
-        console.warn('⚠️ No role found for user:', userId, '- defaulting to student');
-        logger.warn('No role found for user:', userId, '- defaulting to student');
-        return 'student';
-      }
-      
-      console.log('✅ Role fetched successfully:', roleData.role, 'for user:', userId);
-      logger.info('✅ Role fetched successfully:', roleData.role, 'for user:', userId);
-      return roleData.role as 'admin' | 'teacher' | 'student' | 'parent';
-    } catch (error) {
-      console.error('❌ Failed to fetch user role:', error);
-      logger.error('Failed to fetch user role:', error);
-      return 'student'; // Safe fallback
-    }
-  };
-
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -66,75 +31,54 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        logger.debug('Auth state change:', event, session?.user?.id);
+        console.log('Auth state change:', event, session?.user?.id);
         
         if (!mounted) return;
         
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile and role from database with a small delay
+          // Fetch user profile from our database asynchronously
           setTimeout(async () => {
             if (!mounted) return;
             
             try {
-              logger.debug('Fetching profile for user:', session.user.id);
-              
-              const { data: profile, error: profileError } = await supabase
+              const { data: profile, error } = await supabase
                 .from('profiles')
                 .select('*')
                 .eq('user_id', session.user.id)
-                .maybeSingle();
+                .single();
                 
               if (!mounted) return;
                 
-              if (profileError) {
-                logger.error('Profile fetch error:', profileError);
-                throw profileError;
-              }
-              
-              if (!profile) {
-                logger.warn('No profile found for user:', session.user.id);
-                // Create a basic user object with fetched role
-                const userRole = await fetchUserRole(session.user.id);
-                
+              if (error) {
+                console.error('Profile fetch error:', error);
+                // Create a basic user object even if profile fetch fails
                 setUser({
                   id: session.user.id,
                   email: session.user.email!,
                   name: session.user.email!,
-                  role: userRole,
+                  role: 'student', // Default role
                   createdAt: new Date().toISOString(),
                 });
-              } else {
-                logger.debug('Profile found:', profile.full_name);
-                console.log('📝 Profile found:', profile.full_name);
-                
-                // Fetch role from secure user_roles table
-                const userRole = await fetchUserRole(session.user.id);
-                
-                logger.debug('Setting user with role:', userRole);
-                console.log('👤 Setting user with role:', userRole, 'for email:', session.user.email);
-                
+              } else if (profile) {
                 setUser({
                   id: session.user.id,
                   email: session.user.email!,
                   name: profile.full_name || session.user.email!,
-                  role: userRole,
+                  role: profile.role as 'admin' | 'teacher' | 'student',
                   createdAt: profile.created_at,
                 });
               }
             } catch (error) {
-              logger.error('Profile/Role fetch failed:', error);
+              console.error('Profile fetch failed:', error);
               if (!mounted) return;
-              
-              // Try to at least get the role even if profile fails
-              const userRole = await fetchUserRole(session.user.id);
-              
+              // Fallback user object
               setUser({
                 id: session.user.id,
                 email: session.user.email!,
                 name: session.user.email!,
-                role: userRole,
+                role: 'student',
                 createdAt: new Date().toISOString(),
               });
             }
@@ -142,7 +86,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             if (mounted) {
               setIsLoading(false);
             }
-          }, 100); // Small delay to ensure session is fully established
+          }, 0);
         } else {
           setUser(null);
           setIsLoading(false);
@@ -168,7 +112,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
-    logger.debug('Login attempt for:', credentials.email);
+    console.log('Login attempt for:', credentials.email);
     
     const { error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
@@ -176,12 +120,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (error) {
-      logger.error('Login error:', error.message);
+      console.log('Login error:', error.message);
       setIsLoading(false);
       throw new Error(error.message);
     }
     
-    logger.debug('Login successful, waiting for auth state change...');
+    console.log('Login successful, waiting for auth state change...');
     // Don't set loading to false here - let the auth state change handle it
   };
 
@@ -246,7 +190,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      logger.debug('Logout attempt...');
+      console.log('Logout attempt...');
       
       // Clear localStorage items that might persist session data
       localStorage.removeItem('supabase.auth.token');
@@ -256,7 +200,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        logger.debug('No active session found, clearing state');
+        console.log('No active session found, clearing state');
         setUser(null);
         setSession(null);
         return;
@@ -264,16 +208,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const { error } = await supabase.auth.signOut();
       if (error) {
-        logger.error('Logout error:', error.message);
+        console.log('Logout error:', error.message);
       }
       
       // Always clear state after logout attempt
       setUser(null);
       setSession(null);
       
-      logger.debug('Logout successful, state cleared');
+      console.log('Logout successful, state cleared');
     } catch (error: any) {
-      logger.error('Logout error:', error.message);
+      console.log('Logout error:', error.message);
       // Always clear state on error to prevent stuck state
       setUser(null);
       setSession(null);

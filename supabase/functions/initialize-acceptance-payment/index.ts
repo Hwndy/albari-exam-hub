@@ -20,75 +20,22 @@ serve(async (req) => {
   }
 
   try {
-    // Create client with user's JWT for authentication
-    const supabaseClient = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_ANON_KEY") ?? "",
-      {
-        global: {
-          headers: { Authorization: req.headers.get("Authorization")! },
-        },
-      }
-    );
-
-    // Verify user is authenticated
-    const { data: { user }, error: authError } = await supabaseClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized: Authentication required" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 401 }
-      );
-    }
-
-    const { application_id, amount, email, callback_url }: PaymentRequest = await req.json();
-
-    console.log("Initializing acceptance fee payment for:", application_id);
-
-    // Use service role for privileged operations
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Verify the authenticated user owns this application
+    const { application_id, amount, email, callback_url }: PaymentRequest = await req.json();
+
+    console.log("Initializing acceptance fee payment for:", application_id);
+
     const { data: application, error: appError } = await supabase
       .from("admission_applications")
-      .select("application_number, first_name, last_name, email")
+      .select("application_number, first_name, last_name")
       .eq("id", application_id)
       .single();
 
-    if (appError) {
-      return new Response(
-        JSON.stringify({ error: "Application not found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 404 }
-      );
-    }
-
-    if (application.email !== user.email) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized: You can only pay for your own application" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 403 }
-      );
-    }
-
-    // Check for existing payment to prevent duplicates
-    const { data: existingPayment } = await supabase
-      .from("admission_payments")
-      .select("id, status")
-      .eq("application_id", application_id)
-      .eq("payment_type", "acceptance_fee")
-      .in("status", ["pending", "completed"])
-      .maybeSingle();
-
-    if (existingPayment) {
-      return new Response(
-        JSON.stringify({ error: "A payment already exists for this application" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 400 }
-      );
-    }
-
-    console.log("Authorization verified for user:", user.email);
-
+    if (appError) throw new Error("Application not found");
 
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",

@@ -7,7 +7,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { MessageSquare, Bell, Megaphone, Calendar, AlertCircle, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { sanitizeHtml } from '@/lib/sanitize';
 
 interface Announcement {
   id: string;
@@ -141,7 +140,7 @@ export const CommunicationHub = () => {
                 </div>
                 <div 
                   className="text-sm text-gray-700 mb-3"
-                  dangerouslySetInnerHTML={{ __html: sanitizeHtml(announcement.content) }}
+                  dangerouslySetInnerHTML={{ __html: announcement.content }}
                 />
                          <div className="flex justify-between items-center text-xs text-gray-500">
                            <span>From School Admin</span>
@@ -217,7 +216,7 @@ export const CommunicationHub = () => {
                       
                       <div 
                         className="text-sm text-muted-foreground mb-3"
-                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(announcement.content) }}
+                        dangerouslySetInnerHTML={{ __html: announcement.content }}
                       />
                       
                       {announcement.target_audience && announcement.target_audience.length > 0 && (

@@ -114,7 +114,7 @@ export const StudentManagement = () => {
         (studentsData || []).map(async (student) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name')
+            .select('full_name, role')
             .eq('user_id', student.user_id)
             .single();
 
@@ -136,7 +136,7 @@ export const StudentManagement = () => {
 
           return {
             ...student,
-            profiles: profile ? { ...profile, role: 'student' } : { full_name: '', role: 'student' },
+            profiles: profile,
             class_assignments: classNames.filter(Boolean).map(cls => ({ classes: cls }))
           };
         })

@@ -18,8 +18,6 @@ interface RegisterFormProps {
   onSaveEdit?: (data: any) => void;
 }
 
-import { logger } from '@/lib/logger';
-
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
   onToggleMode, 
   allowStudentRegistration = true,
@@ -45,7 +43,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   useEffect(() => {
     const fetchData = async () => {
-      logger.debug('Fetching classes and subjects...');
+      console.log('Fetching classes and subjects...');
       
       try {
         // Fetch classes
@@ -62,7 +60,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             variant: 'destructive',
           });
         } else {
-          logger.debug('Classes fetched:', classesData?.length, 'classes');
+          console.log('Classes fetched:', classesData);
           setClasses(classesData || []);
         }
 
@@ -80,7 +78,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             variant: 'destructive',
           });
         } else {
-          logger.debug('Subjects fetched:', subjectsData?.length, 'subjects');
+          console.log('Subjects fetched:', subjectsData);
           setSubjects(subjectsData || []);
         }
       } catch (error) {

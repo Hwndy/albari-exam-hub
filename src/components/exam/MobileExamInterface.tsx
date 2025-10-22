@@ -19,7 +19,6 @@ import {
 import { Exam } from '@/types/exam';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { sanitizeHtml } from '@/lib/sanitize';
 
 interface MobileExamInterfaceProps {
   exam: Exam;
@@ -405,7 +404,7 @@ export const MobileExamInterface: React.FC<MobileExamInterfaceProps> = ({
                   <div className="prose prose-sm max-w-none">
                     <div 
                       className="text-foreground leading-relaxed text-base"
-                      dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQ.question) }}
+                      dangerouslySetInnerHTML={{ __html: currentQ.question }}
                     />
                   </div>
 
@@ -434,7 +433,7 @@ export const MobileExamInterface: React.FC<MobileExamInterfaceProps> = ({
                             className="flex-1 cursor-pointer leading-relaxed"
                           >
                             <span className="font-medium text-primary mr-2">{key}.</span>
-                            <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(value as string) }} />
+                            <span dangerouslySetInnerHTML={{ __html: value as string }} />
                           </Label>
                         </div>
                       ))}

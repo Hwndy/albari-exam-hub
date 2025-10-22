@@ -3,7 +3,6 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const MAX_RETRIES = 3;
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -13,115 +12,6 @@ const corsHeaders = {
 interface SendOTPRequest {
   email: string;
   type: 'reset_password' | 'email_verification';
-}
-
-// Rate limiting configuration
-const RATE_LIMIT_WINDOW = 60 * 60 * 1000; // 1 hour in milliseconds
-const MAX_OTP_SENDS_PER_HOUR = 3;
-const MAX_IP_SENDS_PER_HOUR = 20;
-
-async function checkRateLimit(
-  supabase: any,
-  identifier: string,
-  action: string,
-  maxAttempts: number
-): Promise<{ allowed: boolean; blockedUntil?: Date }> {
-  // Check if identifier is currently blocked
-  const { data: existing, error } = await supabase
-    .from('rate_limits')
-    .select('*')
-    .eq('identifier', identifier)
-    .eq('action', action)
-    .single();
-
-  if (error && error.code !== 'PGRST116') { // PGRST116 = no rows returned
-    console.error('Rate limit check error:', error);
-    // Fail open - allow the request if we can't check rate limits
-    return { allowed: true };
-  }
-
-  const now = new Date();
-
-  // Check if currently blocked
-  if (existing?.blocked_until) {
-    const blockedUntil = new Date(existing.blocked_until);
-    if (blockedUntil > now) {
-      return { allowed: false, blockedUntil };
-    }
-  }
-
-  // Check if within rate limit window
-  if (existing?.window_start) {
-    const windowStart = new Date(existing.window_start);
-    const windowAge = now.getTime() - windowStart.getTime();
-
-    if (windowAge < RATE_LIMIT_WINDOW) {
-      // Within window - check attempts
-      if (existing.attempts >= maxAttempts) {
-        // Block for 1 hour
-        const blockedUntil = new Date(now.getTime() + RATE_LIMIT_WINDOW);
-        
-        await supabase
-          .from('rate_limits')
-          .update({
-            blocked_until: blockedUntil.toISOString(),
-            updated_at: now.toISOString()
-          })
-          .eq('identifier', identifier)
-          .eq('action', action);
-
-        return { allowed: false, blockedUntil };
-      }
-
-      // Increment attempts
-      await supabase
-        .from('rate_limits')
-        .update({
-          attempts: existing.attempts + 1,
-          updated_at: now.toISOString()
-        })
-        .eq('identifier', identifier)
-        .eq('action', action);
-
-      return { allowed: true };
-    }
-  }
-
-  // Start new window
-  await supabase
-    .from('rate_limits')
-    .upsert({
-      identifier,
-      action,
-      attempts: 1,
-      window_start: now.toISOString(),
-      blocked_until: null,
-      updated_at: now.toISOString()
-    }, { onConflict: 'identifier,action' });
-
-  return { allowed: true };
-}
-
-async function sendEmailWithRetry(emailData: any, retries = MAX_RETRIES): Promise<any> {
-  for (let attempt = 1; attempt <= retries; attempt++) {
-    try {
-      const response = await resend.emails.send(emailData);
-      return response;
-    } catch (error: any) {
-      console.error(`Email send attempt ${attempt} failed:`, error);
-      if (attempt === retries) throw error;
-      // Exponential backoff: 1s, 2s, 3s
-      await new Promise(resolve => setTimeout(resolve, attempt * 1000));
-    }
-  }
-}
-
-async function logEmail(supabase: any, logData: any) {
-  try {
-    await supabase.from('email_logs').insert(logData);
-  } catch (error) {
-    console.error('Failed to log email:', error);
-  }
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -143,78 +33,21 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Initialize Supabase client with service role
+    // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
-    // Get client IP for rate limiting
-    const clientIP = req.headers.get('x-forwarded-for')?.split(',')[0] || 
-                     req.headers.get('x-real-ip') || 
-                     'unknown';
-
-    // Check email-based rate limit (3 per hour per email)
-    const emailRateCheck = await checkRateLimit(
-      supabase,
-      email.toLowerCase(),
-      'otp_send',
-      MAX_OTP_SENDS_PER_HOUR
-    );
-
-    if (!emailRateCheck.allowed) {
-      const minutesLeft = emailRateCheck.blockedUntil 
-        ? Math.ceil((emailRateCheck.blockedUntil.getTime() - Date.now()) / 60000)
-        : 60;
-      
-      return new Response(
-        JSON.stringify({ 
-          error: `Too many OTP requests. Please try again in ${minutesLeft} minutes.`,
-          blocked_until: emailRateCheck.blockedUntil?.toISOString()
-        }),
-        {
-          status: 429,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // Check IP-based rate limit (20 per hour per IP)
-    const ipRateCheck = await checkRateLimit(
-      supabase,
-      clientIP,
-      'otp_send_ip',
-      MAX_IP_SENDS_PER_HOUR
-    );
-
-    if (!ipRateCheck.allowed) {
-      return new Response(
-        JSON.stringify({ 
-          error: 'Too many requests from this location. Please try again later.'
-        }),
-        {
-          status: 429,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // Invalidate any existing unused OTPs for this email
-    await supabase
-      .from('password_reset_otps')
-      .update({ used: true })
-      .eq('email', email.toLowerCase())
-      .eq('used', false);
-
-    // Generate an 8-digit alphanumeric OTP (more secure)
-    const otp = Math.random().toString(36).substring(2, 10).toUpperCase();
+    // Generate a 6-digit OTP
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     
-    // Store OTP in database with 5-minute expiration (reduced from 10)
-    const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
+    // Store OTP in database with 10-minute expiration
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
     
     const { error: dbError } = await supabase
       .from('password_reset_otps')
-      .insert({
+      .upsert({
         email: email.toLowerCase(),
         otp_code: otp,
         expires_at: expiresAt,
@@ -266,7 +99,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
               </div>
               
-              <p style="margin: 15px 0;"><strong>This code will expire in 5 minutes.</strong></p>
+              <p style="margin: 15px 0;"><strong>This code will expire in 10 minutes.</strong></p>
               <p style="margin: 15px 0;">If you didn't request a password reset, please ignore this email or contact your administrator if you have concerns.</p>
             </div>
             
@@ -308,7 +141,7 @@ const handler = async (req: Request): Promise<Response> => {
                 </div>
               </div>
               
-              <p style="margin: 15px 0;"><strong>This code will expire in 5 minutes.</strong></p>
+              <p style="margin: 15px 0;"><strong>This code will expire in 10 minutes.</strong></p>
             </div>
             
             <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
@@ -343,11 +176,11 @@ const handler = async (req: Request): Promise<Response> => {
       await logEmail(supabase, {
         ...emailLogData,
         status: 'sent' as const,
-        resend_id: emailResponse.data?.id,
+        resend_id: emailResponse.id,
         sent_at: new Date().toISOString(),
       });
 
-      console.log("OTP email sent successfully");
+      console.log("OTP email sent successfully:", emailResponse);
     } catch (emailError: any) {
       // Update log with failure
       await logEmail(supabase, {
@@ -361,11 +194,13 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error(`Failed to send OTP email: ${emailError.message}`);
     }
 
+    console.log("OTP email sent successfully:", emailResponse);
+
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: 'OTP sent successfully',
-        expires_in: 300 // 5 minutes
+        expires_in: 600 // 10 minutes
       }),
       {
         status: 200,
