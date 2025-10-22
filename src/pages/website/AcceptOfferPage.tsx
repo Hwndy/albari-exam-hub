@@ -122,7 +122,7 @@ export const AcceptOfferPage = () => {
           application_id: application.id,
           amount: 50000,
           email: application.email,
-          callback_url: `${window.location.origin}/track-application`,
+          callback_url: `${window.location.origin}/payment-callback`,
         },
       });
 

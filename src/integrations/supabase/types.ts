@@ -1785,6 +1785,39 @@ export type Database = {
         }
         Relationships: []
       }
+      paystack_webhooks: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_data: Json
+          event_type: string
+          id: string
+          processed: boolean
+          processed_at: string | null
+          reference: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_data: Json
+          event_type: string
+          id?: string
+          processed?: boolean
+          processed_at?: string | null
+          reference?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_data?: Json
+          event_type?: string
+          id?: string
+          processed?: boolean
+          processed_at?: string | null
+          reference?: string | null
+        }
+        Relationships: []
+      }
       periods: {
         Row: {
           created_at: string | null

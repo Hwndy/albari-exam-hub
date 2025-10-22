@@ -54,21 +54,30 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
 
   const fetchData = async () => {
     try {
-      // Fetch teachers
-      const { data: teachersData } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
+      // Fetch teachers - get profiles with teacher role from user_roles
+      const { data: teacherRoles } = await supabase
+        .from('user_roles')
+        .select('user_id')
         .eq('role', 'teacher');
+
+      if (teacherRoles) {
+        const teacherIds = teacherRoles.map(r => r.user_id);
+        
+        const { data: profilesData } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', teacherIds);
+
+        if (profilesData) {
+          setTeachers(profilesData.map(t => ({ id: t.user_id, full_name: t.full_name })));
+        }
+      }
 
       // Fetch classes
       const { data: classesData } = await supabase
         .from('classes')
         .select('*')
         .order('name');
-
-      if (teachersData) {
-        setTeachers(teachersData.map(t => ({ id: t.user_id, full_name: t.full_name })));
-      }
       
       if (classesData) {
         setClasses(classesData);

@@ -11,6 +11,7 @@ import { PortalsPage } from './PortalsPage';
 import { TrackApplicationPage } from './TrackApplicationPage';
 import { ApplyPage } from './ApplyPage';
 import { AcceptOfferPage } from './AcceptOfferPage';
+import { PaymentCallbackPage } from './PaymentCallbackPage';
 
 export const WebsiteRouter = () => {
   return (
@@ -23,6 +24,7 @@ export const WebsiteRouter = () => {
         <Route path="/admissions/apply" element={<ApplyPage />} />
         <Route path="/track-application" element={<TrackApplicationPage />} />
         <Route path="/accept-offer/:token" element={<AcceptOfferPage />} />
+        <Route path="/payment-callback" element={<PaymentCallbackPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
