@@ -10,6 +10,7 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://irrxmoqbgygyyzozifdl.lovable.app";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "admissions@albari.edu.ng";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -94,10 +95,80 @@ serve(async (req) => {
 
     const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;
     
-    const emailSubject = `🎉 Admission Offer - ${application.application_number}`;
+    const emailSubject = `🎉 Admission Offer - Al-Bari College`;
     const emailHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="color: #2563eb;">🎉 Congratulations!</h1>
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+          <!-- Header -->
+          <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Al-Bari College</h1>
+            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 14px;">Excellence in Education</p>
+          </div>
+          
+          <!-- Content -->
+          <div style="padding: 40px 30px;">
+            <h2 style="color: #2563eb; margin: 0 0 20px 0; font-size: 24px;">🎉 Congratulations!</h2>
+            
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
+              Dear ${application.first_name} ${application.last_name},
+            </p>
+            
+            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
+              We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.
+            </p>
+            
+            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #2563eb;">
+              <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 18px;">📋 Admission Details</h3>
+              <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Application Number:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.application_number}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Class:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.classes?.name || 'N/A'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">₦50,000</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
+                  <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                </tr>
+              </table>
+            </div>
+
+            <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">
+              <p style="margin: 0; color: #713f12; font-size: 14px; line-height: 1.5;">
+                <strong>⚠️ Important:</strong> You must accept and pay the acceptance fee by <strong>${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> to secure your place.
+              </p>
+            </div>
+
+            <div style="margin: 30px 0;">
+              <h4 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">🎯 Next Steps:</h4>
+              <ol style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
+                <li>Click the button below to accept or decline your offer</li>
+                <li>If you accept, you'll be directed to pay the acceptance fee (₦50,000)</li>
+                <li>Complete the enrollment process after payment confirmation</li>
+                <li>Receive your student login credentials via email</li>
+              </ol>
+            </div>
+
+            <div style="text-align: center; margin: 35px 0;">
+              <a href="${acceptanceUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
+                Accept Offer & Pay Fee →
+              </a>
+              <p style="margin-top: 15px; color: #6b7280; font-size: 13px;">
+                The acceptance page includes a secure payment button
+              </p>
+            </div>
         <p>Dear ${application.first_name} ${application.last_name},</p>
         
         <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
@@ -134,20 +205,31 @@ serve(async (req) => {
           </p>
         </div>
 
-        <p style="color: #6b7280; font-size: 14px;">
-          If you have any questions, please contact our admissions office at <a href="mailto:admissions@albari.edu.ng" style="color: #2563eb;">admissions@albari.edu.ng</a>
-        </p>
+            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
+              If you have any questions, please contact our admissions office at 
+              <a href="mailto:admissions@albari.edu.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.edu.ng</a>
+            </p>
 
-        <p style="margin-top: 20px;">
-          Welcome to the Al-Bari College family!
-        </p>
+            <p style="margin-top: 30px; color: #059669; font-weight: 600; font-size: 16px;">
+              Welcome to the Al-Bari College family! 🎓
+            </p>
+          </div>
 
-        <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-        
-        <p style="color: #6b7280; font-size: 12px;">
-          This is an automated message. Please do not reply to this email.
-        </p>
-      </div>
+          <!-- Footer -->
+          <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
+            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
+              Al-Bari College | Excellence in Education
+            </p>
+            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
+              This is an automated message from the admissions office. Please do not reply to this email.
+            </p>
+            <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
+              &copy; ${new Date().getFullYear()} Al-Bari College. All rights reserved.
+            </p>
+          </div>
+        </div>
+      </body>
+      </html>
     `;
 
     // Log email attempt
@@ -162,7 +244,7 @@ serve(async (req) => {
     let emailResult;
     try {
       emailResult = await sendEmailWithRetry({
-        from: "Al-Bari College <onboarding@resend.dev>",
+        from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [application.email],
         subject: emailSubject,
         html: emailHtml,

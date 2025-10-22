@@ -3,6 +3,36 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "noreply@albari.edu.ng";
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 1000;
+
+// Helper function to send email with retry logic
+async function sendEmailWithRetry(emailData: any, maxRetries = MAX_RETRIES): Promise<any> {
+  let lastError;
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const result = await resend.emails.send(emailData);
+      return result;
+    } catch (error) {
+      console.error(`Email send attempt ${attempt + 1} failed:`, error);
+      lastError = error;
+      if (attempt < maxRetries - 1) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS * (attempt + 1)));
+      }
+    }
+  }
+  throw lastError;
+}
+
+// Helper function to log email attempts
+async function logEmail(supabase: any, logData: any) {
+  try {
+    await supabase.from('email_logs').insert(logData);
+  } catch (error) {
+    console.error('Failed to log email:', error);
+  }
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -166,7 +196,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       // Send email with retry via Resend
       const emailResponse = await sendEmailWithRetry({
-        from: "Al-Bari College <onboarding@resend.dev>",
+        from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [email],
         subject: subject,
         html: htmlContent,
@@ -193,8 +223,6 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Failed to send OTP email:", emailError);
       throw new Error(`Failed to send OTP email: ${emailError.message}`);
     }
-
-    console.log("OTP email sent successfully:", emailResponse);
 
     return new Response(
       JSON.stringify({ 

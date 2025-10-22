@@ -4,6 +4,7 @@ import { Resend } from "npm:resend@2.0.0";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "admissions@albari.edu.ng";
 
 // Helper function to send email with retry logic
 async function sendEmailWithRetry(resend: any, emailData: any, maxRetries = MAX_RETRIES): Promise<any> {
@@ -210,7 +211,7 @@ serve(async (req) => {
     try {
       // Send email with retry
       emailResult = await sendEmailWithRetry(resend, {
-        from: "Al-Bari College <onboarding@resend.dev>",
+        from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [application.email],
         subject: template.subject,
         html: template.html,
