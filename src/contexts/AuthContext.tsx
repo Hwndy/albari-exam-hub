@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User, AuthState, LoginCredentials } from '@/types/auth';
+import { logger } from '@/lib/logger';
 
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
@@ -31,7 +32,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
+        logger.debug('Auth state change:', event, session?.user?.id);
         
         if (!mounted) return;
         
@@ -112,7 +113,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const login = async (credentials: LoginCredentials) => {
     setIsLoading(true);
-    console.log('Login attempt for:', credentials.email);
+    logger.debug('Login attempt for:', credentials.email);
     
     const { error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
@@ -120,12 +121,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     if (error) {
-      console.log('Login error:', error.message);
+      logger.error('Login error:', error.message);
       setIsLoading(false);
       throw new Error(error.message);
     }
     
-    console.log('Login successful, waiting for auth state change...');
+    logger.debug('Login successful, waiting for auth state change...');
     // Don't set loading to false here - let the auth state change handle it
   };
 
@@ -190,7 +191,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   const logout = async () => {
     try {
-      console.log('Logout attempt...');
+      logger.debug('Logout attempt...');
       
       // Clear localStorage items that might persist session data
       localStorage.removeItem('supabase.auth.token');
@@ -200,7 +201,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
-        console.log('No active session found, clearing state');
+        logger.debug('No active session found, clearing state');
         setUser(null);
         setSession(null);
         return;
@@ -208,16 +209,16 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       
       const { error } = await supabase.auth.signOut();
       if (error) {
-        console.log('Logout error:', error.message);
+        logger.error('Logout error:', error.message);
       }
       
       // Always clear state after logout attempt
       setUser(null);
       setSession(null);
       
-      console.log('Logout successful, state cleared');
+      logger.debug('Logout successful, state cleared');
     } catch (error: any) {
-      console.log('Logout error:', error.message);
+      logger.error('Logout error:', error.message);
       // Always clear state on error to prevent stuck state
       setUser(null);
       setSession(null);

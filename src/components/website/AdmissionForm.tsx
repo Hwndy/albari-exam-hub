@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,11 +12,13 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Upload, Calendar as CalendarIcon, User, GraduationCap, FileText, CreditCard, Send } from 'lucide-react';
+import { CheckCircle, Upload, Calendar as CalendarIcon, User, GraduationCap, FileText, CreditCard, Send, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { validateFile } from '@/lib/validationSchemas';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 interface AdmissionFormData {
   // Personal Information
