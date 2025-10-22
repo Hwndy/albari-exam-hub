@@ -277,7 +277,7 @@ export const AdmissionForm = () => {
         .from('admission_applications')
         .insert({
           id: applicationId,
-          status: 'payment_pending' as any,
+          status: 'payment_pending',
           first_name: formData.first_name,
           middle_name: formData.middle_name || null,
           last_name: formData.last_name,
