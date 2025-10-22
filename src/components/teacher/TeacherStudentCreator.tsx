@@ -60,15 +60,27 @@ export const TeacherStudentCreator: React.FC = () => {
       }
 
       // Fetch recently created students (optional)
-      const { data: recentStudents } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('role', 'student')
-        .order('created_at', { ascending: false })
-        .limit(5);
+      const { data: studentRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'student');
 
-      if (recentStudents) {
-        setCreatedStudents(recentStudents);
+      if (studentRoles && studentRoles.length > 0) {
+        const studentUserIds = studentRoles.map(r => r.user_id);
+        const { data: recentStudents } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', studentUserIds)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        if (recentStudents) {
+          const studentsWithRoles = recentStudents.map(student => ({
+            ...student,
+            role: 'student'
+          }));
+          setCreatedStudents(studentsWithRoles);
+        }
       }
     } catch (error: any) {
       toast({

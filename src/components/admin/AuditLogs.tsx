@@ -88,15 +88,21 @@ export const AuditLogs: React.FC = () => {
         .limit(50);
 
       if (sessions) {
-        // Fetch user profiles separately
+        // Fetch user profiles and roles separately
         const userIds = [...new Set(sessions.map(s => s.student_id))];
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name, role')
+          .select('user_id, full_name')
+          .in('user_id', userIds);
+
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
           .in('user_id', userIds);
 
         const profileMap = profiles?.reduce((acc, p) => {
-          acc[p.user_id] = p;
+          const roleEntry = roles?.find(r => r.user_id === p.user_id);
+          acc[p.user_id] = { ...p, role: roleEntry?.role || 'student' };
           return acc;
         }, {} as Record<string, any>) || {};
 
@@ -130,15 +136,21 @@ export const AuditLogs: React.FC = () => {
         .limit(30);
 
       if (exams) {
-        // Fetch creator profiles separately
+        // Fetch creator profiles and roles separately
         const creatorIds = [...new Set(exams.map(e => e.created_by))];
         const { data: creatorProfiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name, role')
+          .select('user_id, full_name')
+          .in('user_id', creatorIds);
+
+        const { data: creatorRoles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
           .in('user_id', creatorIds);
 
         const creatorMap = creatorProfiles?.reduce((acc, p) => {
-          acc[p.user_id] = p;
+          const roleEntry = creatorRoles?.find(r => r.user_id === p.user_id);
+          acc[p.user_id] = { ...p, role: roleEntry?.role || 'teacher' };
           return acc;
         }, {} as Record<string, any>) || {};
 
@@ -171,15 +183,21 @@ export const AuditLogs: React.FC = () => {
         .limit(30);
 
       if (questions) {
-        // Fetch question creator profiles separately
+        // Fetch question creator profiles and roles separately
         const questionCreatorIds = [...new Set(questions.map(q => q.created_by))];
         const { data: questionProfiles } = await supabase
           .from('profiles')
-          .select('user_id, full_name, role')
+          .select('user_id, full_name')
+          .in('user_id', questionCreatorIds);
+
+        const { data: questionRoles } = await supabase
+          .from('user_roles')
+          .select('user_id, role')
           .in('user_id', questionCreatorIds);
 
         const questionCreatorMap = questionProfiles?.reduce((acc, p) => {
-          acc[p.user_id] = p;
+          const roleEntry = questionRoles?.find(r => r.user_id === p.user_id);
+          acc[p.user_id] = { ...p, role: roleEntry?.role || 'teacher' };
           return acc;
         }, {} as Record<string, any>) || {};
 

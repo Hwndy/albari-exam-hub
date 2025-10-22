@@ -114,7 +114,13 @@ export const StudentManagement = () => {
         (studentsData || []).map(async (student) => {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('full_name, role')
+            .select('full_name')
+            .eq('user_id', student.user_id)
+            .single();
+
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('role')
             .eq('user_id', student.user_id)
             .single();
 
@@ -136,7 +142,10 @@ export const StudentManagement = () => {
 
           return {
             ...student,
-            profiles: profile,
+            profiles: {
+              full_name: profile?.full_name || 'Unknown',
+              role: roleData?.role || 'student'
+            },
             class_assignments: classNames.filter(Boolean).map(cls => ({ classes: cls }))
           };
         })

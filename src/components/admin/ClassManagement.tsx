@@ -43,15 +43,27 @@ export const ClassManagement = () => {
         .from('class_assignments')
         .select('*');
 
-      // Fetch student profiles
+      // Fetch student profiles and their roles
+      const { data: studentRoles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .eq('role', 'student');
+
+      const studentUserIds = studentRoles?.map(r => r.user_id) || [];
+      
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('role', 'student');
+        .in('user_id', studentUserIds);
+
+      const profilesWithRoles = profilesData?.map(profile => ({
+        ...profile,
+        role: 'student'
+      })) || [];
 
       if (classesData) setClasses(classesData);
       if (assignmentsData) setAssignments(assignmentsData);
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(profilesWithRoles);
     } catch (error: any) {
       toast({
         title: 'Error',

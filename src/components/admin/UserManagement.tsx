@@ -48,6 +48,20 @@ export const UserManagement = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
+      // Fetch user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      // Combine profiles with roles
+      const profilesWithRoles = profilesData?.map(profile => {
+        const roleEntry = rolesData?.find(r => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: roleEntry?.role || 'student'
+        };
+      }) || [];
+
       // Fetch classes
       const { data: classesData } = await supabase
         .from('classes')
@@ -60,7 +74,7 @@ export const UserManagement = () => {
         .select('*')
         .order('name');
 
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);
       if (subjectsData) setSubjects(subjectsData);
     } catch (error: any) {

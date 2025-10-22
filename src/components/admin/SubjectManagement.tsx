@@ -43,14 +43,26 @@ export const SubjectManagement = () => {
         .from('subject_assignments')
         .select('*');
 
-      // Fetch profiles
+      // Fetch profiles and roles
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*');
 
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      const profilesWithRoles = profilesData?.map(profile => {
+        const roleEntry = rolesData?.find(r => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: roleEntry?.role || 'student'
+        };
+      }) || [];
+
       if (subjectsData) setSubjects(subjectsData);
       if (assignmentsData) setAssignments(assignmentsData);
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(profilesWithRoles);
     } catch (error: any) {
       toast({
         title: 'Error',

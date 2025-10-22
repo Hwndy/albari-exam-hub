@@ -53,13 +53,29 @@ export const InterviewPanelManager: React.FC<InterviewPanelManagerProps> = ({
       }
 
       // Load staff with admin or teacher roles
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name, role')
-        .in('role', ['admin', 'teacher'])
-        .order('full_name');
+      const { data: roles } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
+        .in('role', ['admin', 'teacher']);
 
-      if (profiles) setStaff(profiles);
+      if (roles && roles.length > 0) {
+        const userIds = roles.map(r => r.user_id);
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('user_id, full_name')
+          .in('user_id', userIds)
+          .order('full_name');
+
+        const profilesWithRoles = profiles?.map(profile => {
+          const roleEntry = roles.find(r => r.user_id === profile.user_id);
+          return {
+            ...profile,
+            role: roleEntry?.role || 'teacher'
+          };
+        }) || [];
+
+        setStaff(profilesWithRoles);
+      }
 
       // Load existing panel members
       const { data: panel } = await supabase
