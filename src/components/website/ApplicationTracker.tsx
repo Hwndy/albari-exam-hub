@@ -46,30 +46,38 @@ export const ApplicationTracker = () => {
     setSearched(true);
 
     try {
-      const { data, error } = await supabase
-        .from('admission_applications')
-        .select('*')
-        .eq('application_number', applicationNumber.toUpperCase())
-        .eq('email', email.toLowerCase())
-        .maybeSingle();
+      // Use secure edge function with rate limiting
+      const { data, error } = await supabase.functions.invoke('track-application', {
+        body: {
+          application_number: applicationNumber.toUpperCase(),
+          email: email.toLowerCase(),
+        },
+      });
 
       if (error) throw error;
 
-      if (!data) {
+      if (data.error) {
+        setApplication(null);
+        toast({
+          title: data.error.includes('Rate limit') ? 'Too Many Attempts' : 'Application Not Found',
+          description: data.error,
+          variant: 'destructive',
+        });
+      } else if (data.success && data.application) {
+        setApplication(data.application as Application);
+      } else {
         setApplication(null);
         toast({
           title: 'Application Not Found',
           description: 'No application found with these details. Please check and try again.',
           variant: 'destructive',
         });
-      } else {
-        setApplication(data as Application);
       }
     } catch (error: any) {
       console.error('Error tracking application:', error);
       toast({
         title: 'Error',
-        description: 'Failed to track application. Please try again.',
+        description: error.message || 'Failed to track application. Please try again.',
         variant: 'destructive',
       });
     } finally {

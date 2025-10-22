@@ -105,21 +105,28 @@ export const AcceptOfferPage = () => {
   };
 
   const handleAccept = async () => {
-    if (!offer || !application) return;
+    if (!token || !application) return;
 
     setProcessing(true);
     try {
-      await supabase
-        .from('admission_offers')
-        .update({
-          status: 'accepted',
-          accepted_at: new Date().toISOString(),
-        })
-        .eq('id', offer.id);
+      // Use secure edge function to accept offer
+      const { data: acceptData, error: acceptError } = await supabase.functions.invoke('accept-offer', {
+        body: {
+          acceptance_token: token,
+          decision: 'accepted',
+        },
+      });
 
+      if (acceptError) throw acceptError;
+
+      if (acceptData.error) {
+        throw new Error(acceptData.error);
+      }
+
+      // Initialize payment after successful acceptance
       const { data, error } = await supabase.functions.invoke('initialize-acceptance-payment', {
         body: {
-          application_id: application.id,
+          application_id: acceptData.application_id,
           amount: 50000,
           email: application.email,
           callback_url: `${window.location.origin}/payment-callback`,
@@ -133,7 +140,7 @@ export const AcceptOfferPage = () => {
       console.error('Error accepting offer:', error);
       toast({
         title: 'Error',
-        description: 'Failed to process acceptance',
+        description: error.message || 'Failed to process acceptance',
         variant: 'destructive',
       });
       setProcessing(false);
@@ -141,22 +148,23 @@ export const AcceptOfferPage = () => {
   };
 
   const handleDecline = async () => {
-    if (!offer || !application) return;
+    if (!token) return;
 
     setProcessing(true);
     try {
-      await supabase
-        .from('admission_offers')
-        .update({
-          status: 'declined',
-          declined_at: new Date().toISOString(),
-        })
-        .eq('id', offer.id);
+      // Use secure edge function to decline offer
+      const { data, error } = await supabase.functions.invoke('accept-offer', {
+        body: {
+          acceptance_token: token,
+          decision: 'declined',
+        },
+      });
 
-      await supabase
-        .from('admission_applications')
-        .update({ status: 'rejected' })
-        .eq('id', application.id);
+      if (error) throw error;
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'Offer Declined',
@@ -168,7 +176,7 @@ export const AcceptOfferPage = () => {
       console.error('Error declining offer:', error);
       toast({
         title: 'Error',
-        description: 'Failed to decline offer',
+        description: error.message || 'Failed to decline offer',
         variant: 'destructive',
       });
     } finally {
