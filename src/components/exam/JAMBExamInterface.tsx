@@ -27,6 +27,7 @@ import { Exam } from '@/types/exam';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 interface JAMBExamInterfaceProps {
   exam: Exam;
@@ -561,7 +562,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                     <div className="prose prose-sm max-w-none">
                       <div 
                         className="text-foreground leading-relaxed text-base"
-                        dangerouslySetInnerHTML={{ __html: currentQ.question }}
+                        dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQ.question) }}
                       />
                     </div>
 
@@ -590,7 +591,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                               className="flex-1 cursor-pointer leading-relaxed"
                             >
                               <span className="font-medium text-primary mr-2">{key}.</span>
-                              <span dangerouslySetInnerHTML={{ __html: value as string }} />
+                              <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(value as string) }} />
                             </Label>
                           </div>
                         ))}
@@ -823,7 +824,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                       <div className="prose prose-lg max-w-none">
                         <div 
                           className="text-foreground leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: currentQ.question }}
+                          dangerouslySetInnerHTML={{ __html: sanitizeHtml(currentQ.question) }}
                         />
                       </div>
 
@@ -852,7 +853,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                                 className="flex-1 cursor-pointer leading-relaxed"
                               >
                                 <span className="font-medium text-primary mr-3 text-lg">{key}.</span>
-                                <span dangerouslySetInnerHTML={{ __html: value as string }} />
+                                <span dangerouslySetInnerHTML={{ __html: sanitizeHtml(value as string) }} />
                               </Label>
                             </div>
                           ))}

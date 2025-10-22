@@ -1720,6 +1720,39 @@ export type Database = {
           },
         ]
       }
+      rate_limits: {
+        Row: {
+          action: string
+          attempts: number | null
+          blocked_until: string | null
+          created_at: string | null
+          id: string
+          identifier: string
+          updated_at: string | null
+          window_start: string | null
+        }
+        Insert: {
+          action: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          identifier: string
+          updated_at?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          action?: string
+          attempts?: number | null
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          identifier?: string
+          updated_at?: string | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
       school_info: {
         Row: {
           category: string
@@ -2183,6 +2216,10 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_otps: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      cleanup_old_rate_limits: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
