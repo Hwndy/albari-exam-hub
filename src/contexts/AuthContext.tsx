@@ -24,6 +24,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
   // Helper function to fetch user role with proper error handling
   const fetchUserRole = async (userId: string): Promise<'admin' | 'teacher' | 'student' | 'parent'> => {
     try {
+      console.log('🔍 Fetching role for user:', userId);
       logger.debug('Fetching role for user:', userId);
       
       const { data: roleData, error: roleError } = await supabase
@@ -33,18 +34,22 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
         .maybeSingle();
       
       if (roleError) {
+        console.error('❌ Role fetch error:', roleError);
         logger.error('Role fetch error:', roleError);
         throw roleError;
       }
       
       if (!roleData) {
+        console.warn('⚠️ No role found for user:', userId, '- defaulting to student');
         logger.warn('No role found for user:', userId, '- defaulting to student');
         return 'student';
       }
       
+      console.log('✅ Role fetched successfully:', roleData.role, 'for user:', userId);
       logger.info('✅ Role fetched successfully:', roleData.role, 'for user:', userId);
       return roleData.role as 'admin' | 'teacher' | 'student' | 'parent';
     } catch (error) {
+      console.error('❌ Failed to fetch user role:', error);
       logger.error('Failed to fetch user role:', error);
       return 'student'; // Safe fallback
     }
@@ -102,11 +107,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 });
               } else {
                 logger.debug('Profile found:', profile.full_name);
+                console.log('📝 Profile found:', profile.full_name);
                 
                 // Fetch role from secure user_roles table
                 const userRole = await fetchUserRole(session.user.id);
                 
                 logger.debug('Setting user with role:', userRole);
+                console.log('👤 Setting user with role:', userRole, 'for email:', session.user.email);
                 
                 setUser({
                   id: session.user.id,
