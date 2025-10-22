@@ -39,7 +39,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile from our database asynchronously
+          // Fetch user profile and role from database
           setTimeout(async () => {
             if (!mounted) return;
             
@@ -53,7 +53,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               if (!mounted) return;
                 
               if (error) {
-                console.error('Profile fetch error:', error);
+                logger.error('Profile fetch error:', error);
                 // Create a basic user object even if profile fetch fails
                 setUser({
                   id: session.user.id,
@@ -63,16 +63,25 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                   createdAt: new Date().toISOString(),
                 });
               } else if (profile) {
+                // Fetch role from secure user_roles table
+                const { data: roleData, error: roleError } = await supabase
+                  .from('user_roles')
+                  .select('role')
+                  .eq('user_id', session.user.id)
+                  .single();
+                
+                const userRole = roleError ? 'student' : roleData.role;
+                
                 setUser({
                   id: session.user.id,
                   email: session.user.email!,
                   name: profile.full_name || session.user.email!,
-                  role: profile.role as 'admin' | 'teacher' | 'student',
+                  role: userRole as 'admin' | 'teacher' | 'student' | 'parent',
                   createdAt: profile.created_at,
                 });
               }
             } catch (error) {
-              console.error('Profile fetch failed:', error);
+              logger.error('Profile fetch failed:', error);
               if (!mounted) return;
               // Fallback user object
               setUser({
