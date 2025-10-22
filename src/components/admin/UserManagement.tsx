@@ -7,17 +7,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Search } from 'lucide-react';
-import { User, Profile, Class, Subject } from '@/types/auth';
+import { User, ProfileWithRole, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
 
 export const UserManagement = () => {
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<ProfileWithRole[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [isAddingUser, setIsAddingUser] = useState(false);
-  const [editingUser, setEditingUser] = useState<Profile | null>(null);
+  const [editingUser, setEditingUser] = useState<ProfileWithRole | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -42,11 +42,25 @@ export const UserManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch profiles
+      // Fetch profiles with roles
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
+
+      // Fetch user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      // Join profiles with roles
+      const profilesWithRoles: ProfileWithRole[] = (profilesData || []).map(profile => {
+        const userRole = rolesData?.find(r => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: userRole?.role || 'student'
+        };
+      });
 
       // Fetch classes
       const { data: classesData } = await supabase
@@ -60,7 +74,7 @@ export const UserManagement = () => {
         .select('*')
         .order('name');
 
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);
       if (subjectsData) setSubjects(subjectsData);
     } catch (error: any) {
@@ -254,7 +268,7 @@ export const UserManagement = () => {
     });
   };
 
-  const startEditing = (profile: Profile) => {
+  const startEditing = (profile: ProfileWithRole) => {
     setEditingUser(profile);
     setUserForm({
       fullName: profile.full_name,

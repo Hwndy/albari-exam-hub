@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, BookOpen, Users } from 'lucide-react';
-import { Subject, SubjectAssignment, Profile } from '@/types/auth';
+import { Subject, SubjectAssignment, ProfileWithRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const SubjectManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<SubjectAssignment[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<ProfileWithRole[]>([]);
   const [isAddingSubject, setIsAddingSubject] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,14 +43,28 @@ export const SubjectManagement = () => {
         .from('subject_assignments')
         .select('*');
 
-      // Fetch profiles
+      // Fetch profiles with roles
       const { data: profilesData } = await supabase
         .from('profiles')
         .select('*');
 
+      // Fetch user roles
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      // Join profiles with roles
+      const profilesWithRoles: ProfileWithRole[] = (profilesData || []).map(profile => {
+        const userRole = rolesData?.find(r => r.user_id === profile.user_id);
+        return {
+          ...profile,
+          role: userRole?.role || 'student'
+        };
+      });
+
       if (subjectsData) setSubjects(subjectsData);
       if (assignmentsData) setAssignments(assignmentsData);
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(profilesWithRoles);
     } catch (error: any) {
       toast({
         title: 'Error',

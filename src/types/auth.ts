@@ -12,9 +12,21 @@ export interface Profile {
   id: string;
   user_id: string;
   full_name: string;
-  role: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface UserRole {
+  id: string;
+  user_id: string;
+  role: 'admin' | 'teacher' | 'student' | 'parent';
+  created_at: string;
+  created_by: string | null;
+}
+
+// Helper type for displaying user information with role
+export interface ProfileWithRole extends Profile {
+  role: 'admin' | 'teacher' | 'student' | 'parent';
 }
 
 export interface Class {

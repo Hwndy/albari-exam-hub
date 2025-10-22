@@ -87,14 +87,14 @@ export const AdminDashboard = () => {
       
       // Fetch stats in parallel
       const [
-        profilesResult,
+        rolesResult,
         classesResult,
         subjectsResult,
         examsResult,
         questionsResult,
         sessionsResult,
       ] = await Promise.all([
-        supabase.from('profiles').select('role'),
+        supabase.from('user_roles').select('role'),
         supabase.from('classes').select('id'),
         supabase.from('subjects').select('id'),
         supabase.from('exams').select('id, status'),
@@ -103,9 +103,9 @@ export const AdminDashboard = () => {
       ]);
 
       // Calculate stats
-      const profiles = profilesResult.data || [];
-      const totalStudents = profiles.filter(p => p.role === 'student').length;
-      const totalTeachers = profiles.filter(p => p.role === 'teacher').length;
+      const roles = rolesResult.data || [];
+      const totalStudents = roles.filter(r => r.role === 'student').length;
+      const totalTeachers = roles.filter(r => r.role === 'teacher').length;
       
       const exams = examsResult.data || [];
       const activeExams = exams.filter(e => e.status === 'published').length;

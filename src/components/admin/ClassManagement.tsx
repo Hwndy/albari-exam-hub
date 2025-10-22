@@ -6,14 +6,14 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Edit, Trash2, Users } from 'lucide-react';
-import { Class, ClassAssignment, Profile } from '@/types/auth';
+import { Class, ClassAssignment, ProfileWithRole } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export const ClassManagement = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
-  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [profiles, setProfiles] = useState<ProfileWithRole[]>([]);
   const [isAddingClass, setIsAddingClass] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,15 +43,28 @@ export const ClassManagement = () => {
         .from('class_assignments')
         .select('*');
 
-      // Fetch student profiles
+      // Fetch student profiles with roles
       const { data: profilesData } = await supabase
         .from('profiles')
-        .select('*')
+        .select('*');
+
+      // Fetch user roles (only students)
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('user_id, role')
         .eq('role', 'student');
+
+      // Join profiles with roles
+      const studentProfiles: ProfileWithRole[] = (profilesData || [])
+        .filter(profile => rolesData?.some(r => r.user_id === profile.user_id))
+        .map(profile => ({
+          ...profile,
+          role: 'student' as const
+        }));
 
       if (classesData) setClasses(classesData);
       if (assignmentsData) setAssignments(assignmentsData);
-      if (profilesData) setProfiles(profilesData);
+      setProfiles(studentProfiles);
     } catch (error: any) {
       toast({
         title: 'Error',
