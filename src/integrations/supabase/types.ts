@@ -102,7 +102,7 @@ export type Database = {
           admitted_to_class_id?: string | null
           allergies?: string | null
           application_date?: string
-          application_number: string
+          application_number?: string
           applying_for_class_id?: string | null
           blood_group?: string | null
           combined_score?: number | null
