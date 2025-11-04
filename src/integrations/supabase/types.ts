@@ -1065,7 +1065,7 @@ export type Database = {
           ended_at: string | null
           exam_id: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           max_score: number | null
           passed: boolean | null
           percentage: number | null
@@ -1083,7 +1083,7 @@ export type Database = {
           ended_at?: string | null
           exam_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           max_score?: number | null
           passed?: boolean | null
           percentage?: number | null
@@ -1101,7 +1101,7 @@ export type Database = {
           ended_at?: string | null
           exam_id?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           max_score?: number | null
           passed?: boolean | null
           percentage?: number | null
@@ -2680,14 +2680,8 @@ export type Database = {
         }
         Returns: Json
       }
-      cleanup_expired_otps: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_old_rate_limits: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_otps: { Args: never; Returns: undefined }
+      cleanup_old_rate_limits: { Args: never; Returns: undefined }
       create_user_with_profile: {
         Args: {
           user_email: string
@@ -2697,14 +2691,8 @@ export type Database = {
         }
         Returns: Json
       }
-      delete_user_profile: {
-        Args: { user_id_param: string }
-        Returns: Json
-      }
-      get_current_user_role: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
+      get_current_user_role: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2712,26 +2700,11 @@ export type Database = {
         }
         Returns: boolean
       }
-      interview_exists: {
-        Args: { interview_uuid: string }
-        Returns: boolean
-      }
-      is_admin: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_admin_v2: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_teacher: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      is_teacher_v2: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      interview_exists: { Args: { interview_uuid: string }; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      is_admin_v2: { Args: never; Returns: boolean }
+      is_teacher: { Args: never; Returns: boolean }
+      is_teacher_v2: { Args: never; Returns: boolean }
     }
     Enums: {
       admission_status:

@@ -226,52 +226,122 @@ serve(async (req) => {
       throw new Error("Application not found");
     }
 
-    // Generate acceptance token
-    const acceptanceToken = crypto.randomUUID();
+    // Check if offer already exists
+    const { data: existingOffer, error: offerCheckError } = await supabase
+      .from("admission_offers")
+      .select('id, offer_letter_url, acceptance_token')
+      .eq("application_id", application_id)
+      .maybeSingle();
+
+    let acceptanceToken: string;
+    let offerLetterUrl: string;
 
     // Generate PDF
     console.log("Generating offer letter PDF...");
     const pdfBuffer = await generateOfferLetterPDF(application, acceptance_deadline);
     
-    // Upload PDF to storage
-    const pdfFileName = `${application.application_number}_offer_letter.pdf`;
-    const { data: uploadData, error: uploadError } = await supabase
-      .storage
-      .from('admission-documents')
-      .upload(`offer-letters/${pdfFileName}`, pdfBuffer, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
+    if (existingOffer) {
+      console.log("Offer already exists, updating instead of creating new one");
+      
+      // Use existing acceptance token
+      acceptanceToken = existingOffer.acceptance_token;
+      
+      // Delete old PDF if exists
+      if (existingOffer.offer_letter_url) {
+        const oldFileName = existingOffer.offer_letter_url.split('/').pop();
+        if (oldFileName) {
+          await supabase.storage
+            .from('admission-documents')
+            .remove([`offer-letters/${oldFileName}`]);
+        }
+      }
+      
+      // Upload new PDF with timestamp
+      const pdfFileName = `${application.application_number}_offer_letter_${Date.now()}.pdf`;
+      const { error: uploadError } = await supabase.storage
+        .from('admission-documents')
+        .upload(`offer-letters/${pdfFileName}`, pdfBuffer, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+        
+      if (uploadError) {
+        console.error("Error uploading PDF:", uploadError);
+        throw new Error(`PDF upload failed: ${uploadError.message}`);
+      }
+      
+      const { data: urlData } = supabase.storage
+        .from('admission-documents')
+        .getPublicUrl(`offer-letters/${pdfFileName}`);
+      
+      offerLetterUrl = urlData.publicUrl;
+      console.log("New PDF uploaded successfully:", offerLetterUrl);
+      
+      // UPDATE existing offer instead of INSERT
+      const { error: updateError } = await supabase
+        .from("admission_offers")
+        .update({
+          acceptance_deadline,
+          offer_letter_url: offerLetterUrl,
+          status: "sent",
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingOffer.id);
+        
+      if (updateError) {
+        console.error("Error updating offer:", updateError);
+        throw new Error(`Failed to update offer: ${updateError.message}`);
+      }
+      
+      console.log("Offer updated successfully");
+    } else {
+      // Create new offer - original flow
+      console.log("Creating new offer");
+      
+      acceptanceToken = crypto.randomUUID();
+      
+      // Upload PDF to storage
+      const pdfFileName = `${application.application_number}_offer_letter.pdf`;
+      const { error: uploadError } = await supabase
+        .storage
+        .from('admission-documents')
+        .upload(`offer-letters/${pdfFileName}`, pdfBuffer, {
+          contentType: 'application/pdf',
+          upsert: true,
+        });
 
-    if (uploadError) {
-      console.error("Error uploading PDF:", uploadError);
-      throw new Error(`Failed to upload PDF: ${uploadError.message}`);
-    }
+      if (uploadError) {
+        console.error("Error uploading PDF:", uploadError);
+        throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+      }
 
-    // Get public URL for the PDF
-    const { data: urlData } = supabase
-      .storage
-      .from('admission-documents')
-      .getPublicUrl(`offer-letters/${pdfFileName}`);
+      // Get public URL for the PDF
+      const { data: urlData } = supabase
+        .storage
+        .from('admission-documents')
+        .getPublicUrl(`offer-letters/${pdfFileName}`);
 
-    const offerLetterUrl = urlData.publicUrl;
-    console.log("PDF uploaded successfully:", offerLetterUrl);
+      offerLetterUrl = urlData.publicUrl;
+      console.log("PDF uploaded successfully:", offerLetterUrl);
 
-    // Create offer record with acceptance fee and PDF URL
-    const { error: offerError } = await supabase
-      .from("admission_offers")
-      .insert({
-        application_id,
-        acceptance_deadline,
-        acceptance_token: acceptanceToken,
-        acceptance_fee: 50000,
-        status: "sent",
-        offer_letter_url: offerLetterUrl,
-      });
+      // Create offer record with acceptance fee and PDF URL
+      const { error: offerError } = await supabase
+        .from("admission_offers")
+        .insert({
+          application_id,
+          acceptance_deadline,
+          acceptance_token: acceptanceToken,
+          acceptance_fee: 50000,
+          status: "sent",
+          offer_letter_url: offerLetterUrl,
+        });
 
-    if (offerError) {
-      console.error("Error creating offer:", offerError);
-      throw new Error(`Failed to create offer: ${offerError.message}`);
+      if (offerError) {
+        console.error("Error creating offer:", offerError);
+        throw new Error(`Failed to create offer: ${offerError.message}`);
+      }
+      
+      console.log("Offer created successfully");
     }
 
     const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;

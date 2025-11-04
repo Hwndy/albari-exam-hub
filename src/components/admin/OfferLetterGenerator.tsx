@@ -137,6 +137,9 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
               <p className="text-sm text-muted-foreground">
                 Deadline: {format(new Date(existingOffer.acceptance_deadline), 'PPP')}
               </p>
+              <p className="text-xs text-muted-foreground italic">
+                Note: Sending again will update the deadline and regenerate the PDF
+              </p>
               {existingOffer.accepted_at && (
                 <p className="text-sm text-green-600">
                   ✓ Accepted on {format(new Date(existingOffer.accepted_at), 'PPP')}
