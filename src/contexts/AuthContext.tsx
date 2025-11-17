@@ -195,17 +195,44 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     if (data.user && userData.role === 'teacher') {
       try {
-        // Handle subject assignments for teachers
-        if (userData.subjectIds?.length) {
-          const subjectAssignments = userData.subjectIds.map(subjectId => ({
-            user_id: data.user!.id,
-            subject_id: subjectId,
-            class_id: userData.classIds?.[0] || null // Use first class if available
-          }));
+        console.log('🎓 Creating teacher account:', {
+          email: userData.email,
+          subjects: userData.subjectIds?.length || 0,
+          classes: userData.classIds?.length || 0
+        });
+
+        // Create subject assignments for EACH combination of subject and class
+        if (userData.subjectIds?.length && userData.classIds?.length) {
+          const subjectAssignments = [];
+          
+          // For each class the teacher is assigned to
+          for (const classId of userData.classIds) {
+            // Create an assignment for each subject they teach to that class
+            for (const subjectId of userData.subjectIds) {
+              subjectAssignments.push({
+                user_id: data.user.id,
+                subject_id: subjectId,
+                class_id: classId
+              });
+            }
+          }
+          
+          console.log('✅ Subject assignments to create:', subjectAssignments.length);
           await supabase.from('subject_assignments').insert(subjectAssignments);
         }
+        
+        // Handle teacher class assignments
+        if (userData.classIds?.length) {
+          const classAssignments = userData.classIds.map(classId => ({
+            teacher_id: data.user!.id,
+            class_id: classId
+          }));
+          
+          console.log('✅ Class assignments to create:', classAssignments.length);
+          await supabase.from('teacher_class_assignments').insert(classAssignments);
+        }
       } catch (assignmentError) {
-        console.error('Error assigning subjects:', assignmentError);
+        console.error('❌ Error assigning subjects/classes:', assignmentError);
       }
     }
   };

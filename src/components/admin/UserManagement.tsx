@@ -109,6 +109,15 @@ export const UserManagement = () => {
       });
       return;
     }
+
+    if (userForm.role === 'teacher' && userForm.classIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one class for the teacher',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     try {
       // Use the create_user_with_profile function
@@ -151,12 +160,27 @@ export const UserManagement = () => {
         }
 
         if (userForm.role === 'teacher') {
-          // Add subject assignments
-          if (userForm.subjectIds.length > 0) {
-            const subjectAssignments = userForm.subjectIds.map(subjectId => ({
-              user_id: authData.user.id,
-              subject_id: subjectId
-            }));
+          console.log('🎓 Creating teacher account:', {
+            email: userForm.email,
+            subjects: userForm.subjectIds.length,
+            classes: userForm.classIds.length
+          });
+
+          // Create subject assignments for EACH combination of subject and class
+          if (userForm.subjectIds.length > 0 && userForm.classIds.length > 0) {
+            const subjectAssignments = [];
+            
+            for (const classId of userForm.classIds) {
+              for (const subjectId of userForm.subjectIds) {
+                subjectAssignments.push({
+                  user_id: authData.user.id,
+                  subject_id: subjectId,
+                  class_id: classId
+                });
+              }
+            }
+            
+            console.log('✅ Subject assignments to create:', subjectAssignments.length);
             await supabase
               .from('subject_assignments')
               .insert(subjectAssignments);
@@ -168,6 +192,8 @@ export const UserManagement = () => {
               teacher_id: authData.user.id,
               class_id: classId
             }));
+            
+            console.log('✅ Class assignments to create:', classAssignments.length);
             await supabase
               .from('teacher_class_assignments')
               .insert(classAssignments);
