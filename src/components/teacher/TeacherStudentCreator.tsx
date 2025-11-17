@@ -41,48 +41,59 @@ export const TeacherStudentCreator: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch classes that teacher is assigned to through teacher_class_assignments
-      const { data: assignments } = await supabase
+      // Fetch teacher's assigned classes
+      const { data: teacherAssignments } = await supabase
         .from('teacher_class_assignments')
         .select('class_id')
         .eq('teacher_id', user?.id);
 
-      if (assignments && assignments.length > 0) {
-        const classIds = assignments.map(a => a.class_id);
-        const { data: classesData } = await supabase
-          .from('classes')
-          .select('id, name')
-          .in('id', classIds);
+      let classesData = [];
+      if (teacherAssignments && teacherAssignments.length > 0) {
+        const classIds = teacherAssignments.map(a => a.class_id);
         
-        if (classesData) {
-          setClasses(classesData);
+        // Fetch class details
+        const { data } = await supabase
+          .from('classes')
+          .select('id, name, description')
+          .in('id', classIds)
+          .order('name');
+
+        if (data) {
+          classesData = data;
+          setClasses(data);
         }
       }
 
-      // Fetch recently created students (optional)
-      const { data: studentRoles } = await supabase
-        .from('user_roles')
-        .select('user_id, role')
-        .eq('role', 'student');
+      // Fetch students assigned to teacher's classes
+      if (classesData.length > 0) {
+        const classIds = classesData.map(c => c.id);
+        
+        const { data: classAssignments } = await supabase
+          .from('class_assignments')
+          .select(`
+            student_id,
+            class_id,
+            profiles!inner(user_id, full_name, created_at)
+          `)
+          .in('class_id', classIds)
+          .order('created_at', { foreignTable: 'profiles', ascending: false })
+          .limit(10);
 
-      if (studentRoles && studentRoles.length > 0) {
-        const studentUserIds = studentRoles.map(r => r.user_id);
-        const { data: recentStudents } = await supabase
-          .from('profiles')
-          .select('*')
-          .in('user_id', studentUserIds)
-          .order('created_at', { ascending: false })
-          .limit(5);
-
-        if (recentStudents) {
-          const studentsWithRoles = recentStudents.map(student => ({
-            ...student,
+        if (classAssignments) {
+          const studentsWithClass = classAssignments.map(assignment => ({
+            user_id: assignment.profiles.user_id,
+            full_name: assignment.profiles.full_name,
+            created_at: assignment.profiles.created_at,
+            class_id: assignment.class_id,
             role: 'student'
           }));
-          setCreatedStudents(studentsWithRoles);
+          
+          console.log('📚 Students in teacher classes:', studentsWithClass.length);
+          setCreatedStudents(studentsWithClass);
         }
       }
     } catch (error: any) {
+      console.error('❌ Fetch data error:', error);
       toast({
         title: 'Error',
         description: 'Failed to fetch data',
@@ -96,52 +107,61 @@ export const TeacherStudentCreator: React.FC = () => {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (!studentForm.fullName || !studentForm.email || !studentForm.password) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       setIsCreatingStudent(true);
 
-      // Use Supabase client-side signup to create the student
-      const { data, error } = await supabase.auth.signUp({
+      console.log('📝 Creating student via edge function:', {
         email: studentForm.email,
-        password: studentForm.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            full_name: studentForm.fullName,
-            role: 'student'
-          }
+        fullName: studentForm.fullName,
+        classId: studentForm.classId
+      });
+
+      // Get current session
+      const { data: session } = await supabase.auth.getSession();
+      
+      if (!session.session) {
+        throw new Error('No active session');
+      }
+
+      // Call edge function instead of signUp
+      const { data: result, error: functionError } = await supabase.functions.invoke('create-student', {
+        body: {
+          email: studentForm.email,
+          password: studentForm.password,
+          fullName: studentForm.fullName,
+          classId: studentForm.classId || null
         }
       });
 
-      if (error) throw error;
+      if (functionError) throw functionError;
 
-      if (data.user) {
-        // Assign student to class if selected
-        if (studentForm.classId) {
-          const { error: assignmentError } = await supabase
-            .from('class_assignments')
-            .insert({
-              student_id: data.user.id,
-              class_id: studentForm.classId,
-            });
+      console.log('✅ Student created successfully:', result);
 
-          if (assignmentError) {
-            console.warn('Failed to assign student to class:', assignmentError);
-          }
-        }
-
-        await fetchData();
-        resetForm();
-        
-        toast({
-          title: 'Student Created',
-          description: `${studentForm.fullName} has been created successfully. They will receive a confirmation email.`,
-        });
-      }
-    } catch (error: any) {
       toast({
-        title: 'Error',
-        description: error.message || 'Failed to create student',
-        variant: 'destructive',
+        title: "Success",
+        description: `Student ${studentForm.fullName} created successfully`,
+      });
+
+      // Refresh the created students list
+      await fetchData();
+
+      // Reset the form
+      resetForm();
+    } catch (error: any) {
+      console.error('❌ Student creation error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to create student",
+        variant: "destructive",
       });
     } finally {
       setIsCreatingStudent(false);
