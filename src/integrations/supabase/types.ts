@@ -2682,6 +2682,10 @@ export type Database = {
       }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      create_teacher_class_assignments: {
+        Args: { p_class_ids: string[]; p_teacher_id: string }
+        Returns: undefined
+      }
       create_user_with_profile: {
         Args: {
           user_email: string

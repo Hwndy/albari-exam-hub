@@ -186,17 +186,19 @@ export const UserManagement = () => {
               .insert(subjectAssignments);
           }
 
-          // Add class assignments for teachers
+          // Add class assignments for teachers using RPC function to bypass RLS
           if (userForm.classIds.length > 0) {
-            const classAssignments = userForm.classIds.map(classId => ({
-              teacher_id: authData.user.id,
-              class_id: classId
-            }));
+            console.log('✅ Creating class assignments via RPC:', userForm.classIds.length);
             
-            console.log('✅ Class assignments to create:', classAssignments.length);
-            await supabase
-              .from('teacher_class_assignments')
-              .insert(classAssignments);
+            const { error: classAssignError } = await supabase
+              .rpc('create_teacher_class_assignments', {
+                p_teacher_id: authData.user.id,
+                p_class_ids: userForm.classIds
+              });
+              
+            if (classAssignError) throw classAssignError;
+            
+            console.log('✅ Class assignments created successfully');
           }
         }
       }
