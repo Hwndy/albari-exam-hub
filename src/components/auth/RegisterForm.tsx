@@ -134,6 +134,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
 
+    if (formData.role === 'teacher' && formData.classIds.length === 0) {
+      toast({
+        title: 'Error',
+        description: 'Please select at least one class',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register({
