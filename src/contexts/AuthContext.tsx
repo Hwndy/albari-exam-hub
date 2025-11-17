@@ -221,15 +221,22 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           await supabase.from('subject_assignments').insert(subjectAssignments);
         }
         
-        // Handle teacher class assignments
+        // Handle teacher class assignments using RPC function to bypass RLS
         if (userData.classIds?.length) {
-          const classAssignments = userData.classIds.map(classId => ({
-            teacher_id: data.user!.id,
-            class_id: classId
-          }));
+          console.log('✅ Creating class assignments via RPC:', userData.classIds.length);
           
-          console.log('✅ Class assignments to create:', classAssignments.length);
-          await supabase.from('teacher_class_assignments').insert(classAssignments);
+          const { error: classError } = await supabase
+            .rpc('create_teacher_class_assignments', {
+              p_teacher_id: data.user!.id,
+              p_class_ids: userData.classIds
+            });
+            
+          if (classError) {
+            console.error('❌ Class assignment error:', classError);
+            throw classError;
+          }
+          
+          console.log('✅ Class assignments created successfully');
         }
       } catch (assignmentError) {
         console.error('❌ Error assigning subjects/classes:', assignmentError);

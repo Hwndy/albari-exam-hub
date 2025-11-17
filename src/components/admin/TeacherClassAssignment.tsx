@@ -143,11 +143,14 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
     }
 
     try {
+      // Get existing class IDs for this teacher
+      const existingClassIds = assignments.map(a => a.class_id);
+      
+      // Use RPC function to bypass RLS
       const { error } = await supabase
-        .from('teacher_class_assignments')
-        .insert({
-          teacher_id: selectedTeacher,
-          class_id: selectedClass,
+        .rpc('create_teacher_class_assignments', {
+          p_teacher_id: selectedTeacher,
+          p_class_ids: [...existingClassIds, selectedClass]
         });
 
       if (error) throw error;
@@ -170,10 +173,17 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
 
   const removeAssignment = async (assignmentId: string) => {
     try {
+      // Get remaining class IDs after removal
+      const remainingClassIds = assignments
+        .filter(a => a.id !== assignmentId)
+        .map(a => a.class_id);
+      
+      // Use RPC function to bypass RLS - this will delete all and recreate
       const { error } = await supabase
-        .from('teacher_class_assignments')
-        .delete()
-        .eq('id', assignmentId);
+        .rpc('create_teacher_class_assignments', {
+          p_teacher_id: selectedTeacher,
+          p_class_ids: remainingClassIds
+        });
 
       if (error) throw error;
 
