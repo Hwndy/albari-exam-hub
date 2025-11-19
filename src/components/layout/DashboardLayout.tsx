@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User, Menu } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { SchoolSwitcher } from '@/components/shared/SchoolSwitcher';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -36,6 +37,9 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">
+              {/* School Switcher for Super Admins */}
+              {!isMobile && <SchoolSwitcher />}
+              
               {/* Desktop User Info */}
               {!isMobile && (
                 <div className="text-right">
