@@ -31,7 +31,8 @@ export const UserManagement = () => {
     role: 'student' as 'admin' | 'teacher' | 'student',
     classId: '',
     classIds: [] as string[],
-    subjectIds: [] as string[]
+    subjectIds: [] as string[],
+    isSuperAdmin: false
   });
 
   useEffect(() => {
@@ -201,6 +202,24 @@ export const UserManagement = () => {
             console.log('✅ Class assignments created successfully');
           }
         }
+
+        // Handle super admin promotion
+        if (userForm.role === 'admin' && userForm.isSuperAdmin) {
+          const { error: superAdminError } = await supabase.rpc('create_super_admin', {
+            admin_user_id: authData.user.id
+          });
+
+          if (superAdminError) {
+            console.error('Error creating super admin:', superAdminError);
+            toast({
+              title: 'Warning',
+              description: 'User created but super admin promotion failed',
+              variant: 'destructive',
+            });
+          } else {
+            console.log('✨ Super admin created successfully');
+          }
+        }
       }
 
       // If successful, refresh the profiles list
@@ -211,7 +230,9 @@ export const UserManagement = () => {
       
       toast({
         title: 'User Created',
-        description: `${userForm.fullName} has been added successfully.`,
+        description: userForm.isSuperAdmin 
+          ? `${userForm.fullName} has been added as a Super Admin.`
+          : `${userForm.fullName} has been added successfully.`,
       });
     } catch (error: any) {
       toast({
@@ -292,7 +313,8 @@ export const UserManagement = () => {
       role: 'student',
       classId: '',
       classIds: [],
-      subjectIds: []
+      subjectIds: [],
+      isSuperAdmin: false
     });
   };
 
@@ -305,7 +327,8 @@ export const UserManagement = () => {
       role: profile.role as 'admin' | 'teacher' | 'student',
       classId: '',
       classIds: [],
-      subjectIds: []
+      subjectIds: [],
+      isSuperAdmin: false
     });
   };
 
@@ -431,7 +454,7 @@ export const UserManagement = () => {
                 <Select
                   value={userForm.role}
                   onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [] })
+                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [], isSuperAdmin: false })
                   }
                 >
                   <SelectTrigger>
@@ -444,6 +467,21 @@ export const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {userForm.role === 'admin' && (
+                <div className="flex items-center space-x-2 p-4 border border-border rounded-lg bg-muted/50">
+                  <input
+                    type="checkbox"
+                    id="isSuperAdmin"
+                    checked={userForm.isSuperAdmin}
+                    onChange={(e) => setUserForm({ ...userForm, isSuperAdmin: e.target.checked })}
+                    className="rounded border-input"
+                  />
+                  <Label htmlFor="isSuperAdmin" className="cursor-pointer font-medium">
+                    Make Super Admin (can manage all schools)
+                  </Label>
+                </div>
+              )}
 
               {userForm.role === 'student' && (
                 <div className="space-y-2">
