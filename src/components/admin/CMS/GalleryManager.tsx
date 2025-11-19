@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Plus, Trash2, Edit, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { GalleryItem } from '@/types/website';
@@ -20,6 +21,7 @@ export const GalleryManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { withSchoolFilter } = useSchoolQuery();
 
   const { data: galleryItems, isLoading } = useQuery({
     queryKey: ['gallery', selectedCategory],
@@ -30,7 +32,7 @@ export const GalleryManager = () => {
         query = query.eq('category', selectedCategory);
       }
       
-      const { data, error } = await query;
+      const { data, error } = await withSchoolFilter(query);
       if (error) throw error;
       return data as GalleryItem[];
     },
@@ -171,10 +173,11 @@ const GalleryItemDialog = ({ item, open, onOpenChange, userId }: GalleryItemDial
   const [isFeatured, setIsFeatured] = useState(item?.is_featured || false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { withSchoolData } = useSchoolQuery();
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const itemData = {
+      const itemData = withSchoolData({
         title,
         description: description || null,
         image_url: imageUrl,
@@ -183,7 +186,7 @@ const GalleryItemDialog = ({ item, open, onOpenChange, userId }: GalleryItemDial
         is_featured: isFeatured,
         display_order: item?.display_order || 1,
         created_by: userId,
-      };
+      });
 
       if (item) {
         const { error } = await supabase.from('gallery').update(itemData).eq('id', item.id);

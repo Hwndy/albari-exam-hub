@@ -15,6 +15,7 @@ import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Tar
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { EnhancedQuestionForm } from './EnhancedQuestionForm';
 
 interface QuestionOption {
@@ -89,6 +90,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
   const { user } = useAuth();
   const { toast } = useToast();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -169,10 +171,10 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         }
       }
 
-      const [subjectsData, classesData, questionsData] = await Promise.all([
-        subjectsQuery,
-        classesQuery,
-        supabase.from('questions').select(`
+      const [subjectsData, classesData, questionsQueryResult] = await Promise.all([
+        withSchoolFilter(subjectsQuery),
+        withSchoolFilter(classesQuery),
+        withSchoolFilter(supabase.from('questions').select(`
           *,
           question_options(*),
           question_banks!inner(
@@ -183,17 +185,17 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             subjects(name)
           ),
           classes(name)
-        `).order('created_at', { ascending: false })
+        `).order('created_at', { ascending: false }))
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
-      if (questionsData.data) {
-        setQuestionBankQuestions(questionsData.data);
+      if (questionsQueryResult.data) {
+        setQuestionBankQuestions(questionsQueryResult.data);
         
         // Process available questions count by subject and difficulty
         const questionCounts: Record<string, Record<string, number>> = {};
-        questionsData.data.forEach((q: any) => {
+        questionsQueryResult.data.forEach((q: any) => {
           const subjectId = q.question_banks.subject_id;
           const difficulty = q.difficulty_level;
           
@@ -386,7 +388,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       const poolSize = totalQuestions;
       const qps = Math.min(metadata.questionsPerStudent || poolSize, poolSize);
 
-      const examData = {
+      const examData = withSchoolData({
         title: metadata.title,
         description: metadata.description,
         instructions: metadata.instructions,
@@ -408,7 +410,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         exam_category: metadata.examCategory,
         status,
         created_by: user?.id,
-      };
+      });
 
       let exam;
       if (editingExam) {
@@ -465,12 +467,12 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         // Create question bank and save manual questions
         const { data: questionBank } = await supabase
           .from('question_banks')
-          .insert({
+          .insert(withSchoolData({
             name: `${metadata.title} - Questions`,
             subject_id: metadata.subjectId,
             class_id: metadata.classId,
             created_by: user?.id,
-          })
+          }))
           .select()
           .single();
 
@@ -478,7 +480,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
           const question = questions[i];
           const { data: questionRecord } = await supabase
             .from('questions')
-            .insert({
+            .insert(withSchoolData({
               question_text: question.questionText,
               question_type: question.questionType,
               difficulty_level: question.difficultyLevel,
@@ -489,7 +491,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
               created_by: user?.id,
               question_bank_id: questionBank?.id,
               class_id: metadata.classId,
-            })
+            }))
             .select()
             .single();
 
