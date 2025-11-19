@@ -188,7 +188,8 @@ export const UserManagement = () => {
             .from('class_assignments')
             .insert({
               student_id: authData.user.id,
-              class_id: userForm.classId
+              class_id: userForm.classId,
+              school_id: assignedSchoolId
             });
         }
 

@@ -217,7 +217,8 @@ export const StudentManagement = () => {
           .from('class_assignments')
           .insert({
             student_id: studentData.id,
-            class_id: newStudent.class_id
+            class_id: newStudent.class_id,
+            school_id: schoolId
           });
 
         if (assignmentError) throw assignmentError;

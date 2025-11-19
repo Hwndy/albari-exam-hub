@@ -59,7 +59,7 @@ export const AdminQuestionBank: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
+  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
 
 
   useEffect(() => {
@@ -191,6 +191,7 @@ export const AdminQuestionBank: React.FC = () => {
           option_text: option.text,
           is_correct: option.isCorrect,
           option_order: index + 1,
+          school_id: schoolId,
         }));
 
         const { error: optionsError } = await supabase
@@ -204,6 +205,7 @@ export const AdminQuestionBank: React.FC = () => {
           option_text: answer,
           is_correct: true,
           option_order: index + 1,
+          school_id: schoolId,
         }));
 
         const { error: optionsError } = await supabase
