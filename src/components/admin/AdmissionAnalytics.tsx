@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, CheckCircle, XCircle, Clock, TrendingUp, DollarSign } from "lucide-react";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface AnalyticsData {
   totalApplications: number;
@@ -13,6 +14,7 @@ interface AnalyticsData {
 }
 
 export const AdmissionAnalytics = () => {
+  const { withSchoolFilter } = useSchoolQuery();
   const [analytics, setAnalytics] = useState<AnalyticsData>({
     totalApplications: 0,
     byStatus: {},
@@ -29,9 +31,11 @@ export const AdmissionAnalytics = () => {
   const fetchAnalytics = async () => {
     try {
       // Get all applications
-      const { data: applications, error: appError } = await supabase
-        .from("admission_applications")
-        .select("status, gender");
+      const { data: applications, error: appError } = await withSchoolFilter(
+        supabase
+          .from("admission_applications")
+          .select("status, gender")
+      );
 
       if (appError) throw appError;
 

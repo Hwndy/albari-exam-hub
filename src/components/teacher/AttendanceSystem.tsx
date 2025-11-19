@@ -15,6 +15,7 @@ import { UserCheck, UserX, Clock, AlertCircle, Calendar as CalendarIcon, Users, 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -71,6 +72,7 @@ interface Subject {
 
 export const AttendanceSystem = () => {
   const { user } = useAuth();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -113,10 +115,12 @@ export const AttendanceSystem = () => {
       setIsLoading(true);
       
       // Fetch teacher's class assignments
-      const { data: classAssignments, error: classError } = await supabase
-        .from('teacher_class_assignments')
-        .select('class_id')
-        .eq('teacher_id', user?.id);
+      const { data: classAssignments, error: classError } = await withSchoolFilter(
+        supabase
+          .from('teacher_class_assignments')
+          .select('class_id')
+          .eq('teacher_id', user?.id)
+      );
 
       if (classError) throw classError;
 

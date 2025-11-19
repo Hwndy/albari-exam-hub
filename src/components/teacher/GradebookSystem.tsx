@@ -16,6 +16,7 @@ import { BookOpen, Plus, Calculator, TrendingUp, Award, Calendar as CalendarIcon
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -63,6 +64,7 @@ interface Subject {
 
 export const GradebookSystem = () => {
   const { user } = useAuth();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -119,10 +121,12 @@ export const GradebookSystem = () => {
     try {
       setIsLoading(true);
       
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('teacher_class_assignments')
-        .select('class_id')
-        .eq('teacher_id', user?.id);
+      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+        supabase
+          .from('teacher_class_assignments')
+          .select('class_id')
+          .eq('teacher_id', user?.id)
+      );
 
       if (assignmentsError) throw assignmentsError;
 

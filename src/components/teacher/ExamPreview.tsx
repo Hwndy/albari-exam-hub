@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface ExamPreviewProps {
   examId: string;
@@ -37,6 +38,7 @@ export const ExamPreview: React.FC<ExamPreviewProps> = ({ examId, isOpen, onClos
   const [questions, setQuestions] = useState<PreviewQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   useEffect(() => {
     if (isOpen && examId) {
@@ -49,15 +51,16 @@ export const ExamPreview: React.FC<ExamPreviewProps> = ({ examId, isOpen, onClos
       setLoading(true);
       
       // Fetch exam details
-      const { data: examData, error: examError } = await supabase
-        .from('exams')
-        .select(`
-          *,
-          subjects(name),
-          classes(name)
-        `)
-        .eq('id', examId)
-        .single();
+      const { data: examData, error: examError } = await withSchoolFilter(
+        supabase
+          .from('exams')
+          .select(`
+            *,
+            subjects(name),
+            classes(name)
+          `)
+          .eq('id', examId)
+      ).single();
 
       if (examError) throw examError;
 

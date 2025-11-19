@@ -13,6 +13,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface StudentResult {
   id: string;
@@ -36,6 +37,7 @@ export const EnhancedExamResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   useEffect(() => {
     fetchData();
@@ -46,39 +48,43 @@ export const EnhancedExamResults: React.FC = () => {
       setLoading(true);
       
       // Fetch teacher's exams first
-      const { data: examsData } = await supabase
-        .from('exams')
-        .select('id, title, subjects(name)')
-        .eq('created_by', user?.id)
-        .order('created_at', { ascending: false });
+      const { data: examsData } = await withSchoolFilter(
+        supabase
+          .from('exams')
+          .select('id, title, subjects(name)')
+          .eq('created_by', user?.id)
+          .order('created_at', { ascending: false })
+      );
 
       if (examsData) {
         setExams(examsData);
       }
 
       // Fetch results for teacher's exams
-      const { data: resultsData } = await supabase
-        .from('exam_sessions')
-        .select(`
-          id,
-          total_score,
-          max_score,
-          percentage,
-          passed,
-          ended_at,
-          started_at,
-          student_id,
-          exams!inner(
+      const { data: resultsData } = await withSchoolFilter(
+        supabase
+          .from('exam_sessions')
+          .select(`
             id,
-            title,
-            pass_mark,
-            created_by,
-            subjects(name)
-          )
-        `)
-        .eq('status', 'completed')
-        .eq('exams.created_by', user?.id)
-        .order('ended_at', { ascending: false });
+            total_score,
+            max_score,
+            percentage,
+            passed,
+            ended_at,
+            started_at,
+            student_id,
+            exams!inner(
+              id,
+              title,
+              pass_mark,
+              created_by,
+              subjects(name)
+            )
+          `)
+          .eq('status', 'completed')
+          .eq('exams.created_by', user?.id)
+          .order('ended_at', { ascending: false })
+      );
 
       if (resultsData) {
         // Get student profiles separately
