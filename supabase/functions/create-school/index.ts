@@ -37,10 +37,15 @@ serve(async (req) => {
       .from('profiles')
       .select('school_id')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
+      console.error('Profile fetch error:', profileError);
       throw new Error('Failed to fetch user profile');
+    }
+
+    if (!profile) {
+      throw new Error('User profile not found. Please ensure your account is properly set up.');
     }
 
     if (profile.school_id !== null) {
