@@ -32,8 +32,12 @@ export const UserManagement = () => {
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
+    schoolId: '',
     isSuperAdmin: false
   });
+  const [schools, setSchools] = useState<any[]>([]);
+  const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -42,6 +46,26 @@ export const UserManagement = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      
+      // Check if current user is super admin and get their school_id
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('school_id')
+          .eq('user_id', user.id)
+          .single();
+        
+        setCurrentUserSchoolId(profile?.school_id || null);
+        setIsSuperAdmin(profile?.school_id === null);
+      }
+      
+      // Fetch schools (for super admins)
+      const { data: schoolsData } = await supabase
+        .from('schools')
+        .select('*')
+        .order('name');
+      if (schoolsData) setSchools(schoolsData);
       
       // Fetch profiles
       const { data: profilesData } = await supabase
@@ -135,6 +159,9 @@ export const UserManagement = () => {
         throw new Error(data.error as string);
       }
 
+      // Determine school_id: use selected school or current user's school
+      const assignedSchoolId = userForm.schoolId || currentUserSchoolId;
+      
       // Create the actual user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userForm.email,
@@ -142,7 +169,8 @@ export const UserManagement = () => {
         options: {
           data: {
             full_name: userForm.fullName,
-            role: userForm.role
+            role: userForm.role,
+            school_id: assignedSchoolId
           }
         }
       });
@@ -150,6 +178,11 @@ export const UserManagement = () => {
       if (authError) throw authError;
 
       if (authData.user) {
+        // Update profile with school_id
+        await supabase
+          .from('profiles')
+          .update({ school_id: assignedSchoolId })
+          .eq('user_id', authData.user.id);
         // Handle role-specific assignments
         if (userForm.role === 'student' && userForm.classId) {
           await supabase
@@ -314,6 +347,7 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
+      schoolId: '',
       isSuperAdmin: false
     });
   };
@@ -328,6 +362,7 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
+      schoolId: '',
       isSuperAdmin: false
     });
   };
@@ -467,6 +502,31 @@ export const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* School Selection - Only for super admins creating users for specific schools */}
+              {isSuperAdmin && !userForm.isSuperAdmin && (
+                <div className="space-y-2">
+                  <Label htmlFor="school">Assign to School</Label>
+                  <Select
+                    value={userForm.schoolId}
+                    onValueChange={(value) => setUserForm({ ...userForm, schoolId: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a school" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {schools.map((school) => (
+                        <SelectItem key={school.id} value={school.id}>
+                          {school.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty to use your current school or make super admin
+                  </p>
+                </div>
+              )}
 
               {userForm.role === 'admin' && (
                 <div className="flex items-center space-x-2 p-4 border border-border rounded-lg bg-muted/50">
