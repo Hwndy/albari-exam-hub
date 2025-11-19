@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, BookOpen, Users } from 'lucide-react';
 import { Subject, SubjectAssignment, Profile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 export const SubjectManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -18,6 +19,7 @@ export const SubjectManagement = () => {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
 
   const [subjectForm, setSubjectForm] = useState({
     name: '',
@@ -32,21 +34,24 @@ export const SubjectManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch subjects
-      const { data: subjectsData } = await supabase
+      // Fetch subjects - filtered by school
+      const subjectsQuery = supabase
         .from('subjects')
         .select('*')
         .order('name');
+      const { data: subjectsData } = await withSchoolFilter(subjectsQuery);
 
-      // Fetch subject assignments
-      const { data: assignmentsData } = await supabase
+      // Fetch subject assignments - filtered by school
+      const assignmentsQuery = supabase
         .from('subject_assignments')
         .select('*');
+      const { data: assignmentsData } = await withSchoolFilter(assignmentsQuery);
 
-      // Fetch profiles and roles
-      const { data: profilesData } = await supabase
+      // Fetch profiles and roles - filtered by school
+      const profilesQuery = supabase
         .from('profiles')
         .select('*');
+      const { data: profilesData } = await withSchoolFilter(profilesQuery);
 
       const { data: rolesData } = await supabase
         .from('user_roles')
@@ -78,12 +83,14 @@ export const SubjectManagement = () => {
     e.preventDefault();
     
     try {
+      const subjectData = withSchoolData({
+        name: subjectForm.name,
+        description: subjectForm.description,
+      });
+      
       const { error } = await supabase
         .from('subjects')
-        .insert([{
-          name: subjectForm.name,
-          description: subjectForm.description,
-        }]);
+        .insert([subjectData]);
 
       if (error) throw error;
 

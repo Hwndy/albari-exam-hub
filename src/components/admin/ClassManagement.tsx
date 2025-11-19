@@ -9,6 +9,7 @@ import { Plus, Edit, Trash2, Users } from 'lucide-react';
 import { Class, ClassAssignment, Profile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 export const ClassManagement = () => {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -18,6 +19,7 @@ export const ClassManagement = () => {
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
 
   const [classForm, setClassForm] = useState({
     name: '',
@@ -32,18 +34,19 @@ export const ClassManagement = () => {
     try {
       setLoading(true);
       
-      // Fetch classes
-      const { data: classesData } = await supabase
+      // Fetch classes - filtered by school
+      const classesQuery = supabase
         .from('classes')
         .select('*')
         .order('name');
+      const { data: classesData } = await withSchoolFilter(classesQuery);
 
       // Fetch class assignments
       const { data: assignmentsData } = await supabase
         .from('class_assignments')
         .select('*');
 
-      // Fetch student profiles and their roles
+      // Fetch student profiles and their roles - filtered by school
       const { data: studentRoles } = await supabase
         .from('user_roles')
         .select('user_id, role')
@@ -51,10 +54,11 @@ export const ClassManagement = () => {
 
       const studentUserIds = studentRoles?.map(r => r.user_id) || [];
       
-      const { data: profilesData } = await supabase
+      const profilesQuery = supabase
         .from('profiles')
         .select('*')
         .in('user_id', studentUserIds);
+      const { data: profilesData } = await withSchoolFilter(profilesQuery);
 
       const profilesWithRoles = profilesData?.map(profile => ({
         ...profile,
@@ -79,12 +83,14 @@ export const ClassManagement = () => {
     e.preventDefault();
     
     try {
+      const classData = withSchoolData({
+        name: classForm.name,
+        description: classForm.description,
+      });
+      
       const { error } = await supabase
         .from('classes')
-        .insert([{
-          name: classForm.name,
-          description: classForm.description,
-        }]);
+        .insert([classData]);
 
       if (error) throw error;
 
