@@ -1,7 +1,9 @@
 import React, { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { LogOut, User, Menu } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +19,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   title,
 }) => {
   const { user, logout } = useAuth();
+  const { currentSchool, schoolId } = useSchool();
   const isMobile = useIsMobile();
 
   const handleLogout = () => {
@@ -73,6 +76,13 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
           </div>
         </div>
       </header>
+
+      {/* Debug Banner - Shows current school context */}
+      <Alert className="mx-4 mt-4 border-primary/50 bg-primary/10">
+        <AlertDescription className="text-sm font-mono">
+          <strong>Debug:</strong> User: {user?.email} | School: {currentSchool?.name || 'All Schools'} | ID: {schoolId || 'NULL (Super Admin)'}
+        </AlertDescription>
+      </Alert>
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-4 sm:py-6 lg:py-8">
