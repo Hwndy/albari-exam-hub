@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface AdminStudentResult {
   id: string;
@@ -42,6 +43,7 @@ export const AdminStudentResults: React.FC = () => {
   const [selectedClass, setSelectedClass] = useState('all');
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   useEffect(() => {
     fetchData();
@@ -51,17 +53,17 @@ export const AdminStudentResults: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch all subjects and classes
+      // Fetch all subjects and classes filtered by school
       const [subjectsData, classesData] = await Promise.all([
-        supabase.from('subjects').select('id, name').order('name'),
-        supabase.from('classes').select('id, name').order('name')
+        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
+        withSchoolFilter(supabase.from('classes').select('id, name').order('name'))
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
 
-      // Fetch all completed exam sessions
-      const { data: sessionsData } = await supabase
+      // Fetch all completed exam sessions filtered by school
+      const sessionsQuery = supabase
         .from('exam_sessions')
         .select(`
           id,
@@ -83,10 +85,12 @@ export const AdminStudentResults: React.FC = () => {
         .eq('status', 'completed')
         .order('ended_at', { ascending: false });
 
+      const { data: sessionsData } = await withSchoolFilter(sessionsQuery);
+
       if (sessionsData) {
         // Get all student and teacher profiles
-        const studentIds = [...new Set(sessionsData.map(s => s.student_id))];
-        const teacherIds = [...new Set(sessionsData.map(s => s.exams?.created_by).filter(Boolean))];
+        const studentIds = [...new Set(sessionsData.map(s => s.student_id))].filter((id): id is string => typeof id === 'string');
+        const teacherIds = [...new Set(sessionsData.map(s => s.exams?.created_by).filter(Boolean))].filter((id): id is string => typeof id === 'string');
         
         const [studentsData, teachersData] = await Promise.all([
           supabase

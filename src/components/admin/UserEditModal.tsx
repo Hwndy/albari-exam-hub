@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Shield, Book, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Profile } from '@/types/auth';
 
 interface UserEditModalProps {
@@ -43,6 +44,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const [userAssignments, setUserAssignments] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   useEffect(() => {
     if (user && isOpen) {
