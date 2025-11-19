@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { ArrowLeft, Save } from 'lucide-react';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import type { NewsArticle } from '@/types/website';
@@ -31,6 +32,7 @@ export const NewsEditor = ({ article, onClose }: NewsEditorProps) => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { withSchoolData } = useSchoolQuery();
 
   useEffect(() => {
     if (title && !article) {
@@ -44,7 +46,7 @@ export const NewsEditor = ({ article, onClose }: NewsEditorProps) => {
 
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const articleData = {
+      const articleData = withSchoolData({
         title,
         slug,
         excerpt: excerpt || null,
@@ -54,7 +56,7 @@ export const NewsEditor = ({ article, onClose }: NewsEditorProps) => {
         is_published: isPublished,
         published_at: isPublished && !article?.is_published ? new Date().toISOString() : article?.published_at,
         created_by: user?.id || '',
-      };
+      });
 
       if (article) {
         const { error } = await supabase

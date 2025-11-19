@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Plus, Search, Edit, Trash2, Eye } from 'lucide-react';
 import { NewsEditor } from './NewsEditor';
 import type { NewsArticle } from '@/types/website';
@@ -16,15 +17,17 @@ export const NewsManager = () => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { withSchoolFilter } = useSchoolQuery();
 
   const { data: articles, isLoading } = useQuery({
     queryKey: ['news-articles'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const query = supabase
         .from('news_articles')
         .select('*')
         .order('created_at', { ascending: false });
       
+      const { data, error } = await withSchoolFilter(query);
       if (error) throw error;
       return data as NewsArticle[];
     },
