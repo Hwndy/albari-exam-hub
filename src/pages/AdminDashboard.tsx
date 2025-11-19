@@ -89,6 +89,13 @@ export const AdminDashboard = () => {
       setIsLoading(true);
       
       // Fetch stats in parallel, filtered by school
+      // For user_roles, we need to join through profiles to filter by school_id
+      const profilesQuery = supabase
+        .from('profiles')
+        .select('user_id, school_id');
+      const schoolProfiles = await withSchoolFilter(profilesQuery);
+      const schoolUserIds = schoolProfiles.data?.map(p => p.user_id) || [];
+      
       const [
         rolesResult,
         classesResult,
@@ -97,7 +104,9 @@ export const AdminDashboard = () => {
         questionsResult,
         sessionsResult,
       ] = await Promise.all([
-        supabase.from('user_roles').select('role'),
+        schoolUserIds.length > 0 
+          ? supabase.from('user_roles').select('role').in('user_id', schoolUserIds)
+          : Promise.resolve({ data: [] }),
         withSchoolFilter(supabase.from('classes').select('id')),
         withSchoolFilter(supabase.from('subjects').select('id')),
         withSchoolFilter(supabase.from('exams').select('id, status')),
