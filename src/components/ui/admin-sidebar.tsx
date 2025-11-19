@@ -39,14 +39,6 @@ const menuItems = [
     value: "overview",
   },
   {
-    title: "Super Admin",
-    icon: Settings,
-    value: "super-admin",
-    sub: [
-      { title: "Schools", value: "schools" },
-    ],
-  },
-  {
     title: "Admissions",
     icon: GraduationCap,
     value: "admissions",
@@ -108,7 +100,7 @@ export function AdminSidebar() {
   const currentTab = searchParams.get("tab") || "overview";
   const currentSubTab = searchParams.get("subtab");
   
-  const [openGroups, setOpenGroups] = useState<string[]>(["super-admin", "admissions", "academic", "website", "system"]);
+  const [openGroups, setOpenGroups] = useState<string[]>(["admissions", "academic", "website", "system"]);
 
   const navigate = useNavigate();
 

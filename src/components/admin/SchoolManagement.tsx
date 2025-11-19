@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 
 interface School {
   id: string;
@@ -36,6 +37,25 @@ export const SchoolManagement = () => {
   const [creatingAdmins, setCreatingAdmins] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { schoolId } = useSchool();
+
+  // GUARD: Only super admins can access
+  const isSuperAdmin = schoolId === null;
+  
+  if (!isSuperAdmin) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-destructive">Unauthorized Access</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">
+            This page is only accessible to Super Administrators. School admins cannot manage schools.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   const [schoolForm, setSchoolForm] = useState({
     name: '',
