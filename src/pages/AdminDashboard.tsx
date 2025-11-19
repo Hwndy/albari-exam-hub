@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
@@ -72,6 +73,7 @@ export const AdminDashboard = () => {
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const { toast } = useToast();
   const { user, logout } = useAuth();
+  const { withSchoolFilter } = useSchoolQuery();
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -86,7 +88,7 @@ export const AdminDashboard = () => {
     try {
       setIsLoading(true);
       
-      // Fetch stats in parallel
+      // Fetch stats in parallel, filtered by school
       const [
         rolesResult,
         classesResult,
@@ -96,11 +98,11 @@ export const AdminDashboard = () => {
         sessionsResult,
       ] = await Promise.all([
         supabase.from('user_roles').select('role'),
-        supabase.from('classes').select('id'),
-        supabase.from('subjects').select('id'),
-        supabase.from('exams').select('id, status'),
-        supabase.from('questions').select('id'),
-        supabase.from('exam_sessions').select('id, status'),
+        withSchoolFilter(supabase.from('classes').select('id')),
+        withSchoolFilter(supabase.from('subjects').select('id')),
+        withSchoolFilter(supabase.from('exams').select('id, status')),
+        withSchoolFilter(supabase.from('questions').select('id')),
+        withSchoolFilter(supabase.from('exam_sessions').select('id, status')),
       ]);
 
       // Calculate stats
@@ -125,8 +127,8 @@ export const AdminDashboard = () => {
         activeSessions,
       });
 
-      // Fetch recent exams with details
-      const { data: recentExamsData } = await supabase
+      // Fetch recent exams with details, filtered by school
+      const recentExamsQuery = supabase
         .from('exams')
         .select(`
           id,
@@ -140,6 +142,8 @@ export const AdminDashboard = () => {
         `)
         .order('created_at', { ascending: false })
         .limit(5);
+
+      const { data: recentExamsData } = await withSchoolFilter(recentExamsQuery);
 
       if (recentExamsData) {
         const formattedExams = recentExamsData.map((exam: any) => ({
