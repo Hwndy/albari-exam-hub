@@ -2,12 +2,18 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SuperAdminSidebar } from '@/components/ui/super-admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Building2, Users, TrendingUp, Activity } from 'lucide-react';
+import { Building2, Users, TrendingUp, Activity, LogOut } from 'lucide-react';
 import { SchoolManagement } from '@/components/admin/SchoolManagement';
+import { UserManagement } from '@/components/admin/UserManagement';
+import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
+import { EnhancedAuditLogs } from '@/components/admin/EnhancedAuditLogs';
+import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -79,9 +85,40 @@ export const SuperAdminDashboard = () => {
   };
 
   const renderContent = () => {
+    const subtab = searchParams.get('subtab');
+    
     switch (activeTab) {
       case 'schools':
         return <SchoolManagement />;
+      
+      case 'users':
+        return <UserManagement />;
+      
+      case 'analytics':
+        return <AdmissionAnalytics />;
+      
+      case 'logs':
+        if (subtab === 'email-logs') {
+          return <EmailLogsViewer />;
+        }
+        if (subtab === 'audit-logs') {
+          return <EnhancedAuditLogs />;
+        }
+        return (
+          <Tabs defaultValue="email-logs" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="email-logs">Email Logs</TabsTrigger>
+              <TabsTrigger value="audit-logs">Audit Logs</TabsTrigger>
+            </TabsList>
+            <TabsContent value="email-logs">
+              <EmailLogsViewer />
+            </TabsContent>
+            <TabsContent value="audit-logs">
+              <EnhancedAuditLogs />
+            </TabsContent>
+          </Tabs>
+        );
+      
       case 'overview':
       default:
         return (
@@ -176,6 +213,15 @@ export const SuperAdminDashboard = () => {
             <div className="flex items-center gap-4">
               <Badge variant="secondary">Super Admin</Badge>
               <span className="text-sm text-muted-foreground">{user?.email}</span>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={logout}
+                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
           </header>
           <main className="flex-1 p-6">
