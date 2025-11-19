@@ -11,8 +11,10 @@ import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 export const UserManagement = () => {
+  const { withSchoolFilter } = useSchoolQuery();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -67,11 +69,16 @@ export const UserManagement = () => {
         .order('name');
       if (schoolsData) setSchools(schoolsData);
       
-      // Fetch profiles
-      const { data: profilesData } = await supabase
+      // Fetch profiles (filter by school if not super admin)
+      let profilesQuery = supabase
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false });
+      
+      // Only filter by school if current user is not super admin
+      const { data: profilesData } = currentUserSchoolId 
+        ? await profilesQuery.eq('school_id', currentUserSchoolId)
+        : await profilesQuery;
 
       // Fetch user roles
       const { data: rolesData } = await supabase
@@ -87,17 +94,15 @@ export const UserManagement = () => {
         };
       }) || [];
 
-      // Fetch classes
-      const { data: classesData } = await supabase
-        .from('classes')
-        .select('*')
-        .order('name');
+      // Fetch classes (filter by school if not super admin)
+      const { data: classesData } = currentUserSchoolId
+        ? await supabase.from('classes').select('*').eq('school_id', currentUserSchoolId).order('name')
+        : await supabase.from('classes').select('*').order('name');
 
-      // Fetch subjects
-      const { data: subjectsData } = await supabase
-        .from('subjects')
-        .select('*')
-        .order('name');
+      // Fetch subjects (filter by school if not super admin)
+      const { data: subjectsData } = currentUserSchoolId
+        ? await supabase.from('subjects').select('*').eq('school_id', currentUserSchoolId).order('name')
+        : await supabase.from('subjects').select('*').order('name');
 
       setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);

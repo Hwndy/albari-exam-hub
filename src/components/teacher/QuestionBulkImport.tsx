@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface QuestionBulkImportProps {
   isOpen: boolean;
@@ -40,6 +41,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -49,10 +51,12 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
 
   const fetchQuestionBanks = async () => {
     try {
-      const { data, error } = await supabase
-        .from('question_banks')
-        .select('*')
-        .order('name');
+      const { data, error } = await withSchoolFilter(
+        supabase
+          .from('question_banks')
+          .select('*')
+          .order('name')
+      );
 
       if (error) throw error;
       setQuestionBanks(data || []);

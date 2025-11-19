@@ -58,6 +58,7 @@ export const AdmissionManagement = () => {
       let query = supabase
         .from('admission_applications')
         .select('*')
+        .eq('school_id', schoolId)
         .order('application_date', { ascending: false });
 
       if (statusFilter !== 'all') {

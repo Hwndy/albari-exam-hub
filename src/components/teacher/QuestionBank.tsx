@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
 import { EnhancedQuestionForm } from '@/components/shared/EnhancedQuestionForm';
 import { CheckCircle, FileText, Plus, Edit, Trash2 } from 'lucide-react';
@@ -32,6 +33,7 @@ export const QuestionBank: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
 
   useEffect(() => {
     fetchData();
@@ -57,8 +59,8 @@ export const QuestionBank: React.FC = () => {
       const teacherSubjectIds = subjectAssignments.data?.map(a => a.subject_id) || [];
 
       // Fetch classes and subjects (filtered for teachers)
-      let classesQuery = supabase.from('classes').select('*').order('name');
-      let subjectsQuery = supabase.from('subjects').select('*').order('name');
+      let classesQuery = withSchoolFilter(supabase.from('classes').select('*').order('name'));
+      let subjectsQuery = withSchoolFilter(supabase.from('subjects').select('*').order('name'));
 
       if (teacherClassIds.length > 0) {
         classesQuery = classesQuery.in('id', teacherClassIds);
