@@ -88,7 +88,7 @@ export const EnhancedExamResults: React.FC = () => {
 
       if (resultsData) {
         // Get student profiles separately
-        const studentIds = [...new Set(resultsData.map(r => r.student_id))];
+        const studentIds = [...new Set(resultsData.map(r => r.student_id))].filter((id): id is string => typeof id === 'string');
         const { data: studentsData } = await supabase
           .from('profiles')
           .select('user_id, full_name')
