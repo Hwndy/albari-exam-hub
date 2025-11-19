@@ -17,6 +17,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface Exam {
   id: string;
@@ -41,6 +42,7 @@ export const ExamManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [editingExam, setEditingExam] = useState<Exam | null>(null);
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
 
   useEffect(() => {
     fetchExams();
@@ -49,7 +51,7 @@ export const ExamManagement: React.FC = () => {
   const fetchExams = async () => {
     try {
       setLoading(true);
-      const { data: examsData } = await supabase
+      const query = supabase
         .from('exams')
         .select(`
           *,
@@ -57,6 +59,8 @@ export const ExamManagement: React.FC = () => {
           classes(name)
         `)
         .order('created_at', { ascending: false });
+      
+      const { data: examsData } = await withSchoolFilter(query);
 
       if (examsData) {
         const formattedExams = examsData.map(exam => ({

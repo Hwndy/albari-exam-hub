@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface BulkQuestionImportProps {
   subjects: any[];
@@ -33,6 +34,7 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
     errors: []
   });
   const { toast } = useToast();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
 
   const handleBulkImport = async () => {
     if (!subjectId || !classId || !questionsText.trim()) {
@@ -61,25 +63,30 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
       }
 
       // Get or create question bank - include both subject and class
-      let { data: questionBank } = await supabase
+      const bankQuery = supabase
         .from('question_banks')
         .select('*')
         .eq('subject_id', subjectId)
         .eq('class_id', classId)
         .single();
+      
+      let { data: questionBank } = await withSchoolFilter(bankQuery);
 
       if (!questionBank) {
         const selectedSubject = subjects.find(s => s.id === subjectId);
         const selectedClass = classes.find(c => c.id === classId);
+        
+        const bankData = withSchoolData({
+          name: `${selectedSubject?.name} - ${selectedClass?.name} Question Bank`,
+          description: `Question bank for ${selectedSubject?.name} in ${selectedClass?.name}`,
+          subject_id: subjectId,
+          class_id: classId,
+          created_by: (await supabase.auth.getUser()).data.user?.id || ''
+        });
+        
         const { data: newBank } = await supabase
           .from('question_banks')
-          .insert({
-            name: `${selectedSubject?.name} - ${selectedClass?.name} Question Bank`,
-            description: `Question bank for ${selectedSubject?.name} in ${selectedClass?.name}`,
-            subject_id: subjectId,
-            class_id: classId,
-            created_by: (await supabase.auth.getUser()).data.user?.id || ''
-          })
+          .insert(bankData)
           .select()
           .single();
         

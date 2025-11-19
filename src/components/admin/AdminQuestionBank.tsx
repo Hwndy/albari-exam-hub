@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { BulkQuestionImport } from './BulkQuestionImport';
 import { QuestionCategorizer } from '../shared/QuestionCategorizer';
 import { EnhancedQuestionForm } from '../shared/EnhancedQuestionForm';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 
 interface Question {
   id: string;
@@ -58,6 +59,7 @@ export const AdminQuestionBank: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
 
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export const AdminQuestionBank: React.FC = () => {
       setLoading(true);
       
       // Fetch questions with subject and class info
-      const { data: questionsData } = await supabase
+      const questionsQuery = supabase
         .from('questions')
         .select(`
           *,
@@ -82,18 +84,22 @@ export const AdminQuestionBank: React.FC = () => {
           )
         `)
         .order('created_at', { ascending: false });
+      
+      const { data: questionsData } = await withSchoolFilter(questionsQuery);
 
       // Fetch subjects
-      const { data: subjectsData } = await supabase
+      const subjectsQuery = supabase
         .from('subjects')
         .select('*')
         .order('name');
+      const { data: subjectsData } = await withSchoolFilter(subjectsQuery);
 
       // Fetch classes
-      const { data: classesData } = await supabase
+      const classesQuery = supabase
         .from('classes')
         .select('*')
         .order('name');
+      const { data: classesData } = await withSchoolFilter(classesQuery);
 
       if (questionsData) {
         const formattedQuestions = questionsData.map(q => ({
@@ -125,12 +131,14 @@ export const AdminQuestionBank: React.FC = () => {
       // Find existing question bank or create new one for this subject and class
       let questionBankId = null;
       
-      const { data: existingBanks } = await supabase
+      const bankQuery = supabase
         .from('question_banks')
         .select('id')
         .eq('subject_id', questionData.subjectId)
         .eq('class_id', questionData.classId)
         .limit(1);
+      
+      const { data: existingBanks } = await withSchoolFilter(bankQuery);
 
       if (existingBanks && existingBanks.length > 0) {
         questionBankId = existingBanks[0].id;
@@ -139,14 +147,16 @@ export const AdminQuestionBank: React.FC = () => {
         const subject = subjects.find(s => s.id === questionData.subjectId);
         const cls = classes.find(c => c.id === questionData.classId);
         
+        const bankData = withSchoolData({
+          name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
+          subject_id: questionData.subjectId,
+          class_id: questionData.classId,
+          created_by: user?.id,
+        });
+        
         const { data: newQuestionBank, error: bankError } = await supabase
           .from('question_banks')
-          .insert({
-            name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
-            subject_id: questionData.subjectId,
-            class_id: questionData.classId,
-            created_by: user?.id,
-          })
+          .insert(bankData)
           .select()
           .single();
 
