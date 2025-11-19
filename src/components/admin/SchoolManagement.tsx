@@ -5,10 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, Building2, CheckCircle2, XCircle, Users } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Building2, CheckCircle2, XCircle, Users, UserPlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface School {
   id: string;
@@ -32,7 +33,9 @@ export const SchoolManagement = () => {
   const [editingSchool, setEditingSchool] = useState<School | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(true);
+  const [creatingAdmins, setCreatingAdmins] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const [schoolForm, setSchoolForm] = useState({
     name: '',
@@ -66,6 +69,48 @@ export const SchoolManagement = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCreateSchoolAdmins = async () => {
+    if (!confirm('This will create admin accounts for all schools that don\'t have admins yet. Default password will be "Admin123!" which schools must change. Continue?')) {
+      return;
+    }
+
+    try {
+      setCreatingAdmins(true);
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-school-admins', {
+        headers: {
+          Authorization: `Bearer ${session.session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: data.message,
+      });
+
+      // Show details in console for reference
+      console.log('Admin accounts created:', data);
+      
+      // Refresh schools list
+      await fetchSchools();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to create admin accounts',
+        variant: 'destructive',
+      });
+    } finally {
+      setCreatingAdmins(false);
     }
   };
 
@@ -214,13 +259,23 @@ export const SchoolManagement = () => {
           </p>
         </div>
         
-        <Dialog open={isAddingSchool} onOpenChange={setIsAddingSchool}>
-          <DialogTrigger asChild>
-            <Button onClick={() => resetForm()}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add School
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleCreateSchoolAdmins}
+            disabled={creatingAdmins}
+            variant="outline"
+          >
+            <UserPlus className="mr-2 h-4 w-4" />
+            {creatingAdmins ? 'Creating Admins...' : 'Create School Admins'}
+          </Button>
+          
+          <Dialog open={isAddingSchool} onOpenChange={setIsAddingSchool}>
+            <DialogTrigger asChild>
+              <Button onClick={() => resetForm()}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add School
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>
@@ -315,6 +370,7 @@ export const SchoolManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <div className="flex items-center gap-4">
