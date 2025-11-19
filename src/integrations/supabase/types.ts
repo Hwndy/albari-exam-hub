@@ -3063,6 +3063,7 @@ export type Database = {
       interview_exists: { Args: { interview_uuid: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_admin_v2: { Args: never; Returns: boolean }
+      is_same_school: { Args: { target_school_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       is_teacher_v2: { Args: never; Returns: boolean }
