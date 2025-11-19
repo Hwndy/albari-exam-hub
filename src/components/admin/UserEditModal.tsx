@@ -130,8 +130,8 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const fetchSystemData = async () => {
     try {
       const [subjectsData, classesData] = await Promise.all([
-        supabase.from('subjects').select('*').order('name'),
-        supabase.from('classes').select('*').order('name')
+        withSchoolFilter(supabase.from('subjects').select('*').order('name')),
+        withSchoolFilter(supabase.from('classes').select('*').order('name'))
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
