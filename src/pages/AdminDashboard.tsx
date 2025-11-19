@@ -7,6 +7,7 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
@@ -73,7 +74,8 @@ export const AdminDashboard = () => {
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const { withSchoolFilter } = useSchoolQuery();
+  const { isLoading: schoolLoading } = useSchool();
+  const { withSchoolFilter, schoolId } = useSchoolQuery();
 
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
@@ -81,8 +83,13 @@ export const AdminDashboard = () => {
   const activeSubTab = searchParams.get('subtab');
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    // Wait for schoolId to be loaded before fetching data
+    // schoolId will be null for super admins (intentional - they see all)
+    // schoolId will be set for school admins (they see only their school)
+    if (!schoolLoading) {
+      fetchDashboardData();
+    }
+  }, [schoolId, schoolLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
@@ -178,6 +185,29 @@ export const AdminDashboard = () => {
       setIsLoading(false);
     }
   };
+
+  // Show loading state while school context is initializing
+  if (schoolLoading) {
+    return (
+      <div className="flex h-screen bg-background">
+        <AdminSidebar />
+        <div className="flex-1 overflow-auto">
+          <div className="sticky top-0 z-10 bg-background border-b border-border p-4">
+            <div className="flex items-center gap-4">
+              <Logo />
+              <h1 className="text-2xl font-bold text-foreground">Loading school context...</h1>
+            </div>
+          </div>
+          <div className="p-6 flex items-center justify-center">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Please wait...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const getPageTitle = () => {
     if (activeTab === 'overview') return 'Dashboard Overview';

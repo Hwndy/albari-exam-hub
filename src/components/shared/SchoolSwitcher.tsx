@@ -45,6 +45,16 @@ export const SchoolSwitcher = () => {
       const isSuperAdminUser = profile?.school_id === null;
       setIsSuperAdmin(isSuperAdminUser);
 
+      // SAFEGUARD: If user has a school_id, they should NEVER see this switcher
+      if (!isSuperAdminUser) {
+        console.log('[SchoolSwitcher] Non-super-admin tried to access switcher:', {
+          userId: user.id,
+          email: user.email,
+          schoolId: profile?.school_id
+        });
+        return;
+      }
+
       if (isSuperAdminUser) {
         // Fetch all schools
         const { data: schoolsData, error } = await supabase
