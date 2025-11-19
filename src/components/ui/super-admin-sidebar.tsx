@@ -89,9 +89,9 @@ export function SuperAdminSidebar() {
 
   const handleNavigation = (value: string, subValue?: string) => {
     if (subValue) {
-      navigate(`/super-admin?tab=${value}&subtab=${subValue}`);
+      navigate(`/dashboard?tab=${value}&subtab=${subValue}`);
     } else {
-      navigate(`/super-admin?tab=${value}`);
+      navigate(`/dashboard?tab=${value}`);
     }
   };
 
