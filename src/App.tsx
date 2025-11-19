@@ -73,12 +73,13 @@ const DashboardRouter = () => {
 };
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <AuthProvider>
-        <BrowserRouter>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <AuthProvider>
+          <SchoolProvider>
+            <BrowserRouter>
           <SessionMonitor>
             <Routes>
               {/* Redirect root to dashboard */}
@@ -157,10 +158,11 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
             </Routes>
           </SessionMonitor>
-        </BrowserRouter>
-      </AuthProvider>
-    </TooltipProvider>
-  </QueryClientProvider>
+            </BrowserRouter>
+          </SchoolProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </QueryClientProvider>
 );
 
 export default App;
