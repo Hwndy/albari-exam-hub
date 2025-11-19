@@ -189,6 +189,9 @@ const App = () => (
             <Route path="/website/*" element={<WebsiteRouter />} />
             <Route path="/track-application" element={<TrackApplicationPage />} />
             
+            {/* Redirect old super-admin route to dashboard */}
+            <Route path="/super-admin" element={<Navigate to="/dashboard" replace />} />
+            
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />
             </Routes>

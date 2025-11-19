@@ -312,12 +312,6 @@ export const AdminDashboard = () => {
       );
     }
 
-    if (activeTab === 'super-admin') {
-      switch (activeSubTab) {
-        case 'schools': return <SchoolManagement />;
-        default: return <SchoolManagement />;
-      }
-    }
 
     if (activeTab === 'admissions') {
       switch (activeSubTab) {
