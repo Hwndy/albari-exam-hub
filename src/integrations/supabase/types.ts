@@ -3033,6 +3033,10 @@ export type Database = {
       }
       cleanup_expired_otps: { Args: never; Returns: undefined }
       cleanup_old_rate_limits: { Args: never; Returns: undefined }
+      create_super_admin: {
+        Args: { admin_user_id: string }
+        Returns: undefined
+      }
       create_teacher_class_assignments: {
         Args: { p_class_ids: string[]; p_teacher_id: string }
         Returns: undefined
@@ -3062,6 +3066,7 @@ export type Database = {
       is_super_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       is_teacher_v2: { Args: never; Returns: boolean }
+      is_user_super_admin: { Args: { check_user_id: string }; Returns: boolean }
     }
     Enums: {
       admission_status:

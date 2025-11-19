@@ -16,6 +16,7 @@ import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
+import { SchoolManagement } from '@/components/admin/SchoolManagement';
 import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
 import { AdmissionSessionManager } from '@/components/admin/AdmissionSessionManager';
 import { AdmissionPaymentVerification } from '@/components/admin/AdmissionPaymentVerification';
@@ -266,6 +267,13 @@ export const AdminDashboard = () => {
           </Card>
         </div>
       );
+    }
+
+    if (activeTab === 'super-admin') {
+      switch (activeSubTab) {
+        case 'schools': return <SchoolManagement />;
+        default: return <SchoolManagement />;
+      }
     }
 
     if (activeTab === 'admissions') {
