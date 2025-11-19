@@ -476,7 +476,7 @@ export type Database = {
           id: string
           max_applicants: number | null
           required_documents: Json
-          school_id: string
+          school_id: string | null
           session_name: string
           start_date: string
           status: string
@@ -492,7 +492,7 @@ export type Database = {
           id?: string
           max_applicants?: number | null
           required_documents?: Json
-          school_id: string
+          school_id?: string | null
           session_name: string
           start_date: string
           status?: string
@@ -508,7 +508,7 @@ export type Database = {
           id?: string
           max_applicants?: number | null
           required_documents?: Json
-          school_id?: string
+          school_id?: string | null
           session_name?: string
           start_date?: string
           status?: string
@@ -1038,7 +1038,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          school_id: string
+          school_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1046,7 +1046,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          school_id: string
+          school_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1054,7 +1054,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          school_id?: string
+          school_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1261,7 +1261,7 @@ export type Database = {
           question_pool_size: number | null
           questions_per_student: number | null
           randomize_questions: boolean
-          school_id: string
+          school_id: string | null
           sequential_navigation: boolean
           show_results_immediately: boolean
           shuffle_answers: boolean
@@ -1288,7 +1288,7 @@ export type Database = {
           question_pool_size?: number | null
           questions_per_student?: number | null
           randomize_questions?: boolean
-          school_id: string
+          school_id?: string | null
           sequential_navigation?: boolean
           show_results_immediately?: boolean
           shuffle_answers?: boolean
@@ -1315,7 +1315,7 @@ export type Database = {
           question_pool_size?: number | null
           questions_per_student?: number | null
           randomize_questions?: boolean
-          school_id?: string
+          school_id?: string | null
           sequential_navigation?: boolean
           show_results_immediately?: boolean
           shuffle_answers?: boolean
@@ -2133,7 +2133,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          school_id: string
+          school_id: string | null
           subject_id: string | null
           updated_at: string
         }
@@ -2144,7 +2144,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          school_id: string
+          school_id?: string | null
           subject_id?: string | null
           updated_at?: string
         }
@@ -2155,7 +2155,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          school_id?: string
+          school_id?: string | null
           subject_id?: string | null
           updated_at?: string
         }
@@ -2295,7 +2295,7 @@ export type Database = {
           question_bank_id: string | null
           question_text: string
           question_type: Database["public"]["Enums"]["question_type"]
-          school_id: string
+          school_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2313,7 +2313,7 @@ export type Database = {
           question_bank_id?: string | null
           question_text: string
           question_type?: Database["public"]["Enums"]["question_type"]
-          school_id: string
+          school_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2331,7 +2331,7 @@ export type Database = {
           question_bank_id?: string | null
           question_text?: string
           question_type?: Database["public"]["Enums"]["question_type"]
-          school_id?: string
+          school_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2732,7 +2732,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          school_id: string
+          school_id: string | null
           updated_at: string
         }
         Insert: {
@@ -2740,7 +2740,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          school_id: string
+          school_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -2748,7 +2748,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          school_id?: string
+          school_id?: string | null
           updated_at?: string
         }
         Relationships: [

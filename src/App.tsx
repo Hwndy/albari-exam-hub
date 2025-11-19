@@ -5,6 +5,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { SchoolProvider } from '@/contexts/SchoolContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SessionMonitor } from '@/components/security/SessionMonitor';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
