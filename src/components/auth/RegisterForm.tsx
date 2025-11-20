@@ -9,6 +9,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
+import { detectSchoolFromDomain } from '@/lib/school-utils';
+import { Eye, EyeOff } from 'lucide-react';
 
 interface RegisterFormProps {
   onToggleMode: () => void;
@@ -38,6 +40,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [classes, setClasses] = useState<Array<{id: string, name: string}>>([]);
   const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [detectedSchoolId] = useState(detectSchoolFromDomain());
   const { register } = useAuth();
   const { toast } = useToast();
 
@@ -46,10 +51,13 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       console.log('Fetching classes and subjects...');
       
       try {
-        // Fetch classes
+        console.log('Fetching classes and subjects for school:', detectedSchoolId);
+        
+        // Fetch classes filtered by detected school
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('id, name')
+          .eq('school_id', detectedSchoolId)
           .order('name');
 
         if (classesError) {
@@ -60,14 +68,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             variant: 'destructive',
           });
         } else {
-          console.log('Classes fetched:', classesData);
+          console.log('Classes fetched:', classesData?.length || 0, 'classes');
           setClasses(classesData || []);
         }
 
-        // Fetch subjects
+        // Fetch subjects filtered by detected school
         const { data: subjectsData, error: subjectsError } = await supabase
           .from('subjects')
           .select('id, name')
+          .eq('school_id', detectedSchoolId)
           .order('name');
 
         if (subjectsError) {
@@ -78,7 +87,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             variant: 'destructive',
           });
         } else {
-          console.log('Subjects fetched:', subjectsData);
+          console.log('Subjects fetched:', subjectsData?.length || 0, 'subjects');
           setSubjects(subjectsData || []);
         }
       } catch (error) {
@@ -352,26 +361,58 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           
           <div className="space-y-2">
             <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              type="password"
-              placeholder="Enter your password"
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter your password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                required
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
           </div>
           
           <div className="space-y-2">
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              id="confirmPassword"
-              type="password"
-              placeholder="Confirm your password"
-              value={formData.confirmPassword}
-              onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-              required
-            />
+            <div className="relative">
+              <Input
+                id="confirmPassword"
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm your password"
+                value={formData.confirmPassword}
+                onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                required
+                className="pr-10"
+              />
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <Eye className="h-4 w-4 text-muted-foreground" />
+                )}
+              </Button>
+            </div>
           </div>
         </form>
         </CardContent>
