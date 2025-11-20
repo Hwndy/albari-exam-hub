@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Badge } from '@/components/ui/badge';
 import { Plus, UserPlus, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
@@ -145,7 +146,36 @@ export const TeacherStudentCreator: React.FC = () => {
         }
       });
 
-      if (functionError) throw functionError;
+      if (functionError) {
+        // Parse edge function error for user-friendly messages
+        if (functionError instanceof FunctionsHttpError) {
+          let userMessage = 'Failed to create student';
+
+          try {
+            const errorBody = await functionError.context.json();
+            const code = errorBody?.code;
+            const rawError = errorBody?.error as string | undefined;
+
+            if (code === 'email_exists') {
+              userMessage = 'This email address is already registered. Please use a different email or ask the student to log in.';
+            } else if (code === 'missing_school') {
+              userMessage = 'Your account is not linked to any school. Please contact an administrator.';
+            } else if (rawError) {
+              userMessage = rawError;
+            }
+          } catch {
+            userMessage = 'Failed to create student. Please try again.';
+          }
+
+          throw new Error(userMessage);
+        } else if (functionError instanceof FunctionsRelayError) {
+          throw new Error('Unable to reach the server. Please try again in a moment.');
+        } else if (functionError instanceof FunctionsFetchError) {
+          throw new Error('Network error. Please check your connection and try again.');
+        } else {
+          throw functionError;
+        }
+      }
 
       console.log('✅ Student created successfully:', result);
 
