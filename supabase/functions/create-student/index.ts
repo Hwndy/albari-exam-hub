@@ -60,6 +60,17 @@ serve(async (req) => {
     const schoolId = teacherProfile?.school_id;
     console.log('Teacher school_id:', schoolId);
 
+    if (!schoolId) {
+      console.error('Teacher profile has no school_id');
+      return new Response(JSON.stringify({
+        error: 'Your account is not linked to any school. Please contact an administrator.',
+        code: 'missing_school',
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     // Create user using admin API (no auto-login)
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
