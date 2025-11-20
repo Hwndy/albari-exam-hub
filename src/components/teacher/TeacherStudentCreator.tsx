@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserPlus, Mail, User } from 'lucide-react';
+import { Plus, UserPlus, Mail, User, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ export const TeacherStudentCreator: React.FC = () => {
   const [isCreatingStudent, setIsCreatingStudent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [createdStudents, setCreatedStudents] = useState<any[]>([]);
+  const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -237,14 +238,30 @@ export const TeacherStudentCreator: React.FC = () => {
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="flex space-x-2">
-                  <Input
-                    id="password"
-                    type="password"
-                    value={studentForm.password}
-                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                    placeholder="Enter password"
-                    required
-                  />
+                  <div className="relative flex-1">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={studentForm.password}
+                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
+                      placeholder="Enter password"
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
                   <Button type="button" variant="outline" onClick={generatePassword}>
                     Generate
                   </Button>

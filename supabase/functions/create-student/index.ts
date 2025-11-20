@@ -63,7 +63,26 @@ serve(async (req) => {
 
     if (createError) {
       console.error('Create user error:', createError);
-      throw createError;
+      
+      // Handle specific error cases
+      let errorMessage = createError.message || 'Failed to create student';
+      let errorCode = createError.code || 'unknown_error';
+      
+      if (createError.message?.includes('User already registered') || 
+          createError.message?.includes('already exists') ||
+          errorCode === '23505') {
+        errorMessage = 'This email address is already registered';
+        errorCode = 'email_exists';
+      }
+      
+      return new Response(JSON.stringify({ 
+        error: errorMessage,
+        code: errorCode,
+        details: createError.message 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
     console.log('Student user created:', newUser.user?.id);
@@ -94,7 +113,25 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in create-student function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    
+    let errorMessage = error.message || 'An unexpected error occurred';
+    let errorCode = 'unknown_error';
+    
+    // Parse specific error types
+    if (error.message?.includes('User already registered') || 
+        error.message?.includes('already exists')) {
+      errorMessage = 'This email address is already registered';
+      errorCode = 'email_exists';
+    } else if (error.message?.includes('duplicate key')) {
+      errorMessage = 'This email address is already in use';
+      errorCode = 'duplicate_email';
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: errorMessage,
+      code: errorCode,
+      details: error.message 
+    }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
