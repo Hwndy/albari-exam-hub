@@ -32,7 +32,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: 'student' as 'teacher' | 'student',
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[]
@@ -249,7 +249,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <Label htmlFor="role">Role</Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value: 'admin' | 'teacher' | 'student') => 
+              onValueChange={(value: 'teacher' | 'student') => 
                 setFormData({ ...formData, role: value, classId: '', classIds: [], subjectIds: [] })
               }
             >
@@ -259,7 +259,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 <SelectContent className="bg-popover border shadow-lg z-50">
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
               </SelectContent>
             </Select>
           </div>
