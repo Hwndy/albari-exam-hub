@@ -50,6 +50,16 @@ serve(async (req) => {
 
     console.log('Creating student:', { email, fullName, classId });
 
+    // Get teacher's school_id
+    const { data: teacherProfile } = await supabaseAdmin
+      .from('profiles')
+      .select('school_id')
+      .eq('user_id', user.id)
+      .single();
+
+    const schoolId = teacherProfile?.school_id;
+    console.log('Teacher school_id:', schoolId);
+
     // Create user using admin API (no auto-login)
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -87,13 +97,40 @@ serve(async (req) => {
 
     console.log('Student user created:', newUser.user?.id);
 
+    // Update profile with school_id
+    if (schoolId && newUser.user) {
+      await supabaseAdmin
+        .from('profiles')
+        .update({ school_id: schoolId })
+        .eq('user_id', newUser.user.id);
+      
+      console.log('Profile updated with school_id:', schoolId);
+    }
+
+    // Create student entry with school_id
+    if (newUser.user) {
+      const { error: studentError } = await supabaseAdmin
+        .from('students')
+        .insert({
+          user_id: newUser.user.id,
+          school_id: schoolId
+        });
+      
+      if (studentError) {
+        console.error('Student entry creation error:', studentError);
+      } else {
+        console.log('Student entry created with school_id');
+      }
+    }
+
     // Assign to class if provided
     if (classId && newUser.user) {
       const { error: assignError } = await supabaseAdmin
         .from('class_assignments')
         .insert({
           student_id: newUser.user.id,
-          class_id: classId
+          class_id: classId,
+          school_id: schoolId
         });
       
       if (assignError) {

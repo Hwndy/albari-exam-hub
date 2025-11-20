@@ -74,9 +74,11 @@ export const TeacherStudentCreator: React.FC = () => {
           .select(`
             student_id,
             class_id,
+            school_id,
             profiles!inner(user_id, full_name, created_at)
           `)
           .in('class_id', classIds)
+          .not('school_id', 'is', null)
           .order('created_at', { foreignTable: 'profiles', ascending: false })
           .limit(10);
 
