@@ -34,7 +34,7 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
     errors: []
   });
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
+  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
 
   const handleBulkImport = async () => {
     if (!subjectId || !classId || !questionsText.trim()) {
@@ -114,7 +114,8 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
                 explanation: questionData.explanation || null,
                 created_by: (await supabase.auth.getUser()).data.user?.id || '',
                 question_bank_id: questionBank?.id,
-                class_id: classId
+                class_id: classId,
+                school_id: schoolId,
               })
               .select()
               .single();
@@ -128,6 +129,7 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
                 option_text: opt.text,
                 is_correct: opt.isCorrect,
                 option_order: index + 1,
+                school_id: schoolId,
               }));
 
               const { error: optionsError } = await supabase

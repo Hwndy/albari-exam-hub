@@ -41,7 +41,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
+  const { withSchoolFilter, schoolId } = useSchoolQuery();
 
   React.useEffect(() => {
     if (isOpen) {
@@ -201,6 +201,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
               explanation: question.explanation || null,
               question_bank_id: questionBankId,
               created_by: user?.id || '',
+              school_id: schoolId,
             })
             .select()
             .single();
@@ -226,6 +227,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
               option_text: opt.text,
               option_order: opt.order,
               is_correct: opt.order === (question.correct_option?.toUpperCase().charCodeAt(0) - 64),
+              school_id: schoolId,
             }));
 
             const { error: optionsError } = await supabase
