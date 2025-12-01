@@ -13,6 +13,8 @@ import { detectSchoolFromDomain } from '@/lib/school-utils';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface RegisterFormProps {
+  schoolId?: string;
+  schoolName?: string;
   onToggleMode: () => void;
   allowStudentRegistration?: boolean;
   isAdminEdit?: boolean;
@@ -21,6 +23,8 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
+  schoolId,
+  schoolName,
   onToggleMode, 
   allowStudentRegistration = true,
   isAdminEdit = false,
@@ -42,22 +46,28 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [detectedSchoolId] = useState(detectSchoolFromDomain());
+  const detectedSchoolId = detectSchoolFromDomain();
+  const effectiveSchoolId = schoolId || detectedSchoolId;
   const { register } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!effectiveSchoolId) {
+        console.log('No school ID available for fetching data');
+        return;
+      }
+      
       console.log('Fetching classes and subjects...');
       
       try {
-        console.log('Fetching classes and subjects for school:', detectedSchoolId);
+        console.log('Fetching classes and subjects for school:', effectiveSchoolId);
         
         // Fetch classes filtered by detected school
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('id, name')
-          .eq('school_id', detectedSchoolId)
+          .eq('school_id', effectiveSchoolId)
           .order('name');
 
         if (classesError) {
@@ -72,11 +82,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
           setClasses(classesData || []);
         }
 
-        // Fetch subjects filtered by detected school
+        // Fetch subjects filtered by school
         const { data: subjectsData, error: subjectsError } = await supabase
           .from('subjects')
           .select('id, name')
-          .eq('school_id', detectedSchoolId)
+          .eq('school_id', effectiveSchoolId)
           .order('name');
 
         if (subjectsError) {
@@ -101,7 +111,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     };
 
     fetchData();
-  }, [toast]);
+  }, [effectiveSchoolId, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -161,7 +171,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         role: formData.role,
         classId: formData.role === 'student' ? formData.classId : undefined,
         classIds: formData.role === 'teacher' ? formData.classIds : undefined,
-        subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined
+        subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined,
+        schoolId: effectiveSchoolId
       });
       
       toast({
@@ -185,7 +196,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         {isAdminEdit ? 'Edit User Account' : 'Create Account'}
       </CardTitle>
       <CardDescription>
-        {isAdminEdit ? 'Update account information' : 'Join ALBARI Secondary School'}
+        {isAdminEdit 
+          ? 'Update account information' 
+          : schoolName 
+            ? `Registering for: ${schoolName}`
+            : 'Join ALBARI Secondary School'}
       </CardDescription>
     </div>
   );

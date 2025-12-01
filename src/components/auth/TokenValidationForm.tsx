@@ -3,15 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { supabase } from '@/integrations/supabase/client';
 
 interface TokenValidationFormProps {
-  onValidToken: () => void;
+  onValidToken: (schoolId: string, schoolName: string) => void;
   onBackToLogin: () => void;
 }
-
-const ADMIN_TEACHER_TOKEN = '4250645';
 
 export const TokenValidationForm: React.FC<TokenValidationFormProps> = ({
   onValidToken,
@@ -19,15 +18,30 @@ export const TokenValidationForm: React.FC<TokenValidationFormProps> = ({
 }) => {
   const [token, setToken] = useState('');
   const [error, setError] = useState('');
+  const [isValidating, setIsValidating] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsValidating(true);
 
-    if (token.trim() === ADMIN_TEACHER_TOKEN) {
-      onValidToken();
-    } else {
-      setError('Invalid registration token. Please contact the administrator.');
+    try {
+      const { data: school, error: queryError } = await supabase
+        .from('schools')
+        .select('id, name')
+        .eq('registration_token', token.trim())
+        .eq('is_active', true)
+        .single();
+
+      if (queryError || !school) {
+        setError('Invalid registration token. Please contact your school administrator.');
+      } else {
+        onValidToken(school.id, school.name);
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again.');
+    } finally {
+      setIsValidating(false);
     }
   };
 
@@ -60,8 +74,15 @@ export const TokenValidationForm: React.FC<TokenValidationFormProps> = ({
             </Alert>
           )}
 
-          <Button type="submit" className="w-full">
-            Verify Token
+          <Button type="submit" className="w-full" disabled={isValidating}>
+            {isValidating ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              'Verify Token'
+            )}
           </Button>
         </form>
         
