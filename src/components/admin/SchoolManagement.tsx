@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search, Building2, CheckCircle2, XCircle, Users, UserPlus } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Building2, CheckCircle2, XCircle, Users, UserPlus, Key, Copy, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,7 @@ interface School {
   created_at: string;
   updated_at?: string;
   settings?: any;
+  registration_token?: string | null;
 }
 
 export const SchoolManagement = () => {
@@ -65,6 +66,7 @@ export const SchoolManagement = () => {
     address: '',
     primary_color: '#0066cc',
     secondary_color: '#00cc66',
+    registration_token: '',
   });
 
   useEffect(() => {
@@ -150,6 +152,7 @@ export const SchoolManagement = () => {
             address: schoolForm.address,
             primary_color: schoolForm.primary_color,
             secondary_color: schoolForm.secondary_color,
+            registration_token: schoolForm.registration_token,
           })
           .eq('id', editingSchool.id);
 
@@ -236,6 +239,47 @@ export const SchoolManagement = () => {
     }
   };
 
+  const copyToken = (token: string | null) => {
+    if (!token) return;
+    navigator.clipboard.writeText(token);
+    toast({ 
+      title: 'Copied!', 
+      description: 'Registration token copied to clipboard' 
+    });
+  };
+
+  const handleRegenerateToken = async () => {
+    if (!editingSchool) return;
+    
+    if (!confirm('Regenerating will invalidate the current token. Users with the old token will not be able to register. Continue?')) {
+      return;
+    }
+    
+    // Generate new 7-character token
+    const newToken = Math.random().toString(36).substring(2, 9);
+    
+    const { error } = await supabase
+      .from('schools')
+      .update({ registration_token: newToken })
+      .eq('id', editingSchool.id);
+    
+    if (error) {
+      toast({ 
+        title: 'Error', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+    
+    setSchoolForm({ ...schoolForm, registration_token: newToken });
+    toast({ 
+      title: 'Success', 
+      description: 'Token regenerated successfully' 
+    });
+    fetchSchools();
+  };
+
   const startEditing = (school: School) => {
     setEditingSchool(school);
     setSchoolForm({
@@ -246,6 +290,7 @@ export const SchoolManagement = () => {
       address: school.address || '',
       primary_color: school.primary_color || '#0066cc',
       secondary_color: school.secondary_color || '#00cc66',
+      registration_token: school.registration_token || '',
     });
     setIsAddingSchool(true);
   };
@@ -259,6 +304,7 @@ export const SchoolManagement = () => {
       address: '',
       primary_color: '#0066cc',
       secondary_color: '#00cc66',
+      registration_token: '',
     });
     setEditingSchool(null);
     setIsAddingSchool(false);
@@ -379,6 +425,30 @@ export const SchoolManagement = () => {
                 </div>
               </div>
 
+              {editingSchool && (
+                <div>
+                  <Label>Registration Token</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      value={schoolForm.registration_token}
+                      readOnly
+                      className="font-mono bg-muted"
+                    />
+                    <Button 
+                      type="button"
+                      variant="outline"
+                      onClick={handleRegenerateToken}
+                    >
+                      <RefreshCw className="h-4 w-4 mr-1" />
+                      Regenerate
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Share this token with school staff to allow registration
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel
@@ -441,6 +511,22 @@ export const SchoolManagement = () => {
                   <p className="text-muted-foreground">
                     <strong>Phone:</strong> {school.contact_phone}
                   </p>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
+                <Key className="h-4 w-4 text-primary" />
+                <code className="text-sm font-mono flex-1">
+                  {school.registration_token || 'No token'}
+                </code>
+                {school.registration_token && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => copyToken(school.registration_token)}
+                  >
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 )}
               </div>
 
