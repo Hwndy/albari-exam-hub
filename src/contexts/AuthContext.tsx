@@ -14,6 +14,7 @@ interface AuthContextType extends AuthState {
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
+    schoolId?: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -196,7 +197,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       try {
         await supabase.from('class_assignments').insert({
           student_id: data.user.id,
-          class_id: userData.classId
+          class_id: userData.classId,
+          school_id: userData.schoolId
         });
       } catch (assignmentError) {
         console.error('Error assigning class:', assignmentError);

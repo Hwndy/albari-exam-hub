@@ -13,7 +13,7 @@ type AuthMode = 'login' | 'register' | 'forgot-password' | 'token-validation';
 export const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
-  const [tokenValidated, setTokenValidated] = useState(false);
+  const [validatedSchool, setValidatedSchool] = useState<{id: string, name: string} | null>(null);
   const { isAuthenticated, user, isLoading, logout } = useAuth();
   
   // Check if user came from portal and needs forced login
@@ -83,23 +83,25 @@ export const AuthPage = () => {
       case 'token-validation':
         return (
           <TokenValidationForm 
-            onValidToken={() => {
-              setTokenValidated(true);
+            onValidToken={(schoolId, schoolName) => {
+              setValidatedSchool({ id: schoolId, name: schoolName });
               setMode('register');
             }}
             onBackToLogin={() => setMode('login')}
           />
         );
       case 'register':
-        if (!tokenValidated) {
+        if (!validatedSchool) {
           setMode('token-validation');
           return null;
         }
         return (
           <RegisterForm 
+            schoolId={validatedSchool.id}
+            schoolName={validatedSchool.name}
             onToggleMode={() => {
               setMode('login');
-              setTokenValidated(false);
+              setValidatedSchool(null);
             }}
             allowStudentRegistration={false}
           />

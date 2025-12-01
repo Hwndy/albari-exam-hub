@@ -2519,6 +2519,7 @@ export type Database = {
           logo_url: string | null
           name: string
           primary_color: string | null
+          registration_token: string | null
           secondary_color: string | null
           settings: Json | null
           subdomain: string
@@ -2534,6 +2535,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           primary_color?: string | null
+          registration_token?: string | null
           secondary_color?: string | null
           settings?: Json | null
           subdomain: string
@@ -2549,6 +2551,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           primary_color?: string | null
+          registration_token?: string | null
           secondary_color?: string | null
           settings?: Json | null
           subdomain?: string
