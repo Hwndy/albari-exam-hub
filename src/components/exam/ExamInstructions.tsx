@@ -32,6 +32,7 @@ interface ExamDetails {
   allow_review: boolean;
   sequential_navigation: boolean;
   show_results_immediately: boolean;
+  school_id?: string;
 }
 
 export const ExamInstructions: React.FC = () => {
@@ -121,6 +122,7 @@ export const ExamInstructions: React.FC = () => {
         .insert({
           exam_id: examId,
           student_id: user?.id,
+          school_id: examDetails!.school_id,
           status: 'in_progress',
           started_at: new Date().toISOString(),
           current_question_index: 0,
