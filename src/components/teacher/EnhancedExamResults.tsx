@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { 
   Download, 
   Search, 
-  Eye,
   FileSpreadsheet
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,44 +46,79 @@ export const EnhancedExamResults: React.FC = () => {
     try {
       setLoading(true);
       
-      // Fetch teacher's exams first
-      const { data: examsData } = await withSchoolFilter(
-        supabase
-          .from('exams')
-          .select('id, title, subjects(name)')
-          .eq('created_by', user?.id)
-          .order('created_at', { ascending: false })
-      );
+      // Fetch teacher's class assignments
+      const { data: classAssignments } = await supabase
+        .from('teacher_class_assignments')
+        .select('class_id')
+        .eq('teacher_id', user?.id);
+
+      // Fetch teacher's subject assignments
+      const { data: subjectAssignments } = await supabase
+        .from('subject_assignments')
+        .select('class_id, subject_id')
+        .eq('user_id', user?.id);
+
+      // Combine all assigned class IDs
+      const assignedClassIds = [
+        ...(classAssignments?.map(a => a.class_id) || []),
+        ...(subjectAssignments?.map(a => a.class_id) || [])
+      ].filter((id): id is string => !!id);
+      
+      const uniqueClassIds = [...new Set(assignedClassIds)];
+
+      // Build filter for exams: assigned classes OR created by teacher
+      let examsQuery = supabase
+        .from('exams')
+        .select('id, title, class_id, subject_id, subjects(name)')
+        .order('created_at', { ascending: false });
+
+      if (uniqueClassIds.length > 0) {
+        // Show exams for assigned classes OR exams created by this teacher
+        examsQuery = examsQuery.or(`class_id.in.(${uniqueClassIds.join(',')}),created_by.eq.${user?.id}`);
+      } else {
+        // No class assignments, only show exams created by teacher
+        examsQuery = examsQuery.eq('created_by', user?.id);
+      }
+
+      const { data: examsData } = await withSchoolFilter(examsQuery);
 
       if (examsData) {
         setExams(examsData);
       }
 
-      // Fetch results for teacher's exams
-      const { data: resultsData } = await withSchoolFilter(
-        supabase
-          .from('exam_sessions')
-          .select(`
+      // Build filter for exam_sessions based on same logic
+      let resultsQuery = supabase
+        .from('exam_sessions')
+        .select(`
+          id,
+          total_score,
+          max_score,
+          percentage,
+          passed,
+          ended_at,
+          started_at,
+          student_id,
+          exams!inner(
             id,
-            total_score,
-            max_score,
-            percentage,
-            passed,
-            ended_at,
-            started_at,
-            student_id,
-            exams!inner(
-              id,
-              title,
-              pass_mark,
-              created_by,
-              subjects(name)
-            )
-          `)
-          .eq('status', 'completed')
-          .eq('exams.created_by', user?.id)
-          .order('ended_at', { ascending: false })
-      );
+            title,
+            pass_mark,
+            created_by,
+            class_id,
+            subjects(name)
+          )
+        `)
+        .eq('status', 'completed')
+        .order('ended_at', { ascending: false });
+
+      if (uniqueClassIds.length > 0) {
+        // Show results for assigned classes OR exams created by teacher
+        resultsQuery = resultsQuery.or(`exams.class_id.in.(${uniqueClassIds.join(',')}),exams.created_by.eq.${user?.id}`);
+      } else {
+        // No class assignments, only show results for exams created by teacher
+        resultsQuery = resultsQuery.eq('exams.created_by', user?.id);
+      }
+
+      const { data: resultsData } = await withSchoolFilter(resultsQuery);
 
       if (resultsData) {
         // Get student profiles separately
