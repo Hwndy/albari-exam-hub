@@ -66,17 +66,15 @@ export const EnhancedExamResults: React.FC = () => {
       
       const uniqueClassIds = [...new Set(assignedClassIds)];
 
-      // Build filter for exams: assigned classes OR created by teacher
+      // Step 1: Get exam IDs for teacher's assigned classes OR created by teacher
       let examsQuery = supabase
         .from('exams')
         .select('id, title, class_id, subject_id, subjects(name)')
         .order('created_at', { ascending: false });
 
       if (uniqueClassIds.length > 0) {
-        // Show exams for assigned classes OR exams created by this teacher
         examsQuery = examsQuery.or(`class_id.in.(${uniqueClassIds.join(',')}),created_by.eq.${user?.id}`);
       } else {
-        // No class assignments, only show exams created by teacher
         examsQuery = examsQuery.eq('created_by', user?.id);
       }
 
@@ -86,41 +84,41 @@ export const EnhancedExamResults: React.FC = () => {
         setExams(examsData);
       }
 
-      // Build filter for exam_sessions based on same logic
-      let resultsQuery = supabase
-        .from('exam_sessions')
-        .select(`
-          id,
-          total_score,
-          max_score,
-          percentage,
-          passed,
-          ended_at,
-          started_at,
-          student_id,
-          exams!inner(
-            id,
-            title,
-            pass_mark,
-            created_by,
-            class_id,
-            subjects(name)
-          )
-        `)
-        .eq('status', 'completed')
-        .order('ended_at', { ascending: false });
-
-      if (uniqueClassIds.length > 0) {
-        // Show results for assigned classes OR exams created by teacher
-        resultsQuery = resultsQuery.or(`exams.class_id.in.(${uniqueClassIds.join(',')}),exams.created_by.eq.${user?.id}`);
-      } else {
-        // No class assignments, only show results for exams created by teacher
-        resultsQuery = resultsQuery.eq('exams.created_by', user?.id);
+      // Step 2: Get exam_sessions using exam IDs directly (avoids foreign table .or() issue)
+      const teacherExamIds = examsData?.map(e => e.id) || [];
+      
+      let resultsData: any[] = [];
+      
+      if (teacherExamIds.length > 0) {
+        const { data } = await withSchoolFilter(
+          supabase
+            .from('exam_sessions')
+            .select(`
+              id,
+              total_score,
+              max_score,
+              percentage,
+              passed,
+              ended_at,
+              started_at,
+              student_id,
+              exam_id,
+              exams!inner(
+                id,
+                title,
+                pass_mark,
+                created_by,
+                class_id,
+                subjects(name)
+              )
+            `)
+            .eq('status', 'completed')
+            .in('exam_id', teacherExamIds)
+            .order('ended_at', { ascending: false })
+        );
+        resultsData = data || [];
       }
-
-      const { data: resultsData } = await withSchoolFilter(resultsQuery);
-
-      if (resultsData) {
+      if (resultsData.length > 0) {
         // Get student profiles separately
         const studentIds = [...new Set(resultsData.map(r => r.student_id))].filter((id): id is string => typeof id === 'string');
         const { data: studentsData } = await supabase
