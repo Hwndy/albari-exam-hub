@@ -11,12 +11,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Slider } from '@/components/ui/slider';
-import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Target, Clock } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Target, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { EnhancedQuestionForm } from './EnhancedQuestionForm';
+
+// Default to show all questions (high number that will be capped by total)
+const DEFAULT_QUESTIONS_PER_STUDENT = 9999;
 
 interface QuestionOption {
   id: string;
@@ -113,7 +117,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     showResultsImmediately: false,
     sequentialNavigation: false,
     allowQuestionFlagging: true,
-    questionsPerStudent: 20,
+    questionsPerStudent: DEFAULT_QUESTIONS_PER_STUDENT,
     examCategory: 'regular',
   });
 
@@ -288,7 +292,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       showResultsImmediately: false,
       sequentialNavigation: false,
       allowQuestionFlagging: true,
-      questionsPerStudent: 20,
+      questionsPerStudent: DEFAULT_QUESTIONS_PER_STUDENT,
       examCategory: 'regular',
     });
     setQuestions([]);
@@ -757,18 +761,42 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
                     />
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Questions per Student: {Math.min(metadata.questionsPerStudent, getTotalQuestionCount())} (from pool of {getTotalQuestionCount()})</Label>
-                    <Slider
-                      value={[Math.min(metadata.questionsPerStudent, getTotalQuestionCount() || 1)]}
-                      onValueChange={([value]) => setMetadata({ ...metadata, questionsPerStudent: value })}
-                      max={Math.max(getTotalQuestionCount(), 1)}
-                      min={1}
-                      step={1}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Each student will see a unique set of {Math.min(metadata.questionsPerStudent, getTotalQuestionCount())} questions from the total pool.
-                    </p>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label>Questions per Student</Label>
+                      <span className="text-sm font-medium">
+                        {getTotalQuestionCount() > 0 
+                          ? Math.min(metadata.questionsPerStudent, getTotalQuestionCount()) 
+                          : 'Add questions first'}
+                      </span>
+                    </div>
+                    {getTotalQuestionCount() > 0 ? (
+                      <>
+                        <Slider
+                          value={[Math.min(metadata.questionsPerStudent, getTotalQuestionCount())]}
+                          onValueChange={([value]) => setMetadata({ ...metadata, questionsPerStudent: value })}
+                          max={getTotalQuestionCount()}
+                          min={1}
+                          step={1}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Total questions in pool: {getTotalQuestionCount()}
+                        </p>
+                        {metadata.questionsPerStudent < getTotalQuestionCount() && (
+                          <Alert className="bg-amber-50 border-amber-200">
+                            <AlertTriangle className="h-4 w-4 text-amber-600" />
+                            <AlertDescription className="text-amber-800 text-sm">
+                              Each student will see a random subset of {Math.min(metadata.questionsPerStudent, getTotalQuestionCount())} questions 
+                              from the pool of {getTotalQuestionCount()}. Students may get different questions.
+                            </AlertDescription>
+                          </Alert>
+                        )}
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        Add questions in the Manual, Question Bank, or Randomized tab first.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-4">
