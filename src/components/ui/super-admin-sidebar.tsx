@@ -1,12 +1,11 @@
 import { useState } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   LayoutDashboard,
   Building2,
   Users,
   TrendingUp,
   FileText,
-  Settings,
   ChevronDown,
 } from "lucide-react";
 
@@ -67,14 +66,11 @@ const superAdminMenuItems = [
 export function SuperAdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
-  const searchParams = new URLSearchParams(location.search);
+  const [searchParams, setSearchParams] = useSearchParams();
   const currentTab = searchParams.get("tab") || "overview";
   const currentSubTab = searchParams.get("subtab");
   
   const [openGroups, setOpenGroups] = useState<string[]>(["logs"]);
-
-  const navigate = useNavigate();
 
   const isActive = (value: string, subValue?: string) => {
     if (subValue) {
@@ -88,11 +84,12 @@ export function SuperAdminSidebar() {
   };
 
   const handleNavigation = (value: string, subValue?: string) => {
+    const params = new URLSearchParams();
+    params.set("tab", value);
     if (subValue) {
-      navigate(`/dashboard?tab=${value}&subtab=${subValue}`);
-    } else {
-      navigate(`/dashboard?tab=${value}`);
+      params.set("subtab", subValue);
     }
+    setSearchParams(params);
   };
 
   const toggleGroup = (value: string) => {

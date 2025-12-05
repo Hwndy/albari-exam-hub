@@ -6,15 +6,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, Search } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download } from 'lucide-react';
 import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
+import { useSchool } from '@/contexts/SchoolContext';
 
 export const UserManagement = () => {
   const { withSchoolFilter } = useSchoolQuery();
+  const { isLoading: schoolLoading } = useSchool();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -23,6 +25,7 @@ export const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
 
   // Add User Form State
@@ -384,7 +387,77 @@ export const UserManagement = () => {
 
   const stats = getRoleStats();
 
-  if (loading) {
+  // Export all users to CSV
+  const exportToCSV = async () => {
+    try {
+      setExporting(true);
+      
+      // Fetch all profiles with school info
+      const { data: allProfiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (profilesError) throw profilesError;
+
+      // Fetch all roles
+      const userIds = allProfiles?.map(p => p.user_id) || [];
+      const { data: rolesData } = userIds.length > 0
+        ? await supabase.from('user_roles').select('user_id, role').in('user_id', userIds)
+        : { data: [] };
+
+      // Fetch all schools for mapping
+      const { data: allSchools } = await supabase.from('schools').select('id, name');
+      const schoolMap = new Map(allSchools?.map(s => [s.id, s.name]) || []);
+
+      // Build CSV data
+      const headers = ['Full Name', 'Role', 'School', 'Created Date'];
+      const rows = allProfiles?.map(profile => {
+        const roleEntry = rolesData?.find(r => r.user_id === profile.user_id);
+        const role = roleEntry?.role || 'student';
+        const schoolName = profile.school_id ? (schoolMap.get(profile.school_id) || 'Unknown') : 'Super Admin';
+        
+        return [
+          profile.full_name,
+          role,
+          schoolName,
+          new Date(profile.created_at).toLocaleDateString()
+        ];
+      }) || [];
+
+      // Create CSV content
+      const csvContent = [
+        headers.join(','),
+        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      ].join('\n');
+
+      // Download file
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', `users_export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: 'Export Complete',
+        description: `Exported ${rows.length} users to CSV`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Export Failed',
+        description: error.message || 'Failed to export users',
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  if (loading || schoolLoading) {
     return <div className="flex justify-center p-8">Loading...</div>;
   }
 
@@ -443,13 +516,19 @@ export const UserManagement = () => {
           </Select>
         </div>
         
-        <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button>
-          </DialogTrigger>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={exportToCSV} disabled={exporting}>
+            <Download className="h-4 w-4 mr-2" />
+            {exporting ? 'Exporting...' : 'Export CSV'}
+          </Button>
+          
+          <Dialog open={isAddingUser} onOpenChange={setIsAddingUser}>
+            <DialogTrigger asChild>
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Add New User</DialogTitle>
@@ -646,6 +725,7 @@ export const UserManagement = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Users List */}

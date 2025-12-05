@@ -38,9 +38,18 @@ export const SchoolManagement = () => {
   const [creatingAdmins, setCreatingAdmins] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { schoolId } = useSchool();
+  const { schoolId, isLoading: schoolLoading } = useSchool();
 
-  // GUARD: Only super admins can access
+  // Wait for school context to load before checking super admin status
+  if (schoolLoading) {
+    return (
+      <div className="flex justify-center items-center p-8">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
+
+  // GUARD: Only super admins can access (school_id = null means super admin)
   const isSuperAdmin = schoolId === null;
   
   if (!isSuperAdmin) {
