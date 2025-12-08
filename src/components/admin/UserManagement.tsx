@@ -15,7 +15,7 @@ import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useSchool } from '@/contexts/SchoolContext';
 
 export const UserManagement = () => {
-  const { withSchoolFilter } = useSchoolQuery();
+  const { withSchoolFilter, schoolId } = useSchoolQuery();
   const { isLoading: schoolLoading } = useSchool();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -44,9 +44,12 @@ export const UserManagement = () => {
   const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
+  // Wait for school context to load before fetching data
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!schoolLoading) {
+      fetchData();
+    }
+  }, [schoolLoading, schoolId]);
 
   const fetchData = async () => {
     try {
