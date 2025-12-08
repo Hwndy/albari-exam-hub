@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.create-student]
 verify_jwt = true
+
+[functions.export-users]
+verify_jwt = true

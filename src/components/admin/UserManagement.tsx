@@ -387,48 +387,33 @@ export const UserManagement = () => {
 
   const stats = getRoleStats();
 
-  // Export all users to CSV
+  // Export all users to CSV via edge function
   const exportToCSV = async () => {
     try {
       setExporting(true);
       
-      // Fetch all profiles with school info
-      const { data: allProfiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      // Call edge function to get all user data including emails
+      const { data, error } = await supabase.functions.invoke('export-users');
 
-      if (profilesError) throw profilesError;
+      if (error) throw error;
 
-      // Fetch all roles
-      const userIds = allProfiles?.map(p => p.user_id) || [];
-      const { data: rolesData } = userIds.length > 0
-        ? await supabase.from('user_roles').select('user_id, role').in('user_id', userIds)
-        : { data: [] };
+      const users = data?.users || [];
 
-      // Fetch all schools for mapping
-      const { data: allSchools } = await supabase.from('schools').select('id, name');
-      const schoolMap = new Map(allSchools?.map(s => [s.id, s.name]) || []);
-
-      // Build CSV data
-      const headers = ['Full Name', 'Role', 'School', 'Created Date'];
-      const rows = allProfiles?.map(profile => {
-        const roleEntry = rolesData?.find(r => r.user_id === profile.user_id);
-        const role = roleEntry?.role || 'student';
-        const schoolName = profile.school_id ? (schoolMap.get(profile.school_id) || 'Unknown') : 'Super Admin';
-        
-        return [
-          profile.full_name,
-          role,
-          schoolName,
-          new Date(profile.created_at).toLocaleDateString()
-        ];
-      }) || [];
+      // Build CSV data with email and class
+      const headers = ['Full Name', 'Email', 'Role', 'School', 'Class', 'Created Date'];
+      const rows = users.map((user: any) => [
+        user.full_name,
+        user.email,
+        user.role,
+        user.school,
+        user.class_name,
+        new Date(user.created_at).toLocaleDateString()
+      ]);
 
       // Create CSV content
       const csvContent = [
         headers.join(','),
-        ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+        ...rows.map((row: string[]) => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       ].join('\n');
 
       // Download file
