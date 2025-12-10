@@ -8,6 +8,16 @@ import { Switch } from '@/components/ui/switch';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Clock, 
   Flag, 
@@ -57,6 +67,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [loadingQuestions, setLoadingQuestions] = useState(true);
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   // Fetch real questions from database
   useEffect(() => {
@@ -638,7 +649,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
               {Object.keys(answers).length} answered • {flaggedQuestions.size} flagged
             </div>
             
-            <Button onClick={handleSubmit} variant="default" size="sm">
+            <Button onClick={() => setShowSubmitConfirm(true)} variant="default" size="sm">
               Submit Exam
             </Button>
           </div>
@@ -883,7 +894,7 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
                       Next Question
                     </Button>
                     
-                    <Button onClick={handleSubmit} variant="default" size="lg">
+                    <Button onClick={() => setShowSubmitConfirm(true)} variant="default" size="lg">
                       Submit Exam
                     </Button>
                   </div>
@@ -893,6 +904,36 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Are you sure you want to submit your exam?</p>
+                <div className="text-sm space-y-1">
+                  <p>• Questions answered: <span className="font-medium">{Object.keys(answers).length}</span> of <span className="font-medium">{questions.length}</span></p>
+                  <p>• Questions flagged: <span className="font-medium">{flaggedQuestions.size}</span></p>
+                  {Object.keys(answers).length < questions.length && (
+                    <p className="text-warning font-medium mt-2">
+                      ⚠️ You have {questions.length - Object.keys(answers).length} unanswered question(s)
+                    </p>
+                  )}
+                </div>
+                <p className="font-medium text-destructive">This action cannot be undone.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Continue Exam</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSubmit}>
+              Yes, Submit Exam
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
