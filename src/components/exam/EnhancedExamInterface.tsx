@@ -8,6 +8,16 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Clock, 
   Flag, 
@@ -79,6 +89,7 @@ export const EnhancedExamInterface: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [warnings, setWarnings] = useState<string[]>([]);
   const [examStatus, setExamStatus] = useState<'not_started' | 'in_progress' | 'completed'>('not_started');
+  const [showSubmitConfirm, setShowSubmitConfirm] = useState(false);
 
   useEffect(() => {
     if (examId && user) {
@@ -818,7 +829,7 @@ export const EnhancedExamInterface: React.FC = () => {
                   <div className="flex space-x-2">
                     {currentQuestionIndex === exam.questions.length - 1 ? (
                       <Button
-                        onClick={() => submitExam()}
+                        onClick={() => setShowSubmitConfirm(true)}
                         disabled={submitting}
                         className="bg-success hover:bg-success/90"
                       >
@@ -840,6 +851,36 @@ export const EnhancedExamInterface: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Submit Confirmation Modal */}
+      <AlertDialog open={showSubmitConfirm} onOpenChange={setShowSubmitConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Submit Exam?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Are you sure you want to submit your exam?</p>
+                <div className="text-sm space-y-1">
+                  <p>• Questions answered: <span className="font-medium">{Object.keys(responses).length}</span> of <span className="font-medium">{exam.questions.length}</span></p>
+                  <p>• Questions flagged: <span className="font-medium">{flaggedQuestions.size}</span></p>
+                  {Object.keys(responses).length < exam.questions.length && (
+                    <p className="text-warning font-medium mt-2">
+                      ⚠️ You have {exam.questions.length - Object.keys(responses).length} unanswered question(s)
+                    </p>
+                  )}
+                </div>
+                <p className="font-medium text-destructive">This action cannot be undone.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>No, Continue Exam</AlertDialogCancel>
+            <AlertDialogAction onClick={() => submitExam()} disabled={submitting}>
+              {submitting ? 'Submitting...' : 'Yes, Submit Exam'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
