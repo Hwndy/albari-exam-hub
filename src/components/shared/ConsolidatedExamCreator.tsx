@@ -15,6 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Target, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchool } from '@/contexts/SchoolContext';
 import { useToast } from '@/hooks/use-toast';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { EnhancedQuestionForm } from './EnhancedQuestionForm';
@@ -94,7 +95,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
+  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
   
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -132,11 +133,13 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
   // Randomized generation
   const [criteria, setCriteria] = useState<QuestionCriteria[]>([]);
 
+  const { isLoading: schoolLoading } = useSchool();
+
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !schoolLoading && schoolId) {
       fetchData();
     }
-  }, [isOpen]);
+  }, [isOpen, schoolLoading, schoolId]);
 
   useEffect(() => {
     if (editingExam && isOpen) {
