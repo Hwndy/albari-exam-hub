@@ -332,15 +332,8 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
           let selectedOptionId = null;
           
           if (question && ['mcq', 'true_false'].includes(question.type)) {
-            const optionIndex = answer.charCodeAt(0) - 65; // Convert A,B,C,D to 0,1,2,3
-            const { data: optionData } = await supabase
-              .from('question_options')
-              .select('id')
-              .eq('question_id', questionId)
-              .eq('option_order', optionIndex + 1)
-              .single();
-            
-            selectedOptionId = optionData?.id;
+            // Use the optionIds mapping which correctly maps shuffled display letters to actual option IDs
+            selectedOptionId = question.optionIds?.[answer] || null;
           }
 
           await supabase
