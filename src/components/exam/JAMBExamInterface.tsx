@@ -94,10 +94,10 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
           }
         }
 
-        // Get exam details to check if questions_per_student is set
+        // Get exam details to check shuffle settings
         const { data: examData } = await supabase
           .from('exams')
-          .select('questions_per_student, question_pool_size')
+          .select('questions_per_student, question_pool_size, randomize_questions, shuffle_answers')
           .eq('id', exam.id)
           .single();
 
@@ -118,61 +118,84 @@ export const JAMBExamInterface: React.FC<JAMBExamInterfaceProps> = ({
 
         if (error) throw error;
 
-        let formattedQuestions = examQuestions?.map((eq: any) => ({
-          id: eq.questions.id,
-          question: eq.questions.question_text,
-          options: eq.questions.question_options
-            ?.sort((a: any, b: any) => a.option_order - b.option_order)
-            ?.reduce((acc: any, opt: any, index: number) => {
+        // Create a deterministic seed based on user ID and exam ID for consistent shuffling per student
+        const seed = (user?.id || '') + exam.id;
+        let hash = 0;
+        for (let i = 0; i < seed.length; i++) {
+          const char = seed.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash;
+        }
+        
+        // Seeded random function for deterministic shuffling
+        const createSeededRandom = (seed: number) => {
+          let m = 0x80000000;
+          let a = 1103515245;
+          let c = 12345;
+          let state = seed ? seed : Math.floor(Math.random() * (m - 1));
+          return () => {
+            state = (a * state + c) % m;
+            return state / (m - 1);
+          };
+        };
+
+        const seededRandom = createSeededRandom(Math.abs(hash));
+
+        // Shuffle function using seeded random
+        const shuffleWithSeed = <T,>(arr: T[], random: () => number): T[] => {
+          const shuffled = [...arr];
+          for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+          }
+          return shuffled;
+        };
+
+        let formattedQuestions = examQuestions?.map((eq: any) => {
+          let options = eq.questions.question_options
+            ?.sort((a: any, b: any) => a.option_order - b.option_order) || [];
+          
+          // Shuffle answer options if enabled
+          if (examData?.shuffle_answers) {
+            options = shuffleWithSeed(options, createSeededRandom(Math.abs(hash) + eq.questions.id.charCodeAt(0)));
+          }
+          
+          return {
+            id: eq.questions.id,
+            question: eq.questions.question_text,
+            options: options.reduce((acc: any, opt: any, index: number) => {
               const letter = String.fromCharCode(65 + index);
               acc[letter] = opt.option_text;
               return acc;
             }, {}),
-          correctAnswer: eq.questions.question_options
-            ?.find((opt: any) => opt.is_correct)
-            ?.option_order 
-            ? String.fromCharCode(64 + eq.questions.question_options.find((opt: any) => opt.is_correct).option_order)
-            : 'A',
-          subject: eq.questions.question_banks?.subjects?.name || 'Unknown',
-          difficulty: eq.questions.difficulty_level,
-          type: eq.questions.question_type === 'true_false' ? 'true_false' : 'mcq',
-          points: eq.points,
-          explanation: eq.questions.explanation,
-          media_url: eq.questions.media_url,
-        })) || [];
+            optionIds: options.reduce((acc: any, opt: any, index: number) => {
+              const letter = String.fromCharCode(65 + index);
+              acc[letter] = opt.id;
+              return acc;
+            }, {}),
+            correctAnswer: (() => {
+              const correctOpt = options.findIndex((opt: any) => opt.is_correct);
+              return correctOpt >= 0 ? String.fromCharCode(65 + correctOpt) : 'A';
+            })(),
+            subject: eq.questions.question_banks?.subjects?.name || 'Unknown',
+            difficulty: eq.questions.difficulty_level,
+            type: eq.questions.question_type === 'true_false' ? 'true_false' : 'mcq',
+            points: eq.points,
+            explanation: eq.questions.explanation,
+            media_url: eq.questions.media_url,
+          };
+        }) || [];
 
-        // If questions_per_student is set, randomly select that number of questions
+        // Always shuffle questions if randomize_questions is enabled
+        if (examData?.randomize_questions) {
+          formattedQuestions = shuffleWithSeed(formattedQuestions, seededRandom);
+          console.log('Questions shuffled for student:', user?.id);
+        }
+
+        // Apply questions_per_student limit if set
         if (examData?.questions_per_student && formattedQuestions.length > examData.questions_per_student) {
-          // Create a deterministic seed based on user ID and exam ID for consistency
-          const seed = user?.id + exam.id;
-          let hash = 0;
-          for (let i = 0; i < seed.length; i++) {
-            const char = seed.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
-          }
-          
-          // Use seeded random to ensure same questions for same user
-          const seededRandom = (function(seed: number) {
-            let m = 0x80000000; // 2**31
-            let a = 1103515245;
-            let c = 12345;
-            let state = seed ? seed : Math.floor(Math.random() * (m - 1));
-            return function() {
-              state = (a * state + c) % m;
-              return state / (m - 1);
-            };
-          })(Math.abs(hash));
-          
-          // Shuffle with seeded random
-          const shuffled = [...formattedQuestions];
-          for (let i = shuffled.length - 1; i > 0; i--) {
-            const j = Math.floor(seededRandom() * (i + 1));
-            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-          }
-          
-          formattedQuestions = shuffled.slice(0, examData.questions_per_student);
-          console.log(`Selected ${examData.questions_per_student} questions from pool of ${shuffled.length}`);
+          formattedQuestions = formattedQuestions.slice(0, examData.questions_per_student);
+          console.log(`Limited to ${examData.questions_per_student} questions from pool of ${examQuestions?.length}`);
         }
 
         setQuestions(formattedQuestions);

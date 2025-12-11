@@ -165,13 +165,16 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
       if (roleError) throw roleError;
 
-      // Update password if provided
+      // Update password if provided (via edge function for admin access)
       if (formData.password.trim()) {
-        const { error: passwordError } = await supabase.auth.admin.updateUserById(
-          user.user_id,
-          { password: formData.password }
-        );
+        const { data: passwordData, error: passwordError } = await supabase.functions.invoke('update-user-password', {
+          body: {
+            userId: user.user_id,
+            newPassword: formData.password
+          }
+        });
         if (passwordError) throw passwordError;
+        if (passwordData?.error) throw new Error(passwordData.error);
       }
 
       // Update assignments based on role
