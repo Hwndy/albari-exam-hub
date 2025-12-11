@@ -144,6 +144,12 @@ export const MobileExamInterface: React.FC<MobileExamInterfaceProps> = ({
               acc[letter] = opt.option_text;
               return acc;
             }, {}),
+            // Map display letters to actual option IDs (respects shuffled order)
+            optionIds: options.reduce((acc: any, opt: any, index: number) => {
+              const letter = String.fromCharCode(65 + index);
+              acc[letter] = opt.id;
+              return acc;
+            }, {}),
             correctAnswer: (() => {
               const correctOpt = options.findIndex((opt: any) => opt.is_correct);
               return correctOpt >= 0 ? String.fromCharCode(65 + correctOpt) : 'A';
@@ -228,15 +234,8 @@ export const MobileExamInterface: React.FC<MobileExamInterfaceProps> = ({
           let selectedOptionId = null;
           
           if (question && ['mcq', 'true_false'].includes(question.type)) {
-            const optionIndex = answer.charCodeAt(0) - 65;
-            const { data: optionData } = await supabase
-              .from('question_options')
-              .select('id')
-              .eq('question_id', questionId)
-              .eq('option_order', optionIndex + 1)
-              .single();
-            
-            selectedOptionId = optionData?.id;
+            // Use the optionIds mapping which correctly maps shuffled display letters to actual option IDs
+            selectedOptionId = question.optionIds?.[answer] || null;
           }
 
           await supabase

@@ -407,6 +407,8 @@ export const EnhancedExamInterface: React.FC = () => {
 
     const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
     
+    // For MCQ/True-False, value is the option ID directly from the shuffled options array
+    // This correctly maps to the actual option in the database
     const newResponse: ExamResponse = {
       question_id: questionId,
       selected_option_id: currentQuestion.question_type === 'mcq' || currentQuestion.question_type === 'true_false' ? value || undefined : undefined,
