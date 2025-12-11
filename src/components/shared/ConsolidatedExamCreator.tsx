@@ -333,6 +333,17 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     );
   };
 
+  const selectAllQuestions = () => {
+    const allQuestionIds = filteredQuestionBankQuestions.map(q => q.id);
+    const allSelected = allQuestionIds.every(id => selectedQuestionIds.includes(id));
+    
+    if (allSelected) {
+      setSelectedQuestionIds(prev => prev.filter(id => !allQuestionIds.includes(id)));
+    } else {
+      setSelectedQuestionIds(prev => [...new Set([...prev, ...allQuestionIds])]);
+    }
+  };
+
   // Randomized generation functions
   const addCriteria = () => {
     if (subjects.length > 0) {
@@ -955,7 +966,20 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             <TabsContent value="question-bank" className="space-y-6">
               <div className="flex justify-between items-center">
                 <h3 className="text-lg font-semibold">Select from Question Bank</h3>
-                <Badge>{selectedQuestionIds.length} selected</Badge>
+                <div className="flex items-center gap-2">
+                  {filteredQuestionBankQuestions.length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={selectAllQuestions}
+                    >
+                      {filteredQuestionBankQuestions.every(q => selectedQuestionIds.includes(q.id)) 
+                        ? 'Deselect All' 
+                        : 'Select All'}
+                    </Button>
+                  )}
+                  <Badge>{selectedQuestionIds.length} selected</Badge>
+                </div>
               </div>
 
               {!metadata.subjectId ? (
