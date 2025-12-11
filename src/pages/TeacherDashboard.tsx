@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -10,57 +10,9 @@ import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
 import { TeacherStudentCreator } from '@/components/teacher/TeacherStudentCreator';
 import { TeacherClassAssignment } from '@/components/admin/TeacherClassAssignment';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 
 export const TeacherDashboard = () => {
   const { user } = useAuth();
-  const [stats, setStats] = useState({ totalExams: 0, questionsBank: 0, studentSubmissions: 0 });
-  const [statsLoading, setStatsLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!user?.id) return;
-      setStatsLoading(true);
-
-      try {
-        // Get exams created by this teacher
-        const { data: exams, count: examCount } = await supabase
-          .from('exams')
-          .select('id', { count: 'exact' })
-          .eq('created_by', user.id);
-
-        // Get questions created by this teacher
-        const { count: questionsCount } = await supabase
-          .from('questions')
-          .select('id', { count: 'exact' })
-          .eq('created_by', user.id);
-
-        // Get completed exam sessions for teacher's exams
-        const examIds = exams?.map(e => e.id) || [];
-        let submissionsCount = 0;
-        if (examIds.length > 0) {
-          const { count } = await supabase
-            .from('exam_sessions')
-            .select('id', { count: 'exact' })
-            .eq('status', 'completed')
-            .in('exam_id', examIds);
-          submissionsCount = count || 0;
-        }
-
-        setStats({
-          totalExams: examCount || 0,
-          questionsBank: questionsCount || 0,
-          studentSubmissions: submissionsCount
-        });
-      } catch (error) {
-        console.error('Error fetching stats:', error);
-      } finally {
-        setStatsLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, [user?.id]);
   
   return (
     <DashboardLayout title="Teacher Dashboard">
@@ -74,7 +26,7 @@ export const TeacherDashboard = () => {
                   <BookOpen className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{statsLoading ? '...' : stats.totalExams}</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Total Exams</p>
                 </div>
               </div>
@@ -88,7 +40,7 @@ export const TeacherDashboard = () => {
                   <FileText className="h-6 w-6 text-success" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{statsLoading ? '...' : stats.questionsBank}</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Questions Bank</p>
                 </div>
               </div>
@@ -102,7 +54,7 @@ export const TeacherDashboard = () => {
                   <Users className="h-6 w-6 text-warning" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{statsLoading ? '...' : stats.studentSubmissions}</p>
+                  <p className="text-2xl font-bold">-</p>
                   <p className="text-sm text-muted-foreground">Student Submissions</p>
                 </div>
               </div>
