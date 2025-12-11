@@ -259,49 +259,67 @@ export const EnhancedExamInterface: React.FC = () => {
         setTimeRemaining(examData.duration_minutes * 60);
       }
 
-      // Format and potentially filter questions
-      let questions = examData.exam_questions
-        .sort((a: any, b: any) => a.question_order - b.question_order)
-        .map((eq: any) => ({
-          ...eq.questions,
-          points: eq.points,
-          options: eq.questions.question_options?.sort(
-            (a: any, b: any) => a.option_order - b.option_order
-          ) || []
-        }));
+      // Create a deterministic seed based on user ID and exam ID
+      const seed = user!.id + examId!;
+      let hash = 0;
+      for (let i = 0; i < seed.length; i++) {
+        const char = seed.charCodeAt(i);
+        hash = ((hash << 5) - hash) + char;
+        hash = hash & hash;
+      }
+      
+      const createSeededRandom = (seed: number) => {
+        let m = 0x80000000;
+        let a = 1103515245;
+        let c = 12345;
+        let state = seed ? seed : Math.floor(Math.random() * (m - 1));
+        return () => {
+          state = (a * state + c) % m;
+          return state / (m - 1);
+        };
+      };
 
-      // If questions_per_student is set, randomly select that number of questions
-      if (examData.questions_per_student && questions.length > examData.questions_per_student) {
-        // Create a deterministic seed based on user ID and exam ID for consistency
-        const seed = user!.id + examId;
-        let hash = 0;
-        for (let i = 0; i < seed.length; i++) {
-          const char = seed.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash = hash & hash; // Convert to 32-bit integer
-        }
-        
-        // Use seeded random to ensure same questions for same user
-        const seededRandom = (function(seed: number) {
-          let m = 0x80000000; // 2**31
-          let a = 1103515245;
-          let c = 12345;
-          let state = seed ? seed : Math.floor(Math.random() * (m - 1));
-          return function() {
-            state = (a * state + c) % m;
-            return state / (m - 1);
-          };
-        })(Math.abs(hash));
-        
-        // Shuffle with seeded random
-        const shuffled = [...questions];
+      const seededRandom = createSeededRandom(Math.abs(hash));
+
+      const shuffleWithSeed = <T,>(arr: T[], random: () => number): T[] => {
+        const shuffled = [...arr];
         for (let i = shuffled.length - 1; i > 0; i--) {
-          const j = Math.floor(seededRandom() * (i + 1));
+          const j = Math.floor(random() * (i + 1));
           [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        
-        questions = shuffled.slice(0, examData.questions_per_student);
-        console.log(`Selected ${examData.questions_per_student} questions from pool of ${shuffled.length}`);
+        return shuffled;
+      };
+
+      // Format questions with optional answer shuffling
+      let questions = examData.exam_questions
+        .sort((a: any, b: any) => a.question_order - b.question_order)
+        .map((eq: any) => {
+          let options = eq.questions.question_options?.sort(
+            (a: any, b: any) => a.option_order - b.option_order
+          ) || [];
+          
+          // Shuffle answer options if enabled
+          if (examData.shuffle_answers) {
+            options = shuffleWithSeed(options, createSeededRandom(Math.abs(hash) + eq.questions.id.charCodeAt(0)));
+          }
+          
+          return {
+            ...eq.questions,
+            points: eq.points,
+            options
+          };
+        });
+
+      // Shuffle questions if randomize_questions is enabled
+      if (examData.randomize_questions) {
+        questions = shuffleWithSeed(questions, seededRandom);
+        console.log('Questions shuffled for student:', user!.id);
+      }
+
+      // Apply questions_per_student limit if set
+      if (examData.questions_per_student && questions.length > examData.questions_per_student) {
+        questions = questions.slice(0, examData.questions_per_student);
+        console.log(`Limited to ${examData.questions_per_student} questions`);
       }
 
       // Format exam data
