@@ -106,7 +106,7 @@ export const ExamManagement: React.FC = () => {
       
       toast({
         title: 'Exam Deleted',
-        description: 'Exam and all associated results have been permanently deleted.',
+        description: 'Exam has been deleted. Student results have been preserved.',
       });
     } catch (error: any) {
       toast({
@@ -382,11 +382,10 @@ export const ExamManagement: React.FC = () => {
                           Delete Exam: {exam.title}
                         </AlertDialogTitle>
                         <AlertDialogDescription className="space-y-3">
-                          <p>This will <strong>permanently delete</strong> this exam and all associated data:</p>
+                          <p>This will permanently delete this exam.</p>
                           <ul className="list-disc list-inside space-y-1 text-sm">
-                            <li>All student exam sessions</li>
-                            <li>All student answers/responses</li>
-                            <li>All question associations</li>
+                            <li className="text-green-600 dark:text-green-400">Student exam results will be preserved</li>
+                            <li>Question associations will be removed</li>
                           </ul>
                           <p className="text-destructive font-medium">This action cannot be undone.</p>
                         </AlertDialogDescription>
@@ -397,7 +396,7 @@ export const ExamManagement: React.FC = () => {
                           onClick={() => handleDeleteExam(exam.id)}
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                         >
-                          Delete Exam & Results
+                          Delete Exam
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
