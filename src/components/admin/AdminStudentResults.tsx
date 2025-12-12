@@ -63,6 +63,7 @@ export const AdminStudentResults: React.FC = () => {
       if (classesData.data) setClasses(classesData.data);
 
       // Fetch all completed exam sessions filtered by school (increased limit from default 1000)
+      // Use left join (remove !inner) to include results from deleted exams
       const sessionsQuery = supabase
         .from('exam_sessions')
         .select(`
@@ -74,7 +75,7 @@ export const AdminStudentResults: React.FC = () => {
           ended_at,
           started_at,
           student_id,
-          exams!inner(
+          exams(
             id,
             title,
             created_by,
@@ -116,15 +117,15 @@ export const AdminStudentResults: React.FC = () => {
             student_name: student?.full_name || 'Unknown Student',
             student_email: student?.user_id || '',
             subject_name: session.exams?.subjects?.name || 'N/A',
-            class_name: session.exams?.classes?.name || 'No Class',
-            exam_title: session.exams?.title || 'Unknown Exam',
+            class_name: session.exams?.classes?.name || 'N/A',
+            exam_title: session.exams?.title || 'Deleted Exam',
             total_score: session.total_score || 0,
             max_score: session.max_score || 0,
             percentage: session.percentage || 0,
             status: session.passed ? 'passed' : 'failed',
             completed_at: session.ended_at || '',
             time_spent_minutes: timeSpentMinutes,
-            teacher_name: teacher?.full_name || 'Unknown Teacher',
+            teacher_name: teacher?.full_name || 'N/A',
           };
         });
         
