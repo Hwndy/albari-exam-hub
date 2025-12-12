@@ -6,13 +6,25 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { 
   Edit, 
   Trash2, 
   Search, 
   Eye,
   Send,
   Copy,
-  Archive
+  Archive,
+  AlertTriangle
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -81,9 +93,7 @@ export const ExamManagement: React.FC = () => {
     }
   };
 
-  const handleDeleteExam = async (examId: string, examTitle: string) => {
-    if (!confirm(`Are you sure you want to delete "${examTitle}"?`)) return;
-
+  const handleDeleteExam = async (examId: string) => {
     try {
       const { error } = await supabase
         .from('exams')
@@ -96,7 +106,7 @@ export const ExamManagement: React.FC = () => {
       
       toast({
         title: 'Exam Deleted',
-        description: 'Exam has been deleted successfully.',
+        description: 'Exam and all associated results have been permanently deleted.',
       });
     } catch (error: any) {
       toast({
@@ -359,13 +369,39 @@ export const ExamManagement: React.FC = () => {
                     <Copy className="h-4 w-4" />
                   </Button>
                   
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDeleteExam(exam.id, exam.title)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle className="flex items-center gap-2">
+                          <AlertTriangle className="h-5 w-5 text-destructive" />
+                          Delete Exam: {exam.title}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-3">
+                          <p>This will <strong>permanently delete</strong> this exam and all associated data:</p>
+                          <ul className="list-disc list-inside space-y-1 text-sm">
+                            <li>All student exam sessions</li>
+                            <li>All student answers/responses</li>
+                            <li>All question associations</li>
+                          </ul>
+                          <p className="text-destructive font-medium">This action cannot be undone.</p>
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDeleteExam(exam.id)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Exam & Results
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               </div>
             ))}

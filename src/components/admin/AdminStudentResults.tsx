@@ -62,7 +62,7 @@ export const AdminStudentResults: React.FC = () => {
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
 
-      // Fetch all completed exam sessions filtered by school
+      // Fetch all completed exam sessions filtered by school (increased limit from default 1000)
       const sessionsQuery = supabase
         .from('exam_sessions')
         .select(`
@@ -83,7 +83,8 @@ export const AdminStudentResults: React.FC = () => {
           )
         `)
         .eq('status', 'completed')
-        .order('ended_at', { ascending: false });
+        .order('ended_at', { ascending: false })
+        .limit(10000);
 
       const { data: sessionsData } = await withSchoolFilter(sessionsQuery);
 
@@ -145,8 +146,11 @@ export const AdminStudentResults: React.FC = () => {
       result.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.exam_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.teacher_name.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesSubject = selectedSubject === 'all' || result.subject_name === selectedSubject;
-    const matchesClass = selectedClass === 'all' || result.class_name === selectedClass;
+    // Case-insensitive comparison with trimming for subject and class filtering
+    const matchesSubject = selectedSubject === 'all' || 
+      result.subject_name?.toLowerCase().trim() === selectedSubject?.toLowerCase().trim();
+    const matchesClass = selectedClass === 'all' || 
+      result.class_name?.toLowerCase().trim() === selectedClass?.toLowerCase().trim();
     return matchesSearch && matchesSubject && matchesClass;
   });
 
