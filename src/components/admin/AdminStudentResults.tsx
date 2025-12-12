@@ -23,7 +23,9 @@ interface AdminStudentResult {
   student_name: string;
   student_email: string;
   subject_name: string;
+  subject_id: string | null;
   class_name: string;
+  class_id: string | null;
   exam_title: string;
   total_score: number;
   max_score: number;
@@ -62,8 +64,9 @@ export const AdminStudentResults: React.FC = () => {
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
 
-      // Fetch all completed exam sessions filtered by school (increased limit from default 1000)
+      // Fetch all completed exam sessions filtered by school
       // Use left join (remove !inner) to include results from deleted exams
+      // Use .range() instead of .limit() for explicit control
       const sessionsQuery = supabase
         .from('exam_sessions')
         .select(`
@@ -79,15 +82,23 @@ export const AdminStudentResults: React.FC = () => {
             id,
             title,
             created_by,
-            subjects(name),
-            classes(name)
+            subject_id,
+            class_id,
+            subjects(id, name),
+            classes(id, name)
           )
-        `)
+        `, { count: 'exact' })
         .eq('status', 'completed')
         .order('ended_at', { ascending: false })
-        .limit(10000);
+        .range(0, 9999);
 
-      const { data: sessionsData } = await withSchoolFilter(sessionsQuery);
+      const { data: sessionsData, count: totalCount } = await withSchoolFilter(sessionsQuery);
+      
+      console.log('[AdminStudentResults] Query results:', {
+        returnedRows: sessionsData?.length || 0,
+        totalCount: totalCount,
+        hasMore: totalCount ? totalCount > (sessionsData?.length || 0) : false
+      });
 
       if (sessionsData) {
         // Get all student and teacher profiles
@@ -117,7 +128,9 @@ export const AdminStudentResults: React.FC = () => {
             student_name: student?.full_name || 'Unknown Student',
             student_email: student?.user_id || '',
             subject_name: session.exams?.subjects?.name || 'N/A',
+            subject_id: session.exams?.subject_id || null,
             class_name: session.exams?.classes?.name || 'N/A',
+            class_id: session.exams?.class_id || null,
             exam_title: session.exams?.title || 'Deleted Exam',
             total_score: session.total_score || 0,
             max_score: session.max_score || 0,
@@ -128,6 +141,8 @@ export const AdminStudentResults: React.FC = () => {
             teacher_name: teacher?.full_name || 'N/A',
           };
         });
+        
+        console.log('[AdminStudentResults] Formatted results:', formattedResults.length);
         
         setResults(formattedResults);
       }
@@ -142,17 +157,25 @@ export const AdminStudentResults: React.FC = () => {
     }
   };
 
+  // Filter by ID instead of name for reliable matching
   const filteredResults = results.filter(result => {
     const matchesSearch = 
       result.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.exam_title.toLowerCase().includes(searchTerm.toLowerCase()) ||
       result.teacher_name.toLowerCase().includes(searchTerm.toLowerCase());
-    // Case-insensitive comparison with trimming for subject and class filtering
-    const matchesSubject = selectedSubject === 'all' || 
-      result.subject_name?.toLowerCase().trim() === selectedSubject?.toLowerCase().trim();
-    const matchesClass = selectedClass === 'all' || 
-      result.class_name?.toLowerCase().trim() === selectedClass?.toLowerCase().trim();
+    // Filter by subject_id and class_id for reliable matching
+    const matchesSubject = selectedSubject === 'all' || result.subject_id === selectedSubject;
+    const matchesClass = selectedClass === 'all' || result.class_id === selectedClass;
     return matchesSearch && matchesSubject && matchesClass;
+  });
+  
+  // Debug logging for filtering
+  console.log('[AdminStudentResults] Filtering:', {
+    totalResults: results.length,
+    filteredCount: filteredResults.length,
+    selectedSubject,
+    selectedClass,
+    searchTerm
   });
 
   const handleBulkDownload = () => {
@@ -284,12 +307,12 @@ export const AdminStudentResults: React.FC = () => {
           
           <Select value={selectedSubject} onValueChange={setSelectedSubject}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="All Subjects" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Subjects</SelectItem>
               {subjects.map(subject => (
-                <SelectItem key={subject.id} value={subject.name}>
+                <SelectItem key={subject.id} value={subject.id}>
                   {subject.name}
                 </SelectItem>
               ))}
@@ -298,12 +321,12 @@ export const AdminStudentResults: React.FC = () => {
           
           <Select value={selectedClass} onValueChange={setSelectedClass}>
             <SelectTrigger className="w-48">
-              <SelectValue />
+              <SelectValue placeholder="All Classes" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Classes</SelectItem>
               {classes.map(cls => (
-                <SelectItem key={cls.id} value={cls.name}>
+                <SelectItem key={cls.id} value={cls.id}>
                   {cls.name}
                 </SelectItem>
               ))}
