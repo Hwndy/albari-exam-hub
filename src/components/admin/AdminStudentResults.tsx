@@ -44,6 +44,7 @@ export const AdminStudentResults: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedClass, setSelectedClass] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [loadingProgress, setLoadingProgress] = useState('');
   const { toast } = useToast();
   const { withSchoolFilter } = useSchoolQuery();
 
@@ -54,6 +55,7 @@ export const AdminStudentResults: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setLoadingProgress('Loading subjects and classes...');
       
       // Fetch all subjects and classes filtered by school
       const [subjectsData, classesData] = await Promise.all([
@@ -64,46 +66,60 @@ export const AdminStudentResults: React.FC = () => {
       if (subjectsData.data) setSubjects(subjectsData.data);
       if (classesData.data) setClasses(classesData.data);
 
-      // Fetch all completed exam sessions filtered by school
-      // Use left join (remove !inner) to include results from deleted exams
-      // Use .range() instead of .limit() for explicit control
-      const sessionsQuery = supabase
-        .from('exam_sessions')
-        .select(`
-          id,
-          total_score,
-          max_score,
-          percentage,
-          passed,
-          ended_at,
-          started_at,
-          student_id,
-          exams(
-            id,
-            title,
-            created_by,
-            subject_id,
-            class_id,
-            subjects(id, name),
-            classes(id, name)
-          )
-        `, { count: 'exact' })
-        .eq('status', 'completed')
-        .order('ended_at', { ascending: false })
-        .range(0, 9999);
-
-      const { data: sessionsData, count: totalCount } = await withSchoolFilter(sessionsQuery);
+      // Fetch all completed exam sessions in batches to bypass 1000 row limit
+      const BATCH_SIZE = 1000;
+      let allSessionsData: any[] = [];
+      let start = 0;
+      let hasMore = true;
       
-      console.log('[AdminStudentResults] Query results:', {
-        returnedRows: sessionsData?.length || 0,
-        totalCount: totalCount,
-        hasMore: totalCount ? totalCount > (sessionsData?.length || 0) : false
-      });
+      while (hasMore) {
+        setLoadingProgress(`Loading results... (${allSessionsData.length} fetched)`);
+        
+        const sessionsQuery = supabase
+          .from('exam_sessions')
+          .select(`
+            id,
+            total_score,
+            max_score,
+            percentage,
+            passed,
+            ended_at,
+            started_at,
+            student_id,
+            exams(
+              id,
+              title,
+              created_by,
+              subject_id,
+              class_id,
+              subjects(id, name),
+              classes(id, name)
+            )
+          `)
+          .eq('status', 'completed')
+          .order('ended_at', { ascending: false })
+          .range(start, start + BATCH_SIZE - 1);
 
-      if (sessionsData) {
+        const { data: batchData, error } = await withSchoolFilter(sessionsQuery);
+        
+        if (error) throw error;
+        
+        if (batchData && batchData.length > 0) {
+          allSessionsData = [...allSessionsData, ...batchData];
+          start += BATCH_SIZE;
+          hasMore = batchData.length === BATCH_SIZE;
+        } else {
+          hasMore = false;
+        }
+      }
+      
+      console.log('[AdminStudentResults] Total results fetched:', allSessionsData.length);
+      setLoadingProgress(`Processing ${allSessionsData.length} results...`);
+
+  if (allSessionsData.length > 0) {
         // Get all student and teacher profiles
-        const studentIds = [...new Set(sessionsData.map(s => s.student_id))].filter((id): id is string => typeof id === 'string');
-        const teacherIds = [...new Set(sessionsData.map(s => s.exams?.created_by).filter(Boolean))].filter((id): id is string => typeof id === 'string');
+        const studentIds = [...new Set(allSessionsData.map(s => s.student_id))].filter((id): id is string => typeof id === 'string');
+        const teacherIds = [...new Set(allSessionsData.map(s => s.exams?.created_by).filter(Boolean))].filter((id): id is string => typeof id === 'string');
         
         const [studentsData, teachersData] = await Promise.all([
           supabase
@@ -116,7 +132,7 @@ export const AdminStudentResults: React.FC = () => {
             .in('user_id', teacherIds)
         ]);
 
-        const formattedResults: AdminStudentResult[] = sessionsData.map(session => {
+        const formattedResults: AdminStudentResult[] = allSessionsData.map(session => {
           const student = studentsData.data?.find(s => s.user_id === session.student_id);
           const teacher = teachersData.data?.find(t => t.user_id === session.exams?.created_by);
           const timeSpentMinutes = session.started_at && session.ended_at 
@@ -224,7 +240,12 @@ export const AdminStudentResults: React.FC = () => {
   const stats = getStats();
 
   if (loading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center p-8 space-y-2">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <p className="text-muted-foreground">{loadingProgress || 'Loading...'}</p>
+      </div>
+    );
   }
 
   return (
