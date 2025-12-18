@@ -194,7 +194,55 @@ export const AdminStudentResults: React.FC = () => {
     searchTerm
   });
 
+  const generateExportFilename = () => {
+    const date = new Date().toISOString().split('T')[0];
+    
+    // If no filters applied, use generic name
+    if (selectedSubject === 'all' && selectedClass === 'all') {
+      return `all_student_results_${date}.csv`;
+    }
+    
+    // Clean up names for filename (remove special chars, replace spaces with underscores)
+    const cleanName = (str: string) => str
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, '')
+      .replace(/\s+/g, '_')
+      .trim();
+    
+    // Get subject and class names
+    const subjectName = selectedSubject !== 'all' 
+      ? subjects.find(s => s.id === selectedSubject)?.name || ''
+      : '';
+      
+    const className = selectedClass !== 'all'
+      ? classes.find(c => c.id === selectedClass)?.name || ''
+      : '';
+    
+    // Get exam title from first result if filtering shows consistent exam
+    const examTitle = filteredResults.length > 0 && filteredResults[0].exam_title !== 'Deleted Exam'
+      ? filteredResults[0].exam_title
+      : '';
+    
+    // Build filename parts
+    const parts: string[] = [];
+    if (examTitle) parts.push(cleanName(examTitle));
+    if (subjectName) parts.push(cleanName(subjectName));
+    if (className) parts.push(cleanName(className));
+    parts.push(date);
+    
+    return parts.join('_') + '.csv';
+  };
+
   const handleBulkDownload = () => {
+    if (filteredResults.length === 0) {
+      toast({
+        title: 'No data to export',
+        description: 'Please adjust your filters to see results',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const csvContent = [
       ['Student Name', 'Subject', 'Class', 'Exam Title', 'Score', 'Max Score', 'Percentage', 'Status', 'Teacher', 'Date Completed', 'Time Spent (minutes)'],
       ...filteredResults.map(result => [
@@ -216,7 +264,7 @@ export const AdminStudentResults: React.FC = () => {
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `all_student_results_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = generateExportFilename();
     link.click();
   };
 
