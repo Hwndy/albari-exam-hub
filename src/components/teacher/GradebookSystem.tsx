@@ -177,10 +177,12 @@ export const GradebookSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('class_assignments')
-        .select('student_id')
-        .eq('class_id', selectedClass);
+      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+        supabase
+          .from('class_assignments')
+          .select('student_id')
+          .eq('class_id', selectedClass)
+      );
 
       if (assignmentsError) throw assignmentsError;
 
@@ -235,23 +237,25 @@ export const GradebookSystem = () => {
 
   const fetchGradebookEntries = async () => {
     try {
-      const { data, error } = await supabase
-        .from('gradebook_entries')
-        .select(`
-          *,
-          subjects (
-            name
-          )
-        `)
-        .eq('class_id', selectedClass)
-        .eq('subject_id', selectedSubject)
-        .eq('teacher_id', user?.id)
-        .order('assessment_date', { ascending: false });
+      const { data, error } = await withSchoolFilter(
+        supabase
+          .from('gradebook_entries')
+          .select(`
+            *,
+            subjects (
+              name
+            )
+          `)
+          .eq('class_id', selectedClass)
+          .eq('subject_id', selectedSubject)
+          .eq('teacher_id', user?.id)
+          .order('assessment_date', { ascending: false })
+      );
 
       if (error) throw error;
 
       // Fetch student details separately
-      const studentIds = [...new Set((data || []).map(entry => entry.student_id))];
+      const studentIds = [...new Set((data || []).map(entry => entry.student_id))].filter((id): id is string => typeof id === 'string');
       
       const { data: studentsData } = await supabase
         .from('students')
@@ -318,21 +322,23 @@ export const GradebookSystem = () => {
       const obtainedScore = parseFloat(newGrade.obtained_score);
       const grade = calculateGrade(obtainedScore, maxScore);
 
+      const gradeData = withSchoolData({
+        student_id: newGrade.student_id,
+        subject_id: newGrade.subject_id,
+        class_id: newGrade.class_id,
+        assessment_name: newGrade.assessment_name,
+        assessment_type: newGrade.assessment_type,
+        assessment_date: format(newGrade.assessment_date, 'yyyy-MM-dd'),
+        max_score: maxScore,
+        obtained_score: obtainedScore,
+        grade,
+        remarks: newGrade.remarks,
+        teacher_id: user?.id
+      });
+
       const { error } = await supabase
         .from('gradebook_entries')
-        .insert({
-          student_id: newGrade.student_id,
-          subject_id: newGrade.subject_id,
-          class_id: newGrade.class_id,
-          assessment_name: newGrade.assessment_name,
-          assessment_type: newGrade.assessment_type,
-          assessment_date: format(newGrade.assessment_date, 'yyyy-MM-dd'),
-          max_score: maxScore,
-          obtained_score: obtainedScore,
-          grade,
-          remarks: newGrade.remarks,
-          teacher_id: user?.id
-        });
+        .insert(gradeData);
 
       if (error) throw error;
 
@@ -378,14 +384,14 @@ export const GradebookSystem = () => {
 
       const maxScore = parseFloat(bulkAssessment.max_score);
       
-      // Prepare bulk entries
+      // Prepare bulk entries with school_id
       const entries = Object.entries(bulkGrades)
         .filter(([_, data]) => data.obtained_score !== '')
         .map(([studentId, data]) => {
           const obtainedScore = parseFloat(data.obtained_score);
           const grade = calculateGrade(obtainedScore, maxScore);
           
-          return {
+          return withSchoolData({
             student_id: studentId,
             subject_id: bulkAssessment.subject_id,
             class_id: bulkAssessment.class_id,
@@ -397,7 +403,7 @@ export const GradebookSystem = () => {
             grade,
             remarks: data.remarks,
             teacher_id: user?.id
-          };
+          });
         });
 
       if (entries.length === 0) {

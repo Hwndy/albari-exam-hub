@@ -138,14 +138,16 @@ export const QuestionBank: React.FC = () => {
         const subject = subjects.find(s => s.id === questionData.subjectId);
         const cls = classes.find(c => c.id === questionData.classId);
         
+        const questionBankData = withSchoolData({
+          name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
+          subject_id: questionData.subjectId,
+          class_id: questionData.classId,
+          created_by: user?.id,
+        });
+
         const { data: newQuestionBank, error: bankError } = await supabase
           .from('question_banks')
-          .insert({
-            name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
-            subject_id: questionData.subjectId,
-            class_id: questionData.classId,
-            created_by: user?.id,
-          })
+          .insert(questionBankData)
           .select()
           .single();
 
@@ -153,21 +155,23 @@ export const QuestionBank: React.FC = () => {
         questionBankId = newQuestionBank?.id;
       }
 
-      // Insert question
+      // Insert question with school_id
+      const questionInsertData = withSchoolData({
+        question_text: questionData.questionText,
+        question_type: questionData.questionType,
+        difficulty_level: questionData.difficulty,
+        points: questionData.points,
+        explanation: questionData.explanation,
+        media_url: questionData.mediaUrl || null,
+        formula_latex: questionData.formulaLatex || null,
+        question_bank_id: questionBankId,
+        class_id: questionData.classId,
+        created_by: user?.id,
+      });
+
       const { data: newQuestion, error: questionError } = await supabase
         .from('questions')
-        .insert({
-          question_text: questionData.questionText,
-          question_type: questionData.questionType,
-          difficulty_level: questionData.difficulty,
-          points: questionData.points,
-          explanation: questionData.explanation,
-          media_url: questionData.mediaUrl || null,
-          formula_latex: questionData.formulaLatex || null,
-          question_bank_id: questionBankId,
-          class_id: questionData.classId, // Add class_id directly
-          created_by: user?.id,
-        })
+        .insert(questionInsertData)
         .select()
         .single();
 

@@ -167,6 +167,9 @@ export const ExamManagement: React.FC = () => {
 
   const handleDuplicateExam = async (exam: Exam) => {
     try {
+      // Get the current user's ID for created_by
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      
       const { error } = await supabase
         .from('exams')
         .insert({
@@ -178,7 +181,7 @@ export const ExamManagement: React.FC = () => {
           total_questions: exam.total_questions,
           pass_mark: exam.pass_mark,
           status: 'draft',
-          created_by: '1', // Will be updated to use actual user ID
+          created_by: currentUser?.id || exam.created_by,
         });
 
       if (error) throw error;
