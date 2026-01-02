@@ -41,10 +41,11 @@ export const ClassManagement = () => {
         .order('name');
       const { data: classesData } = await withSchoolFilter(classesQuery);
 
-      // Fetch class assignments
-      const { data: assignmentsData } = await supabase
+      // Fetch class assignments - filtered by school
+      const assignmentsQuery = supabase
         .from('class_assignments')
         .select('*');
+      const { data: assignmentsData } = await withSchoolFilter(assignmentsQuery);
 
       // Fetch student profiles and their roles - filtered by school
       const { data: studentRoles } = await supabase

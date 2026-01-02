@@ -17,6 +17,7 @@ import {
 import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useToast } from '@/hooks/use-toast';
 
 interface AvailableExam {
@@ -47,6 +48,7 @@ export const ExamList: React.FC = () => {
   const [exams, setExams] = useState<AvailableExam[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
+  const { withSchoolFilter } = useSchoolQuery();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -60,25 +62,29 @@ export const ExamList: React.FC = () => {
       setLoading(true);
       console.log('Fetching exams for student:', user?.id);
       
-      // Get student's class assignments
-      const { data: classAssignments } = await supabase
-        .from('class_assignments')
-        .select('class_id')
-        .eq('student_id', user?.id);
+      // Get student's class assignments with school filter
+      const { data: classAssignments } = await withSchoolFilter(
+        supabase
+          .from('class_assignments')
+          .select('class_id')
+          .eq('student_id', user?.id)
+      );
 
       const classIds = classAssignments?.map(ca => ca.class_id) || [];
       console.log('Student class assignments:', classIds);
 
-      // Fetch published exams for student's classes
-      let query = supabase
-        .from('exams')
-        .select(`
-          *,
-          subjects(name),
-          classes(name)
-        `)
-        .eq('status', 'published')
-        .order('created_at', { ascending: false });
+      // Fetch published exams for student's classes with school filter
+      let query = withSchoolFilter(
+        supabase
+          .from('exams')
+          .select(`
+            *,
+            subjects(name),
+            classes(name)
+          `)
+          .eq('status', 'published')
+          .order('created_at', { ascending: false })
+      );
 
       // Add class filtering - show exams for student's classes OR general exams (no class restriction)
       if (classIds.length > 0) {

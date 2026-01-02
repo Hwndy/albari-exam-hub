@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { User, GraduationCap, Calendar, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,11 +17,13 @@ interface Student {
   status: string;
   user_id: string;
   full_name?: string;
+  class_name?: string;
 }
 
 export const StudentOverview = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { withSchoolFilter } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,17 +77,31 @@ export const StudentOverview = () => {
         ?.map(rel => rel.students)
         .filter(Boolean) || [];
       
-      // Get profile names separately to avoid foreign key issues
+      // Get profile names and class assignments separately to avoid foreign key issues
       if (studentsData.length > 0) {
+        const studentIds = studentsData.map((s: any) => s.id);
+        
         const { data: profilesData } = await supabase
           .from('profiles')
           .select('user_id, full_name')
-          .in('user_id', studentsData.map(s => s.user_id));
+          .in('user_id', studentsData.map((s: any) => s.user_id));
         
-        // Merge profile data with student data
+        // Get class assignments for each student
+        const { data: classAssignments } = await withSchoolFilter(
+          supabase
+            .from('class_assignments')
+            .select('student_id, classes(name)')
+            .in('student_id', studentIds)
+        );
+        
+        // Merge profile data and class data with student data
         studentsData.forEach((student: any) => {
           const profile = profilesData?.find(p => p.user_id === student.user_id);
           student.full_name = profile?.full_name || 'Unknown Student';
+          
+          // Find class assignment
+          const classAssignment = classAssignments?.find((ca: any) => ca.student_id === student.id);
+          student.class_name = classAssignment?.classes?.name || null;
         });
       }
       
@@ -185,7 +202,7 @@ export const StudentOverview = () => {
               <div className="flex items-center space-x-2 text-sm">
                 <GraduationCap className="h-4 w-4 text-muted-foreground" />
                 <span>
-                  Class: Not Available
+                  Class: {student.class_name || 'Not Assigned'}
                 </span>
               </div>
               

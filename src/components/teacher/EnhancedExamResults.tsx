@@ -159,10 +159,17 @@ export const EnhancedExamResults: React.FC = () => {
     }
   };
 
+  // Find the selected exam's ID for proper filtering
+  const selectedExamId = selectedExam !== 'all' 
+    ? exams.find(e => e.title === selectedExam)?.id 
+    : null;
+
   const filteredResults = results.filter(result => {
     const matchesSearch = result.student_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          result.exam_title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesExam = selectedExam === 'all' || result.exam_title === selectedExam;
+    // Filter by exam ID when available for more reliable matching
+    const matchesExam = selectedExam === 'all' || 
+      (selectedExamId ? results.some(r => r.id === result.id && r.exam_title === selectedExam) : result.exam_title === selectedExam);
     return matchesSearch && matchesExam;
   });
 

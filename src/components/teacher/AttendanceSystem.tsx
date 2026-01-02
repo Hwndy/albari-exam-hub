@@ -186,10 +186,12 @@ export const AttendanceSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: assignments, error: assignmentsError } = await supabase
-        .from('class_assignments')
-        .select('student_id')
-        .eq('class_id', selectedClass);
+      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+        supabase
+          .from('class_assignments')
+          .select('student_id')
+          .eq('class_id', selectedClass)
+      );
 
       if (assignmentsError) throw assignmentsError;
 
@@ -245,18 +247,20 @@ export const AttendanceSystem = () => {
         return;
       }
 
+      const sessionData = withSchoolData({
+        class_id: newSession.class_id,
+        subject_id: newSession.subject_id,
+        teacher_id: user?.id,
+        date: format(newSession.date, 'yyyy-MM-dd'),
+        start_time: newSession.start_time,
+        end_time: newSession.end_time,
+        period_number: newSession.period_number,
+        status: 'scheduled'
+      });
+
       const { data: session, error } = await supabase
         .from('attendance_sessions')
-        .insert({
-          class_id: newSession.class_id,
-          subject_id: newSession.subject_id,
-          teacher_id: user?.id,
-          date: format(newSession.date, 'yyyy-MM-dd'),
-          start_time: newSession.start_time,
-          end_time: newSession.end_time,
-          period_number: newSession.period_number,
-          status: 'scheduled'
-        })
+        .insert(sessionData)
         .select()
         .single();
 
