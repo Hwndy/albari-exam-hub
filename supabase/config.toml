@@ -56,3 +56,6 @@ verify_jwt = true
 
 [functions.send-push-notification]
 verify_jwt = true
+
+[functions.send-fee-reminders]
+verify_jwt = true
