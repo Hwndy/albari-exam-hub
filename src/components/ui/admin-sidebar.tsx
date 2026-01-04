@@ -8,6 +8,7 @@ import {
   GraduationCap,
   ChevronDown,
   Globe,
+  CreditCard,
 } from "lucide-react";
 
 import {
@@ -62,6 +63,11 @@ const menuItems = [
       { title: "Classes", value: "classes" },
       { title: "Subjects", value: "subjects" },
     ],
+  },
+  {
+    title: "Fee Management",
+    icon: CreditCard,
+    value: "fees",
   },
   {
     title: "Users",
