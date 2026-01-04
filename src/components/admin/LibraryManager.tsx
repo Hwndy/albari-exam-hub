@@ -122,11 +122,11 @@ export const LibraryManager: React.FC = () => {
       }));
       setIssues(processedIssues);
 
-      // Fetch students
-      const profilesQuery = await (supabase.from('profiles').select('user_id, full_name').eq('role', 'student') as any);
-      const studentsQuery = await (supabase.from('students').select('id, user_id') as any);
-      const profilesData = profilesQuery.data || [];
-      const studentRecords = studentsQuery.data || [];
+      // Fetch students - use separate queries to avoid deep type instantiation
+      const profilesResponse = await supabase.from('profiles').select('user_id, full_name').eq('role', 'student');
+      const studentsResponse = await supabase.from('students').select('id, user_id');
+      const profilesData: { user_id: string; full_name: string }[] = profilesResponse.data || [];
+      const studentRecords: { id: string; user_id: string }[] = studentsResponse.data || [];
 
       const studentsList = profilesData.map((p: any) => {
         const studentRecord = studentRecords.find((s: any) => s.user_id === p.user_id);

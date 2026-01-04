@@ -37,6 +37,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { FeeManagement } from '@/components/admin/SMS/FeeManagement';
 import { TimetableManager } from '@/components/admin/TimetableManager';
 import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
+import { LibraryManager } from '@/components/admin/LibraryManager';
+import { BulkNotificationSender } from '@/components/admin/BulkNotificationSender';
+import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
 
 interface DashboardStats {
   totalStudents: number;
@@ -238,6 +241,9 @@ export const AdminDashboard = () => {
       return titles[activeSubTab || 'exams'] || 'Academic';
     }
     if (activeTab === 'fees') return 'Fee Management';
+    if (activeTab === 'library') return 'Library Management';
+    if (activeTab === 'notifications') return 'Bulk Notifications';
+    if (activeTab === 'id-cards') return 'Student ID Cards';
     if (activeTab === 'users') return 'User Management';
     if (activeTab === 'website') {
       const titles: Record<string, string> = {
@@ -344,6 +350,18 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'fees') {
       return <FeeManagement />;
+    }
+
+    if (activeTab === 'library') {
+      return <LibraryManager />;
+    }
+
+    if (activeTab === 'notifications') {
+      return <BulkNotificationSender />;
+    }
+
+    if (activeTab === 'id-cards') {
+      return <IDCardGenerator />;
     }
 
     if (activeTab === 'users') {

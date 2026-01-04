@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Trophy, Clock, TrendingUp, Calendar } from 'lucide-react';
+import { BookOpen, Trophy, Clock, TrendingUp, Calendar, Library } from 'lucide-react';
 import { ExamList } from '@/components/student/ExamList';
 import { StudentTimetable } from '@/components/student/StudentTimetable';
+import { LibraryCatalog } from '@/components/student/LibraryCatalog';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -180,6 +181,10 @@ export const StudentDashboard = () => {
                 <Calendar className="h-4 w-4 mr-1 hidden sm:inline" />
                 Timetable
               </TabsTrigger>
+              <TabsTrigger value="library" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <Library className="h-4 w-4 mr-1 hidden sm:inline" />
+                Library
+              </TabsTrigger>
             </TabsList>
           </div>
 
@@ -189,6 +194,10 @@ export const StudentDashboard = () => {
 
           <TabsContent value="timetable">
             <StudentTimetable />
+          </TabsContent>
+
+          <TabsContent value="library">
+            <LibraryCatalog />
           </TabsContent>
         </Tabs>
       </div>
