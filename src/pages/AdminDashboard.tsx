@@ -34,6 +34,7 @@ import { SchoolInfoEditor } from '@/components/admin/CMS/SchoolInfoEditor';
 import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { FeeManagement } from '@/components/admin/SMS/FeeManagement';
 
 interface DashboardStats {
   totalStudents: number;
@@ -232,6 +233,7 @@ export const AdminDashboard = () => {
       };
       return titles[activeSubTab || 'exams'] || 'Academic';
     }
+    if (activeTab === 'fees') return 'Fee Management';
     if (activeTab === 'users') return 'User Management';
     if (activeTab === 'website') {
       const titles: Record<string, string> = {
@@ -332,6 +334,10 @@ export const AdminDashboard = () => {
         case 'subjects': return <SubjectManagement />;
         default: return <ExamManagement />;
       }
+    }
+
+    if (activeTab === 'fees') {
+      return <FeeManagement />;
     }
 
     if (activeTab === 'users') {
