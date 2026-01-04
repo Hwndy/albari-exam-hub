@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import React, { useState, useEffect, useRef } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Download, Mail, Loader2, Users, BookOpen, Award, TrendingUp, Printer, Eye } from 'lucide-react';
+import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
 
 interface ClassData {
   id: string;
@@ -29,25 +30,54 @@ interface StudentData {
   id: string;
   full_name: string;
   user_id: string;
+  registration_number?: string;
+  age?: number;
+  gender?: string;
+  weight?: number;
+  height?: number;
+  section?: string;
 }
 
 interface GradeEntry {
   student_id: string;
-  student_name: string;
   subject_id: string;
   subject_name: string;
-  obtained_score: number;
-  max_score: number;
-  percentage: number;
+  test1_score: number;
+  test2_score: number;
+  exam_score: number;
+  total: number;
   grade: string;
+  subject_position: number;
+  class_average: number;
+  highest_in_class: number;
+  lowest_in_class: number;
+  remark: string;
+}
+
+interface AttendanceData {
+  days_school_opened: number;
+  days_present: number;
+  days_absent: number;
+}
+
+interface CommentsData {
+  class_teacher_comment: string;
+  head_teacher_comment: string;
+  principal_comment: string;
 }
 
 interface StudentReportCard {
   student_id: string;
   student_name: string;
+  registration_number: string;
   class_name: string;
+  section: string;
   term: string;
   academic_year: string;
+  age: number | null;
+  gender: string;
+  weight: number | null;
+  height: number | null;
   grades: GradeEntry[];
   total_obtained: number;
   total_max: number;
@@ -55,19 +85,30 @@ interface StudentReportCard {
   position: number;
   total_students: number;
   overall_grade: string;
-  remarks: string;
+  attendance: AttendanceData;
+  comments: CommentsData;
+  class_average: number;
+  highest_average: number;
+  lowest_average: number;
 }
 
+interface SchoolInfo {
+  name: string;
+  address: string;
+  phone: string;
+  email: string;
+  motto: string;
+  logo_url: string;
+}
+
+// Al-Bari A-F Grading Scale
 const GRADING_SCALE = [
-  { min: 75, max: 100, grade: 'A1', remark: 'Excellent' },
-  { min: 70, max: 74, grade: 'B2', remark: 'Very Good' },
-  { min: 65, max: 69, grade: 'B3', remark: 'Good' },
-  { min: 60, max: 64, grade: 'C4', remark: 'Credit' },
-  { min: 55, max: 59, grade: 'C5', remark: 'Credit' },
-  { min: 50, max: 54, grade: 'C6', remark: 'Credit' },
-  { min: 45, max: 49, grade: 'D7', remark: 'Pass' },
-  { min: 40, max: 44, grade: 'E8', remark: 'Pass' },
-  { min: 0, max: 39, grade: 'F9', remark: 'Fail' },
+  { min: 70, max: 100, grade: 'A', remark: 'Excellent' },
+  { min: 60, max: 69, grade: 'B', remark: 'Very Good' },
+  { min: 50, max: 59, grade: 'C', remark: 'Good' },
+  { min: 40, max: 49, grade: 'D', remark: 'Pass' },
+  { min: 30, max: 39, grade: 'E', remark: 'Poor' },
+  { min: 0, max: 29, grade: 'F', remark: 'Fail' },
 ];
 
 const TERMS = ['First Term', 'Second Term', 'Third Term'];
@@ -78,19 +119,24 @@ export const ReportCardGenerator: React.FC = () => {
   const { withSchoolFilter, schoolId } = useSchoolQuery();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [isGenerating, setIsGenerating] = useState(false);
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [students, setStudents] = useState<StudentData[]>([]);
   const [reportCards, setReportCards] = useState<StudentReportCard[]>([]);
+  const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
 
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTerm, setSelectedTerm] = useState<string>('First Term');
-  const [academicYear, setAcademicYear] = useState<string>(new Date().getFullYear().toString());
+  const [academicYear, setAcademicYear] = useState<string>('2024/2025');
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewingCard, setPreviewingCard] = useState<StudentReportCard | null>(null);
+  const [commentsDialogOpen, setCommentsDialogOpen] = useState(false);
+  const [editingComments, setEditingComments] = useState<{
+    studentId: string;
+    comments: CommentsData;
+  } | null>(null);
 
   useEffect(() => {
     fetchInitialData();
@@ -105,13 +151,17 @@ export const ReportCardGenerator: React.FC = () => {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [classesRes, subjectsRes] = await Promise.all([
+      const [classesRes, subjectsRes, schoolRes] = await Promise.all([
         withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
         withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
+        withSchoolFilter(supabase.from('schools').select('name, address, phone, email, motto, logo_url').single()),
       ]);
 
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
+      if (schoolRes.data) {
+        setSchoolInfo(schoolRes.data as SchoolInfo);
+      }
 
       if (classesRes.data && classesRes.data.length > 0) {
         setSelectedClass(classesRes.data[0].id);
@@ -142,70 +192,108 @@ export const ReportCardGenerator: React.FC = () => {
         return;
       }
 
-      // Fetch student profiles (student_id in class_assignments is actually user_id from profiles)
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('user_id, full_name')
-        .in('user_id', studentUserIds);
+      // Fetch student profiles and student records
+      const [profilesRes, studentsRes] = await Promise.all([
+        supabase.from('profiles').select('user_id, full_name').in('user_id', studentUserIds),
+        supabase.from('students').select('id, user_id, registration_number, age, gender, weight, height, section').in('user_id', studentUserIds),
+      ]);
 
-      // Fetch students table for proper IDs
-      const { data: studentsData } = await supabase
-        .from('students')
-        .select('id, user_id')
-        .in('user_id', studentUserIds);
+      const profiles = profilesRes.data || [];
+      const studentsData = studentsRes.data || [];
 
-      const studentsList = (profiles || []).map(p => {
-        const studentRecord = studentsData?.find(s => s.user_id === p.user_id);
+      const studentsList: StudentData[] = profiles.map(p => {
+        const studentRecord = studentsData.find(s => s.user_id === p.user_id);
         return {
           id: studentRecord?.id || p.user_id,
           full_name: p.full_name,
           user_id: p.user_id,
+          registration_number: studentRecord?.registration_number,
+          age: studentRecord?.age,
+          gender: studentRecord?.gender,
+          weight: studentRecord?.weight,
+          height: studentRecord?.height,
+          section: studentRecord?.section,
         };
       });
 
       setStudents(studentsList);
 
       // Fetch gradebook entries for these students
-      const studentIds = studentsData?.map(s => s.id) || [];
+      const studentIds = studentsData.map(s => s.id);
       if (studentIds.length === 0) {
         setReportCards([]);
         return;
       }
 
-      const { data: grades } = await supabase
-        .from('gradebook_entries')
-        .select('*, subjects(name)')
-        .in('student_id', studentIds)
-        .eq('class_id', selectedClass);
+      const [gradesRes, commentsRes, attendanceRes] = await Promise.all([
+        supabase
+          .from('gradebook_entries')
+          .select('*, subjects(name)')
+          .in('student_id', studentIds)
+          .eq('class_id', selectedClass),
+        supabase
+          .from('report_card_comments')
+          .select('*')
+          .in('student_id', studentIds)
+          .eq('class_id', selectedClass)
+          .eq('term', selectedTerm)
+          .eq('academic_year', academicYear),
+        supabase
+          .from('attendance_summary')
+          .select('*')
+          .in('student_id', studentIds)
+          .eq('class_id', selectedClass)
+          .eq('term', selectedTerm)
+          .eq('academic_year', academicYear),
+      ]);
+
+      const grades = gradesRes.data || [];
+      const comments = commentsRes.data || [];
+      const attendance = attendanceRes.data || [];
 
       // Process grades into report cards
       const className = classes.find(c => c.id === selectedClass)?.name || '';
-      const processedCards = generateReportCards(studentsList, grades || [], className);
+      const processedCards = generateReportCards(studentsList, grades, comments, attendance, className);
       setReportCards(processedCards);
     } catch (error) {
       console.error('Error fetching students and grades:', error);
     }
   };
 
-  const getGrade = (percentage: number): string => {
+  const getGrade = (percentage: number): { grade: string; remark: string } => {
     const scale = GRADING_SCALE.find(s => percentage >= s.min && percentage <= s.max);
-    return scale?.grade || 'F9';
-  };
-
-  const getRemarks = (average: number): string => {
-    const scale = GRADING_SCALE.find(s => average >= s.min && average <= s.max);
-    return scale?.remark || 'Fail';
+    return scale || { grade: 'F', remark: 'Fail' };
   };
 
   const generateReportCards = (
     studentsList: StudentData[], 
-    grades: any[], 
+    grades: any[],
+    comments: any[],
+    attendance: any[],
     className: string
   ): StudentReportCard[] => {
-    const cards: StudentReportCard[] = [];
-    const studentAverages: { id: string; average: number }[] = [];
+    // Group grades by subject to calculate class statistics
+    const subjectStats: Record<string, { scores: number[]; highest: number; lowest: number; average: number }> = {};
+    
+    grades.forEach(g => {
+      const total = (g.test1_score || 0) + (g.test2_score || 0) + (g.exam_score || 0);
+      if (!subjectStats[g.subject_id]) {
+        subjectStats[g.subject_id] = { scores: [], highest: 0, lowest: 100, average: 0 };
+      }
+      subjectStats[g.subject_id].scores.push(total);
+    });
 
-    // First pass: calculate averages for positioning
+    // Calculate statistics for each subject
+    Object.keys(subjectStats).forEach(subjectId => {
+      const stats = subjectStats[subjectId];
+      stats.highest = Math.max(...stats.scores);
+      stats.lowest = Math.min(...stats.scores);
+      stats.average = stats.scores.reduce((a, b) => a + b, 0) / stats.scores.length;
+    });
+
+    // Calculate student averages for positioning
+    const studentAverages: { id: string; average: number }[] = [];
+    
     studentsList.forEach(student => {
       const studentGrades = grades.filter(g => g.student_id === student.id);
       if (studentGrades.length === 0) {
@@ -213,9 +301,10 @@ export const ReportCardGenerator: React.FC = () => {
         return;
       }
 
-      const totalObtained = studentGrades.reduce((sum, g) => sum + (g.obtained_score || 0), 0);
-      const totalMax = studentGrades.reduce((sum, g) => sum + (g.max_score || 0), 0);
-      const average = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+      const totalObtained = studentGrades.reduce((sum, g) => 
+        sum + (g.test1_score || 0) + (g.test2_score || 0) + (g.exam_score || 0), 0);
+      const maxPossible = studentGrades.length * 100;
+      const average = maxPossible > 0 ? (totalObtained / maxPossible) * 100 : 0;
       studentAverages.push({ id: student.id, average });
     });
 
@@ -223,43 +312,84 @@ export const ReportCardGenerator: React.FC = () => {
     studentAverages.sort((a, b) => b.average - a.average);
     const positionMap = new Map(studentAverages.map((s, i) => [s.id, i + 1]));
 
-    // Second pass: generate full report cards
-    studentsList.forEach(student => {
+    // Calculate class-wide statistics
+    const allAverages = studentAverages.map(s => s.average);
+    const classAverage = allAverages.length > 0 ? allAverages.reduce((a, b) => a + b, 0) / allAverages.length : 0;
+    const highestAverage = allAverages.length > 0 ? Math.max(...allAverages) : 0;
+    const lowestAverage = allAverages.length > 0 ? Math.min(...allAverages) : 0;
+
+    // Generate report cards
+    const cards: StudentReportCard[] = studentsList.map(student => {
       const studentGrades = grades.filter(g => g.student_id === student.id);
+      const studentComments = comments.find(c => c.student_id === student.id);
+      const studentAttendance = attendance.find(a => a.student_id === student.id);
       
+      // Calculate subject positions
       const gradeEntries: GradeEntry[] = studentGrades.map(g => {
-        const percentage = g.max_score > 0 ? (g.obtained_score / g.max_score) * 100 : 0;
+        const total = (g.test1_score || 0) + (g.test2_score || 0) + (g.exam_score || 0);
+        const stats = subjectStats[g.subject_id];
+        
+        // Calculate position in subject
+        const subjectScores = stats?.scores.sort((a, b) => b - a) || [];
+        const subjectPosition = subjectScores.indexOf(total) + 1;
+
+        const { grade, remark } = getGrade(total);
+
         return {
           student_id: student.id,
-          student_name: student.full_name,
           subject_id: g.subject_id,
           subject_name: g.subjects?.name || 'Unknown',
-          obtained_score: g.obtained_score || 0,
-          max_score: g.max_score || 0,
-          percentage: Math.round(percentage * 10) / 10,
-          grade: getGrade(percentage),
+          test1_score: g.test1_score || 0,
+          test2_score: g.test2_score || 0,
+          exam_score: g.exam_score || 0,
+          total,
+          grade,
+          subject_position: subjectPosition || 1,
+          class_average: Math.round((stats?.average || 0) * 10) / 10,
+          highest_in_class: stats?.highest || 0,
+          lowest_in_class: stats?.lowest || 0,
+          remark,
         };
       });
 
-      const totalObtained = gradeEntries.reduce((sum, g) => sum + g.obtained_score, 0);
-      const totalMax = gradeEntries.reduce((sum, g) => sum + g.max_score, 0);
+      const totalObtained = gradeEntries.reduce((sum, g) => sum + g.total, 0);
+      const totalMax = gradeEntries.length * 100;
       const average = totalMax > 0 ? (totalObtained / totalMax) * 100 : 0;
+      const { grade: overallGrade } = getGrade(average);
 
-      cards.push({
+      return {
         student_id: student.id,
         student_name: student.full_name,
+        registration_number: student.registration_number || 'N/A',
         class_name: className,
+        section: student.section || '',
         term: selectedTerm,
         academic_year: academicYear,
+        age: student.age || null,
+        gender: student.gender || 'N/A',
+        weight: student.weight || null,
+        height: student.height || null,
         grades: gradeEntries,
         total_obtained: totalObtained,
         total_max: totalMax,
         average: Math.round(average * 10) / 10,
         position: positionMap.get(student.id) || studentsList.length,
         total_students: studentsList.length,
-        overall_grade: getGrade(average),
-        remarks: getRemarks(average),
-      });
+        overall_grade: overallGrade,
+        attendance: {
+          days_school_opened: studentAttendance?.days_school_opened || 0,
+          days_present: studentAttendance?.days_present || 0,
+          days_absent: studentAttendance?.days_absent || 0,
+        },
+        comments: {
+          class_teacher_comment: studentComments?.class_teacher_comment || '',
+          head_teacher_comment: studentComments?.head_teacher_comment || '',
+          principal_comment: studentComments?.principal_comment || '',
+        },
+        class_average: Math.round(classAverage * 10) / 10,
+        highest_average: Math.round(highestAverage * 10) / 10,
+        lowest_average: Math.round(lowestAverage * 10) / 10,
+      };
     });
 
     return cards.sort((a, b) => a.position - b.position);
@@ -288,8 +418,46 @@ export const ReportCardGenerator: React.FC = () => {
     setPreviewOpen(true);
   };
 
+  const handleEditComments = (card: StudentReportCard) => {
+    setEditingComments({
+      studentId: card.student_id,
+      comments: { ...card.comments },
+    });
+    setCommentsDialogOpen(true);
+  };
+
+  const handleSaveComments = async () => {
+    if (!editingComments) return;
+
+    try {
+      const student = students.find(s => s.id === editingComments.studentId);
+      if (!student) return;
+
+      const { error } = await supabase
+        .from('report_card_comments')
+        .upsert({
+          school_id: schoolId,
+          student_id: editingComments.studentId,
+          class_id: selectedClass,
+          term: selectedTerm,
+          academic_year: academicYear,
+          ...editingComments.comments,
+        }, {
+          onConflict: 'student_id,class_id,term,academic_year',
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Success', description: 'Comments saved successfully' });
+      setCommentsDialogOpen(false);
+      fetchStudentsAndGrades();
+    } catch (error: any) {
+      console.error('Error saving comments:', error);
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    }
+  };
+
   const handlePrintReportCard = (card: StudentReportCard) => {
-    // Create a printable version
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -303,13 +471,23 @@ export const ReportCardGenerator: React.FC = () => {
   const generatePrintableHTML = (card: StudentReportCard): string => {
     const gradeRows = card.grades.map(g => `
       <tr>
-        <td style="border: 1px solid #ddd; padding: 8px;">${g.subject_name}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${g.obtained_score}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${g.max_score}</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${g.percentage}%</td>
-        <td style="border: 1px solid #ddd; padding: 8px; text-align: center; font-weight: bold;">${g.grade}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.subject_name}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.test1_score}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.test2_score}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.exam_score}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">${g.total}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">${g.grade}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.subject_position}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.class_average}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.highest_in_class}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.lowest_in_class}</td>
+        <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.remark}</td>
       </tr>
     `).join('');
+
+    const gradingScaleHTML = GRADING_SCALE.map(s => 
+      `<span style="margin-right: 15px;"><strong>${s.grade}</strong> (${s.min}-${s.max}%): ${s.remark}</span>`
+    ).join('');
 
     return `
       <!DOCTYPE html>
@@ -317,86 +495,156 @@ export const ReportCardGenerator: React.FC = () => {
       <head>
         <title>Report Card - ${card.student_name}</title>
         <style>
-          body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-          .header { text-align: center; margin-bottom: 30px; }
-          .school-name { font-size: 24px; font-weight: bold; color: #1a365d; }
-          .report-title { font-size: 18px; margin-top: 10px; }
-          .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; padding: 15px; background: #f8f9fa; border-radius: 8px; }
-          .info-item { display: flex; gap: 8px; }
-          .info-label { font-weight: bold; color: #666; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th { background: #1a365d; color: white; padding: 12px 8px; text-align: left; }
-          th:not(:first-child) { text-align: center; }
-          .summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin: 20px 0; }
-          .summary-card { padding: 15px; background: #f8f9fa; border-radius: 8px; text-align: center; }
-          .summary-value { font-size: 24px; font-weight: bold; color: #1a365d; }
-          .summary-label { color: #666; font-size: 12px; }
-          .grading-scale { margin-top: 30px; font-size: 12px; color: #666; }
-          .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 50px; }
-          .signature-line { border-top: 1px solid #333; padding-top: 5px; text-align: center; }
-          @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } }
+          * { box-sizing: border-box; margin: 0; padding: 0; }
+          body { font-family: 'Times New Roman', serif; max-width: 900px; margin: 0 auto; padding: 20px; font-size: 12px; }
+          .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px; }
+          .school-logo { width: 80px; height: 80px; margin: 0 auto 10px; }
+          .school-name { font-size: 22px; font-weight: bold; color: #1a365d; text-transform: uppercase; }
+          .school-address { font-size: 11px; color: #333; margin: 5px 0; }
+          .school-motto { font-style: italic; color: #666; margin: 5px 0; }
+          .report-title { font-size: 16px; font-weight: bold; margin-top: 10px; text-decoration: underline; }
+          
+          .student-info { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 15px 0; padding: 10px; border: 1px solid #000; }
+          .info-row { display: flex; gap: 5px; }
+          .info-label { font-weight: bold; min-width: 120px; }
+          
+          .grades-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; }
+          .grades-table th { background: #1a365d; color: white; padding: 8px 4px; text-align: center; border: 1px solid #000; }
+          .grades-table th.subject { text-align: left; }
+          
+          .summary-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; }
+          .summary-box { border: 1px solid #000; padding: 10px; text-align: center; }
+          .summary-value { font-size: 18px; font-weight: bold; color: #1a365d; }
+          .summary-label { font-size: 10px; color: #666; }
+          
+          .attendance-section { margin: 15px 0; }
+          .attendance-row { display: flex; gap: 30px; }
+          .attendance-item { display: flex; gap: 5px; }
+          
+          .comments-section { margin: 15px 0; }
+          .comment-box { border: 1px solid #000; padding: 10px; margin: 10px 0; min-height: 50px; }
+          .comment-label { font-weight: bold; margin-bottom: 5px; background: #f0f0f0; padding: 5px; }
+          
+          .grading-scale { margin-top: 15px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; font-size: 10px; }
+          
+          .signatures { display: grid; grid-template-columns: repeat(3, 1fr); gap: 30px; margin-top: 40px; }
+          .signature-box { text-align: center; }
+          .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; }
+          
+          @media print { 
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } 
+            .grades-table th { background: #1a365d !important; color: white !important; }
+          }
         </style>
       </head>
       <body>
         <div class="header">
-          <div class="school-name">School Name</div>
-          <div class="report-title">Student Report Card</div>
-          <div>${card.term} - Academic Year ${card.academic_year}</div>
+          ${schoolInfo?.logo_url ? `<img src="${schoolInfo.logo_url}" class="school-logo" alt="School Logo" />` : ''}
+          <div class="school-name">${schoolInfo?.name || 'School Name'}</div>
+          <div class="school-address">${schoolInfo?.address || 'School Address'}</div>
+          <div class="school-address">Tel: ${schoolInfo?.phone || 'N/A'} | Email: ${schoolInfo?.email || 'N/A'}</div>
+          <div class="school-motto">"${schoolInfo?.motto || 'Excellence in Education'}"</div>
+          <div class="report-title">STUDENT TERMINAL REPORT</div>
         </div>
 
         <div class="student-info">
-          <div class="info-item"><span class="info-label">Name:</span> ${card.student_name}</div>
-          <div class="info-item"><span class="info-label">Class:</span> ${card.class_name}</div>
-          <div class="info-item"><span class="info-label">Position:</span> ${card.position} of ${card.total_students}</div>
-          <div class="info-item"><span class="info-label">Overall Grade:</span> ${card.overall_grade}</div>
+          <div class="info-row"><span class="info-label">Name:</span> ${card.student_name}</div>
+          <div class="info-row"><span class="info-label">Session:</span> ${card.academic_year}</div>
+          <div class="info-row"><span class="info-label">Reg. No:</span> ${card.registration_number}</div>
+          <div class="info-row"><span class="info-label">Term:</span> ${card.term}</div>
+          <div class="info-row"><span class="info-label">Class:</span> ${card.class_name}${card.section ? ' (' + card.section + ')' : ''}</div>
+          <div class="info-row"><span class="info-label">Age:</span> ${card.age || 'N/A'} years</div>
+          <div class="info-row"><span class="info-label">Gender:</span> ${card.gender}</div>
+          <div class="info-row"><span class="info-label">Weight:</span> ${card.weight ? card.weight + ' kg' : 'N/A'}</div>
+          <div class="info-row"><span class="info-label">Position:</span> ${card.position} out of ${card.total_students}</div>
+          <div class="info-row"><span class="info-label">Height:</span> ${card.height ? card.height + ' cm' : 'N/A'}</div>
         </div>
 
-        <table>
+        <table class="grades-table">
           <thead>
             <tr>
-              <th>Subject</th>
-              <th>Score</th>
-              <th>Max</th>
-              <th>Percentage</th>
-              <th>Grade</th>
+              <th class="subject">SUBJECT</th>
+              <th>TEST 1<br/>(20)</th>
+              <th>TEST 2<br/>(20)</th>
+              <th>EXAM<br/>(60)</th>
+              <th>TOTAL<br/>(100)</th>
+              <th>GRADE</th>
+              <th>POS.</th>
+              <th>CLASS<br/>AVG</th>
+              <th>HIGH</th>
+              <th>LOW</th>
+              <th>REMARK</th>
             </tr>
           </thead>
           <tbody>
             ${gradeRows}
+            <tr style="font-weight: bold; background: #f0f0f0;">
+              <td style="border: 1px solid #000; padding: 6px;">TOTAL / AVERAGE</td>
+              <td colspan="3" style="border: 1px solid #000; padding: 6px; text-align: center;">-</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.total_obtained}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.overall_grade}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.position}</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.class_average}%</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.highest_average}%</td>
+              <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.lowest_average}%</td>
+              <td style="border: 1px solid #000; padding: 6px;">Average: ${card.average}%</td>
+            </tr>
           </tbody>
         </table>
 
-        <div class="summary">
-          <div class="summary-card">
+        <div class="summary-section">
+          <div class="summary-box">
             <div class="summary-value">${card.total_obtained}/${card.total_max}</div>
-            <div class="summary-label">Total Score</div>
+            <div class="summary-label">TOTAL SCORE</div>
           </div>
-          <div class="summary-card">
+          <div class="summary-box">
             <div class="summary-value">${card.average}%</div>
-            <div class="summary-label">Average</div>
+            <div class="summary-label">AVERAGE PERCENTAGE</div>
           </div>
-          <div class="summary-card">
+          <div class="summary-box">
             <div class="summary-value">${card.position}/${card.total_students}</div>
-            <div class="summary-label">Position</div>
-          </div>
-          <div class="summary-card">
-            <div class="summary-value">${card.overall_grade}</div>
-            <div class="summary-label">Grade</div>
+            <div class="summary-label">POSITION IN CLASS</div>
           </div>
         </div>
 
-        <div>
-          <strong>Remarks:</strong> ${card.remarks}
+        <div class="attendance-section">
+          <strong>ATTENDANCE RECORD:</strong>
+          <div class="attendance-row" style="margin-top: 5px;">
+            <div class="attendance-item"><span class="info-label">Days School Opened:</span> ${card.attendance.days_school_opened}</div>
+            <div class="attendance-item"><span class="info-label">Days Present:</span> ${card.attendance.days_present}</div>
+            <div class="attendance-item"><span class="info-label">Days Absent:</span> ${card.attendance.days_absent}</div>
+          </div>
+        </div>
+
+        <div class="comments-section">
+          <div class="comment-box">
+            <div class="comment-label">CLASS TEACHER'S REMARKS:</div>
+            <div>${card.comments.class_teacher_comment || 'No comment'}</div>
+          </div>
+          <div class="comment-box">
+            <div class="comment-label">HEAD TEACHER'S REMARKS:</div>
+            <div>${card.comments.head_teacher_comment || 'No comment'}</div>
+          </div>
+          <div class="comment-box">
+            <div class="comment-label">PRINCIPAL'S REMARKS:</div>
+            <div>${card.comments.principal_comment || 'No comment'}</div>
+          </div>
         </div>
 
         <div class="grading-scale">
-          <strong>Grading Scale:</strong> A1 (75-100) | B2 (70-74) | B3 (65-69) | C4 (60-64) | C5 (55-59) | C6 (50-54) | D7 (45-49) | E8 (40-44) | F9 (0-39)
+          <strong>GRADING SCALE:</strong> ${gradingScaleHTML}
         </div>
 
         <div class="signatures">
-          <div class="signature-line">Class Teacher</div>
-          <div class="signature-line">Principal</div>
-          <div class="signature-line">Parent/Guardian</div>
+          <div class="signature-box">
+            <div class="signature-line">Class Teacher's Signature</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line">Principal's Signature</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line">Parent/Guardian's Signature</div>
+          </div>
         </div>
       </body>
       </html>
@@ -440,7 +688,7 @@ export const ReportCardGenerator: React.FC = () => {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold">Report Card Generator</h2>
-          <p className="text-muted-foreground">Generate and print student report cards</p>
+          <p className="text-muted-foreground">Generate Al-Bari format report cards with TEST 1, TEST 2 & EXAM scores</p>
         </div>
       </div>
 
@@ -482,7 +730,7 @@ export const ReportCardGenerator: React.FC = () => {
               <Input
                 value={academicYear}
                 onChange={(e) => setAcademicYear(e.target.value)}
-                placeholder="e.g., 2025"
+                placeholder="e.g., 2024/2025"
               />
             </div>
           </div>
@@ -516,11 +764,11 @@ export const ReportCardGenerator: React.FC = () => {
                   </TableHead>
                   <TableHead>Position</TableHead>
                   <TableHead>Student Name</TableHead>
+                  <TableHead>Reg. No</TableHead>
                   <TableHead className="text-center">Subjects</TableHead>
                   <TableHead className="text-center">Total</TableHead>
                   <TableHead className="text-center">Average</TableHead>
                   <TableHead className="text-center">Grade</TableHead>
-                  <TableHead>Remarks</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -539,6 +787,7 @@ export const ReportCardGenerator: React.FC = () => {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">{card.student_name}</TableCell>
+                    <TableCell className="text-muted-foreground">{card.registration_number}</TableCell>
                     <TableCell className="text-center">{card.grades.length}</TableCell>
                     <TableCell className="text-center">{card.total_obtained}/{card.total_max}</TableCell>
                     <TableCell className="text-center font-medium">{card.average}%</TableCell>
@@ -547,13 +796,15 @@ export const ReportCardGenerator: React.FC = () => {
                         {card.overall_grade}
                       </Badge>
                     </TableCell>
-                    <TableCell>{card.remarks}</TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button size="sm" variant="ghost" onClick={() => handlePreview(card)}>
+                      <div className="flex justify-end gap-1">
+                        <Button size="sm" variant="ghost" onClick={() => handleEditComments(card)} title="Add Comments">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => handlePreview(card)} title="Preview">
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => handlePrintReportCard(card)}>
+                        <Button size="sm" variant="ghost" onClick={() => handlePrintReportCard(card)} title="Print">
                           <Printer className="h-4 w-4" />
                         </Button>
                       </div>
@@ -574,96 +825,93 @@ export const ReportCardGenerator: React.FC = () => {
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
           <DialogHeader>
-            <DialogTitle>Report Card Preview</DialogTitle>
+            <DialogTitle>Report Card Preview - {previewingCard?.student_name}</DialogTitle>
           </DialogHeader>
           {previewingCard && (
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Student Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-muted rounded-lg">
-                <div>
-                  <span className="text-muted-foreground text-sm">Student Name</span>
-                  <p className="font-medium">{previewingCard.student_name}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground text-sm">Class</span>
-                  <p className="font-medium">{previewingCard.class_name}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground text-sm">Term</span>
-                  <p className="font-medium">{previewingCard.term}</p>
-                </div>
-                <div>
-                  <span className="text-muted-foreground text-sm">Position</span>
-                  <p className="font-medium">{previewingCard.position} of {previewingCard.total_students}</p>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 bg-muted rounded-lg text-sm">
+                <div><span className="text-muted-foreground">Name:</span> <strong>{previewingCard.student_name}</strong></div>
+                <div><span className="text-muted-foreground">Reg. No:</span> <strong>{previewingCard.registration_number}</strong></div>
+                <div><span className="text-muted-foreground">Class:</span> <strong>{previewingCard.class_name}</strong></div>
+                <div><span className="text-muted-foreground">Term:</span> <strong>{previewingCard.term}</strong></div>
+                <div><span className="text-muted-foreground">Position:</span> <strong>{previewingCard.position}/{previewingCard.total_students}</strong></div>
+                <div><span className="text-muted-foreground">Average:</span> <strong>{previewingCard.average}%</strong></div>
+                <div><span className="text-muted-foreground">Grade:</span> <Badge>{previewingCard.overall_grade}</Badge></div>
+                <div><span className="text-muted-foreground">Session:</span> <strong>{previewingCard.academic_year}</strong></div>
               </div>
 
               {/* Grades Table */}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Subject</TableHead>
-                    <TableHead className="text-center">Score</TableHead>
-                    <TableHead className="text-center">Max</TableHead>
-                    <TableHead className="text-center">%</TableHead>
-                    <TableHead className="text-center">Grade</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {previewingCard.grades.map((g, i) => (
-                    <TableRow key={i}>
-                      <TableCell>{g.subject_name}</TableCell>
-                      <TableCell className="text-center">{g.obtained_score}</TableCell>
-                      <TableCell className="text-center">{g.max_score}</TableCell>
-                      <TableCell className="text-center">{g.percentage}%</TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={g.percentage >= 50 ? 'default' : 'destructive'}>
-                          {g.grade}
-                        </Badge>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Subject</TableHead>
+                      <TableHead className="text-center">Test 1 (20)</TableHead>
+                      <TableHead className="text-center">Test 2 (20)</TableHead>
+                      <TableHead className="text-center">Exam (60)</TableHead>
+                      <TableHead className="text-center">Total (100)</TableHead>
+                      <TableHead className="text-center">Grade</TableHead>
+                      <TableHead className="text-center">Pos.</TableHead>
+                      <TableHead className="text-center">Class Avg</TableHead>
+                      <TableHead>Remark</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-
-              {/* Summary */}
-              <div className="grid grid-cols-4 gap-4">
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Award className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="text-lg font-bold">{previewingCard.total_obtained}/{previewingCard.total_max}</div>
-                    <div className="text-xs text-muted-foreground">Total Score</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <TrendingUp className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="text-lg font-bold">{previewingCard.average}%</div>
-                    <div className="text-xs text-muted-foreground">Average</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <Users className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="text-lg font-bold">{previewingCard.position}/{previewingCard.total_students}</div>
-                    <div className="text-xs text-muted-foreground">Position</div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4 text-center">
-                    <BookOpen className="h-6 w-6 mx-auto mb-2 text-primary" />
-                    <div className="text-lg font-bold">{previewingCard.overall_grade}</div>
-                    <div className="text-xs text-muted-foreground">Grade</div>
-                  </CardContent>
-                </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {previewingCard.grades.map((g, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{g.subject_name}</TableCell>
+                        <TableCell className="text-center">{g.test1_score}</TableCell>
+                        <TableCell className="text-center">{g.test2_score}</TableCell>
+                        <TableCell className="text-center">{g.exam_score}</TableCell>
+                        <TableCell className="text-center font-bold">{g.total}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant={g.total >= 50 ? 'default' : 'destructive'}>{g.grade}</Badge>
+                        </TableCell>
+                        <TableCell className="text-center">{g.subject_position}</TableCell>
+                        <TableCell className="text-center">{g.class_average}</TableCell>
+                        <TableCell>{g.remark}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
 
+              {/* Attendance */}
               <div className="p-4 bg-muted rounded-lg">
-                <span className="font-medium">Remarks: </span>
-                <span>{previewingCard.remarks}</span>
+                <strong className="block mb-2">Attendance:</strong>
+                <div className="flex flex-wrap gap-6 text-sm">
+                  <span>Days Opened: <strong>{previewingCard.attendance.days_school_opened}</strong></span>
+                  <span>Days Present: <strong>{previewingCard.attendance.days_present}</strong></span>
+                  <span>Days Absent: <strong>{previewingCard.attendance.days_absent}</strong></span>
+                </div>
               </div>
+
+              {/* Comments */}
+              {(previewingCard.comments.class_teacher_comment || previewingCard.comments.head_teacher_comment || previewingCard.comments.principal_comment) && (
+                <div className="space-y-2">
+                  {previewingCard.comments.class_teacher_comment && (
+                    <div className="p-3 border rounded-lg">
+                      <strong className="text-sm text-muted-foreground">Class Teacher:</strong>
+                      <p>{previewingCard.comments.class_teacher_comment}</p>
+                    </div>
+                  )}
+                  {previewingCard.comments.head_teacher_comment && (
+                    <div className="p-3 border rounded-lg">
+                      <strong className="text-sm text-muted-foreground">Head Teacher:</strong>
+                      <p>{previewingCard.comments.head_teacher_comment}</p>
+                    </div>
+                  )}
+                  {previewingCard.comments.principal_comment && (
+                    <div className="p-3 border rounded-lg">
+                      <strong className="text-sm text-muted-foreground">Principal:</strong>
+                      <p>{previewingCard.comments.principal_comment}</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
           <DialogFooter>
@@ -671,6 +919,62 @@ export const ReportCardGenerator: React.FC = () => {
             <Button onClick={() => previewingCard && handlePrintReportCard(previewingCard)}>
               <Printer className="h-4 w-4 mr-2" />
               Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Comments Dialog */}
+      <Dialog open={commentsDialogOpen} onOpenChange={setCommentsDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Edit Report Card Comments</DialogTitle>
+          </DialogHeader>
+          {editingComments && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Class Teacher's Remarks</Label>
+                <Textarea
+                  value={editingComments.comments.class_teacher_comment}
+                  onChange={(e) => setEditingComments({
+                    ...editingComments,
+                    comments: { ...editingComments.comments, class_teacher_comment: e.target.value }
+                  })}
+                  placeholder="Enter class teacher's remarks..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Head Teacher's Remarks</Label>
+                <Textarea
+                  value={editingComments.comments.head_teacher_comment}
+                  onChange={(e) => setEditingComments({
+                    ...editingComments,
+                    comments: { ...editingComments.comments, head_teacher_comment: e.target.value }
+                  })}
+                  placeholder="Enter head teacher's remarks..."
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Principal's Remarks</Label>
+                <Textarea
+                  value={editingComments.comments.principal_comment}
+                  onChange={(e) => setEditingComments({
+                    ...editingComments,
+                    comments: { ...editingComments.comments, principal_comment: e.target.value }
+                  })}
+                  placeholder="Enter principal's remarks..."
+                  rows={3}
+                />
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCommentsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSaveComments}>
+              <Save className="h-4 w-4 mr-2" />
+              Save Comments
             </Button>
           </DialogFooter>
         </DialogContent>

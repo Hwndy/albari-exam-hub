@@ -904,6 +904,70 @@ export type Database = {
           },
         ]
       }
+      attendance_summary: {
+        Row: {
+          academic_year: string
+          class_id: string | null
+          created_at: string | null
+          days_absent: number | null
+          days_present: number | null
+          days_school_opened: number | null
+          id: string
+          school_id: string | null
+          student_id: string
+          term: string
+          updated_at: string | null
+        }
+        Insert: {
+          academic_year: string
+          class_id?: string | null
+          created_at?: string | null
+          days_absent?: number | null
+          days_present?: number | null
+          days_school_opened?: number | null
+          id?: string
+          school_id?: string | null
+          student_id: string
+          term: string
+          updated_at?: string | null
+        }
+        Update: {
+          academic_year?: string
+          class_id?: string | null
+          created_at?: string | null
+          days_absent?: number | null
+          days_present?: number | null
+          days_school_opened?: number | null
+          id?: string
+          school_id?: string | null
+          student_id?: string
+          term?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_summary_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_summary_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_summary_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_issues: {
         Row: {
           book_id: string | null
@@ -1671,11 +1735,13 @@ export type Database = {
       }
       gradebook_entries: {
         Row: {
+          academic_year: string | null
           assessment_date: string | null
           assessment_name: string
           assessment_type: string
           class_id: string | null
           created_at: string | null
+          exam_score: number | null
           grade: string | null
           id: string
           max_score: number
@@ -1685,13 +1751,18 @@ export type Database = {
           student_id: string | null
           subject_id: string | null
           teacher_id: string | null
+          term: string | null
+          test1_score: number | null
+          test2_score: number | null
         }
         Insert: {
+          academic_year?: string | null
           assessment_date?: string | null
           assessment_name: string
           assessment_type: string
           class_id?: string | null
           created_at?: string | null
+          exam_score?: number | null
           grade?: string | null
           id?: string
           max_score: number
@@ -1701,13 +1772,18 @@ export type Database = {
           student_id?: string | null
           subject_id?: string | null
           teacher_id?: string | null
+          term?: string | null
+          test1_score?: number | null
+          test2_score?: number | null
         }
         Update: {
+          academic_year?: string | null
           assessment_date?: string | null
           assessment_name?: string
           assessment_type?: string
           class_id?: string | null
           created_at?: string | null
+          exam_score?: number | null
           grade?: string | null
           id?: string
           max_score?: number
@@ -1717,6 +1793,9 @@ export type Database = {
           student_id?: string | null
           subject_id?: string | null
           teacher_id?: string | null
+          term?: string | null
+          test1_score?: number | null
+          test2_score?: number | null
         }
         Relationships: [
           {
@@ -1806,6 +1885,44 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grading_scales: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_default: boolean | null
+          name: string
+          scale_data: Json
+          school_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name: string
+          scale_data: Json
+          school_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_default?: boolean | null
+          name?: string
+          scale_data?: Json
+          school_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grading_scales_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
@@ -2511,6 +2628,70 @@ export type Database = {
         }
         Relationships: []
       }
+      report_card_comments: {
+        Row: {
+          academic_year: string
+          class_id: string | null
+          class_teacher_comment: string | null
+          created_at: string | null
+          head_teacher_comment: string | null
+          id: string
+          principal_comment: string | null
+          school_id: string | null
+          student_id: string
+          term: string
+          updated_at: string | null
+        }
+        Insert: {
+          academic_year: string
+          class_id?: string | null
+          class_teacher_comment?: string | null
+          created_at?: string | null
+          head_teacher_comment?: string | null
+          id?: string
+          principal_comment?: string | null
+          school_id?: string | null
+          student_id: string
+          term: string
+          updated_at?: string | null
+        }
+        Update: {
+          academic_year?: string
+          class_id?: string | null
+          class_teacher_comment?: string | null
+          created_at?: string | null
+          head_teacher_comment?: string | null
+          id?: string
+          principal_comment?: string | null
+          school_id?: string | null
+          student_id?: string
+          term?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_card_comments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_comments_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_comments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -2769,49 +2950,64 @@ export type Database = {
           address: Json | null
           admission_date: string | null
           admission_number: string
+          age: number | null
           blood_group: string | null
           created_at: string | null
           date_of_birth: string | null
           emergency_contact: Json | null
           gender: string | null
+          height: number | null
           id: string
           medical_info: Json | null
+          registration_number: string | null
           school_id: string
+          section: string | null
           status: string | null
           updated_at: string | null
           user_id: string | null
+          weight: number | null
         }
         Insert: {
           address?: Json | null
           admission_date?: string | null
           admission_number: string
+          age?: number | null
           blood_group?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           emergency_contact?: Json | null
           gender?: string | null
+          height?: number | null
           id?: string
           medical_info?: Json | null
+          registration_number?: string | null
           school_id: string
+          section?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
+          weight?: number | null
         }
         Update: {
           address?: Json | null
           admission_date?: string | null
           admission_number?: string
+          age?: number | null
           blood_group?: string | null
           created_at?: string | null
           date_of_birth?: string | null
           emergency_contact?: Json | null
           gender?: string | null
+          height?: number | null
           id?: string
           medical_info?: Json | null
+          registration_number?: string | null
           school_id?: string
+          section?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
+          weight?: number | null
         }
         Relationships: [
           {
