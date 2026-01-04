@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2 } from 'lucide-react';
+import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2, Calendar } from 'lucide-react';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { TeacherExamBuilder } from '@/components/teacher/TeacherExamBuilder';
 import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
@@ -11,6 +11,7 @@ import { TeacherStudentCreator } from '@/components/teacher/TeacherStudentCreato
 import { TeacherClassAssignment } from '@/components/admin/TeacherClassAssignment';
 import { AttendanceSystem } from '@/components/teacher/AttendanceSystem';
 import { GradebookSystem } from '@/components/teacher/GradebookSystem';
+import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,6 +157,10 @@ export const TeacherDashboard = () => {
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">My Exams</TabsTrigger>
               <TabsTrigger value="results" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Student Results</TabsTrigger>
+              <TabsTrigger value="timetable" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <Calendar className="h-4 w-4 mr-1 hidden sm:inline" />
+                Timetable
+              </TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 <ClipboardCheck className="h-4 w-4 mr-1 hidden sm:inline" />
                 Attendance
@@ -194,6 +199,10 @@ export const TeacherDashboard = () => {
               <h2 className="text-2xl font-bold">Student Results</h2>
             </div>
             <EnhancedExamResults />
+          </TabsContent>
+
+          <TabsContent value="timetable" className="space-y-4">
+            <TeacherTimetable />
           </TabsContent>
 
           <TabsContent value="attendance" className="space-y-4">

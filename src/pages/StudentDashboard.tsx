@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
-import { BookOpen, Trophy, Clock, TrendingUp } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BookOpen, Trophy, Clock, TrendingUp, Calendar } from 'lucide-react';
 import { ExamList } from '@/components/student/ExamList';
+import { StudentTimetable } from '@/components/student/StudentTimetable';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -166,8 +168,29 @@ export const StudentDashboard = () => {
           </Card>
         </div>
 
-        {/* Exam List Component */}
-        <ExamList />
+        {/* Main Content with Tabs */}
+        <Tabs defaultValue="exams" className="w-full">
+          <div className="overflow-x-auto mb-6">
+            <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
+              <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <BookOpen className="h-4 w-4 mr-1 hidden sm:inline" />
+                Exams
+              </TabsTrigger>
+              <TabsTrigger value="timetable" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <Calendar className="h-4 w-4 mr-1 hidden sm:inline" />
+                Timetable
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <TabsContent value="exams">
+            <ExamList />
+          </TabsContent>
+
+          <TabsContent value="timetable">
+            <StudentTimetable />
+          </TabsContent>
+        </Tabs>
       </div>
     </DashboardLayout>
   );
