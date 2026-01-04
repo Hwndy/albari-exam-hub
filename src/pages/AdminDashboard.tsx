@@ -35,6 +35,8 @@ import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FeeManagement } from '@/components/admin/SMS/FeeManagement';
+import { TimetableManager } from '@/components/admin/TimetableManager';
+import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
 
 interface DashboardStats {
   totalStudents: number;
@@ -230,6 +232,8 @@ export const AdminDashboard = () => {
         'questions': 'Question Bank',
         'classes': 'Class Management',
         'subjects': 'Subject Management',
+        'timetable': 'Timetable Management',
+        'report-cards': 'Report Cards',
       };
       return titles[activeSubTab || 'exams'] || 'Academic';
     }
@@ -332,6 +336,8 @@ export const AdminDashboard = () => {
         case 'questions': return <AdminQuestionBank />;
         case 'classes': return <ClassManagement />;
         case 'subjects': return <SubjectManagement />;
+        case 'timetable': return <TimetableManager />;
+        case 'report-cards': return <ReportCardGenerator />;
         default: return <ExamManagement />;
       }
     }
