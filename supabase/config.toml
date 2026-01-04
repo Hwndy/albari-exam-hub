@@ -41,3 +41,15 @@ verify_jwt = true
 
 [functions.update-user-password]
 verify_jwt = true
+
+[functions.send-bulk-email]
+verify_jwt = true
+
+[functions.send-bulk-sms]
+verify_jwt = true
+
+[functions.create-school]
+verify_jwt = true
+
+[functions.create-school-admins]
+verify_jwt = true

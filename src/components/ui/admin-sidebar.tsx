@@ -9,6 +9,9 @@ import {
   ChevronDown,
   Globe,
   CreditCard,
+  Library,
+  Bell,
+  CreditCard as IdCard,
 } from "lucide-react";
 
 import {
@@ -70,6 +73,21 @@ const menuItems = [
     title: "Fee Management",
     icon: CreditCard,
     value: "fees",
+  },
+  {
+    title: "Library",
+    icon: Library,
+    value: "library",
+  },
+  {
+    title: "Notifications",
+    icon: Bell,
+    value: "notifications",
+  },
+  {
+    title: "ID Cards",
+    icon: IdCard,
+    value: "id-cards",
   },
   {
     title: "Users",

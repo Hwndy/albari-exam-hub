@@ -2140,6 +2140,107 @@ export type Database = {
           },
         ]
       }
+      notification_queue: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          error_message: string | null
+          id: string
+          recipient_type: string | null
+          recipients: Json | null
+          scheduled_at: string | null
+          school_id: string | null
+          sent_at: string | null
+          status: string | null
+          template_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_type?: string | null
+          recipients?: Json | null
+          scheduled_at?: string | null
+          school_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          error_message?: string | null
+          id?: string
+          recipient_type?: string | null
+          recipients?: Json | null
+          scheduled_at?: string | null
+          school_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          template_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_queue_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notification_queue_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "notification_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notification_templates: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          name: string
+          school_id: string | null
+          subject: string | null
+          type: string
+          updated_at: string
+          variables: string[] | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          name: string
+          school_id?: string | null
+          subject?: string | null
+          type: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          name?: string
+          school_id?: string | null
+          subject?: string | null
+          type?: string
+          updated_at?: string
+          variables?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_templates_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parents: {
         Row: {
           address: Json | null
@@ -2871,6 +2972,50 @@ export type Database = {
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_id_cards: {
+        Row: {
+          academic_year: string
+          card_number: string
+          created_at: string
+          expiry_date: string
+          id: string
+          issue_date: string
+          school_id: string | null
+          status: string | null
+          student_id: string
+        }
+        Insert: {
+          academic_year: string
+          card_number: string
+          created_at?: string
+          expiry_date: string
+          id?: string
+          issue_date?: string
+          school_id?: string | null
+          status?: string | null
+          student_id: string
+        }
+        Update: {
+          academic_year?: string
+          card_number?: string
+          created_at?: string
+          expiry_date?: string
+          id?: string
+          issue_date?: string
+          school_id?: string | null
+          status?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_id_cards_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
             referencedColumns: ["id"]
           },
         ]
