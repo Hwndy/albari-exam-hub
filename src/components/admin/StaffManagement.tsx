@@ -1,0 +1,575 @@
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useSchool } from "@/contexts/SchoolContext";
+import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar } from "lucide-react";
+import { format } from "date-fns";
+
+interface StaffMember {
+  id: string;
+  user_id: string;
+  employee_id: string;
+  department: string;
+  designation: string;
+  join_date: string;
+  employment_type: string;
+  status: string;
+  profile?: {
+    full_name: string;
+    user_id: string;
+  };
+  user_roles?: {
+    role: string;
+  }[];
+}
+
+interface StaffDetails {
+  id: string;
+  user_id: string;
+  employee_id: string;
+  department: string;
+  designation: string;
+  join_date: string;
+  qualifications: any;
+  documents: any;
+  bank_details: any;
+  salary: number;
+  employment_type: string;
+  status: string;
+  emergency_contact: any;
+}
+
+export const StaffManagement = () => {
+  const { schoolId } = useSchool();
+  const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterDepartment, setFilterDepartment] = useState<string>("all");
+  const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [isLoading, setIsLoading] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showViewDialog, setShowViewDialog] = useState(false);
+  const [selectedStaff, setSelectedStaff] = useState<StaffDetails | null>(null);
+  const [teachers, setTeachers] = useState<any[]>([]);
+  
+  // Form state
+  const [formData, setFormData] = useState({
+    user_id: "",
+    employee_id: "",
+    department: "",
+    designation: "",
+    join_date: "",
+    employment_type: "full-time",
+  });
+
+  useEffect(() => {
+    if (schoolId) {
+      fetchStaffMembers();
+      fetchTeachers();
+    }
+  }, [schoolId]);
+
+  const fetchStaffMembers = async () => {
+    setIsLoading(true);
+    
+    // First get staff details
+    const { data: staffData, error: staffError } = await supabase
+      .from("staff_details")
+      .select("*")
+      .eq("school_id", schoolId);
+
+    if (staffError) {
+      console.error("Error fetching staff:", staffError);
+      setIsLoading(false);
+      return;
+    }
+
+    // Fetch profiles for each staff member
+    if (staffData && staffData.length > 0) {
+      const userIds = staffData.map(s => s.user_id);
+      
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", userIds);
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("user_id", userIds);
+
+      const enrichedStaff = staffData.map(staff => ({
+        ...staff,
+        profile: profiles?.find(p => p.user_id === staff.user_id),
+        user_roles: roles?.filter(r => r.user_id === staff.user_id)
+      }));
+
+      setStaffMembers(enrichedStaff);
+    } else {
+      setStaffMembers([]);
+    }
+    
+    setIsLoading(false);
+  };
+
+  const fetchTeachers = async () => {
+    // Get all teachers/admin users without staff_details
+    const { data: allUsers } = await supabase
+      .from("user_roles")
+      .select("user_id, role")
+      .in("role", ["teacher", "admin"]);
+
+    if (allUsers) {
+      const userIds = allUsers.map(u => u.user_id);
+      
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name, school_id")
+        .in("user_id", userIds)
+        .eq("school_id", schoolId);
+
+      const { data: existingStaff } = await supabase
+        .from("staff_details")
+        .select("user_id")
+        .eq("school_id", schoolId);
+
+      const existingUserIds = existingStaff?.map(s => s.user_id) || [];
+
+      // Filter to only show users without staff details
+      const availableTeachers = profiles?.filter(
+        p => !existingUserIds.includes(p.user_id)
+      ).map(p => ({
+        ...p,
+        role: allUsers.find(u => u.user_id === p.user_id)?.role
+      }));
+
+      setTeachers(availableTeachers || []);
+    }
+  };
+
+  const handleAddStaff = async () => {
+    if (!formData.user_id || !formData.employee_id) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    setIsLoading(true);
+
+    const { error } = await supabase
+      .from("staff_details")
+      .insert({
+        user_id: formData.user_id,
+        school_id: schoolId,
+        employee_id: formData.employee_id,
+        department: formData.department,
+        designation: formData.designation,
+        join_date: formData.join_date || null,
+        employment_type: formData.employment_type,
+      });
+
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success("Staff member added successfully");
+      setShowAddDialog(false);
+      setFormData({
+        user_id: "",
+        employee_id: "",
+        department: "",
+        designation: "",
+        join_date: "",
+        employment_type: "full-time",
+      });
+      fetchStaffMembers();
+      fetchTeachers();
+    }
+
+    setIsLoading(false);
+  };
+
+  const handleViewStaff = async (staff: StaffMember) => {
+    const { data } = await supabase
+      .from("staff_details")
+      .select("*")
+      .eq("id", staff.id)
+      .single();
+
+    if (data) {
+      setSelectedStaff(data);
+      setShowViewDialog(true);
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "active":
+        return <Badge className="bg-green-500">Active</Badge>;
+      case "inactive":
+        return <Badge variant="secondary">Inactive</Badge>;
+      case "on-leave":
+        return <Badge className="bg-amber-500">On Leave</Badge>;
+      case "terminated":
+        return <Badge variant="destructive">Terminated</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
+
+  const filteredStaff = staffMembers.filter((staff) => {
+    const matchesSearch =
+      staff.profile?.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      staff.employee_id?.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesDepartment = filterDepartment === "all" || staff.department === filterDepartment;
+    const matchesStatus = filterStatus === "all" || staff.status === filterStatus;
+    return matchesSearch && matchesDepartment && matchesStatus;
+  });
+
+  const departments = [...new Set(staffMembers.map((s) => s.department).filter(Boolean))];
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Staff Management</h2>
+        <Button onClick={() => setShowAddDialog(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Staff
+        </Button>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-primary/10">
+                <Users className="h-6 w-6 text-primary" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{staffMembers.length}</p>
+                <p className="text-sm text-muted-foreground">Total Staff</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-green-100">
+                <Briefcase className="h-6 w-6 text-green-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {staffMembers.filter((s) => s.status === "active").length}
+                </p>
+                <p className="text-sm text-muted-foreground">Active</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-amber-100">
+                <Calendar className="h-6 w-6 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">
+                  {staffMembers.filter((s) => s.status === "on-leave").length}
+                </p>
+                <p className="text-sm text-muted-foreground">On Leave</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-blue-100">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{departments.length}</p>
+                <p className="text-sm text-muted-foreground">Departments</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Staff Table */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row gap-4 justify-between">
+            <CardTitle>Staff Directory</CardTitle>
+            <div className="flex flex-wrap gap-2">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search staff..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
+              </div>
+              <Select value={filterDepartment} onValueChange={setFilterDepartment}>
+                <SelectTrigger className="w-40">
+                  <SelectValue placeholder="Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Departments</SelectItem>
+                  {departments.map((dept) => (
+                    <SelectItem key={dept} value={dept}>
+                      {dept}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={filterStatus} onValueChange={setFilterStatus}>
+                <SelectTrigger className="w-32">
+                  <SelectValue placeholder="Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="on-leave">On Leave</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Employee ID</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Department</TableHead>
+                <TableHead>Designation</TableHead>
+                <TableHead>Join Date</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStaff.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    No staff members found
+                  </TableCell>
+                </TableRow>
+              ) : (
+                filteredStaff.map((staff) => (
+                  <TableRow key={staff.id}>
+                    <TableCell className="font-medium">{staff.employee_id}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{staff.profile?.full_name || "N/A"}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {staff.user_roles?.[0]?.role || "Staff"}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>{staff.department || "—"}</TableCell>
+                    <TableCell>{staff.designation || "—"}</TableCell>
+                    <TableCell>
+                      {staff.join_date
+                        ? format(new Date(staff.join_date), "MMM dd, yyyy")
+                        : "—"}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">
+                        {staff.employment_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>{getStatusBadge(staff.status)}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleViewStaff(staff)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      {/* Add Staff Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Staff Member</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="text-sm font-medium">Select User *</label>
+              <Select
+                value={formData.user_id}
+                onValueChange={(value) => setFormData({ ...formData, user_id: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {teachers.map((teacher) => (
+                    <SelectItem key={teacher.user_id} value={teacher.user_id}>
+                      {teacher.full_name} ({teacher.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {teachers.length === 0 && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  No available users. All teachers/admins already have staff records.
+                </p>
+              )}
+            </div>
+            <div>
+              <label className="text-sm font-medium">Employee ID *</label>
+              <Input
+                value={formData.employee_id}
+                onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
+                placeholder="e.g., EMP001"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Department</label>
+                <Input
+                  value={formData.department}
+                  onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+                  placeholder="e.g., Science"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Designation</label>
+                <Input
+                  value={formData.designation}
+                  onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                  placeholder="e.g., Senior Teacher"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Join Date</label>
+                <Input
+                  type="date"
+                  value={formData.join_date}
+                  onChange={(e) => setFormData({ ...formData, join_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Employment Type</label>
+                <Select
+                  value={formData.employment_type}
+                  onValueChange={(value) => setFormData({ ...formData, employment_type: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="full-time">Full Time</SelectItem>
+                    <SelectItem value="part-time">Part Time</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddStaff} disabled={isLoading}>
+              Add Staff
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Staff Dialog */}
+      <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Staff Details</DialogTitle>
+          </DialogHeader>
+          {selectedStaff && (
+            <Tabs defaultValue="info">
+              <TabsList>
+                <TabsTrigger value="info">Basic Info</TabsTrigger>
+                <TabsTrigger value="qualifications">Qualifications</TabsTrigger>
+                <TabsTrigger value="documents">Documents</TabsTrigger>
+              </TabsList>
+              <TabsContent value="info" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm text-muted-foreground">Employee ID</label>
+                    <p className="font-medium">{selectedStaff.employee_id}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Department</label>
+                    <p className="font-medium">{selectedStaff.department || "—"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Designation</label>
+                    <p className="font-medium">{selectedStaff.designation || "—"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Join Date</label>
+                    <p className="font-medium">
+                      {selectedStaff.join_date
+                        ? format(new Date(selectedStaff.join_date), "MMM dd, yyyy")
+                        : "—"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Employment Type</label>
+                    <p className="font-medium capitalize">{selectedStaff.employment_type}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm text-muted-foreground">Status</label>
+                    <p>{getStatusBadge(selectedStaff.status)}</p>
+                  </div>
+                </div>
+              </TabsContent>
+              <TabsContent value="qualifications">
+                <div className="py-8 text-center text-muted-foreground">
+                  {Array.isArray(selectedStaff.qualifications) && selectedStaff.qualifications.length > 0
+                    ? "Qualifications listed here"
+                    : "No qualifications added yet"}
+                </div>
+              </TabsContent>
+              <TabsContent value="documents">
+                <div className="py-8 text-center text-muted-foreground">
+                  {Array.isArray(selectedStaff.documents) && selectedStaff.documents.length > 0
+                    ? "Documents listed here"
+                    : "No documents uploaded yet"}
+                </div>
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};

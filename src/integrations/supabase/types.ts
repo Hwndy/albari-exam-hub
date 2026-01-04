@@ -1494,6 +1494,134 @@ export type Database = {
           },
         ]
       }
+      fee_installment_plans: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          fee_structure_id: string | null
+          id: string
+          number_of_installments: number
+          school_id: string | null
+          start_date: string
+          status: string | null
+          student_id: string
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          number_of_installments: number
+          school_id?: string | null
+          start_date: string
+          status?: string | null
+          student_id: string
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          number_of_installments?: number
+          school_id?: string | null
+          start_date?: string
+          status?: string | null
+          student_id?: string
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_installment_plans_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_installment_plans_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_installment_plans_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_installments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          due_date: string
+          id: string
+          installment_number: number
+          paid_amount: number | null
+          paid_at: string | null
+          payment_id: string | null
+          plan_id: string | null
+          school_id: string | null
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          due_date: string
+          id?: string
+          installment_number: number
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_id?: string | null
+          plan_id?: string | null
+          school_id?: string | null
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          due_date?: string
+          id?: string
+          installment_number?: number
+          paid_amount?: number | null
+          paid_at?: string | null
+          payment_id?: string | null
+          plan_id?: string | null
+          school_id?: string | null
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_installments_payment_id_fkey"
+            columns: ["payment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_payments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_installments_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "fee_installment_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_installments_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_payments: {
         Row: {
           amount_paid: number
@@ -1554,6 +1682,71 @@ export type Database = {
           },
           {
             foreignKeyName: "fee_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_reminder_logs: {
+        Row: {
+          error_message: string | null
+          fee_structure_id: string | null
+          id: string
+          installment_id: string | null
+          reminder_type: string
+          school_id: string | null
+          sent_at: string | null
+          status: string | null
+          student_id: string | null
+        }
+        Insert: {
+          error_message?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          installment_id?: string | null
+          reminder_type: string
+          school_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          student_id?: string | null
+        }
+        Update: {
+          error_message?: string | null
+          fee_structure_id?: string | null
+          id?: string
+          installment_id?: string | null
+          reminder_type?: string
+          school_id?: string | null
+          sent_at?: string | null
+          status?: string | null
+          student_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_reminder_logs_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_reminder_logs_installment_id_fkey"
+            columns: ["installment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_installments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_reminder_logs_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_reminder_logs_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -2443,6 +2636,77 @@ export type Database = {
           },
         ]
       }
+      promotion_history: {
+        Row: {
+          academic_year: string
+          created_at: string | null
+          from_class_id: string | null
+          id: string
+          notes: string | null
+          promoted_at: string | null
+          promoted_by: string | null
+          promotion_type: string
+          school_id: string | null
+          student_id: string
+          to_class_id: string | null
+        }
+        Insert: {
+          academic_year: string
+          created_at?: string | null
+          from_class_id?: string | null
+          id?: string
+          notes?: string | null
+          promoted_at?: string | null
+          promoted_by?: string | null
+          promotion_type: string
+          school_id?: string | null
+          student_id: string
+          to_class_id?: string | null
+        }
+        Update: {
+          academic_year?: string
+          created_at?: string | null
+          from_class_id?: string | null
+          id?: string
+          notes?: string | null
+          promoted_at?: string | null
+          promoted_by?: string | null
+          promotion_type?: string
+          school_id?: string | null
+          student_id?: string
+          to_class_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "promotion_history_from_class_id_fkey"
+            columns: ["from_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_history_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_history_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_history_to_class_id_fkey"
+            columns: ["to_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       push_subscriptions: {
         Row: {
           created_at: string
@@ -2958,6 +3222,121 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      staff_attendance: {
+        Row: {
+          check_in: string | null
+          check_out: string | null
+          created_at: string | null
+          date: string
+          id: string
+          leave_type: string | null
+          marked_by: string | null
+          notes: string | null
+          school_id: string | null
+          staff_id: string
+          status: string
+        }
+        Insert: {
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date: string
+          id?: string
+          leave_type?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          school_id?: string | null
+          staff_id: string
+          status: string
+        }
+        Update: {
+          check_in?: string | null
+          check_out?: string | null
+          created_at?: string | null
+          date?: string
+          id?: string
+          leave_type?: string | null
+          marked_by?: string | null
+          notes?: string | null
+          school_id?: string | null
+          staff_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_attendance_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_details: {
+        Row: {
+          bank_details: Json | null
+          created_at: string | null
+          department: string | null
+          designation: string | null
+          documents: Json | null
+          emergency_contact: Json | null
+          employee_id: string | null
+          employment_type: string | null
+          id: string
+          join_date: string | null
+          qualifications: Json | null
+          salary: number | null
+          school_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          bank_details?: Json | null
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          documents?: Json | null
+          emergency_contact?: Json | null
+          employee_id?: string | null
+          employment_type?: string | null
+          id?: string
+          join_date?: string | null
+          qualifications?: Json | null
+          salary?: number | null
+          school_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          bank_details?: Json | null
+          created_at?: string | null
+          department?: string | null
+          designation?: string | null
+          documents?: Json | null
+          emergency_contact?: Json | null
+          employee_id?: string | null
+          employment_type?: string | null
+          id?: string
+          join_date?: string | null
+          qualifications?: Json | null
+          salary?: number | null
+          school_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_details_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       student_attendance: {
         Row: {
