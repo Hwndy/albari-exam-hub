@@ -6,6 +6,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import { SchoolProvider } from '@/contexts/SchoolContext';
+import { PWAProvider } from '@/contexts/PWAContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SessionMonitor } from '@/components/security/SessionMonitor';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -22,6 +23,10 @@ import { ExamResultsPage } from '@/pages/ExamResultsPage';
 import NotFound from '@/pages/NotFound';
 import { WebsiteRouter } from '@/pages/website/WebsiteRouter';
 import { TrackApplicationPage } from '@/pages/website/TrackApplicationPage';
+import { InstallPage } from '@/pages/InstallPage';
+import { InstallPrompt } from '@/components/pwa/InstallPrompt';
+import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
+import { UpdateAvailable } from '@/components/pwa/UpdateAvailable';
 
 const queryClient = new QueryClient();
 
@@ -114,89 +119,99 @@ const App = () => (
         <Sonner />
         <AuthProvider>
           <SchoolProvider>
-            <BrowserRouter>
-          <SessionMonitor>
-            <Routes>
-              {/* Redirect root to dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              
-              {/* Login route */}
-              <Route path="/login" element={<AuthPage />} />
-              
-              {/* Protected dashboard routes */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <DashboardRouter />
-                  </ProtectedRoute>
-                }
-              />
-            
-            {/* Role-specific routes */}
-            <Route
-              path="/student/*"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <StudentDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/teacher/*"
-              element={
-                <ProtectedRoute allowedRoles={['teacher']}>
-                  <TeacherDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Exam route with instructions and results */}
-            <Route
-              path="/exam/instructions/:examId"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <ExamInstructionsPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/exam"
-              element={
-                <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
-                  <ExamPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/exam/results/:sessionId"
-              element={
-                <ProtectedRoute allowedRoles={['student']}>
-                  <ExamResultsPage />
-                </ProtectedRoute>
-              }
-            />
-            
-            {/* Website routes - publicly accessible */}
-            <Route path="/website/*" element={<WebsiteRouter />} />
-            <Route path="/track-application" element={<TrackApplicationPage />} />
-            
-            {/* Redirect old super-admin route to dashboard */}
-            <Route path="/super-admin" element={<Navigate to="/dashboard" replace />} />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-            </Routes>
-          </SessionMonitor>
-            </BrowserRouter>
+            <PWAProvider>
+              <BrowserRouter>
+                <SessionMonitor>
+                  {/* PWA Components */}
+                  <OfflineIndicator />
+                  <InstallPrompt />
+                  <UpdateAvailable />
+                  
+                  <Routes>
+                    {/* Redirect root to dashboard */}
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    
+                    {/* Login route */}
+                    <Route path="/login" element={<AuthPage />} />
+                    
+                    {/* Install page for PWA */}
+                    <Route path="/install" element={<InstallPage />} />
+                    
+                    {/* Protected dashboard routes */}
+                    <Route
+                      path="/dashboard"
+                      element={
+                        <ProtectedRoute>
+                          <DashboardRouter />
+                        </ProtectedRoute>
+                      }
+                    />
+                  
+                  {/* Role-specific routes */}
+                  <Route
+                    path="/student/*"
+                    element={
+                      <ProtectedRoute allowedRoles={['student']}>
+                        <StudentDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/teacher/*"
+                    element={
+                      <ProtectedRoute allowedRoles={['teacher']}>
+                        <TeacherDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/admin/*"
+                    element={
+                      <ProtectedRoute allowedRoles={['admin']}>
+                        <AdminDashboard />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Exam route with instructions and results */}
+                  <Route
+                    path="/exam/instructions/:examId"
+                    element={
+                      <ProtectedRoute allowedRoles={['student']}>
+                        <ExamInstructionsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/exam"
+                    element={
+                      <ProtectedRoute allowedRoles={['student', 'teacher', 'admin']}>
+                        <ExamPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/exam/results/:sessionId"
+                    element={
+                      <ProtectedRoute allowedRoles={['student']}>
+                        <ExamResultsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  
+                  {/* Website routes - publicly accessible */}
+                  <Route path="/website/*" element={<WebsiteRouter />} />
+                  <Route path="/track-application" element={<TrackApplicationPage />} />
+                  
+                  {/* Redirect old super-admin route to dashboard */}
+                  <Route path="/super-admin" element={<Navigate to="/dashboard" replace />} />
+                  
+                  {/* Catch-all route */}
+                  <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </SessionMonitor>
+              </BrowserRouter>
+            </PWAProvider>
           </SchoolProvider>
         </AuthProvider>
       </TooltipProvider>
