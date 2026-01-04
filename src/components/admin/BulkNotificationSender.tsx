@@ -205,12 +205,11 @@ export const BulkNotificationSender: React.FC = () => {
       let recipients: any[] = [];
       
       if (sendForm.recipientType === 'all_parents') {
-        const { data } = await supabase
-          .from('profiles')
-          .select('user_id, full_name, email:user_id')
+        const response = await (supabase.from('profiles') as any)
+          .select('user_id, full_name')
           .eq('role', 'parent')
           .eq('school_id', schoolId);
-        recipients = data || [];
+        recipients = (response.data || []) as any[];
       } else if (sendForm.recipientType === 'class' && sendForm.selectedClasses.length > 0) {
         // Get students in selected classes, then their parents
         const { data: students } = await supabase

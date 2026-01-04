@@ -53,3 +53,6 @@ verify_jwt = true
 
 [functions.create-school-admins]
 verify_jwt = true
+
+[functions.send-push-notification]
+verify_jwt = true

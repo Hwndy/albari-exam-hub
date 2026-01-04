@@ -71,50 +71,57 @@ export const IDCardGenerator: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch school info
-      const { data: schoolData } = await supabase
+      // Fetch school info - use separate query and cast to avoid type issues
+      const schoolResponse = await supabase
         .from('schools')
-        .select('id, name, address, phone, email, logo_url, motto')
+        .select('id, name, address, logo_url, motto')
         .eq('id', schoolId)
         .single();
       
-      setSchool(schoolData);
+      const schoolData = schoolResponse.data as any;
+      if (schoolData) {
+        setSchool({
+          id: schoolData.id,
+          name: schoolData.name,
+          address: schoolData.address,
+          logo_url: schoolData.logo_url,
+          motto: schoolData.motto,
+        });
+      }
 
       // Fetch classes
-      const { data: classesData } = await supabase
+      const classesResponse = await supabase
         .from('classes')
         .select('id, name')
         .eq('school_id', schoolId)
         .order('name');
       
-      setClasses((classesData || []) as ClassOption[]);
+      setClasses((classesResponse.data || []) as ClassOption[]);
 
-      // Fetch students with their profiles and class assignments
-      const { data: studentsData } = await supabase
+      // Fetch students - use separate queries to avoid deep type instantiation
+      const studentsResponse = await supabase
         .from('students')
-        .select(`
-          id,
-          user_id,
-          admission_number,
-          class_id,
-          classes(name)
-        `)
+        .select('id, user_id, admission_number')
         .eq('school_id', schoolId);
+      
+      const studentsData = studentsResponse.data as any[] || [];
 
       // Get profiles for students
-      if (studentsData && studentsData.length > 0) {
+      if (studentsData.length > 0) {
         const userIds = studentsData.map(s => s.user_id);
-        const { data: profilesData } = await supabase
+        
+        const profilesResponse = await supabase
           .from('profiles')
-          .select('user_id, full_name, avatar_url')
+          .select('user_id, full_name')
           .in('user_id', userIds);
+        
+        const profilesData = profilesResponse.data as any[] || [];
 
-        const studentsWithProfiles = studentsData.map((student: any) => ({
+        const studentsWithProfiles: Student[] = studentsData.map((student: any) => ({
           id: student.id,
           user_id: student.user_id,
           admission_number: student.admission_number || `STU-${student.id.slice(0, 8).toUpperCase()}`,
-          profile: profilesData?.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' },
-          class: student.classes,
+          profile: profilesData.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' },
         }));
 
         setStudents(studentsWithProfiles);
