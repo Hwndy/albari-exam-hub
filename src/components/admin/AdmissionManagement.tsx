@@ -157,7 +157,6 @@ export const AdmissionManagement = () => {
       await supabase.from('profiles').insert({
         user_id: authData.user.id,
         full_name: `${application.first_name} ${application.middle_name || ''} ${application.last_name}`.trim(),
-        role: 'student'
       });
 
       // Add role

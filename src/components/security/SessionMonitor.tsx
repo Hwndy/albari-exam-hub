@@ -18,8 +18,8 @@ export const SessionMonitor: React.FC<SessionMonitorProps> = ({ children }) => {
   useEffect(() => {
     if (!user) return;
 
-    let inactivityTimer: NodeJS.Timeout;
-    let tabSwitchTimer: NodeJS.Timeout;
+    let inactivityTimer: ReturnType<typeof setTimeout>;
+    let tabSwitchTimer: ReturnType<typeof setTimeout>;
 
     // Track user activity
     const updateActivity = () => {

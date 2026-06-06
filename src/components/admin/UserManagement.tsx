@@ -291,7 +291,6 @@ export const UserManagement = () => {
         .from('profiles')
         .update({
           full_name: userForm.fullName,
-          role: userForm.role,
         })
         .eq('id', editingUser.id);
 
