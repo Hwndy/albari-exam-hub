@@ -1,54 +1,47 @@
 
-# Plan: Generate BREAKDOWN.md — Full Application Audit
+# Plan: Thorough Application Scan → Rewrite BREAKDOWN.md
 
-## Goal
-Scan the entire codebase (frontend components, pages, contexts, services, Supabase migrations, edge functions, config) and produce a single `BREAKDOWN.md` file at the project root that summarizes the current state of the School Management System.
+The previous `BREAKDOWN.md` was written largely from session memory. This time I will actually crawl the codebase and database before writing.
 
-## Approach
+## Scan Steps (read-only)
 
-### Step 1: Codebase Inventory
-- List and categorize every file in:
-  - `src/pages/` (all dashboards, exam flow, website)
-  - `src/components/admin/`, `src/components/admin/SMS/`, `src/components/admin/CMS/`
-  - `src/components/teacher/`, `src/components/student/`, `src/components/parent/`
-  - `src/components/pwa/`, `src/components/settings/`
-  - `supabase/functions/` (all 22 edge functions)
-  - `supabase/migrations/` (count + recent changes)
-- Cross-reference the 68 database tables already inventoried.
+1. **File inventory** — `ls -R` style walk of:
+   - `src/pages/`, `src/components/**`, `src/contexts/`, `src/hooks/`, `src/services/`, `src/lib/`
+   - `supabase/functions/`, `supabase/migrations/`
+   - Root config (`vite.config.ts`, `package.json`, `index.html`, `public/`)
 
-### Step 2: Feature Status Matrix
-For each module from the SMS spec (4.1 → 4.7 + Admissions, Exams, Library, PWA, Website CMS, Notifications, Multi-tenancy), mark each sub-feature as:
-- ✅ Complete
-- 🟡 Partial (with what's missing)
-- ❌ Not started
+2. **Per-component inspection** — open each major component to determine if it's wired up, stubbed, or fully working. Focus areas:
+   - `AdminDashboard.tsx` — confirm which tabs/components are mounted (Staff, Promotion, Receipts, etc.)
+   - `StudentDashboard.tsx`, `TeacherDashboard.tsx`, `ParentDashboard.tsx`, `SuperAdminDashboard.tsx`
+   - All SMS components (`StudentManagement`, `FeeManagement`, `StudentPromotion`, `StaffManagement`, `StaffAttendance`, etc.)
+   - All CMS components
+   - Admissions pipeline (12+ components)
+   - Exam engine (15+ components)
+   - PWA components and `App.tsx` routing
 
-### Step 3: Identify Outstanding Work
-Compare spec vs. implementation to list:
-- Missing core SMS features (e.g. bulk Excel import/export, biometric/QR attendance, payment gateway tie-in beyond Paystack, full financial reports UI, transport, hostel, inventory, timetable auto-generation, etc.)
-- Phase 5+ items mentioned earlier (AI Analytics, Multi-Currency, Language/i18n, Video Conferencing)
-- Integration gaps between new components and `AdminDashboard.tsx` tabs
+3. **Database review** — list all 68 tables and their RLS posture; cross-reference which have UI coverage and which are orphaned.
 
-### Step 4: Fixes & Tech Debt
-Catalogue known issues:
-- PWA build size warning history
-- "Leaked Password Protection" Supabase Auth setting
-- `any` casts added in `BulkNotificationSender.tsx` / `LibraryManager.tsx`
-- Hard-coded school mapping in `src/lib/school-utils.ts`
-- Edge functions needing `verify_jwt` review
-- Any RLS / GRANT gaps surfaced by linter
-- TypeScript/console errors visible in preview
+4. **Edge function review** — open each of the 22 edge functions, note purpose, `verify_jwt` status, secret usage.
 
-### Step 5: Write `BREAKDOWN.md`
-Structure:
-1. Executive Summary (% complete per module)
-2. ✅ Completed Features (grouped by module)
-3. 🟡 Partial / In-Progress
-4. ❌ Not Yet Built
-5. 🐛 Known Issues & Required Fixes
-6. 🔐 Security & Config Items
-7. 📋 Recommended Next Phase priorities
+5. **Build / runtime health** — check `tsconfig`, recent TS errors, console/runtime errors, bundle size warnings, security memory.
 
-File location: `/BREAKDOWN.md` (project root, so it's easy to find).
+6. **Spec gap analysis** — compare against the user's original SMS spec (4.1–4.7) plus implied modules (Transport, Hostel, Inventory, AI, i18n, etc.).
 
-## Deliverable
-A single new file: `BREAKDOWN.md`. No code changes, no DB changes, no edge function changes.
+## Output
+
+A single rewritten file: **`BREAKDOWN.md`** (project root, overwrites the existing one), with:
+
+1. Executive summary table (per-module completion %)
+2. ✅ **What's Done** — exhaustive, grouped by module, with file references (`src/...`)
+3. 🟡 **What's Partial** — feature, gap, file to extend
+4. ❌ **What's Missing** — both spec gaps and roadmap items
+5. 🐛 **Fixes Required** — concrete bugs / tech debt with file:line where possible
+6. 🔐 Security & config checklist
+7. 📋 Prioritized next-steps list
+
+Estimated length: 400–600 lines, since the user asked for thorough.
+
+## Constraints
+
+- Read-only scan; only file written is `BREAKDOWN.md`.
+- No code changes, no DB changes.
