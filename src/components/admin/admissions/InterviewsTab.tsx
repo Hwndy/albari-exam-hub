@@ -126,7 +126,7 @@ export const InterviewsTab: React.FC = () => {
                       />
                       <InterviewFeedbackForm
                         interviewId={row.id}
-                        onUpdate={load}
+                        onSubmit={load}
                       />
                     </div>
                   </TableCell>
