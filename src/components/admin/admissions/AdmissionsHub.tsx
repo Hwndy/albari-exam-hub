@@ -14,7 +14,7 @@ import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
 import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoard';
 import { AdmissionSessionManager } from '@/components/admin/AdmissionSessionManager';
 import { AdmissionExamScheduler } from '@/components/admin/AdmissionExamScheduler';
-import { InterviewPanelManager } from '@/components/admin/InterviewPanelManager';
+import { InterviewsTab } from '@/components/admin/admissions/InterviewsTab';
 import { AdmissionPaymentVerification } from '@/components/admin/AdmissionPaymentVerification';
 import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
 
@@ -86,7 +86,7 @@ export const AdmissionsHub: React.FC<AdmissionsHubProps> = ({ initialTab = 'appl
           <AdmissionExamScheduler />
         </TabsContent>
         <TabsContent value="interviews" className="mt-0">
-          <InterviewPanelManager />
+          <InterviewsTab />
         </TabsContent>
         <TabsContent value="payments" className="mt-0">
           <AdmissionPaymentVerification />
