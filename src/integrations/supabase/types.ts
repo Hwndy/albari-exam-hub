@@ -101,7 +101,7 @@ export type Database = {
           review_notes: string | null
           reviewed_at: string | null
           reviewed_by: string | null
-          school_id: string | null
+          school_id: string
           special_needs: string | null
           state_of_origin: string | null
           status: Database["public"]["Enums"]["admission_status"]
@@ -138,7 +138,7 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          school_id?: string | null
+          school_id: string
           special_needs?: string | null
           state_of_origin?: string | null
           status?: Database["public"]["Enums"]["admission_status"]
@@ -175,7 +175,7 @@ export type Database = {
           review_notes?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
-          school_id?: string | null
+          school_id?: string
           special_needs?: string | null
           state_of_origin?: string | null
           status?: Database["public"]["Enums"]["admission_status"]
@@ -222,7 +222,7 @@ export type Database = {
           file_url: string
           id: string
           mime_type: string | null
-          school_id: string | null
+          school_id: string
           uploaded_at: string
           verified: boolean | null
           verified_at: string | null
@@ -236,7 +236,7 @@ export type Database = {
           file_url: string
           id?: string
           mime_type?: string | null
-          school_id?: string | null
+          school_id: string
           uploaded_at?: string
           verified?: boolean | null
           verified_at?: string | null
@@ -250,7 +250,7 @@ export type Database = {
           file_url?: string
           id?: string
           mime_type?: string | null
-          school_id?: string | null
+          school_id?: string
           uploaded_at?: string
           verified?: boolean | null
           verified_at?: string | null
@@ -334,7 +334,7 @@ export type Database = {
           location: string | null
           panel_decision: string | null
           scheduled_date: string
-          school_id: string | null
+          school_id: string
           score: number | null
           status: string
           updated_at: string
@@ -350,7 +350,7 @@ export type Database = {
           location?: string | null
           panel_decision?: string | null
           scheduled_date: string
-          school_id?: string | null
+          school_id: string
           score?: number | null
           status?: string
           updated_at?: string
@@ -366,7 +366,7 @@ export type Database = {
           location?: string | null
           panel_decision?: string | null
           scheduled_date?: string
-          school_id?: string | null
+          school_id?: string
           score?: number | null
           status?: string
           updated_at?: string
@@ -400,7 +400,7 @@ export type Database = {
           id: string
           offer_letter_url: string | null
           offered_class_id: string | null
-          school_id: string | null
+          school_id: string
           status: string
           updated_at: string
         }
@@ -415,7 +415,7 @@ export type Database = {
           id?: string
           offer_letter_url?: string | null
           offered_class_id?: string | null
-          school_id?: string | null
+          school_id: string
           status?: string
           updated_at?: string
         }
@@ -430,7 +430,7 @@ export type Database = {
           id?: string
           offer_letter_url?: string | null
           offered_class_id?: string | null
-          school_id?: string | null
+          school_id?: string
           status?: string
           updated_at?: string
         }
@@ -468,7 +468,7 @@ export type Database = {
           payment_method: string | null
           payment_reference: string | null
           payment_type: string
-          school_id: string | null
+          school_id: string
           status: string
           transaction_id: string | null
         }
@@ -481,7 +481,7 @@ export type Database = {
           payment_method?: string | null
           payment_reference?: string | null
           payment_type?: string
-          school_id?: string | null
+          school_id: string
           status?: string
           transaction_id?: string | null
         }
@@ -494,7 +494,7 @@ export type Database = {
           payment_method?: string | null
           payment_reference?: string | null
           payment_type?: string
-          school_id?: string | null
+          school_id?: string
           status?: string
           transaction_id?: string | null
         }
@@ -582,7 +582,7 @@ export type Database = {
           from_status: Database["public"]["Enums"]["admission_status"] | null
           id: string
           notes: string | null
-          school_id: string | null
+          school_id: string
           to_status: Database["public"]["Enums"]["admission_status"]
         }
         Insert: {
@@ -592,7 +592,7 @@ export type Database = {
           from_status?: Database["public"]["Enums"]["admission_status"] | null
           id?: string
           notes?: string | null
-          school_id?: string | null
+          school_id: string
           to_status: Database["public"]["Enums"]["admission_status"]
         }
         Update: {
@@ -602,7 +602,7 @@ export type Database = {
           from_status?: Database["public"]["Enums"]["admission_status"] | null
           id?: string
           notes?: string | null
-          school_id?: string | null
+          school_id?: string
           to_status?: Database["public"]["Enums"]["admission_status"]
         }
         Relationships: [
@@ -4016,6 +4016,10 @@ export type Database = {
         Returns: Json
       }
       delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
+      get_application_tracking: {
+        Args: { p_app_no: string; p_email: string }
+        Returns: Json
+      }
       get_current_user_role: { Args: never; Returns: string }
       get_user_school_id: { Args: never; Returns: string }
       has_role: {
@@ -4033,6 +4037,15 @@ export type Database = {
       is_teacher: { Args: never; Returns: boolean }
       is_teacher_v2: { Args: never; Returns: boolean }
       is_user_super_admin: { Args: { check_user_id: string }; Returns: boolean }
+      submit_admission_application: { Args: { payload: Json }; Returns: Json }
+      transition_admission_status: {
+        Args: {
+          p_application_id: string
+          p_new_status: Database["public"]["Enums"]["admission_status"]
+          p_notes?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       admission_status:
