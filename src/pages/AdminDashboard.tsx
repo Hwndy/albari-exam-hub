@@ -19,12 +19,7 @@ import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
 import { SchoolManagement } from '@/components/admin/SchoolManagement';
-import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
-import { AdmissionSessionManager } from '@/components/admin/AdmissionSessionManager';
-import { AdmissionPaymentVerification } from '@/components/admin/AdmissionPaymentVerification';
-import { AdmissionExamScheduler } from '@/components/admin/AdmissionExamScheduler';
-import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoard';
-import { AdmissionAnalytics } from '@/components/admin/AdmissionAnalytics';
+import { AdmissionsHub, type AdmissionTab } from '@/components/admin/admissions/AdmissionsHub';
 import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
 import { EmailTestingPanel } from '@/components/admin/EmailTestingPanel';
 import { NewsManager } from '@/components/admin/CMS/NewsManager';
@@ -326,14 +321,17 @@ export const AdminDashboard = () => {
 
 
     if (activeTab === 'admissions') {
-      switch (activeSubTab) {
-        case 'sessions': return <AdmissionSessionManager />;
-        case 'payments': return <AdmissionPaymentVerification />;
-        case 'entrance-exams': return <AdmissionExamScheduler />;
-        case 'decisions': return <AdmissionDecisionBoard />;
-        case 'analytics': return <AdmissionAnalytics />;
-        default: return <AdmissionManagement />;
-      }
+      const subToTab: Record<string, AdmissionTab> = {
+        sessions: 'sessions',
+        payments: 'payments',
+        'entrance-exams': 'exams',
+        decisions: 'pipeline',
+        analytics: 'analytics',
+        interviews: 'interviews',
+        applications: 'applications',
+      };
+      const initial = subToTab[activeSubTab || ''] ?? 'applications';
+      return <AdmissionsHub initialTab={initial} />;
     }
 
     if (activeTab === 'academic') {
