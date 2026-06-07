@@ -7,89 +7,9 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
-const RATE_LIMIT_WINDOW_MINUTES = 60;
-const MAX_ATTEMPTS_PER_WINDOW = 5;
-const BLOCK_DURATION_MINUTES = 30;
-
 interface TrackApplicationRequest {
   application_number: string;
   email: string;
-}
-
-async function checkRateLimit(
-  supabase: any,
-  identifier: string
-): Promise<{ allowed: boolean; message?: string }> {
-  // Clean up old entries
-  await supabase
-    .from("application_tracking_limits")
-    .delete()
-    .lt("window_start", new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000).toISOString());
-
-  // Check if blocked
-  const { data: blocked } = await supabase
-    .from("application_tracking_limits")
-    .select("blocked_until")
-    .eq("identifier", identifier)
-    .gt("blocked_until", new Date().toISOString())
-    .single();
-
-  if (blocked) {
-    return {
-      allowed: false,
-      message: `Too many attempts. Please try again after ${new Date(blocked.blocked_until).toLocaleTimeString()}`,
-    };
-  }
-
-  // Get current window
-  const windowStart = new Date(Date.now() - RATE_LIMIT_WINDOW_MINUTES * 60 * 1000);
-  const { data: existing } = await supabase
-    .from("application_tracking_limits")
-    .select("*")
-    .eq("identifier", identifier)
-    .gte("window_start", windowStart.toISOString())
-    .single();
-
-  if (existing) {
-    const newAttempts = existing.attempts + 1;
-    
-    if (newAttempts > MAX_ATTEMPTS_PER_WINDOW) {
-      // Block user
-      const blockedUntil = new Date(Date.now() + BLOCK_DURATION_MINUTES * 60 * 1000);
-      await supabase
-        .from("application_tracking_limits")
-        .update({
-          blocked_until: blockedUntil.toISOString(),
-          updated_at: new Date().toISOString(),
-        })
-        .eq("identifier", identifier);
-
-      return {
-        allowed: false,
-        message: `Rate limit exceeded. Blocked until ${blockedUntil.toLocaleTimeString()}`,
-      };
-    }
-
-    // Increment attempts
-    await supabase
-      .from("application_tracking_limits")
-      .update({
-        attempts: newAttempts,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("identifier", identifier);
-  } else {
-    // Create new tracking record
-    await supabase
-      .from("application_tracking_limits")
-      .insert({
-        identifier,
-        attempts: 1,
-        window_start: new Date().toISOString(),
-      });
-  }
-
-  return { allowed: true };
 }
 
 serve(async (req) => {
@@ -103,7 +23,9 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { application_number, email }: TrackApplicationRequest = await req.json();
+    const body = (await req.json()) as TrackApplicationRequest;
+    const application_number = body.application_number?.trim();
+    const email = body.email?.trim().toLowerCase();
 
     console.log("Tracking application:", { application_number, email });
 
@@ -118,23 +40,7 @@ serve(async (req) => {
       );
     }
 
-    // Get IP address for rate limiting
-    const ip = req.headers.get("x-forwarded-for") || "unknown";
-    const identifier = `${ip}_${email}`;
-
-    // Check rate limit
-    const rateLimitCheck = await checkRateLimit(supabase, identifier);
-    if (!rateLimitCheck.allowed) {
-      return new Response(
-        JSON.stringify({ error: rateLimitCheck.message }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 429,
-        }
-      );
-    }
-
-    // Query application with both application_number AND email
+    // Query application with both application_number AND email (case-insensitive)
     const { data: application, error: appError } = await supabase
       .from("admission_applications")
       .select(`
@@ -142,8 +48,10 @@ serve(async (req) => {
         application_number,
         first_name,
         last_name,
+        email,
+        phone,
         status,
-        created_at,
+        application_date,
         applying_for_class_id,
         classes:applying_for_class_id(name),
         admission_payments(
@@ -173,9 +81,9 @@ serve(async (req) => {
           exams(title, duration_minutes)
         )
       `)
-      .eq("application_number", application_number)
-      .eq("email", email)
-      .single();
+      .ilike("application_number", application_number)
+      .ilike("email", email)
+      .maybeSingle();
 
     if (appError || !application) {
       console.error("Application not found:", appError);
