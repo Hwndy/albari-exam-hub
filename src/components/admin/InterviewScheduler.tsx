@@ -51,6 +51,7 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
       scheduledDate.setHours(parseInt(hours), parseInt(minutes));
 
       // Create interview record
+      // school_id is auto-populated by trigger from the parent application
       const { data: interviewData, error: interviewError } = await supabase
         .from('admission_interviews')
         .insert({
@@ -59,7 +60,7 @@ export const InterviewScheduler: React.FC<InterviewSchedulerProps> = ({
           interview_type: interviewType,
           location: location,
           status: 'scheduled',
-        })
+        } as any)
         .select()
         .single();
 
