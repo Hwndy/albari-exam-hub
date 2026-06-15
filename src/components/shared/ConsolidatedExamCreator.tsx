@@ -298,7 +298,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       sequentialNavigation: false,
       allowQuestionFlagging: true,
       questionsPerStudent: DEFAULT_QUESTIONS_PER_STUDENT,
-      examCategory: 'regular',
+      examCategory: defaultCategory || 'regular',
     });
     setQuestions([]);
     setSelectedQuestionIds([]);
