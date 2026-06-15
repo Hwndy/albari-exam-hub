@@ -26,6 +26,11 @@ async function sendEmailWithRetry(emailData: any, maxRetries = MAX_RETRIES): Pro
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
       const result = await resend.emails.send(emailData);
+      if (result && (result as any).error) {
+        const err = (result as any).error;
+        const message = err.message || err.name || JSON.stringify(err);
+        throw new Error(`Resend error: ${message}`);
+      }
       return result;
     } catch (error) {
       console.error(`Email send attempt ${attempt + 1} failed:`, error);
@@ -235,6 +240,7 @@ serve(async (req) => {
 
     let acceptanceToken: string;
     let offerLetterUrl: string;
+    let pdfFileName: string;
 
     // Generate PDF
     console.log("Generating offer letter PDF...");
@@ -257,7 +263,7 @@ serve(async (req) => {
       }
       
       // Upload new PDF with timestamp
-      const pdfFileName = `${application.application_number}_offer_letter_${Date.now()}.pdf`;
+      pdfFileName = `${application.application_number}_offer_letter_${Date.now()}.pdf`;
       const { error: uploadError } = await supabase.storage
         .from('admission-documents')
         .upload(`offer-letters/${pdfFileName}`, pdfBuffer, {
@@ -301,7 +307,7 @@ serve(async (req) => {
       acceptanceToken = crypto.randomUUID();
       
       // Upload PDF to storage
-      const pdfFileName = `${application.application_number}_offer_letter.pdf`;
+      pdfFileName = `${application.application_number}_offer_letter.pdf`;
       const { error: uploadError } = await supabase
         .storage
         .from('admission-documents')
