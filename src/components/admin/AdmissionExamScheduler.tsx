@@ -145,7 +145,13 @@ export const AdmissionExamScheduler = () => {
           <p className="text-muted-foreground">Schedule and manage admission entrance exams</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+          <Dialog
+            open={isAssignOpen}
+            onOpenChange={(open) => {
+              setIsAssignOpen(open);
+              if (open) fetchEntranceExams();
+            }}
+          >
             <DialogTrigger asChild>
               <Button variant="outline">
                 <Users className="h-4 w-4 mr-2" />
@@ -159,18 +165,39 @@ export const AdmissionExamScheduler = () => {
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label>Select Exam</Label>
-                  <select
-                    className="w-full rounded-md border border-input bg-background px-3 py-2"
-                    value={selectedExam || ""}
-                    onChange={(e) => setSelectedExam(e.target.value)}
-                  >
-                    <option value="">Choose an exam...</option>
-                    {exams.map((exam) => (
-                      <option key={exam.id} value={exam.id}>
-                        {exam.title} - {new Date(exam.start_date).toLocaleDateString()}
-                      </option>
-                    ))}
-                  </select>
+                  {exams.length === 0 ? (
+                    <div className="rounded-md border border-dashed p-4 text-sm space-y-3">
+                      <p className="text-muted-foreground">
+                        No entrance exams found. Create one first to assign applicants.
+                      </p>
+                      <ConsolidatedExamCreator
+                        defaultCategory="entrance"
+                        onExamCreated={fetchEntranceExams}
+                        trigger={
+                          <Button size="sm" variant="outline">
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create Entrance Exam
+                          </Button>
+                        }
+                      />
+                    </div>
+                  ) : (
+                    <select
+                      className="w-full rounded-md border border-input bg-background px-3 py-2"
+                      value={selectedExam || ""}
+                      onChange={(e) => setSelectedExam(e.target.value)}
+                    >
+                      <option value="">Choose an exam...</option>
+                      {exams.map((exam) => (
+                        <option key={exam.id} value={exam.id}>
+                          {exam.title}
+                          {exam.start_date
+                            ? ` - ${new Date(exam.start_date).toLocaleDateString()}`
+                            : ""}
+                        </option>
+                      ))}
+                    </select>
+                  )}
                 </div>
 
                 <div className="space-y-2">
