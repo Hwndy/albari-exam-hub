@@ -1,33 +1,28 @@
-## Plan
+# Fix Entrance Exam Management on Admin Side
 
-1. **Restore uploaded documents in admin review**
-   - Fix the application form so uploaded document metadata is saved with the correct field used by the database.
-   - Stop silently ignoring document-save failures after storage upload.
-   - Backfill existing uploaded files already in storage for affected applications so the admin review modal shows them.
-   - Update the admin document viewer download path handling so it works whether the database stores a storage path or a public URL.
+## Problems
+1. The **"Create Entrance Exam"** button in `AdmissionExamScheduler.tsx` is a dead-end — it only fires a `toast.info("Please use the Create Exam button…")`. No dialog opens, so admins literally cannot create an entrance exam from this page.
+2. Because no exam can be created here (and existing exams aren't tagged `exam_category = 'entrance'`), the **"Assign Applicants" → Select Exam** dropdown is empty.
+3. The applicants list is filtered by `status = 'under_review'` only, so applicants in other valid pre-exam stages (`submitted`, `documents_verified`, etc.) never appear — explaining the "0 selected" empty list in the screenshot.
+4. After creating an exam through the generic creator, `exam_category` defaults aren't forced to `entrance` for this admissions flow.
 
-2. **Fix admission tracking and offer workflow**
-   - Keep the secure tracking function as the public lookup source, but expand the tracker UI to show real interview, payment, exam, and offer details returned by the function.
-   - Add an “Accept Offer” action in the tracker when an active offer exists.
-   - Fix the public offer acceptance page so it can load offer details by token without relying on applicant login/RLS.
-   - Align offer statuses so a newly sent offer is actually accept-able instead of being treated as already processed.
+## Fix
 
-3. **Fix interview notification emails**
-   - Update the notification function to correctly detect provider send failures instead of logging them as successful.
-   - Surface clear admin feedback if email delivery fails.
-   - Include scheduled date, time, type, and location consistently in both the tracking page and email template.
+### 1. `src/components/admin/AdmissionExamScheduler.tsx`
+- Import `ConsolidatedExamCreator` and render it as the trigger for the **Create Entrance Exam** button (replace the toast).
+- Pass `onExamCreated={fetchEntranceExams}` so the new exam appears immediately in the list and in the assignment dropdown.
+- Pre-seed/force `examCategory = 'entrance'` for exams created from this page (open the creator with an `editingExam`-style preset, or add a small `presetCategory` prop to the creator — minimal change: pass a wrapper that pre-sets category through a new optional `defaultCategory` prop).
+- Broaden `fetchEligibleApplicants` to include statuses `['submitted', 'under_review', 'documents_verified']` using `.in('status', [...])`, so admins can actually pick applicants.
+- Show an empty-state hint when no entrance exams exist yet ("Create your first entrance exam to begin assigning applicants").
+- Show an empty-state hint when no eligible applicants exist.
 
-4. **Fix offer-letter sending**
-   - Correct the `pdfFileName is not defined` crash in the offer-letter function.
-   - Ensure the generated PDF is stored, linked to the offer, and attached/sent correctly.
-   - Update the function to create/update offers with an accept-able status and a valid acceptance token/link.
-   - Improve frontend error messages so admins see the real reason when sending fails.
+### 2. `src/components/shared/ConsolidatedExamCreator.tsx` (small additive change)
+- Add an optional prop `defaultCategory?: 'regular' | 'entrance'`.
+- When provided and not editing, initialize `metadata.examCategory` to that value and lock the category field (read-only) so the entrance flow can't be saved as `regular`.
 
-5. **Database/security adjustments**
-   - Add or repair the public-token offer lookup/decision backend path so applicants can accept/decline from email without signing in.
-   - Remove remaining direct `auth.users` lookups in admission offer/document applicant policies where they can break access.
-   - Preserve admin school isolation for all admission tables.
+### 3. Validation
+- Open Admissions → Entrance Exams, click **Create Entrance Exam**, fill in the dialog, save. Verify a new card appears.
+- Click **Assign Applicants**, confirm the new exam is in the dropdown and at least one applicant (e.g. `APP2026-000005`) is listed and assignable.
+- Confirm `admission_exam_assignments` row is inserted and applicant status moves to `interview_scheduled`.
 
-6. **Validation**
-   - Test the current sample application (`APP2026-000005`) through: document display, tracker lookup, schedule interview email path, send offer letter, open acceptance link, accept/decline flow.
-   - Check Edge Function logs after fixes for clean delivery errors/success states.
+No DB migration is required — `exams.exam_category` and `admission_exam_assignments` already exist.

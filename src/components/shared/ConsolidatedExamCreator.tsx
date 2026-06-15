@@ -76,6 +76,7 @@ interface ConsolidatedExamCreatorProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   isTeacher?: boolean; // Restrict access for teachers
+  defaultCategory?: 'regular' | 'entrance';
 }
 
 export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = ({
@@ -85,6 +86,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
   isTeacher = false,
+  defaultCategory,
 }) => {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -119,7 +121,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
     sequentialNavigation: false,
     allowQuestionFlagging: true,
     questionsPerStudent: DEFAULT_QUESTIONS_PER_STUDENT,
-    examCategory: 'regular',
+    examCategory: defaultCategory || 'regular',
   });
 
   // Manual question creation
@@ -296,7 +298,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       sequentialNavigation: false,
       allowQuestionFlagging: true,
       questionsPerStudent: DEFAULT_QUESTIONS_PER_STUDENT,
-      examCategory: 'regular',
+      examCategory: defaultCategory || 'regular',
     });
     setQuestions([]);
     setSelectedQuestionIds([]);
