@@ -30,6 +30,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
+import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
 
 interface Exam {
   id: string;
@@ -276,6 +277,7 @@ export const ExamManagement: React.FC = () => {
             </SelectContent>
           </Select>
         </div>
+        <TagExamsDialog onTagged={fetchExams} />
       </div>
 
       {/* Exams List */}
