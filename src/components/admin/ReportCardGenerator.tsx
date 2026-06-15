@@ -408,7 +408,8 @@ export const ReportCardGenerator: React.FC = () => {
         class_name: className,
         section: student.section || '',
         term: selectedTerm,
-        academic_year: academicYear,
+        academic_year:
+          sessions.find(s => s.id === selectedSessionId)?.academic_year || '',
         age: student.age || null,
         gender: student.gender || 'N/A',
         weight: student.weight || null,
@@ -484,7 +485,8 @@ export const ReportCardGenerator: React.FC = () => {
           student_id: editingComments.studentId,
           class_id: selectedClass,
           term: selectedTerm,
-          academic_year: academicYear,
+          academic_year:
+            sessions.find(s => s.id === selectedSessionId)?.academic_year || '',
           ...editingComments.comments,
         }, {
           onConflict: 'student_id,class_id,term,academic_year',
@@ -770,12 +772,19 @@ export const ReportCardGenerator: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Academic Year</Label>
-              <Input
-                value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                placeholder="e.g., 2024/2025"
-              />
+              <Label>Session</Label>
+              <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.session_name}{s.is_current ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
