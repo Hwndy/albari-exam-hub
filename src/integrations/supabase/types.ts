@@ -4021,6 +4021,7 @@ export type Database = {
         Returns: Json
       }
       get_current_user_role: { Args: never; Returns: string }
+      get_user_email: { Args: never; Returns: string }
       get_user_school_id: { Args: never; Returns: string }
       has_role: {
         Args: {
