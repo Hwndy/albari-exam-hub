@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Plus, Users, Calendar } from "lucide-react";
+import { ConsolidatedExamCreator } from "@/components/shared/ConsolidatedExamCreator";
 
 interface EntranceExam {
   id: string;
@@ -54,7 +55,7 @@ export const AdmissionExamScheduler = () => {
       const { data, error } = await supabase
         .from("admission_applications")
         .select("id, application_number, first_name, last_name, status")
-        .eq("status", "under_review");
+        .in("status", ["submitted", "under_review", "documents_verified"]);
 
       if (error) throw error;
       setApplicants(data || []);
@@ -199,15 +200,27 @@ export const AdmissionExamScheduler = () => {
             </DialogContent>
           </Dialog>
           
-          <Button onClick={() => {
-            // Stay in the current context, open exam creator
-            toast.info("Please use the Create Exam button and set category to 'Entrance' for admission exams");
-          }}>
-            <Plus className="h-4 w-4 mr-2" />
-            Create Entrance Exam
-          </Button>
+          <ConsolidatedExamCreator
+            defaultCategory="entrance"
+            onExamCreated={fetchEntranceExams}
+            trigger={
+              <Button>
+                <Plus className="h-4 w-4 mr-2" />
+                Create Entrance Exam
+              </Button>
+            }
+          />
         </div>
       </div>
+
+      {exams.length === 0 && (
+        <Card>
+          <CardContent className="py-10 text-center text-muted-foreground">
+            No entrance exams yet. Click <strong>Create Entrance Exam</strong> to schedule one,
+            then use <strong>Assign Applicants</strong> to add candidates.
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {exams.map((exam) => (
