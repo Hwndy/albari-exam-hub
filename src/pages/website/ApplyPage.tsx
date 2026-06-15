@@ -52,7 +52,7 @@ export const ApplyPage = () => {
               </a>
               {' '}or call{' '}
               <a href="tel:+2341234567890" className="text-primary hover:underline">
-                +234 123 456 7890
+                +234 802 815 2097
               </a>
             </p>
           </div>

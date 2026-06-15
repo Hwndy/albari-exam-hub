@@ -190,7 +190,7 @@ CREATE TRIGGER update_website_settings_updated_at
 -- Insert initial school information
 INSERT INTO public.school_info (info_key, info_value, category) VALUES
 ('school_name', 'Al-Bari College', 'general'),
-('phone', '+234 123 456 7890', 'contact'),
+('phone', '+234 802 815 2097', 'contact'),
 ('email', 'info@albari.edu.ng', 'contact'),
 ('address', 'Lagos, Nigeria', 'contact'),
 ('established', '2010', 'general'),
@@ -206,6 +206,6 @@ INSERT INTO public.website_settings (setting_key, setting_value, description) VA
 ('site_title', '"Al-Bari College - Excellence in Education"', 'Main site title'),
 ('site_tagline', '"Building Tomorrow''s Leaders Today"', 'Site tagline/motto'),
 ('contact_email', '"info@albari.edu.ng"', 'Main contact email'),
-('contact_phone', '"+234 123 456 7890"', 'Main contact phone'),
+('contact_phone', '"+234 802 815 2097"', 'Main contact phone'),
 ('social_links', '{"facebook": "https://facebook.com/albaricollege", "twitter": "https://twitter.com/albaricollege", "instagram": "https://instagram.com/albaricollege"}', 'Social media links'),
 ('school_colors', '{"primary": "#22c55e", "secondary": "#16a34a", "accent": "#15803d"}', 'School brand colors');

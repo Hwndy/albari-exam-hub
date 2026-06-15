@@ -323,7 +323,7 @@ export const AdmissionsPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div>
                 <h3 className="font-semibold text-foreground mb-2">Admissions Office</h3>
-                <p className="text-muted-foreground">+234 123 456 7890</p>
+                <p className="text-muted-foreground">+234 802 815 2097</p>
               </div>
               <div>
                 <h3 className="font-semibold text-foreground mb-2">Email</h3>

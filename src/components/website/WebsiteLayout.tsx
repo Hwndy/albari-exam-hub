@@ -40,7 +40,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
               <div className="flex items-center space-x-6 text-muted-foreground">
                 <div className="flex items-center space-x-1">
                   <Phone className="h-3 w-3" />
-                  <span>+234 123 456 7890</span>
+                  <span>+234 802 815 2097</span>
                 </div>
                 <div className="flex items-center space-x-1">
                   <Mail className="h-3 w-3" />
@@ -185,7 +185,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
                 </div>
                 <div className="flex items-center space-x-2">
                   <Phone className="h-4 w-4 text-primary" />
-                  <span>+234 123 456 7890</span>
+                  <span>+234 802 815 2097</span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Mail className="h-4 w-4 text-primary" />
