@@ -15,6 +15,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
+import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
 
 interface ClassData {
   id: string;
@@ -869,8 +870,17 @@ export const ReportCardGenerator: React.FC = () => {
           ) : (
             <div className="py-12 text-center text-muted-foreground">
               <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>No grades found for the selected class and term.</p>
-              <p className="text-sm">Add grades in the Gradebook to generate report cards.</p>
+              <p className="font-medium text-foreground">No scores yet for this class, session and term.</p>
+              <p className="text-sm mt-2 max-w-md mx-auto">
+                Scores come from two places: online exams tagged as <strong>Test 1 / Test 2 / Exam</strong>
+                under this session and term, or manual entries in the Gradebook.
+              </p>
+              <div className="mt-4 flex justify-center gap-2">
+                <TagExamsDialog />
+              </div>
+              <p className="text-xs mt-3">
+                Tip: most schools already have completed online exams — tag them above to start populating report cards immediately.
+              </p>
             </div>
           )}
         </CardContent>
