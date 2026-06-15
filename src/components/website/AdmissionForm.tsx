@@ -1168,7 +1168,7 @@ export const AdmissionForm = () => {
                     <CardTitle className="text-base">Academic Information</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
-                    <p><strong>Applying for:</strong> {formData.applying_for_class}</p>
+                    <p><strong>Applying for:</strong> {classOptions.find(c => c.id === formData.applying_for_class)?.name || 'Not selected'}</p>
                     <p><strong>Previous School:</strong> {formData.previous_school || 'Not provided'}</p>
                     <p><strong>Previous Class:</strong> {formData.previous_class || 'Not provided'}</p>
                   </CardContent>
