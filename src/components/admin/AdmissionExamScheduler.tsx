@@ -176,6 +176,11 @@ export const AdmissionExamScheduler = () => {
                 <div className="space-y-2">
                   <Label>Select Applicants ({selectedApplicants.length} selected)</Label>
                   <div className="max-h-64 overflow-y-auto border rounded-md p-4 space-y-2">
+                    {applicants.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        No eligible applicants (must be in <em>submitted</em> or <em>under_review</em> status).
+                      </p>
+                    )}
                     {applicants.map((applicant) => (
                       <div key={applicant.id} className="flex items-center space-x-2">
                         <Checkbox
