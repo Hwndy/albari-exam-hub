@@ -88,7 +88,7 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
       }
 
       // Then send the offer letter
-      const { error } = await supabase.functions.invoke('send-offer-letter', {
+      const { data: offerData, error } = await supabase.functions.invoke('send-offer-letter', {
         body: {
           application_id: applicationId,
           acceptance_deadline: deadline.toISOString(),
@@ -96,6 +96,9 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
       });
 
       if (error) throw error;
+      if (offerData && (offerData as any).error) {
+        throw new Error((offerData as any).error);
+      }
 
       // Update application status
       await supabase
@@ -113,9 +116,17 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
       checkExistingOffer(); // Refresh offer status
     } catch (error: any) {
       console.error('Error sending offer:', error);
+      // Edge function errors arrive as FunctionsHttpError — extract real body.
+      let description = error?.message || 'Failed to send offer letter';
+      try {
+        if (error?.context?.json) {
+          const j = await error.context.json();
+          if (j?.error) description = j.error;
+        }
+      } catch {/* noop */}
       toast({
         title: 'Error',
-        description: 'Failed to send offer letter',
+        description,
         variant: 'destructive',
       });
     } finally {
