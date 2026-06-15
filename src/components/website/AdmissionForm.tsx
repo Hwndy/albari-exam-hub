@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,6 +129,27 @@ export const AdmissionForm = () => {
 
   const { toast } = useToast();
 
+  // Real classes loaded from DB (anon read allowed by RLS).
+  const [classOptions, setClassOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [classesLoading, setClassesLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from('classes')
+        .select('id, name')
+        .order('name');
+      if (cancelled) return;
+      if (error) {
+        console.error('Failed to load classes', error);
+      }
+      setClassOptions(data ?? []);
+      setClassesLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   const steps = [
     { title: 'Personal Info', icon: User, description: 'Basic personal information' },
     { title: 'Academic Info', icon: GraduationCap, description: 'Educational background' },
@@ -136,11 +157,6 @@ export const AdmissionForm = () => {
     { title: 'Medical Info', icon: FileText, description: 'Health information' },
     { title: 'Documents', icon: Upload, description: 'Required documents' },
     { title: 'Review', icon: CheckCircle, description: 'Review and submit' }
-  ];
-
-  const classes = [
-    'JSS 1', 'JSS 2', 'JSS 3',
-    'SSS 1', 'SSS 2', 'SSS 3'
   ];
 
   const nigerianStates = [
