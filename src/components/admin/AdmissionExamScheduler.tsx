@@ -55,7 +55,7 @@ export const AdmissionExamScheduler = () => {
       const { data, error } = await supabase
         .from("admission_applications")
         .select("id, application_number, first_name, last_name, status")
-        .in("status", ["submitted", "under_review", "documents_verified"]);
+        .in("status", ["submitted", "under_review"]);
 
       if (error) throw error;
       setApplicants(data || []);
