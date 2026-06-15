@@ -524,6 +524,7 @@ export type Database = {
           created_by: string | null
           end_date: string
           id: string
+          is_current: boolean
           max_applicants: number | null
           required_documents: Json
           school_id: string | null
@@ -540,6 +541,7 @@ export type Database = {
           created_by?: string | null
           end_date: string
           id?: string
+          is_current?: boolean
           max_applicants?: number | null
           required_documents?: Json
           school_id?: string | null
@@ -556,6 +558,7 @@ export type Database = {
           created_by?: string | null
           end_date?: string
           id?: string
+          is_current?: boolean
           max_applicants?: number | null
           required_documents?: Json
           school_id?: string | null
@@ -1392,6 +1395,7 @@ export type Database = {
         Row: {
           allow_question_flagging: boolean
           allow_review: boolean
+          assessment_category: string | null
           class_id: string | null
           created_at: string
           created_by: string
@@ -1407,11 +1411,13 @@ export type Database = {
           randomize_questions: boolean
           school_id: string | null
           sequential_navigation: boolean
+          session_id: string | null
           show_results_immediately: boolean
           shuffle_answers: boolean
           start_date: string | null
           status: Database["public"]["Enums"]["exam_status"]
           subject_id: string | null
+          term: string | null
           title: string
           total_questions: number
           updated_at: string
@@ -1419,6 +1425,7 @@ export type Database = {
         Insert: {
           allow_question_flagging?: boolean
           allow_review?: boolean
+          assessment_category?: string | null
           class_id?: string | null
           created_at?: string
           created_by: string
@@ -1434,11 +1441,13 @@ export type Database = {
           randomize_questions?: boolean
           school_id?: string | null
           sequential_navigation?: boolean
+          session_id?: string | null
           show_results_immediately?: boolean
           shuffle_answers?: boolean
           start_date?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           subject_id?: string | null
+          term?: string | null
           title: string
           total_questions?: number
           updated_at?: string
@@ -1446,6 +1455,7 @@ export type Database = {
         Update: {
           allow_question_flagging?: boolean
           allow_review?: boolean
+          assessment_category?: string | null
           class_id?: string | null
           created_at?: string
           created_by?: string
@@ -1461,11 +1471,13 @@ export type Database = {
           randomize_questions?: boolean
           school_id?: string | null
           sequential_navigation?: boolean
+          session_id?: string | null
           show_results_immediately?: boolean
           shuffle_answers?: boolean
           start_date?: string | null
           status?: Database["public"]["Enums"]["exam_status"]
           subject_id?: string | null
+          term?: string | null
           title?: string
           total_questions?: number
           updated_at?: string
@@ -1483,6 +1495,13 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exams_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "admission_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -1941,6 +1960,7 @@ export type Database = {
           obtained_score: number | null
           remarks: string | null
           school_id: string | null
+          session_id: string | null
           student_id: string | null
           subject_id: string | null
           teacher_id: string | null
@@ -1962,6 +1982,7 @@ export type Database = {
           obtained_score?: number | null
           remarks?: string | null
           school_id?: string | null
+          session_id?: string | null
           student_id?: string | null
           subject_id?: string | null
           teacher_id?: string | null
@@ -1983,6 +2004,7 @@ export type Database = {
           obtained_score?: number | null
           remarks?: string | null
           school_id?: string | null
+          session_id?: string | null
           student_id?: string | null
           subject_id?: string | null
           teacher_id?: string | null
@@ -2003,6 +2025,13 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gradebook_entries_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "admission_sessions"
             referencedColumns: ["id"]
           },
           {
@@ -2936,6 +2965,9 @@ export type Database = {
           question_text: string
           question_type: Database["public"]["Enums"]["question_type"]
           school_id: string | null
+          subject_id: string | null
+          tags: string[] | null
+          topic: string | null
           updated_at: string
         }
         Insert: {
@@ -2954,6 +2986,9 @@ export type Database = {
           question_text: string
           question_type?: Database["public"]["Enums"]["question_type"]
           school_id?: string | null
+          subject_id?: string | null
+          tags?: string[] | null
+          topic?: string | null
           updated_at?: string
         }
         Update: {
@@ -2972,6 +3007,9 @@ export type Database = {
           question_text?: string
           question_type?: Database["public"]["Enums"]["question_type"]
           school_id?: string | null
+          subject_id?: string | null
+          tags?: string[] | null
+          topic?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2994,6 +3032,13 @@ export type Database = {
             columns: ["school_id"]
             isOneToOne: false
             referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "questions_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
             referencedColumns: ["id"]
           },
         ]
@@ -3978,7 +4023,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      v_student_term_scores: {
+        Row: {
+          class_id: string | null
+          exam_score: number | null
+          school_id: string | null
+          session_id: string | null
+          student_id: string | null
+          subject_id: string | null
+          subject_position: number | null
+          term: string | null
+          test1: number | null
+          test2: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       calculate_exam_score: {
@@ -4020,6 +4080,7 @@ export type Database = {
         Args: { p_app_no: string; p_email: string }
         Returns: Json
       }
+      get_current_session: { Args: { p_school_id: string }; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_user_email: { Args: never; Returns: string }
       get_user_school_id: { Args: never; Returns: string }
