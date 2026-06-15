@@ -789,14 +789,20 @@ export const AdmissionForm = () => {
                   <Label htmlFor="applying_for_class">Applying for Class *</Label>
                   <Select value={formData.applying_for_class} onValueChange={(value) => updateFormData('applying_for_class', value)}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select class" />
+                      <SelectValue placeholder={classesLoading ? 'Loading classes...' : 'Select class'} />
                     </SelectTrigger>
                     <SelectContent>
-                      {classes.map((cls) => (
-                        <SelectItem key={cls} value={cls}>
-                          {cls}
-                        </SelectItem>
-                      ))}
+                      {classOptions.length === 0 && !classesLoading ? (
+                        <div className="px-3 py-2 text-sm text-muted-foreground">
+                          No classes available yet. Please contact the school.
+                        </div>
+                      ) : (
+                        classOptions.map((cls) => (
+                          <SelectItem key={cls.id} value={cls.id}>
+                            {cls.name}
+                          </SelectItem>
+                        ))
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
