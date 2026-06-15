@@ -1,38 +1,118 @@
-# Fix empty "Select Exam" dropdown + safe security review
 
-## Why the dropdown is empty
-I checked the database: **no exam has `exam_category = 'entrance'`** — all existing exams are tagged `regular`. The Assign dialog correctly filters by `exam_category = 'entrance'`, so it has nothing to show. The dialog also gives no hint about this, so it looks broken.
+# Academic Flow Overhaul
 
-The "Create Entrance Exam" button now opens the creator with `defaultCategory="entrance"`, but until an entrance exam is actually saved the dropdown will stay empty. On top of that, two small issues make this worse:
-1. `fetchEntranceExams` only runs once on mount, so an exam created while the page is open won't appear until refresh (the creator's `onExamCreated` callback fires, but if the user opens the Assign dialog before creating one, they see nothing and no guidance).
-2. There is no empty-state inside the Assign dialog itself — only on the card grid behind it.
+Goal: make Exams → Questions → Results → Report Cards feel like one connected system, all scoped by **School → Session/Term → Class → Subject**.
 
-## Fix (UI only, no schema changes)
+We will reuse `admission_sessions` as the single source of truth for sessions/terms (renamed in UI as "Academic Sessions"), and add a lightweight `term` field where needed so the same session can hold First/Second/Third term records.
 
-### `src/components/admin/AdmissionExamScheduler.tsx`
-- Re-fetch entrance exams every time the Assign dialog opens (`onOpenChange` → call `fetchEntranceExams()`), so newly created exams appear immediately.
-- Inside the Assign dialog, when `exams.length === 0`, replace the empty `<select>` with a clear inline message + a `ConsolidatedExamCreator` trigger button so the admin can create one without closing the dialog:
-  > "No entrance exams found. Create one first to assign applicants." [Create Entrance Exam]
-- Add a one-time backfill helper (optional, behind a small "Convert existing exam to entrance" link in the empty-state) — *skipped by default* to avoid touching existing `regular` exams. We'll just guide the admin to create a fresh entrance exam.
-- Keep all existing behaviour (assign flow, applicant list, status update) untouched.
+---
 
-No changes to `ConsolidatedExamCreator.tsx`, RLS, or any edge function.
+## 1. Session & Term as the spine
 
-## Security review (non-breaking)
-You also asked about security. I will:
-1. Run the Supabase linter and the security scanner in read-only mode.
-2. Report findings grouped as:
-   - **Safe to fix now** — missing GRANTs, RLS gaps on tables that are clearly meant to be auth-only, function `search_path` warnings. These are additive and won't break working features.
-   - **Needs your confirmation** — anything that would tighten access on a table currently used publicly (e.g. `website_*`, `news_articles`, `gallery`). I will not change these without approval.
-3. Only after you approve, apply fixes in a single migration that:
-   - Adds missing `GRANT`s to `authenticated` / `service_role`.
-   - Pins `search_path = public` on any `SECURITY DEFINER` function missing it.
-   - Adds RLS policies on auth-only tables that lack them, scoped via `has_role` / `get_user_school_id`.
+**DB (one migration):**
+- Add `current` boolean on `admission_sessions` (only one current per school, enforced by partial unique index).
+- Add `term text` (`first` | `second` | `third`) and `session_id uuid → admission_sessions(id)` on:
+  - `exams`
+  - `gradebook_entries` (already has `term` + `academic_year` text — backfill `session_id` from `academic_year`)
+- Add `assessment_category text` on `exams` (`test1` | `test2` | `exam` | `ca` | `mock` | `other`) so an exam can feed the report card's TEST1 (20) / TEST2 (20) / EXAM (60) split automatically.
+- Helper SQL function `get_current_session(school uuid)` for defaults.
 
-Nothing in this review step modifies UI, edge functions, or any policy that current features depend on.
+**UI:**
+- New `AcademicSessionManager` (admin) — list sessions, mark current, manage terms. Reuses existing `AdmissionSessionManager` UI but exposes it under Academics too.
+- A global `SessionTermPicker` chip in the admin/teacher header that defaults to current session + current term. All academic screens read from it via a new `useAcademicContext()` hook.
 
-## Validation
-- Open Admissions → Entrance Exams → **Assign Applicants** with zero entrance exams: confirm the new empty-state + inline Create button.
-- Click the inline Create button, save an entrance exam, confirm it appears in the dropdown without closing the dialog.
-- Assign `APP2026-000006` to it, confirm `admission_exam_assignments` row inserts and status moves to `interview_scheduled`.
-- Verify all existing `regular` exam flows (teacher dashboards, student exam list) are unchanged.
+---
+
+## 2. Exams — grouped by Subject / Class / Term
+
+**`ExamManagement.tsx` rework:**
+- Replace flat list with grouped accordion:
+  ```text
+  Session 2025/2026 → First Term
+    └─ JSS1
+        └─ Mathematics
+            ├─ CA Test 1   (test1, 20 marks)   [edit] [results]
+            ├─ CA Test 2   (test2, 20 marks)
+            └─ Term Exam   (exam,  60 marks)
+        └─ English …
+  ```
+- Filters: Session, Term, Class, Subject, Category, Status.
+- "Create Exam" prefills session/term from context and forces `assessment_category` choice so report-card mapping is unambiguous.
+- Keep existing entrance-exam flow untouched (already uses `exam_category='entrance'`).
+
+---
+
+## 3. Question Bank — proper organization
+
+**`AdminQuestionBank.tsx` / `teacher/QuestionBank.tsx`:**
+- Group by **Subject → Class → Topic/Tag** with collapsible tree.
+- Add `topic text` and `tags text[]` columns on `questions` (migration).
+- Filters: subject, class, difficulty, topic, tag, question type.
+- "Use in exam" action: multi-select questions → add to any existing exam in same subject/class.
+- Bulk import already exists — extend CSV template to include topic/tags.
+- De-duplicate: warn on near-identical question text within a question bank.
+
+---
+
+## 4. Results — one unified hub
+
+New `ResultsHub` component with three views, all session/term/class/subject scoped:
+
+1. **By Exam** — pick exam → student list with score, %, pass/fail, time, attempt status. (Replaces scattered `AdminStudentResults`, `EnhancedExamResults`.)
+2. **By Student** — pick student → all assessments this term, grouped by subject, with running average.
+3. **By Class** — class broadsheet: rows=students, cols=subjects, cells=term total (TEST1+TEST2+EXAM out of 100), with class average and position.
+
+Data sources unified:
+- Online exams → `exam_sessions` (auto-graded).
+- Offline assessments → `gradebook_entries` (teacher-entered TEST1/TEST2/EXAM).
+- A SQL view `v_student_term_scores(student_id, session_id, term, subject_id, test1, test2, exam, total, grade, position)` powers all three views and the report card.
+
+Export: CSV + PDF per view.
+
+---
+
+## 5. Report Card — fix end-to-end
+
+Diagnosis from the codebase: `ReportCardGenerator.tsx` (984 lines) pulls from `gradebook_entries` directly but doesn't reliably aggregate online exam results, has no canonical term/session filter, and the grading scale isn't pulled from `grading_scales` per school.
+
+Fixes:
+- **Data**: read from the new `v_student_term_scores` view so both online exams (mapped by `assessment_category`) and manual gradebook entries flow in together.
+- **Calculations**: TEST1 (20) + TEST2 (20) + EXAM (60) = 100; grade letter from `grading_scales` for the school (fall back to seeded A–F if none).
+- **Position**: computed in the view via `RANK() OVER (PARTITION BY class, subject ORDER BY total DESC)`; class position from sum of totals.
+- **Stats block**: average, position, class average, highest/lowest, attendance % (from `student_attendance` for the term), biometrics + comments (from `report_card_comments`, already exists).
+- **PDF**: single React-PDF template, one student per call, "Generate for whole class" loops with progress.
+- **Header controls**: Session, Term, Class, Student(s). No more silent empty PDFs — show inline validation if data is missing for a student/subject.
+
+---
+
+## 6. Permissions & multi-tenancy
+
+- Every new query goes through `useSchoolQuery` and includes `school_id` + `session_id`.
+- RLS on new columns/view follows existing pattern: `(school_id = get_user_school_id() AND …) OR is_super_admin()`.
+- Teachers: only see exams/results for classes they're assigned to (existing `teacher_class_assignments`).
+- Students/Parents: results restricted to own/child records (existing policies extended to the view).
+
+---
+
+## Delivery order (single pass, multiple commits)
+
+1. Migration: sessions/terms columns, `assessment_category`, `topic/tags`, view, grants, RLS.
+2. `useAcademicContext` + `SessionTermPicker`.
+3. Exam list regroup + creator updates.
+4. Question bank tree + filters.
+5. ResultsHub (replaces old results screens, keeps deep-links working via redirects).
+6. ReportCardGenerator rewrite on top of the view.
+
+## Out of scope
+
+- Changing the admissions/entrance-exam flow.
+- New auth flows, new roles.
+- Mobile-specific redesign (existing responsive styles kept).
+
+## Validation checklist
+
+- Create a session, mark current, create TEST1 + TEST2 + EXAM for JSS1 Math, students take/teacher enters scores → report card shows 20/20/60 split, correct grade, correct class position.
+- Filter Exam list by session/term/class/subject → only matching exams.
+- Question bank: filter by topic, add 5 questions to an exam in two clicks.
+- Results: same numbers in "By Exam", "By Student", "By Class", and Report Card.
+- Multi-tenant: a teacher from School B sees nothing from School A.
