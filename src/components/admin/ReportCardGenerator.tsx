@@ -112,6 +112,18 @@ const GRADING_SCALE = [
 ];
 
 const TERMS = ['First Term', 'Second Term', 'Third Term'];
+const TERM_VALUES: Record<string, 'first' | 'second' | 'third'> = {
+  'First Term': 'first',
+  'Second Term': 'second',
+  'Third Term': 'third',
+};
+
+interface AcademicSession {
+  id: string;
+  session_name: string;
+  academic_year: string;
+  is_current: boolean;
+}
 
 export const ReportCardGenerator: React.FC = () => {
   const { toast } = useToast();
@@ -124,10 +136,11 @@ export const ReportCardGenerator: React.FC = () => {
   const [students, setStudents] = useState<StudentData[]>([]);
   const [reportCards, setReportCards] = useState<StudentReportCard[]>([]);
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
+  const [sessions, setSessions] = useState<AcademicSession[]>([]);
 
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTerm, setSelectedTerm] = useState<string>('First Term');
-  const [academicYear, setAcademicYear] = useState<string>('2024/2025');
+  const [selectedSessionId, setSelectedSessionId] = useState<string>('');
   const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
   
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -143,18 +156,24 @@ export const ReportCardGenerator: React.FC = () => {
   }, [schoolId]);
 
   useEffect(() => {
-    if (selectedClass) {
+    if (selectedClass && selectedSessionId) {
       fetchStudentsAndGrades();
     }
-  }, [selectedClass, selectedTerm, academicYear]);
+  }, [selectedClass, selectedTerm, selectedSessionId]);
 
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [classesRes, subjectsRes, schoolRes] = await Promise.all([
+      const [classesRes, subjectsRes, schoolRes, sessionsRes] = await Promise.all([
         withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
         withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
         withSchoolFilter(supabase.from('schools').select('name, address, phone, email, motto, logo_url').single()),
+        withSchoolFilter(
+          supabase
+            .from('admission_sessions')
+            .select('id, session_name, academic_year, is_current')
+            .order('start_date', { ascending: false })
+        ),
       ]);
 
       setClasses(classesRes.data || []);
@@ -162,6 +181,10 @@ export const ReportCardGenerator: React.FC = () => {
       if (schoolRes.data) {
         setSchoolInfo(schoolRes.data as SchoolInfo);
       }
+      const sessionList = (sessionsRes.data || []) as AcademicSession[];
+      setSessions(sessionList);
+      const current = sessionList.find(s => s.is_current) || sessionList[0];
+      if (current) setSelectedSessionId(current.id);
 
       if (classesRes.data && classesRes.data.length > 0) {
         setSelectedClass(classesRes.data[0].id);
@@ -175,7 +198,7 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const fetchStudentsAndGrades = async () => {
-    if (!selectedClass) return;
+    if (!selectedClass || !selectedSessionId) return;
 
     try {
       // Fetch students in the class
@@ -218,36 +241,56 @@ export const ReportCardGenerator: React.FC = () => {
 
       setStudents(studentsList);
 
-      // Fetch gradebook entries for these students
+      // Fetch unified term scores from the view (online exams + manual gradebook)
       const studentIds = studentsData.map(s => s.id);
       if (studentIds.length === 0) {
         setReportCards([]);
         return;
       }
 
-      const [gradesRes, commentsRes, attendanceRes] = await Promise.all([
+      const termValue = TERM_VALUES[selectedTerm];
+      const academicYearText =
+        sessions.find(s => s.id === selectedSessionId)?.academic_year || '';
+
+      const [scoresRes, subjectsMapRes, commentsRes, attendanceRes] = await Promise.all([
         supabase
-          .from('gradebook_entries')
-          .select('*, subjects(name)')
+          .from('v_student_term_scores')
+          .select('*')
           .in('student_id', studentIds)
-          .eq('class_id', selectedClass),
+          .eq('class_id', selectedClass)
+          .eq('session_id', selectedSessionId)
+          .eq('term', termValue),
+        supabase.from('subjects').select('id, name'),
         supabase
           .from('report_card_comments')
           .select('*')
           .in('student_id', studentIds)
           .eq('class_id', selectedClass)
           .eq('term', selectedTerm)
-          .eq('academic_year', academicYear),
+          .eq('academic_year', academicYearText),
         supabase
           .from('attendance_summary')
           .select('*')
           .in('student_id', studentIds)
           .eq('class_id', selectedClass)
           .eq('term', selectedTerm)
-          .eq('academic_year', academicYear),
+          .eq('academic_year', academicYearText),
       ]);
 
-      const grades = gradesRes.data || [];
+      const rawScores = scoresRes.data || [];
+      const subjectsMap = new Map(
+        (subjectsMapRes.data || []).map((s: any) => [s.id, s.name])
+      );
+      // Re-shape view rows into the same shape generateReportCards expects.
+      const grades = rawScores.map((r: any) => ({
+        student_id: r.student_id,
+        subject_id: r.subject_id,
+        class_id: r.class_id,
+        test1_score: Number(r.test1) || 0,
+        test2_score: Number(r.test2) || 0,
+        exam_score: Number(r.exam_score) || 0,
+        subjects: { name: subjectsMap.get(r.subject_id) || 'Unknown' },
+      }));
       const comments = commentsRes.data || [];
       const attendance = attendanceRes.data || [];
 
@@ -257,6 +300,7 @@ export const ReportCardGenerator: React.FC = () => {
       setReportCards(processedCards);
     } catch (error) {
       console.error('Error fetching students and grades:', error);
+      toast({ title: 'Error', description: 'Failed to load report card data', variant: 'destructive' });
     }
   };
 
@@ -364,7 +408,8 @@ export const ReportCardGenerator: React.FC = () => {
         class_name: className,
         section: student.section || '',
         term: selectedTerm,
-        academic_year: academicYear,
+        academic_year:
+          sessions.find(s => s.id === selectedSessionId)?.academic_year || '',
         age: student.age || null,
         gender: student.gender || 'N/A',
         weight: student.weight || null,
@@ -440,7 +485,8 @@ export const ReportCardGenerator: React.FC = () => {
           student_id: editingComments.studentId,
           class_id: selectedClass,
           term: selectedTerm,
-          academic_year: academicYear,
+          academic_year:
+            sessions.find(s => s.id === selectedSessionId)?.academic_year || '',
           ...editingComments.comments,
         }, {
           onConflict: 'student_id,class_id,term,academic_year',
@@ -726,12 +772,19 @@ export const ReportCardGenerator: React.FC = () => {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Academic Year</Label>
-              <Input
-                value={academicYear}
-                onChange={(e) => setAcademicYear(e.target.value)}
-                placeholder="e.g., 2024/2025"
-              />
+              <Label>Session</Label>
+              <Select value={selectedSessionId} onValueChange={setSelectedSessionId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select session" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map(s => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.session_name}{s.is_current ? ' (current)' : ''}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </CardContent>
