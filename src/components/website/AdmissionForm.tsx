@@ -363,7 +363,7 @@ export const AdmissionForm = () => {
           status: 'payment_pending',
           gender: normalizedGender,
           email: formData.email,
-          classId: classData?.id
+          classId
         });
         
         toast({
