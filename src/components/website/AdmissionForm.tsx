@@ -417,25 +417,32 @@ export const AdmissionForm = () => {
           
           const { error: uploadError } = await supabase.storage
             .from('admission-documents')
-            .upload(fileName, doc.file);
+            .upload(fileName, doc.file, { upsert: true });
 
-          if (!uploadError) {
-            const { data: { publicUrl } } = supabase.storage
-              .from('admission-documents')
-              .getPublicUrl(fileName);
+          if (uploadError) {
+            console.error('Document upload failed:', doc.type, uploadError);
+            continue;
+          }
 
-            await supabase
-              .from('admission_documents')
-              .insert({
-                application_id: applicationId,
-                document_type: doc.type === 'previous_result' ? 'previous_school_report' : 
-                              doc.type === 'passport_photos' ? 'passport_photo' : 
-                              doc.type === 'medical_report' ? 'medical_certificate' : doc.type,
-                document_name: doc.file.name,
-                document_url: publicUrl,
-                file_size: doc.file.size,
-                mime_type: doc.file.type
-              } as any);
+          const { error: docInsertError } = await supabase
+            .from('admission_documents')
+            .insert({
+              application_id: applicationId,
+              document_type:
+                doc.type === 'previous_result' ? 'previous_school_report' :
+                doc.type === 'passport_photos' ? 'passport_photo' :
+                doc.type === 'medical_report' ? 'medical_certificate' :
+                doc.type,
+              document_name: doc.file.name,
+              // Store the storage path (not a public URL); the admin viewer
+              // downloads via supabase.storage.from(...).download(file_url).
+              file_url: fileName,
+              file_size: doc.file.size,
+              mime_type: doc.file.type,
+            } as any);
+
+          if (docInsertError) {
+            console.error('Document metadata insert failed:', doc.type, docInsertError);
           }
         }
       }
