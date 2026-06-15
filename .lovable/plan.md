@@ -1,118 +1,66 @@
 
-# Academic Flow Overhaul
+# Report Card empty — root cause + fix
 
-Goal: make Exams → Questions → Results → Report Cards feel like one connected system, all scoped by **School → Session/Term → Class → Subject**.
+## Diagnosis
 
-We will reuse `admission_sessions` as the single source of truth for sessions/terms (renamed in UI as "Academic Sessions"), and add a lightweight `term` field where needed so the same session can hold First/Second/Third term records.
+The Report Card screen is rendering correctly. There's just nothing to show:
 
----
+- `gradebook_entries`: **0 rows total**. No teacher has entered any TEST1/TEST2/EXAM scores.
+- `exam_sessions`: **2,650 completed** sessions, but **0** of them have their parent exam tagged with `session_id` + `term` + `assessment_category` — so the unified view filters them all out.
+- `admission_sessions`: 1 row ("1 st term", 2025/2026), `is_current = false`.
 
-## 1. Session & Term as the spine
+The Report Card itself can't manufacture data. We need to wire upstream so scores actually flow in.
 
-**DB (one migration):**
-- Add `current` boolean on `admission_sessions` (only one current per school, enforced by partial unique index).
-- Add `term text` (`first` | `second` | `third`) and `session_id uuid → admission_sessions(id)` on:
-  - `exams`
-  - `gradebook_entries` (already has `term` + `academic_year` text — backfill `session_id` from `academic_year`)
-- Add `assessment_category text` on `exams` (`test1` | `test2` | `exam` | `ca` | `mock` | `other`) so an exam can feed the report card's TEST1 (20) / TEST2 (20) / EXAM (60) split automatically.
-- Helper SQL function `get_current_session(school uuid)` for defaults.
+## Fix plan (4 small changes)
 
-**UI:**
-- New `AcademicSessionManager` (admin) — list sessions, mark current, manage terms. Reuses existing `AdmissionSessionManager` UI but exposes it under Academics too.
-- A global `SessionTermPicker` chip in the admin/teacher header that defaults to current session + current term. All academic screens read from it via a new `useAcademicContext()` hook.
+### 1. Tag exams from the UI
 
----
+In `src/components/admin/ExamManagement.tsx` (and `ConsolidatedExamCreator.tsx`), add three required fields when creating/editing a regular exam:
 
-## 2. Exams — grouped by Subject / Class / Term
+- **Session** (dropdown of `admission_sessions` for the school, defaults to current).
+- **Term** (first / second / third, defaults to current term from a new picker — see #4).
+- **Assessment category** (test1 / test2 / exam / ca / mock / other).
 
-**`ExamManagement.tsx` rework:**
-- Replace flat list with grouped accordion:
-  ```text
-  Session 2025/2026 → First Term
-    └─ JSS1
-        └─ Mathematics
-            ├─ CA Test 1   (test1, 20 marks)   [edit] [results]
-            ├─ CA Test 2   (test2, 20 marks)
-            └─ Term Exam   (exam,  60 marks)
-        └─ English …
-  ```
-- Filters: Session, Term, Class, Subject, Category, Status.
-- "Create Exam" prefills session/term from context and forces `assessment_category` choice so report-card mapping is unambiguous.
-- Keep existing entrance-exam flow untouched (already uses `exam_category='entrance'`).
+Show a small inline notice on existing untagged exams: *"Tag this exam with a session and term so its results appear on report cards."*
 
----
+### 2. Bulk-tag existing exams
 
-## 3. Question Bank — proper organization
+Add an admin-only "Tag exams" dialog on the Exam list with:
+- Multi-select exams from the list.
+- Pick session + term + category, apply to all selected.
 
-**`AdminQuestionBank.tsx` / `teacher/QuestionBank.tsx`:**
-- Group by **Subject → Class → Topic/Tag** with collapsible tree.
-- Add `topic text` and `tags text[]` columns on `questions` (migration).
-- Filters: subject, class, difficulty, topic, tag, question type.
-- "Use in exam" action: multi-select questions → add to any existing exam in same subject/class.
-- Bulk import already exists — extend CSV template to include topic/tags.
-- De-duplicate: warn on near-identical question text within a question bank.
+This lets the admin retroactively classify the 2,650 historical sessions so they start showing on report cards immediately, without re-running anything.
 
----
+### 3. Gradebook writes session_id
 
-## 4. Results — one unified hub
+In `src/components/teacher/GradebookSystem.tsx`, replace the free-text `academic_year` input with the same Session dropdown and write `session_id` on every insert/update. Backfill `academic_year` text from the chosen session for compatibility with existing `report_card_comments` / `attendance_summary` joins.
 
-New `ResultsHub` component with three views, all session/term/class/subject scoped:
+### 4. Empty-state guidance on the Report Card
 
-1. **By Exam** — pick exam → student list with score, %, pass/fail, time, attempt status. (Replaces scattered `AdminStudentResults`, `EnhancedExamResults`.)
-2. **By Student** — pick student → all assessments this term, grouped by subject, with running average.
-3. **By Class** — class broadsheet: rows=students, cols=subjects, cells=term total (TEST1+TEST2+EXAM out of 100), with class average and position.
+When `reportCards.length === 0`, replace the generic message with a real diagnostic:
+- "No exams found for this session+term. **Create a TEST1 / TEST2 / EXAM** in Exam Management, or enter scores in the Gradebook."
+- If the school has untagged exams (we can detect with a count query), show: *"You have N completed exams not tagged with a session/term — click here to tag them."* → opens the bulk-tag dialog.
 
-Data sources unified:
-- Online exams → `exam_sessions` (auto-graded).
-- Offline assessments → `gradebook_entries` (teacher-entered TEST1/TEST2/EXAM).
-- A SQL view `v_student_term_scores(student_id, session_id, term, subject_id, test1, test2, exam, total, grade, position)` powers all three views and the report card.
+### 5. Mark a session current (one-time, optional)
 
-Export: CSV + PDF per view.
+The single existing session "1 st term" has `is_current = false`. Either:
+- Add an `AcademicSessionManager` toggle (planned for step 1 of the larger plan), or
+- For now, the Report Card already lets the admin pick the session from the dropdown — so this is not blocking, but the empty-state hint will mention it.
 
----
+## Files touched
 
-## 5. Report Card — fix end-to-end
+- `src/components/shared/ConsolidatedExamCreator.tsx` — add session/term/category fields, default to current.
+- `src/components/admin/ExamManagement.tsx` — bulk-tag dialog + untagged badge.
+- `src/components/teacher/GradebookSystem.tsx` — Session dropdown writes `session_id`.
+- `src/components/admin/ReportCardGenerator.tsx` — smarter empty state + "tag exams" CTA.
 
-Diagnosis from the codebase: `ReportCardGenerator.tsx` (984 lines) pulls from `gradebook_entries` directly but doesn't reliably aggregate online exam results, has no canonical term/session filter, and the grading scale isn't pulled from `grading_scales` per school.
+## Out of scope (for this pass)
 
-Fixes:
-- **Data**: read from the new `v_student_term_scores` view so both online exams (mapped by `assessment_category`) and manual gradebook entries flow in together.
-- **Calculations**: TEST1 (20) + TEST2 (20) + EXAM (60) = 100; grade letter from `grading_scales` for the school (fall back to seeded A–F if none).
-- **Position**: computed in the view via `RANK() OVER (PARTITION BY class, subject ORDER BY total DESC)`; class position from sum of totals.
-- **Stats block**: average, position, class average, highest/lowest, attendance % (from `student_attendance` for the term), biometrics + comments (from `report_card_comments`, already exists).
-- **PDF**: single React-PDF template, one student per call, "Generate for whole class" loops with progress.
-- **Header controls**: Session, Term, Class, Student(s). No more silent empty PDFs — show inline validation if data is missing for a student/subject.
+- Full SessionTermPicker in the header (planned later).
+- Question bank tree, ResultsHub, Exam list regroup — these come after data starts flowing.
 
----
+## Validation
 
-## 6. Permissions & multi-tenancy
-
-- Every new query goes through `useSchoolQuery` and includes `school_id` + `session_id`.
-- RLS on new columns/view follows existing pattern: `(school_id = get_user_school_id() AND …) OR is_super_admin()`.
-- Teachers: only see exams/results for classes they're assigned to (existing `teacher_class_assignments`).
-- Students/Parents: results restricted to own/child records (existing policies extended to the view).
-
----
-
-## Delivery order (single pass, multiple commits)
-
-1. Migration: sessions/terms columns, `assessment_category`, `topic/tags`, view, grants, RLS.
-2. `useAcademicContext` + `SessionTermPicker`.
-3. Exam list regroup + creator updates.
-4. Question bank tree + filters.
-5. ResultsHub (replaces old results screens, keeps deep-links working via redirects).
-6. ReportCardGenerator rewrite on top of the view.
-
-## Out of scope
-
-- Changing the admissions/entrance-exam flow.
-- New auth flows, new roles.
-- Mobile-specific redesign (existing responsive styles kept).
-
-## Validation checklist
-
-- Create a session, mark current, create TEST1 + TEST2 + EXAM for JSS1 Math, students take/teacher enters scores → report card shows 20/20/60 split, correct grade, correct class position.
-- Filter Exam list by session/term/class/subject → only matching exams.
-- Question bank: filter by topic, add 5 questions to an exam in two clicks.
-- Results: same numbers in "By Exam", "By Student", "By Class", and Report Card.
-- Multi-tenant: a teacher from School B sees nothing from School A.
+1. Open Exam Management → bulk-tag 5 historical exams as `term=third`, `session=1 st term`, `category=exam`.
+2. Open Report Cards → pick SSS 2 B, Third Term, "1 st term" → student scores from those tagged exams now show, with grades + positions.
+3. Open Gradebook → enter TEST1 for a student under the same session/term → it appears on the report card alongside the exam score (20+20+60 split).
