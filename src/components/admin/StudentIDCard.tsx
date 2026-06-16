@@ -33,89 +33,132 @@ export const StudentIDCard: React.FC<Props> = ({ student, school }) => {
       sch: school.name,
     });
     QRCode.toCanvas(qrRef.current, payload, {
-      width: 180,
+      width: 200,
       margin: 1,
-      color: { dark: '#0a3d1f', light: '#ffffff' },
+      color: { dark: '#000000', light: '#ffffff' },
     }).catch(() => {});
   }, [student, school]);
+
+  const GREEN = '#0a4f1f';
+  const YELLOW = '#fbbf24';
+  const DARK = '#1f1f1f';
+  const logoSrc = school.logo_url || '/albari_logo.jpg';
 
   return (
     <div
       id="student-id-card"
       className="relative mx-auto bg-white text-black overflow-hidden shadow-2xl"
-      style={{ width: 340, height: 560, borderRadius: 14 }}
+      style={{ width: 340, height: 540, borderRadius: 14, fontFamily: 'Inter, system-ui, sans-serif' }}
     >
-      {/* Top decorative bands */}
-      <div className="absolute top-0 left-0 w-full h-24 pointer-events-none">
-        <div className="absolute top-0 left-0 w-2/3 h-12 bg-[#1a3d1a]" style={{ clipPath: 'polygon(0 0, 100% 0, 70% 100%, 0% 100%)' }} />
-        <div className="absolute top-0 right-0 w-1/2 h-6 bg-[#facc15]" />
-        <div className="absolute top-6 right-0 w-1/2 h-8" style={{
-          backgroundImage: 'repeating-linear-gradient(135deg, #1a3d1a 0 8px, transparent 8px 18px)',
-        }} />
-        <div className="absolute top-3 left-1/4 w-10 h-3 bg-[#facc15]" />
-      </div>
-
-      {/* Header content */}
-      <div className="relative pt-6 px-4 flex items-start gap-3">
-        {school.logo_url ? (
-          <img src={school.logo_url} alt="" className="w-14 h-14 object-contain shrink-0" crossOrigin="anonymous" />
-        ) : (
-          <div className="w-14 h-14 rounded bg-[#1a3d1a] text-white flex items-center justify-center text-xs font-bold shrink-0">
-            LOGO
-          </div>
-        )}
-        <div className="leading-tight">
-          <p className="font-extrabold text-[#1a3d1a] text-sm uppercase">{school.name}</p>
-          {school.address && (
-            <p className="text-[10px] text-[#1a3d1a] mt-1 font-semibold">{school.address}</p>
-          )}
-        </div>
-      </div>
-
-      {/* Faded school watermark */}
-      <div className="absolute inset-x-0 top-32 bottom-32 opacity-10 pointer-events-none"
+      {/* Faded building/diagonal watermark background */}
+      <div
+        className="absolute inset-0 pointer-events-none"
         style={{
-          backgroundImage: 'linear-gradient(180deg, transparent 0%, #1a3d1a 100%)',
+          backgroundImage:
+            `linear-gradient(135deg, transparent 0 60%, ${GREEN}11 60% 62%, transparent 62%), ` +
+            `linear-gradient(45deg, transparent 0 65%, ${GREEN}11 65% 67%, transparent 67%)`,
+          opacity: 0.5,
         }}
       />
 
-      {/* Photo */}
-      <div className="relative mt-6 flex justify-center">
-        <div className="rounded-full overflow-hidden border-[5px] border-[#0a3d1f] bg-muted" style={{ width: 170, height: 170 }}>
-          {student.photo_url ? (
-            <img src={student.photo_url} alt={student.full_name} className="w-full h-full object-cover" crossOrigin="anonymous" />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-[#0a3d1f] bg-gray-100">
-              {student.full_name.split(' ').map(s => s[0]).slice(0, 2).join('')}
-            </div>
+      {/* TOP DECORATIVE BANDS */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{ height: 110 }}>
+        {/* dark charcoal slab (left) */}
+        <div className="absolute top-0 left-0" style={{
+          width: '55%', height: 56, background: DARK,
+          clipPath: 'polygon(0 0, 100% 0, 86% 100%, 0 100%)',
+        }} />
+        {/* small yellow tab under it */}
+        <div className="absolute" style={{ top: 56, left: 0, width: 16, height: 14, background: YELLOW }} />
+        {/* green slab on left */}
+        <div className="absolute" style={{
+          top: 24, left: 0, width: '45%', height: 56, background: GREEN,
+          clipPath: 'polygon(0 0, 100% 0, 80% 100%, 0 100%)',
+        }} />
+        {/* yellow band right */}
+        <div className="absolute top-0 right-0" style={{ width: '55%', height: 24, background: YELLOW }} />
+        {/* diagonal green stripes right */}
+        <div className="absolute" style={{
+          top: 24, right: 0, width: '55%', height: 50,
+          backgroundImage: `repeating-linear-gradient(115deg, ${GREEN} 0 7px, #ffffff 7px 13px)`,
+        }} />
+      </div>
+
+      {/* Header text + logo */}
+      <div className="relative flex items-start gap-2 px-3" style={{ paddingTop: 86 }}>
+        <img
+          src={logoSrc}
+          alt=""
+          crossOrigin="anonymous"
+          className="object-contain shrink-0"
+          style={{ width: 52, height: 52 }}
+          onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
+        />
+        <div className="leading-tight flex-1 min-w-0">
+          <p className="font-extrabold uppercase truncate" style={{ color: GREEN, fontSize: 13 }}>
+            {school.name}
+          </p>
+          {school.address && (
+            <p className="font-semibold mt-0.5" style={{ color: GREEN, fontSize: 9, lineHeight: 1.2 }}>
+              {school.address}
+            </p>
           )}
         </div>
       </div>
 
-      {/* Name and ID */}
-      <div className="relative mt-4 text-center px-3">
-        <p className="font-black text-lg uppercase tracking-wide text-black truncate">
+      {/* Photo */}
+      <div className="relative flex justify-center" style={{ marginTop: 24 }}>
+        <div
+          className="rounded-full overflow-hidden bg-gray-100 flex items-center justify-center"
+          style={{ width: 180, height: 180, border: `5px solid ${GREEN}` }}
+        >
+          {student.photo_url ? (
+            <img
+              src={student.photo_url}
+              alt={student.full_name}
+              crossOrigin="anonymous"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <span className="text-4xl font-bold" style={{ color: GREEN }}>
+              {student.full_name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase()}
+            </span>
+          )}
+        </div>
+      </div>
+
+      {/* Name + ID */}
+      <div className="relative text-center px-3" style={{ marginTop: 14 }}>
+        <p className="font-black uppercase tracking-tight truncate" style={{ fontSize: 18, color: '#000' }}>
           {student.full_name}
         </p>
-        <p className="text-sm font-semibold text-black mt-0.5">
+        <p className="font-semibold mt-1" style={{ fontSize: 14, color: '#000' }}>
           ID: {student.admission_number || '#########'}
         </p>
         {student.class_name && (
-          <p className="text-xs text-[#1a3d1a] font-semibold mt-0.5">{student.class_name}</p>
+          <p className="font-semibold mt-0.5" style={{ fontSize: 11, color: GREEN }}>
+            {student.class_name}
+          </p>
         )}
       </div>
 
-      {/* QR Code */}
-      <div className="relative mt-3 flex justify-center">
-        <canvas ref={qrRef} className="bg-white p-1" />
+      {/* QR */}
+      <div className="relative flex justify-center" style={{ marginTop: 10 }}>
+        <canvas ref={qrRef} className="bg-white" />
       </div>
 
-      {/* Bottom decorative bands */}
-      <div className="absolute bottom-0 left-0 w-full h-16 pointer-events-none">
-        <div className="absolute bottom-0 left-0 w-2/3 h-10 bg-[#1a3d1a]" style={{ clipPath: 'polygon(0 100%, 100% 100%, 70% 0, 0 0)' }} />
-        <div className="absolute bottom-0 right-0 w-1/2 h-6 bg-[#facc15]" />
-        <div className="absolute bottom-6 right-0 w-1/3 h-6" style={{
-          backgroundImage: 'repeating-linear-gradient(135deg, #1a3d1a 0 6px, transparent 6px 14px)',
+      {/* BOTTOM DECORATIVE BANDS */}
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: 70 }}>
+        <div className="absolute bottom-0 left-0" style={{
+          width: '55%', height: 36, background: GREEN,
+          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 14% 100%)',
+        }} />
+        <div className="absolute bottom-0 right-0" style={{
+          width: '60%', height: 28, background: YELLOW,
+          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 8% 100%)',
+        }} />
+        <div className="absolute bottom-0 left-0" style={{
+          width: 18, height: 22, background: DARK,
         }} />
       </div>
     </div>
