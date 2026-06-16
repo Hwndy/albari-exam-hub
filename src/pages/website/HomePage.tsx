@@ -28,7 +28,7 @@ export const HomePage = () => {
   return (
     <div className="space-y-0">
       {/* Hero Section with Slideshow Background */}
-      <section className="relative min-h-[500px] flex items-center py-24 overflow-hidden">
+      <section className="relative min-h-[600px] flex items-center py-24 overflow-hidden">
         
         {/* Background Slideshow Layer */}
         <div className="absolute inset-0 z-0">
