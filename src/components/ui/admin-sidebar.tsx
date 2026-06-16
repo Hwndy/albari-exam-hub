@@ -64,6 +64,7 @@ const menuItems = [
       { title: "Results", value: "results" },
       { title: "Questions", value: "questions" },
       { title: "Classes", value: "classes" },
+      { title: "Students", value: "students" },
       { title: "Subjects", value: "subjects" },
       { title: "Timetable", value: "timetable" },
       { title: "Report Cards", value: "report-cards" },
