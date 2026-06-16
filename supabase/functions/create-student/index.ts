@@ -46,7 +46,7 @@ serve(async (req) => {
       });
     }
 
-    const { email, password, fullName, classId } = await req.json();
+    const { email, password, fullName, classId, admissionNumber } = await req.json();
 
     console.log('Creating student:', { email, fullName, classId });
 
@@ -120,12 +120,14 @@ serve(async (req) => {
 
     // Create student entry with school_id
     if (newUser.user) {
+      const studentInsert: Record<string, any> = {
+        user_id: newUser.user.id,
+        school_id: schoolId,
+      };
+      if (admissionNumber) studentInsert.admission_number = admissionNumber;
       const { error: studentError } = await supabaseAdmin
         .from('students')
-        .insert({
-          user_id: newUser.user.id,
-          school_id: schoolId
-        });
+        .insert(studentInsert);
       
       if (studentError) {
         console.error('Student entry creation error:', studentError);
