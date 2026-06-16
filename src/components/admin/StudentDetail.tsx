@@ -53,7 +53,7 @@ export const StudentDetail: React.FC = () => {
           .select('id, total_score, max_score, percentage, passed, status, created_at, exam_id')
           .eq('student_id', userId).order('created_at', { ascending: false }).limit(10),
         supabase.from('attendance_summary').select('*').eq('student_id', userId).maybeSingle(),
-        supabase.from('fee_payments').select('*').eq('student_id', userId).order('created_at', { ascending: false }).limit(10),
+        supabase.from('fee_payments').select('*').eq('student_id', userId).order('payment_date', { ascending: false }).limit(10),
         supabase.from('student_parent_relationships').select('*').eq('student_id', userId),
       ]);
 
@@ -250,11 +250,11 @@ export const StudentDetail: React.FC = () => {
               <TableBody>
                 {payments.map((p: any) => (
                   <TableRow key={p.id}>
-                    <TableCell className="font-medium">₦{Number(p.amount ?? 0).toLocaleString()}</TableCell>
+                    <TableCell className="font-medium">₦{Number(p.amount_paid ?? 0).toLocaleString()}</TableCell>
                     <TableCell><Badge variant={p.status === 'success' ? 'default' : 'secondary'}>{p.status || '—'}</Badge></TableCell>
-                    <TableCell className="text-xs">{p.payment_reference || '—'}</TableCell>
+                    <TableCell className="text-xs">{p.receipt_number || p.transaction_id || '—'}</TableCell>
                     <TableCell className="text-xs text-muted-foreground">
-                      {p.created_at ? new Date(p.created_at).toLocaleDateString() : '—'}
+                      {p.payment_date ? new Date(p.payment_date).toLocaleDateString() : '—'}
                     </TableCell>
                   </TableRow>
                 ))}
