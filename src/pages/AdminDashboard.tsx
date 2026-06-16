@@ -35,6 +35,7 @@ import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
 import { LibraryManager } from '@/components/admin/LibraryManager';
 import { BulkNotificationSender } from '@/components/admin/BulkNotificationSender';
 import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
+import { StudentsByClass } from '@/components/admin/StudentsByClass';
 
 interface DashboardStats {
   totalStudents: number;
@@ -229,6 +230,7 @@ export const AdminDashboard = () => {
         'results': 'Student Results',
         'questions': 'Question Bank',
         'classes': 'Class Management',
+        'students': 'Students',
         'subjects': 'Subject Management',
         'timetable': 'Timetable Management',
         'report-cards': 'Report Cards',
@@ -339,6 +341,7 @@ export const AdminDashboard = () => {
         case 'results': return <AdminStudentResults />;
         case 'questions': return <AdminQuestionBank />;
         case 'classes': return <ClassManagement />;
+        case 'students': return <StudentsByClass />;
         case 'subjects': return <SubjectManagement />;
         case 'timetable': return <TimetableManager />;
         case 'report-cards': return <ReportCardGenerator />;

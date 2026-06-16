@@ -3566,6 +3566,7 @@ export type Database = {
           height: number | null
           id: string
           medical_info: Json | null
+          photo_url: string | null
           registration_number: string | null
           school_id: string
           section: string | null
@@ -3587,6 +3588,7 @@ export type Database = {
           height?: number | null
           id?: string
           medical_info?: Json | null
+          photo_url?: string | null
           registration_number?: string | null
           school_id: string
           section?: string | null
@@ -3608,6 +3610,7 @@ export type Database = {
           height?: number | null
           id?: string
           medical_info?: Json | null
+          photo_url?: string | null
           registration_number?: string | null
           school_id?: string
           section?: string | null

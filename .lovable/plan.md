@@ -1,66 +1,44 @@
+# Academic → Students (grouped by Class)
 
-# Report Card empty — root cause + fix
+Add a new admin page under **Academic › Students** that lists all classes as collapsible groups. Clicking a class reveals its students with per-student actions matching the attached mockup.
 
-## Diagnosis
+## Navigation
+- Add sidebar item `Students` under Academic (between `Classes` and `Subjects`), value `students`.
+- Route it in `AdminDashboard.renderContent()` and `getPageTitle()`.
 
-The Report Card screen is rendering correctly. There's just nothing to show:
+## New component: `src/components/admin/StudentsByClass.tsx`
 
-- `gradebook_entries`: **0 rows total**. No teacher has entered any TEST1/TEST2/EXAM scores.
-- `exam_sessions`: **2,650 completed** sessions, but **0** of them have their parent exam tagged with `session_id` + `term` + `assessment_category` — so the unified view filters them all out.
-- `admission_sessions`: 1 row ("1 st term", 2025/2026), `is_current = false`.
+Layout:
+- Header row: page title + two buttons — **Add Student** and **Export Class List** (exports currently expanded/selected class as CSV; if none selected, prompts to pick).
+- Search box (filters by name / admission number across all classes).
+- Accordion list of classes (each row shows class name + student count).
+- On expand: table of students with columns Photo · Full Name · Admission # · Gender · Status · Actions (kebab menu).
 
-The Report Card itself can't manufacture data. We need to wire upstream so scores actually flow in.
+Per-student kebab menu (from attached image):
+1. **View Profile** – opens a Dialog with full student details (profile, parents, class assignment, attendance summary if available).
+2. **Update Photo** – Dialog with file input, uploads to `question-media` bucket path `students/<student_id>/avatar.<ext>` (or new bucket if needed; reuse existing to avoid migration). Saves public URL to `students.photo_url` (add column if missing — see Technical).
+3. **View ID Card** – opens existing `IDCardGenerator` filtered to that student (or renders the same card preview in a dialog).
+4. **Edit Profile** – opens existing `UserEditModal` prefilled with student's user.
+5. **Delete Student** – AlertDialog confirm; calls a new edge function `delete-student` (service-role) that removes auth user + cascades profile/student/class_assignment rows. Falls back to soft-delete (`students.status = 'inactive'`) if hard delete fails.
 
-## Fix plan (4 small changes)
+## Add Student
+Reuse the create flow from `TeacherStudentCreator` form (full name, email, password, class). Calls existing `create-student` edge function. Default class = the currently expanded class.
 
-### 1. Tag exams from the UI
+## Export Class List
+Client-side CSV: `Admission #, Full Name, Gender, DOB, Status, Parent Name, Parent Phone`. Filename `<class-name>-students-<YYYYMMDD>.csv`.
 
-In `src/components/admin/ExamManagement.tsx` (and `ConsolidatedExamCreator.tsx`), add three required fields when creating/editing a regular exam:
+## Data fetching
+- `classes` filtered by `useSchoolQuery` ordered by name.
+- For each class, fetch `class_assignments → students → profiles` (single batched query using `in('class_id', classIds)` then group client-side).
+- Parent info via `student_parent_relationships → parents → profiles` (lazy, only when View Profile opens).
 
-- **Session** (dropdown of `admission_sessions` for the school, defaults to current).
-- **Term** (first / second / third, defaults to current term from a new picker — see #4).
-- **Assessment category** (test1 / test2 / exam / ca / mock / other).
+## Technical notes
+- **Schema check needed**: confirm `students.photo_url` column exists. If not, a small migration adds `photo_url text`.
+- **Storage**: photos go to existing `question-media` bucket under `students/<id>/...` to avoid creating a new bucket. RLS already restricts to school members.
+- **Delete edge function**: new `supabase/functions/delete-student/index.ts` using service role; verifies caller is admin of the student's school via JWT.
+- Multi-tenancy: every query goes through `useSchoolQuery`; new edge function enforces `school_id` match.
+- No changes to existing exam/report-card flow.
 
-Show a small inline notice on existing untagged exams: *"Tag this exam with a session and term so its results appear on report cards."*
-
-### 2. Bulk-tag existing exams
-
-Add an admin-only "Tag exams" dialog on the Exam list with:
-- Multi-select exams from the list.
-- Pick session + term + category, apply to all selected.
-
-This lets the admin retroactively classify the 2,650 historical sessions so they start showing on report cards immediately, without re-running anything.
-
-### 3. Gradebook writes session_id
-
-In `src/components/teacher/GradebookSystem.tsx`, replace the free-text `academic_year` input with the same Session dropdown and write `session_id` on every insert/update. Backfill `academic_year` text from the chosen session for compatibility with existing `report_card_comments` / `attendance_summary` joins.
-
-### 4. Empty-state guidance on the Report Card
-
-When `reportCards.length === 0`, replace the generic message with a real diagnostic:
-- "No exams found for this session+term. **Create a TEST1 / TEST2 / EXAM** in Exam Management, or enter scores in the Gradebook."
-- If the school has untagged exams (we can detect with a count query), show: *"You have N completed exams not tagged with a session/term — click here to tag them."* → opens the bulk-tag dialog.
-
-### 5. Mark a session current (one-time, optional)
-
-The single existing session "1 st term" has `is_current = false`. Either:
-- Add an `AcademicSessionManager` toggle (planned for step 1 of the larger plan), or
-- For now, the Report Card already lets the admin pick the session from the dropdown — so this is not blocking, but the empty-state hint will mention it.
-
-## Files touched
-
-- `src/components/shared/ConsolidatedExamCreator.tsx` — add session/term/category fields, default to current.
-- `src/components/admin/ExamManagement.tsx` — bulk-tag dialog + untagged badge.
-- `src/components/teacher/GradebookSystem.tsx` — Session dropdown writes `session_id`.
-- `src/components/admin/ReportCardGenerator.tsx` — smarter empty state + "tag exams" CTA.
-
-## Out of scope (for this pass)
-
-- Full SessionTermPicker in the header (planned later).
-- Question bank tree, ResultsHub, Exam list regroup — these come after data starts flowing.
-
-## Validation
-
-1. Open Exam Management → bulk-tag 5 historical exams as `term=third`, `session=1 st term`, `category=exam`.
-2. Open Report Cards → pick SSS 2 B, Third Term, "1 st term" → student scores from those tagged exams now show, with grades + positions.
-3. Open Gradebook → enter TEST1 for a student under the same session/term → it appears on the report card alongside the exam score (20+20+60 split).
+## Out of scope
+- Bulk import / promotion (already exist elsewhere).
+- Editing parent linkages (separate screen).
