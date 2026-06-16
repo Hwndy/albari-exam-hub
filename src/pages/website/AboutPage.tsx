@@ -220,16 +220,16 @@ export const AboutPage = () => {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card className="border-0 shadow-lg">
                 <CardContent className="pt-6 text-center">
                   <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <span className="text-2xl font-bold text-primary">MA</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Dr. Mohammed Ali</h3>
-                  <p className="text-primary font-medium mb-2">Principal</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">HON. SULAIMON RASAQ</h3>
+                  <p className="text-primary font-medium mb-2">Proprietor</p>
                   <p className="text-muted-foreground text-sm">
-                    Ph.D in Education Administration with 20+ years of experience in educational leadership.
+                    20+ years of experience in educational leadership.
                   </p>
                 </CardContent>
               </Card>
@@ -239,26 +239,16 @@ export const AboutPage = () => {
                   <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full mx-auto mb-4 flex items-center justify-center">
                     <span className="text-2xl font-bold text-primary">FA</span>
                   </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Mrs. Fatima Ahmed</h3>
-                  <p className="text-primary font-medium mb-2">Vice Principal (Academics)</p>
+                  <h3 className="text-xl font-semibold text-foreground mb-2">Dr. Sulaimon Dhikroh Awe</h3>
+                  <p className="text-primary font-medium mb-2">Director of Studies (D.O.S)</p>
                   <p className="text-muted-foreground text-sm">
-                    Masters in Curriculum Development, dedicated to academic excellence and innovation.
+                    PhD. Mathematics, dedicated to academic excellence and innovation.
                   </p>
                 </CardContent>
               </Card>
 
-              <Card className="border-0 shadow-lg">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">AI</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Mr. Abdul Ibrahim</h3>
-                  <p className="text-primary font-medium mb-2">Vice Principal (Administration)</p>
-                  <p className="text-muted-foreground text-sm">
-                    MBA in Educational Management, ensuring smooth operational excellence.
-                  </p>
-                </CardContent>
-              </Card>
+              
+              {/* </Card> */}
             </div>
           </div>
         </div>
