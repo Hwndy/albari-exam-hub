@@ -38,6 +38,7 @@ import {
 import { UserEditModal } from './UserEditModal';
 import { StudentIDCard } from './StudentIDCard';
 import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
+import html2canvas from 'html2canvas';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -524,7 +525,24 @@ export const StudentsByClass: React.FC = () => {
                   school={schoolInfo}
                 />
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    const node = document.getElementById('student-id-card');
+                    if (!node) return;
+                    try {
+                      const canvas = await html2canvas(node, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+                      const link = document.createElement('a');
+                      link.download = `ID_${(idCardStudent.full_name || 'student').replace(/\s+/g, '_')}.png`;
+                      link.href = canvas.toDataURL('image/png');
+                      link.click();
+                    } catch (err: any) {
+                      toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
+                    }
+                  }}>
+                  <Download className="h-4 w-4 mr-2" /> Download PNG
+                </Button>
                 <Button onClick={() => window.print()}>
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>
