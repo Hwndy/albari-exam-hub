@@ -36,6 +36,7 @@ import { LibraryManager } from '@/components/admin/LibraryManager';
 import { BulkNotificationSender } from '@/components/admin/BulkNotificationSender';
 import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
 import { StudentsByClass } from '@/components/admin/StudentsByClass';
+import { StudentDetail } from '@/components/admin/StudentDetail';
 
 interface DashboardStats {
   totalStudents: number;
@@ -342,6 +343,7 @@ export const AdminDashboard = () => {
         case 'questions': return <AdminQuestionBank />;
         case 'classes': return <ClassManagement />;
         case 'students': return <StudentsByClass />;
+        case 'student-detail': return <StudentDetail />;
         case 'subjects': return <SubjectManagement />;
         case 'timetable': return <TimetableManager />;
         case 'report-cards': return <ReportCardGenerator />;
