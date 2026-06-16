@@ -51,7 +51,7 @@ export const SchoolLifePage = () => {
   const extracurricular = [
     "Debate Club", "Science Club", "Literature Society", "Mathematics Club",
     "Football Team", "Basketball Team", "Athletics", "Table Tennis",
-    "Quranic Recitation", "Arabic Calligraphy", "Drama Club", "Choir"
+    "Quranic Recitation", "Arabic Calligraphy"
   ];
 
   return (
@@ -131,6 +131,35 @@ export const SchoolLifePage = () => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <Card className="border-0 shadow-lg">
+                <CardContent className="pt-6 text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">CRECHE</div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Your babies in safe hands</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Foundation years building core competencies in all subject areas with emphasis on literacy and numeracy.
+                  </p>
+                </CardContent>
+              </Card>
+                <Card className="border-0 shadow-lg">
+                <CardContent className="pt-6 text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">KG - NURSERY</div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">Kindergarten</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Foundation years building core competencies in all subject areas with emphasis on literacy and numeracy.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-0 shadow-lg">
+                <CardContent className="pt-6 text-center">
+                  <div className="text-3xl font-bold text-primary mb-2">PRY 1 - 6</div>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">PRIMARY</h3>
+                  <p className="text-muted-foreground text-sm">
+                    Foundation years building core competencies in all subject areas with emphasis on literacy and numeracy.
+                  </p>
+                </CardContent>
+              </Card>
+
               <Card className="border-0 shadow-lg">
                 <CardContent className="pt-6 text-center">
                   <div className="text-3xl font-bold text-primary mb-2">JSS 1-3</div>
@@ -290,11 +319,11 @@ export const SchoolLifePage = () => {
                     <span className="text-muted-foreground">Morning Assembly & Prayers</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-border pb-3">
-                    <span className="font-medium text-foreground">8:00 - 10:30 AM</span>
+                    <span className="font-medium text-foreground">8:00 - 11:30 AM</span>
                     <span className="text-muted-foreground">First Academic Session</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-border pb-3">
-                    <span className="font-medium text-foreground">10:30 - 11:00 AM</span>
+                    <span className="font-medium text-foreground">11:30 - 12:00 PM</span>
                     <span className="text-muted-foreground">Break & Refreshments</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-border pb-3">
@@ -302,12 +331,12 @@ export const SchoolLifePage = () => {
                     <span className="text-muted-foreground">Second Academic Session</span>
                   </div>
                   <div className="flex justify-between items-center border-b border-border pb-3">
-                    <span className="font-medium text-foreground">1:00 - 2:00 PM</span>
+                    <span className="font-medium text-foreground">12:00 - 2:00 PM</span>
                     <span className="text-muted-foreground">Lunch Break & Prayers</span>
                   </div>
                   <div className="flex justify-between items-center">
                     <span className="font-medium text-foreground">2:00 - 4:00 PM</span>
-                    <span className="text-muted-foreground">Activities & Study Period</span>
+                    <span className="text-muted-foreground">Madrasah & Study Period</span>
                   </div>
                 </div>
               </CardContent>
