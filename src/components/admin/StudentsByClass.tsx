@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
@@ -32,9 +33,11 @@ import {
 } from '@/components/ui/select';
 import {
   MoreVertical, UserPlus, Download, Search, Eye, Camera,
-  IdCard, Pencil, Trash2, Printer, GraduationCap,
+  IdCard, Pencil, Trash2, Printer, GraduationCap, Hash, FileText,
 } from 'lucide-react';
 import { UserEditModal } from './UserEditModal';
+import { StudentIDCard } from './StudentIDCard';
+import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -57,17 +60,19 @@ export const StudentsByClass: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
+  const navigate = useNavigate();
 
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [studentsByClass, setStudentsByClass] = useState<Record<string, StudentRow[]>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [openClass, setOpenClass] = useState<string | undefined>();
+  const [schoolInfo, setSchoolInfo] = useState<{ name: string; address?: string; logo_url?: string | null }>({ name: 'School' });
 
   // Dialogs
   const [addOpen, setAddOpen] = useState(false);
   const [addClassId, setAddClassId] = useState<string>('');
-  const [addForm, setAddForm] = useState({ fullName: '', email: '', password: '' });
+  const [addForm, setAddForm] = useState({ fullName: '', email: '', password: '', admissionNumber: '' });
   const [creating, setCreating] = useState(false);
 
   const [viewStudent, setViewStudent] = useState<StudentRow | null>(null);
@@ -76,8 +81,43 @@ export const StudentsByClass: React.FC = () => {
   const [editProfile, setEditProfile] = useState<any | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
   const [busy, setBusy] = useState(false);
+  const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
-  useEffect(() => { if (schoolId !== undefined) fetchAll(); /* eslint-disable-next-line */ }, [schoolId]);
+  useEffect(() => {
+    if (schoolId !== undefined) {
+      fetchAll();
+      fetchSchoolBranding();
+    }
+    // eslint-disable-next-line
+  }, [schoolId]);
+
+  const fetchSchoolBranding = async () => {
+    try {
+      let name = 'School';
+      let address: string | undefined;
+      let logo_url: string | null = null;
+      if (schoolId) {
+        const { data: s } = await supabase
+          .from('schools').select('name, logo_url, address').eq('id', schoolId).maybeSingle();
+        if (s) {
+          name = (s as any).name ?? name;
+          logo_url = (s as any).logo_url ?? null;
+          const a = (s as any).address;
+          if (a && typeof a === 'object') {
+            address = [a.street, a.city, a.state].filter(Boolean).join(', ');
+          } else if (typeof a === 'string') address = a;
+        }
+      }
+      const { data: infos } = await supabase
+        .from('school_info').select('info_key, info_value').in('info_key', ['school_name', 'address']);
+      (infos ?? []).forEach((i: any) => {
+        if (i.info_key === 'school_name' && i.info_value) name = i.info_value;
+        if (i.info_key === 'address' && i.info_value && !address) address = i.info_value;
+      });
+      setSchoolInfo({ name, address, logo_url });
+    } catch { /* ignore */ }
+  };
 
   const fetchAll = async () => {
     setLoading(true);
@@ -164,12 +204,18 @@ export const StudentsByClass: React.FC = () => {
     setCreating(true);
     try {
       const { error } = await supabase.functions.invoke('create-student', {
-        body: { ...addForm, classId: addClassId },
+        body: {
+          fullName: addForm.fullName,
+          email: addForm.email,
+          password: addForm.password,
+          classId: addClassId,
+          admissionNumber: addForm.admissionNumber || undefined,
+        },
       });
       if (error) throw error;
       toast({ title: 'Student created', description: addForm.fullName });
       setAddOpen(false);
-      setAddForm({ fullName: '', email: '', password: '' });
+      setAddForm({ fullName: '', email: '', password: '', admissionNumber: '' });
       await fetchAll();
     } catch (e: any) {
       toast({ title: 'Create failed', description: e.message || 'Try again', variant: 'destructive' });
@@ -255,6 +301,9 @@ export const StudentsByClass: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setBulkAssignOpen(true)}>
+            <Hash className="h-4 w-4 mr-2" /> Generate Admission #
+          </Button>
           <Button onClick={() => { setAddClassId(openClass || classes[0]?.id || ''); setAddOpen(true); }}>
             <UserPlus className="h-4 w-4 mr-2" /> Add Student
           </Button>
@@ -321,7 +370,13 @@ export const StudentsByClass: React.FC = () => {
                                 <AvatarFallback>{initials(s.full_name)}</AvatarFallback>
                               </Avatar>
                             </TableCell>
-                            <TableCell className="font-medium">{s.full_name}</TableCell>
+                            <TableCell className="font-medium">
+                              <button
+                                className="hover:underline text-left"
+                                onClick={() => navigate(`/dashboard?tab=academic&subtab=student-detail&id=${s.user_id}`)}>
+                                {s.full_name}
+                              </button>
+                            </TableCell>
                             <TableCell>{s.admission_number || '—'}</TableCell>
                             <TableCell className="capitalize">{s.gender || '—'}</TableCell>
                             <TableCell>
@@ -335,11 +390,17 @@ export const StudentsByClass: React.FC = () => {
                                   <Button variant="ghost" size="icon"><MoreVertical className="h-4 w-4" /></Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end" className="bg-popover">
+                                  <DropdownMenuItem onClick={() => navigate(`/dashboard?tab=academic&subtab=student-detail&id=${s.user_id}`)}>
+                                    <FileText className="h-4 w-4 mr-2" /> View Details
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => setViewStudent(s)}>
                                     <Eye className="h-4 w-4 mr-2" /> View Profile
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => setPhotoStudent(s)}>
                                     <Camera className="h-4 w-4 mr-2" /> Update Photo
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => setSingleAssign(s)}>
+                                    <Hash className="h-4 w-4 mr-2" /> Assign Admission #
                                   </DropdownMenuItem>
                                   <DropdownMenuItem onClick={() => setIdCardStudent(s)}>
                                     <IdCard className="h-4 w-4 mr-2" /> View ID Card
@@ -382,6 +443,10 @@ export const StudentsByClass: React.FC = () => {
             <div><Label>Password</Label>
               <Input type="text" value={addForm.password} required minLength={6}
                 onChange={e => setAddForm({ ...addForm, password: e.target.value })} /></div>
+            <div><Label>Admission # <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Input value={addForm.admissionNumber}
+                placeholder="Leave blank to assign later"
+                onChange={e => setAddForm({ ...addForm, admissionNumber: e.target.value })} /></div>
             <div><Label>Class</Label>
               <Select value={addClassId} onValueChange={setAddClassId}>
                 <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
@@ -437,28 +502,21 @@ export const StudentsByClass: React.FC = () => {
 
       {/* View ID Card */}
       <Dialog open={!!idCardStudent} onOpenChange={o => !o && setIdCardStudent(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md">
           <DialogHeader><DialogTitle>Student ID Card</DialogTitle></DialogHeader>
           {idCardStudent && (
             <div className="space-y-4">
-              <div id="id-card-print"
-                className="border rounded-lg p-6 bg-card text-card-foreground w-full max-w-sm mx-auto">
-                <div className="flex flex-col items-center gap-3">
-                  <Avatar className="h-24 w-24 border-2 border-primary">
-                    <AvatarImage src={idCardStudent.photo_url ?? undefined} />
-                    <AvatarFallback className="text-2xl">{initials(idCardStudent.full_name)}</AvatarFallback>
-                  </Avatar>
-                  <p className="font-bold text-lg text-center">{idCardStudent.full_name}</p>
-                  <Badge>{classes.find(c => c.id === idCardStudent.class_id)?.name || 'Class'}</Badge>
-                  <div className="text-sm space-y-1 w-full mt-2">
-                    <div className="flex justify-between"><span className="text-muted-foreground">Adm #</span>
-                      <span className="font-medium">{idCardStudent.admission_number || '—'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">Gender</span>
-                      <span className="font-medium capitalize">{idCardStudent.gender || '—'}</span></div>
-                    <div className="flex justify-between"><span className="text-muted-foreground">DOB</span>
-                      <span className="font-medium">{idCardStudent.date_of_birth || '—'}</span></div>
-                  </div>
-                </div>
+              <div className="print-area">
+                <StudentIDCard
+                  student={{
+                    user_id: idCardStudent.user_id,
+                    full_name: idCardStudent.full_name,
+                    admission_number: idCardStudent.admission_number,
+                    photo_url: idCardStudent.photo_url,
+                    class_name: classes.find(c => c.id === idCardStudent.class_id)?.name,
+                  }}
+                  school={schoolInfo}
+                />
               </div>
               <div className="flex justify-end">
                 <Button onClick={() => window.print()}>
@@ -497,6 +555,26 @@ export const StudentsByClass: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Bulk admission numbers */}
+      <AssignAdmissionNumbersDialog
+        open={bulkAssignOpen}
+        onOpenChange={setBulkAssignOpen}
+        onDone={fetchAll}
+      />
+
+      {/* Single admission number */}
+      <AssignAdmissionNumbersDialog
+        open={!!singleAssign}
+        onOpenChange={(o) => !o && setSingleAssign(null)}
+        singleStudent={singleAssign ? {
+          user_id: singleAssign.user_id,
+          full_name: singleAssign.full_name,
+          class_name: classes.find(c => c.id === singleAssign.class_id)?.name || '—',
+          current: singleAssign.admission_number,
+        } : undefined}
+        onDone={fetchAll}
+      />
     </div>
   );
 };
