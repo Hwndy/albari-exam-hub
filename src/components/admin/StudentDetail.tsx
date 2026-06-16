@@ -52,9 +52,16 @@ export const StudentDetail: React.FC = () => {
         supabase.from('exam_sessions')
           .select('id, total_score, max_score, percentage, passed, status, created_at, exam_id')
           .eq('student_id', userId).order('created_at', { ascending: false }).limit(10),
-        supabase.from('attendance_summary').select('*').eq('student_id', userId).maybeSingle(),
-        supabase.from('fee_payments').select('*').eq('student_id', userId).order('payment_date', { ascending: false }).limit(10),
-        supabase.from('student_parent_relationships').select('*').eq('student_id', userId),
+        // attendance_summary.student_id and fee_payments.student_id reference students.id, not auth user_id
+        stu?.id
+          ? supabase.from('attendance_summary').select('*').eq('student_id', stu.id).order('created_at', { ascending: false }).limit(1).maybeSingle()
+          : Promise.resolve({ data: null }),
+        stu?.id
+          ? supabase.from('fee_payments').select('*').eq('student_id', stu.id).order('payment_date', { ascending: false }).limit(10)
+          : Promise.resolve({ data: [] as any[] }),
+        stu?.id
+          ? supabase.from('student_parent_relationships').select('*').eq('student_id', stu.id)
+          : Promise.resolve({ data: [] as any[] }),
       ]);
 
       // Resolve exam titles
