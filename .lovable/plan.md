@@ -1,98 +1,57 @@
-# Students Page – Fixes & Enhancements
+## Plan
 
-## 1. Fix "Upload failed: permission denied for table users"
+1. **Fix the data/RLS blockers first**
+   - Add a migration to make `students.admission_number` optional so new students can exist before admission numbers are assigned.
+   - Backfill missing `students` rows for existing student profile/class assignments, because the live database currently has class-assigned student users but no rows in `students`.
+   - Replace recursive student/parent RLS checks with security-definer helper functions so the Students page can load without `infinite recursion detected in policy for relation "students"`.
+   - Ensure admin/student update policies support editing student rows, photo URLs, and admission number assignment safely within the same school.
 
-**Cause.** Photo upload to `admission-documents/students/<user_id>/…` triggers Storage RLS. The existing policy *"Users can view their own application documents"* references `auth.users` directly, which `authenticated` cannot read — so the post-INSERT `RETURNING` fails with `permission denied for table users`.
+2. **Repair admission number assignment**
+   - Update `create-student` so it no longer silently succeeds when the student row fails to create.
+   - Update the assign dialog to show exact failures instead of “0 updated” with no actionable error.
+   - Keep bulk + single assignment using the `PREFIX/YEAR/####` format, and refresh the list after assignment.
 
-**Fix (migration).**
-- Rewrite that policy to use the existing `SECURITY DEFINER` helper `public.get_user_email()` instead of querying `auth.users` directly.
-- Add a clean, admin-only storage policy pair scoped to `students/` prefix in `admission-documents`:
-  - `INSERT/UPDATE/DELETE/SELECT` allowed when `bucket_id='admission-documents' AND foldername[1]='students' AND has_role(auth.uid(),'admin')`.
+3. **Repair student editing**
+   - Replace the generic user edit flow for student rows with a student-focused edit dialog that updates:
+     - full name
+     - class assignment
+     - admission number
+     - gender
+     - date of birth
+     - status
+     - section/registration number/basic details already present in the schema
+   - Preserve school isolation on all reads/writes.
 
-After this, photo upload from `StudentsByClass` works unchanged.
+4. **Fix Student Detail data loading and empty states**
+   - Correct `attendance_summary` lookup to use the internal `students.id` because that table references `students.id`, not the auth `user_id`.
+   - Keep exam results lookup by auth `user_id`, because `exam_sessions.student_id` references `profiles.user_id`.
+   - Correct `fee_payments` lookup to use `students.id`.
+   - Add clear empty states for attendance, recent exam results, fee payments, parents/guardians, and missing profile/student records.
 
-## 2. Bulk-assign admission numbers ("action buttons not working")
+5. **Redesign Student ID Card to match the reference**
+   - Rebuild `StudentIDCard` as a portrait card closer to the attached design:
+     - school logo and school name/address at the top
+     - green/yellow/charcoal geometric bands
+     - large circular student photo frame
+     - faint school-building style background/watermark effect
+     - bold centered student name and `ID: admission_number`
+     - large QR code beneath
+   - Use the existing `/albari_logo.jpg` fallback when the school logo URL is missing.
+   - Keep the blurred/covered face area out of consideration and preserve actual uploaded student photo when available.
 
-The kebab actions work, but most existing students have no `admission_number`, so the ID Card shows `—` and admins want to assign them in bulk.
+6. **Fix printing/export so only the card is exported**
+   - Update print CSS so `window.print()` hides the dialog/app chrome and prints only the ID card at the correct portrait dimensions with colors preserved.
+   - Add a PNG download/export action for the currently previewed ID card using `html2canvas`, so printing and exporting do not capture the modal/background.
 
-Add a new header button **"Generate Admission Numbers"** on the Students page:
-- Opens a dialog with format preview: `ALB/YYYY/####` (configurable prefix, year auto, 4-digit sequence per school).
-- Lists students missing an `admission_number`, grouped by class, with checkboxes (all selected by default).
-- On confirm: computes next sequence per school (max existing numeric tail + 1) and updates each selected `students` row.
-- Per-row action **"Assign Admission #"** added to the kebab menu for single-student assignment.
+7. **Update export parameters for class lists**
+   - Expand class CSV export to include useful student list fields: S/N, admission number, full name, class, gender, date of birth, status, section, and registration number where available.
+   - Keep filename based on class name and date.
 
-Also extend the **Add Student** form so admins can enter (or auto-generate) an admission number at creation time — passed to the existing `create-student` edge function (server applies it to the `students` row).
-
-## 3. Redesign the ID Card to match the uploaded artwork
-
-Rebuild the ID Card dialog as a portrait card (≈ 320 × 540 px) that mirrors the reference:
-- Top band: yellow/dark-green geometric shapes + diagonal stripes.
-- School logo (circular) + school name + address on top row.
-- Centered circular photo with dark-green ring.
-- Faded school-building watermark behind the lower half.
-- Bold uppercase student full name + `ID: <admission_number>`.
-- QR code generated from a JSON payload (`{id, name, admission_no, school}`) using `qrcode` (already-suitable lightweight lib; add `qrcode` if missing).
-- Bottom band: matching yellow/green geometric shapes.
-
-Pulls school name/address/logo from `schools` (logo_url) + `school_info` (address). Print button uses an isolated print stylesheet so only the card prints.
-
-A reusable `<StudentIDCard student={…} school={…} />` component renders the design and is used by both the dialog and (later) bulk printing.
-
-## 4. Student Detail page
-
-New route `/admin/students/:userId` (rendered inside `AdminDashboard`'s existing view system as a `student-detail` view).
-
-Sections:
-- **Header**: photo, full name, admission #, class, status badge, quick actions (Edit, Update Photo, View ID Card, Delete).
-- **Personal**: gender, DOB, age, blood group, address, religion, nationality.
-- **Academic**: current class/section, admission date, recent exam sessions (score, %, status) with link to result.
-- **Attendance**: summary from `attendance_summary` (present/absent/late %).
-- **Fees**: outstanding installments + recent payments from `fee_installments` / `fee_payments`.
-- **Parents/Guardians**: list from `student_parent_relationships` → `parents` → `profiles` (name, phone, email, relationship).
-- **Documents**: any items in `admission-documents/students/<user_id>/`.
-
-Each row in the Students-by-class table becomes clickable (name links to the detail page); a "View Details" item is added to the kebab menu.
-
-## Technical details
-
-**Migration**
-```sql
--- Replace policy that touches auth.users
-DROP POLICY "Users can view their own application documents" ON storage.objects;
-CREATE POLICY "Users can view their own application documents"
-ON storage.objects FOR SELECT
-USING (
-  bucket_id = 'admission-documents' AND (
-    EXISTS (
-      SELECT 1 FROM public.admission_applications aa
-      WHERE aa.email = public.get_user_email()
-        AND (storage.foldername(objects.name))[1] = aa.id::text
-    )
-    OR public.has_role(auth.uid(), 'admin')
-  )
-);
-
--- Admin-scoped policies for students photo folder
-CREATE POLICY "Admins manage student photos"
-ON storage.objects FOR ALL
-USING (bucket_id='admission-documents'
-       AND (storage.foldername(name))[1]='students'
-       AND public.has_role(auth.uid(),'admin'))
-WITH CHECK (bucket_id='admission-documents'
-       AND (storage.foldername(name))[1]='students'
-       AND public.has_role(auth.uid(),'admin'));
-```
-
-**Files to add/edit**
-- `supabase/migrations/<ts>_students_storage_fix.sql` — policies above.
-- `src/components/admin/StudentsByClass.tsx` — add `Generate Admission #` header button + dialog, per-row "Assign Admission #" + "View Details", link names to detail page.
-- `src/components/admin/AssignAdmissionNumbersDialog.tsx` — bulk/single admission # assignment.
-- `src/components/admin/StudentIDCard.tsx` — new visual ID card component (uses `qrcode`).
-- `src/components/admin/StudentDetail.tsx` — full detail page.
-- `src/pages/AdminDashboard.tsx` + `src/components/ui/admin-sidebar.tsx` — wire `student-detail` view + navigation by `userId`.
-- `supabase/functions/create-student/index.ts` — accept optional `admissionNumber`.
-- `package.json` — add `qrcode` + `@types/qrcode` if not present.
-
-**Out of scope**
-- Bulk-printing all ID cards (can follow up).
-- Editing parent records inline (open in Users page).
+8. **Test/validate after implementation**
+   - Use Supabase read checks to confirm existing student rows were backfilled and admission-number candidates exist.
+   - Use the preview/session where available to verify:
+     - Student Detail loads attendance/exam/fee sections and empty states correctly.
+     - Admission number assignment updates rows.
+     - Student editing saves changes.
+     - ID card preview visually matches the reference more closely.
+     - Print/export targets only the card.

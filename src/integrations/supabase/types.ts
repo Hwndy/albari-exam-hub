@@ -3556,7 +3556,7 @@ export type Database = {
         Row: {
           address: Json | null
           admission_date: string | null
-          admission_number: string
+          admission_number: string | null
           age: number | null
           blood_group: string | null
           created_at: string | null
@@ -3578,7 +3578,7 @@ export type Database = {
         Insert: {
           address?: Json | null
           admission_date?: string | null
-          admission_number: string
+          admission_number?: string | null
           age?: number | null
           blood_group?: string | null
           created_at?: string | null
@@ -3600,7 +3600,7 @@ export type Database = {
         Update: {
           address?: Json | null
           admission_date?: string | null
-          admission_number?: string
+          admission_number?: string | null
           age?: number | null
           blood_group?: string | null
           created_at?: string | null
@@ -4097,6 +4097,9 @@ export type Database = {
       interview_exists: { Args: { interview_uuid: string }; Returns: boolean }
       is_admin: { Args: never; Returns: boolean }
       is_admin_v2: { Args: never; Returns: boolean }
+      is_my_parent_record: { Args: { _parent_id: string }; Returns: boolean }
+      is_my_student_record: { Args: { _student_id: string }; Returns: boolean }
+      is_parent_of_student: { Args: { _student_id: string }; Returns: boolean }
       is_same_school: { Args: { target_school_id: string }; Returns: boolean }
       is_super_admin: { Args: never; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
