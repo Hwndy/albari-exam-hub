@@ -77,8 +77,10 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
       const { data: cls } = await withSchoolFilter(
         supabase.from('classes').select('id, name')
       );
-      const classMap = new Map((cls ?? []).map((c: any) => [c.id, c.name]));
-      const classIds = Array.from(classMap.keys());
+      const classMap = new Map<string, string>(
+        (cls ?? []).map((c: any) => [c.id as string, c.name as string])
+      );
+      const classIds: string[] = Array.from(classMap.keys());
       if (classIds.length === 0) { setCandidates([]); return; }
 
       const { data: assigns } = await supabase
@@ -96,11 +98,11 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
       const pMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p.full_name]));
       const sMap = new Map((students ?? []).map((s: any) => [s.user_id, s.admission_number]));
 
-      const list: Candidate[] = (assigns ?? [])
+      const list: Candidate[] = ((assigns ?? []) as any[])
         .map((a: any) => ({
           user_id: a.student_id,
           full_name: pMap.get(a.student_id) || 'Unknown',
-          class_name: classMap.get(a.class_id) || '—',
+          class_name: (classMap.get(a.class_id) as string) || '—',
           current: sMap.get(a.student_id) ?? null,
         }))
         .filter(c => !c.current)
