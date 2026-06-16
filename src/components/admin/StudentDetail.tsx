@@ -51,7 +51,7 @@ export const StudentDetail: React.FC = () => {
       const [{ data: examSessions }, { data: att }, { data: pays }, { data: rels }] = await Promise.all([
         supabase.from('exam_sessions')
           .select('id, total_score, max_score, percentage, passed, status, created_at, exam_id')
-          .eq('user_id', userId).order('created_at', { ascending: false }).limit(10),
+          .eq('student_id', userId).order('created_at', { ascending: false }).limit(10),
         supabase.from('attendance_summary').select('*').eq('student_id', userId).maybeSingle(),
         supabase.from('fee_payments').select('*').eq('student_id', userId).order('created_at', { ascending: false }).limit(10),
         supabase.from('student_parent_relationships').select('*').eq('student_id', userId),
