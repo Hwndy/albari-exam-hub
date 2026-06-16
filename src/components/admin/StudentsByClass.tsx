@@ -38,6 +38,7 @@ import {
 import { UserEditModal } from './UserEditModal';
 import { StudentIDCard } from './StudentIDCard';
 import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
+import html2canvas from 'html2canvas';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -229,10 +230,15 @@ export const StudentsByClass: React.FC = () => {
       toast({ title: 'Nothing to export', description: 'No students in this class' });
       return;
     }
-    const header = ['Admission #', 'Full Name', 'Gender', 'Date of Birth', 'Status'];
-    const csv = [header, ...rows.map(r => [
-      r.admission_number ?? '', r.full_name, r.gender ?? '',
-      r.date_of_birth ?? '', r.status ?? '',
+    const header = ['S/N', 'Admission #', 'Full Name', 'Class', 'Gender', 'Date of Birth', 'Status'];
+    const csv = [header, ...rows.map((r, i) => [
+      String(i + 1),
+      r.admission_number ?? '',
+      r.full_name,
+      cls.name,
+      r.gender ?? '',
+      r.date_of_birth ?? '',
+      r.status ?? '',
     ])].map(line => line.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -286,9 +292,10 @@ export const StudentsByClass: React.FC = () => {
   /* -------- Edit Profile -------- */
   const openEdit = async (s: StudentRow) => {
     const { data } = await supabase.from('profiles')
-      .select('id, user_id, full_name, role, created_at, updated_at')
+      .select('id, user_id, full_name, created_at, updated_at')
       .eq('user_id', s.user_id).maybeSingle();
-    if (data) setEditProfile(data);
+    if (data) setEditProfile({ ...data, role: 'student' });
+    else toast({ title: 'Could not load profile', variant: 'destructive' });
   };
 
   return (
@@ -518,7 +525,24 @@ export const StudentsByClass: React.FC = () => {
                   school={schoolInfo}
                 />
               </div>
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2">
+                <Button
+                  variant="outline"
+                  onClick={async () => {
+                    const node = document.getElementById('student-id-card');
+                    if (!node) return;
+                    try {
+                      const canvas = await html2canvas(node, { scale: 3, backgroundColor: '#ffffff', useCORS: true });
+                      const link = document.createElement('a');
+                      link.download = `ID_${(idCardStudent.full_name || 'student').replace(/\s+/g, '_')}.png`;
+                      link.href = canvas.toDataURL('image/png');
+                      link.click();
+                    } catch (err: any) {
+                      toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
+                    }
+                  }}>
+                  <Download className="h-4 w-4 mr-2" /> Download PNG
+                </Button>
                 <Button onClick={() => window.print()}>
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>

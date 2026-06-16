@@ -3,13 +3,25 @@
 @tailwind utilities;
 
 @media print {
+  @page { size: 54mm 86mm; margin: 0; }
+  html, body { background: #fff !important; }
   body * { visibility: hidden !important; }
   #student-id-card, #student-id-card * { visibility: visible !important; }
   #student-id-card {
-    position: absolute !important;
+    position: fixed !important;
     top: 0 !important;
-    left: 50% !important;
-    transform: translateX(-50%) !important;
+    left: 0 !important;
+    width: 54mm !important;
+    height: 86mm !important;
+    transform: none !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  #student-id-card * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 }
 

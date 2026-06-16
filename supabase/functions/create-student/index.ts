@@ -131,6 +131,13 @@ serve(async (req) => {
       
       if (studentError) {
         console.error('Student entry creation error:', studentError);
+        return new Response(JSON.stringify({
+          error: studentError.message || 'Failed to create student record',
+          code: studentError.code || 'student_insert_failed',
+        }), {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
       } else {
         console.log('Student entry created with school_id');
       }
