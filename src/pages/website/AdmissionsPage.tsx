@@ -244,53 +244,7 @@ export const AdmissionsPage = () => {
       </section>
 
       {/* Fee Structure */}
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Fee Structure
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Transparent and affordable fee structure for quality education
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {feeStructure.map((fee, index) => (
-                <Card key={index} className="border-0 shadow-lg">
-                  <CardHeader className="text-center">
-                    <CardTitle className="text-2xl text-primary">{fee.class}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex justify-between items-center border-b border-border pb-2">
-                      <span className="text-muted-foreground">Admission Fee</span>
-                      <span className="font-semibold text-foreground">{fee.admission}</span>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-border pb-2">
-                      <span className="text-muted-foreground">Tuition (per term)</span>
-                      <span className="font-semibold text-foreground">{fee.tuition}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Uniform & Books</span>
-                      <span className="font-semibold text-foreground">{fee.uniform}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            <div className="text-center mt-8">
-              <p className="text-muted-foreground mb-4">
-                * Flexible payment plans available. Contact admissions office for details.
-              </p>
-              <Badge variant="secondary">
-                Scholarship opportunities available for exceptional students
-              </Badge>
-            </div>
-          </div>
-        </div>
-      </section>
+      /
 
       {/* Contact Information */}
       <section className="py-16">
