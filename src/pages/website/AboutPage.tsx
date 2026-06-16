@@ -223,9 +223,12 @@ export const AboutPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <Card className="border-0 shadow-lg">
                 <CardContent className="pt-6 text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">MA</span>
-                  </div>
+                  <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden shadow-md border-2 border-primary/20 flex items-center justify-center">
+      <img
+        src="/rsk.png" alt="HON. SULAIMON RASAQ - proprietor"
+        className="w-full h-full object-cover object-center"
+      />
+    </div>
                   <h3 className="text-xl font-semibold text-foreground mb-2">HON. SULAIMON RASAQ</h3>
                   <p className="text-primary font-medium mb-2">Proprietor</p>
                   <p className="text-muted-foreground text-sm">
@@ -235,17 +238,20 @@ export const AboutPage = () => {
               </Card>
 
               <Card className="border-0 shadow-lg">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-primary/20 to-accent/20 rounded-full mx-auto mb-4 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">FA</span>
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">Dr. Sulaimon Dhikroh Awe</h3>
-                  <p className="text-primary font-medium mb-2">Director of Studies (D.O.S)</p>
-                  <p className="text-muted-foreground text-sm">
-                    PhD. Mathematics, dedicated to academic excellence and innovation.
-                  </p>
-                </CardContent>
-              </Card>
+  <CardContent className="pt-6 text-center">
+    <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden shadow-md border-2 border-primary/20 flex items-center justify-center">
+      <img
+        src="/awe.png" alt="Dr. Sulaimon Dhikroh Awe - Director of Studies"
+        className="w-full h-full object-cover object-center"
+      />
+    </div>
+    <h3 className="text-xl font-semibold text-foreground mb-2">Dr. Sulaimon Dhikroh Awe</h3>
+    <p className="text-primary font-medium mb-2">Director of Studies (D.O.S)</p>
+    <p className="text-muted-foreground text-sm">
+      PhD. Mathematics, dedicated to academic excellence and innovation.
+    </p>
+  </CardContent>
+</Card>
 
               
               {/* </Card> */}
