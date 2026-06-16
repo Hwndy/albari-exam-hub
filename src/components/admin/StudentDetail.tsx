@@ -68,12 +68,26 @@ export const StudentDetail: React.FC = () => {
       setAttendance(att);
       setPayments(pays ?? []);
 
-      // Resolve parents
+      // Resolve parents (via parent.user_id -> profiles)
       const parentIds = Array.from(new Set(((rels ?? []) as any[]).map(r => r.parent_id).filter(Boolean)));
       if (parentIds.length) {
         const { data: parentRows } = await supabase.from('parents').select('*').in('id', parentIds);
-        const pMap = new Map((parentRows ?? []).map((p: any) => [p.id as string, p]));
-        setParents(((rels ?? []) as any[]).map(r => ({ ...r, parent: pMap.get(r.parent_id) })));
+        const userIds = (parentRows ?? []).map((p: any) => p.user_id).filter(Boolean);
+        const { data: parentProfiles } = userIds.length
+          ? await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds)
+          : { data: [] as any[] };
+        const profMap = new Map((parentProfiles ?? []).map((p: any) => [p.user_id as string, p.full_name as string]));
+        const pMap = new Map((parentRows ?? []).map((p: any) => [p.id as string, {
+          ...p,
+          full_name: profMap.get(p.user_id) || 'Parent',
+          phone: p.phone_primary,
+          email: null,
+        }]));
+        setParents(((rels ?? []) as any[]).map(r => ({
+          ...r,
+          relationship: r.relationship_type,
+          parent: pMap.get(r.parent_id),
+        })));
       } else setParents([]);
     } catch (e: any) {
       console.error(e);
