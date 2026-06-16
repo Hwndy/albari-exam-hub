@@ -152,9 +152,9 @@ export const StudentDetail: React.FC = () => {
           <CardContent className="text-sm">
             {attendance ? (
               <div className="grid grid-cols-3 gap-3">
-                <Stat label="Present" value={attendance.present_count ?? 0} />
-                <Stat label="Absent" value={attendance.absent_count ?? 0} />
-                <Stat label="Late" value={attendance.late_count ?? 0} />
+                <Stat label="Present" value={attendance.days_present ?? 0} />
+                <Stat label="Absent" value={attendance.days_absent ?? 0} />
+                <Stat label="Opened" value={attendance.days_school_opened ?? 0} />
               </div>
             ) : <p className="text-muted-foreground">No attendance data.</p>}
           </CardContent>
