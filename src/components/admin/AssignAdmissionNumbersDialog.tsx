@@ -95,8 +95,12 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
         supabase.from('students')
           .select('user_id, admission_number').in('user_id', userIds),
       ]);
-      const pMap = new Map((profiles ?? []).map((p: any) => [p.user_id, p.full_name]));
-      const sMap = new Map((students ?? []).map((s: any) => [s.user_id, s.admission_number]));
+      const pMap = new Map<string, string>(
+        (profiles ?? []).map((p: any) => [p.user_id as string, p.full_name as string])
+      );
+      const sMap = new Map<string, string | null>(
+        (students ?? []).map((s: any) => [s.user_id as string, s.admission_number ?? null])
+      );
 
       const list: Candidate[] = ((assigns ?? []) as any[])
         .map((a: any) => ({
