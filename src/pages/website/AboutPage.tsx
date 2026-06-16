@@ -8,18 +8,33 @@ import { Link } from 'react-router-dom';
 export const AboutPage = () => {
   return (
     <div className="space-y-0">
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4">
+      {/* Hero Section with Image Background */}
+      <section className="relative py-24 overflow-hidden">
+        {/* Background Image Layer */}
+        <div className="absolute inset-0 z-0">
+          <img 
+            src="/albari-campus.png" // Path to your school building image
+            alt="Al-Bari College Campus Background" 
+            className="w-full h-full object-cover object-center"
+          />
+          {/* Constant dark scrim overlay + backdrop blur to ensure text readability */}
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-[px]" />
+        </div>
+
+        {/* Content Layer */}
+        <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-6">
+            {/* badge style slightly altered to stand out against dark bg */}
+            <Badge className="mb-6 bg-primary text-primary-foreground border-none px-3 py-1 shadow-md">
               About Al-Bari College
             </Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
+            
+            {/* typography colors altered for high-contrast presentation */}
+            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
               Excellence in Education
-              <span className="text-primary block">Since 2010</span>
+              <span className="text-primary block mt-1 drop-shadow-sm text-white mb-6 leading-tight tracking-tight">Since 2004</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl max-w-2xl mx-auto text-slate-200 font-medium leading-relaxed">
               For over a decade, Al-Bari College has been at the forefront of educational excellence, 
               nurturing young minds and shaping future leaders through innovative teaching methods 
               and character development.
@@ -28,17 +43,18 @@ export const AboutPage = () => {
         </div>
       </section>
 
-      {/* Our History */}
+      {/* Our History Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left side text column untouched */}
             <div>
               <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-6">
                 Our Rich History
               </h2>
               <div className="space-y-6 text-muted-foreground">
                 <p className="text-lg">
-                  Al-Bari College was founded in 2010 with a vision to provide quality education 
+                  Al-Bari College was founded in 2004 with a vision to provide quality education 
                   that combines academic excellence with moral values. What started as a small 
                   institution with just 50 students has grown into one of Lagos' most respected 
                   educational establishments.
@@ -59,12 +75,28 @@ export const AboutPage = () => {
               </Button>
             </div>
             
-            <div className="relative">
-              <div className="aspect-square bg-gradient-to-br from-primary/20 to-accent/20 rounded-lg flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <BookOpen className="h-24 w-24 text-primary mx-auto" />
-                  <div className="text-2xl font-bold text-foreground">15+ Years</div>
-                  <div className="text-muted-foreground">Of Educational Excellence</div>
+            {/* Right side Showcase Box - Now a sharp Image container */}
+            <div className="relative group">
+              {/* Soft glow background decorative element retained from previous design concepts */}
+              <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-75 transition duration-1000 group-hover:opacity-100" />
+              
+              {/* The new image container, using aspect ratio to keep sharp layout */}
+              <div className="relative aspect-square w-full overflow-hidden rounded-2xl border bg-background shadow-2xl flex items-center justify-center p-6 text-center">
+                <img 
+                  src="/albari_logo.jpg" // Using the same image asset
+                  alt="Campus Detail View" 
+                  className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 hover:scale-105"
+                />
+                {/* Subtle dark-to-transparent gradient mask strictly for legend text readability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
+                
+                {/* Content Overlay */}
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center justify-center h-20 w-20 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mx-auto shadow-inner">
+                    <BookOpen className="h-10 w-10 text-white" />
+                  </div>
+                  <div className="text-3xl font-bold text-white tracking-tight drop-shadow-md">22+ Years</div>
+                  <div className="text-xl text-slate-100 font-medium leading-tight">Of Educational Excellence</div>
                 </div>
               </div>
             </div>
@@ -72,7 +104,7 @@ export const AboutPage = () => {
         </div>
       </section>
 
-      {/* Vision & Mission */}
+      {/* Vision & Mission Section Untouched */}
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -118,7 +150,7 @@ export const AboutPage = () => {
         </div>
       </section>
 
-      {/* Core Values */}
+      {/* Core Values Section Untouched */}
       <section className="py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
@@ -175,7 +207,7 @@ export const AboutPage = () => {
         </div>
       </section>
 
-      {/* Leadership Team */}
+      {/* Leadership Team Section Untouched */}
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
           <div className="max-w-6xl mx-auto">
