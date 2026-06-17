@@ -53,7 +53,8 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", schoolId)
       .single();
 
-    const senderEmail = Deno.env.get("SENDER_EMAIL") || "noreply@resend.dev";
+    const senderEmail = Deno.env.get("SENDER_EMAIL") || "noreply@albari.com.ng";
+    const replyTo = Deno.env.get("REPLY_TO_EMAIL") || "admissions@albari.com.ng";
     const schoolName = school?.name || "School";
 
     // Process each recipient
@@ -88,6 +89,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailResponse = await resend.emails.send({
           from: `${schoolName} <${senderEmail}>`,
           to: [recipientEmail],
+          reply_to: replyTo,
           subject: subject,
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

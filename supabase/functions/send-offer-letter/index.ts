@@ -11,7 +11,8 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://irrxmoqbgygyyzozifdl.lovable.app";
-const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "admissions@albari.edu.ng";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "admissions@albari.com.ng";
+const REPLY_TO = Deno.env.get("REPLY_TO_EMAIL") || "admissions@albari.com.ng";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -512,6 +513,7 @@ serve(async (req) => {
       emailResult = await sendEmailWithRetry({
         from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [application.email],
+        reply_to: REPLY_TO,
         subject: emailSubject,
         html: emailHtml,
         attachments: [
