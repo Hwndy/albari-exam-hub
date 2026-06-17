@@ -3,7 +3,8 @@ import { Resend } from "npm:resend@2.0.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "noreply@albari.edu.ng";
+const SENDER_EMAIL = Deno.env.get("SENDER_EMAIL") || "noreply@albari.com.ng";
+const REPLY_TO = Deno.env.get("REPLY_TO_EMAIL") || "admissions@albari.com.ng";
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -198,6 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
       const emailResponse = await sendEmailWithRetry({
         from: `Al-Bari College <${SENDER_EMAIL}>`,
         to: [email],
+        reply_to: REPLY_TO,
         subject: subject,
         html: htmlContent,
       });
