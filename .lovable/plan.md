@@ -1,57 +1,65 @@
-## Plan
 
-1. **Fix the data/RLS blockers first**
-   - Add a migration to make `students.admission_number` optional so new students can exist before admission numbers are assigned.
-   - Backfill missing `students` rows for existing student profile/class assignments, because the live database currently has class-assigned student users but no rows in `students`.
-   - Replace recursive student/parent RLS checks with security-definer helper functions so the Students page can load without `infinite recursion detected in policy for relation "students"`.
-   - Ensure admin/student update policies support editing student rows, photo URLs, and admission number assignment safely within the same school.
+# Use albari.com.ng with Resend for All Emails
 
-2. **Repair admission number assignment**
-   - Update `create-student` so it no longer silently succeeds when the student row fails to create.
-   - Update the assign dialog to show exact failures instead of “0 updated” with no actionable error.
-   - Keep bulk + single assignment using the `PREFIX/YEAR/####` format, and refresh the list after assignment.
+## Goal
+Switch every outgoing email (offer letters, admission notifications, OTPs, bulk emails, fee reminders, etc.) from the default `onboarding@resend.dev` sender to a branded `albari.com.ng` address, using the existing Resend integration.
 
-3. **Repair student editing**
-   - Replace the generic user edit flow for student rows with a student-focused edit dialog that updates:
-     - full name
-     - class assignment
-     - admission number
-     - gender
-     - date of birth
-     - status
-     - section/registration number/basic details already present in the schema
-   - Preserve school isolation on all reads/writes.
+## Prerequisites (User Actions in Resend)
+The domain must be verified in Resend before branded emails will deliver. The user needs to:
 
-4. **Fix Student Detail data loading and empty states**
-   - Correct `attendance_summary` lookup to use the internal `students.id` because that table references `students.id`, not the auth `user_id`.
-   - Keep exam results lookup by auth `user_id`, because `exam_sessions.student_id` references `profiles.user_id`.
-   - Correct `fee_payments` lookup to use `students.id`.
-   - Add clear empty states for attendance, recent exam results, fee payments, parents/guardians, and missing profile/student records.
+1. Go to https://resend.com/domains and click **Add Domain**.
+2. Enter `albari.com.ng` (or a subdomain like `mail.albari.com.ng` — recommended to isolate from main MX).
+3. Resend will display DNS records (SPF/TXT, DKIM/CNAME x3, and optional DMARC).
+4. Add those DNS records in the domain registrar / DNS provider for albari.com.ng.
+5. Click **Verify** in Resend until status = Verified (usually 5–30 min).
 
-5. **Redesign Student ID Card to match the reference**
-   - Rebuild `StudentIDCard` as a portrait card closer to the attached design:
-     - school logo and school name/address at the top
-     - green/yellow/charcoal geometric bands
-     - large circular student photo frame
-     - faint school-building style background/watermark effect
-     - bold centered student name and `ID: admission_number`
-     - large QR code beneath
-   - Use the existing `/albari_logo.jpg` fallback when the school logo URL is missing.
-   - Keep the blurred/covered face area out of consideration and preserve actual uploaded student photo when available.
+Until verification is complete, sending from `@albari.com.ng` will fail with a 403 from Resend. The code will still work — only the sender domain needs to be flipped once verified.
 
-6. **Fix printing/export so only the card is exported**
-   - Update print CSS so `window.print()` hides the dialog/app chrome and prints only the ID card at the correct portrait dimensions with colors preserved.
-   - Add a PNG download/export action for the currently previewed ID card using `html2canvas`, so printing and exporting do not capture the modal/background.
+## Implementation Plan
 
-7. **Update export parameters for class lists**
-   - Expand class CSV export to include useful student list fields: S/N, admission number, full name, class, gender, date of birth, status, section, and registration number where available.
-   - Keep filename based on class name and date.
+### 1. Add a single sender constant via Supabase secret
+Use the existing `SENDER_EMAIL` secret (already in the project) as the canonical "From" address. Set its value to:
 
-8. **Test/validate after implementation**
-   - Use Supabase read checks to confirm existing student rows were backfilled and admission-number candidates exist.
-   - Use the preview/session where available to verify:
-     - Student Detail loads attendance/exam/fee sections and empty states correctly.
-     - Admission number assignment updates rows.
-     - Student editing saves changes.
-     - ID card preview visually matches the reference more closely.
-     - Print/export targets only the card.
+```
+Al-Bari College <admissions@albari.com.ng>
+```
+
+(Or whatever address the user prefers, e.g. `noreply@albari.com.ng`.)
+
+### 2. Update edge functions to read `SENDER_EMAIL`
+Currently several functions hard-code `onboarding@resend.dev`. Update these to use `Deno.env.get("SENDER_EMAIL")` with a safe fallback:
+
+- `supabase/functions/send-offer-letter/index.ts`
+- `supabase/functions/send-admission-notification/index.ts`
+- `supabase/functions/send-otp/index.ts`
+- `supabase/functions/send-bulk-email/index.ts` (already reads SENDER_EMAIL — verify default)
+- `supabase/functions/send-fee-reminders/index.ts` (audit and align)
+- `supabase/functions/accept-offer/index.ts` (if it sends mail)
+
+Pattern:
+```ts
+const FROM = Deno.env.get("SENDER_EMAIL") || "Al-Bari College <admissions@albari.com.ng>";
+```
+
+### 3. Add Reply-To
+Set `reply_to: "admissions@albari.com.ng"` on all admission/offer/notification emails so replies route to a real inbox.
+
+### 4. Redeploy edge functions
+Deploy all affected functions after the edit so Resend picks up the new sender.
+
+### 5. Verification step
+- Use the existing **Email Testing Panel** (Admin → Email Logs tab) to send a test of each notification type to a real inbox.
+- Check `email_logs` table for `status = sent`.
+- Confirm the recipient sees `From: Al-Bari College <admissions@albari.com.ng>` and that replies go to the right place.
+
+## What I will NOT change
+- Templates, copy, or branding inside the email bodies (already in place).
+- Resend SDK or API key handling (`RESEND_API_KEY` is already configured).
+- Retry/logging logic.
+
+## Open questions
+1. Which exact local-part do you want? Options: `admissions@`, `noreply@`, `info@`, or something else.
+2. Do you want to use the root `albari.com.ng` or a subdomain like `mail.albari.com.ng` (recommended — safer for deliverability and won't interfere with the website's main mail).
+3. Confirm you can add DNS records at albari.com.ng's registrar — without this, branded sending won't work.
+
+Once you confirm 1–3, I'll make the code changes and deploy. The DNS/Resend verification you can do in parallel.
