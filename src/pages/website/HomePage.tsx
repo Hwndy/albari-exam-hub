@@ -4,6 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ArrowRight, Users, GraduationCap, Trophy, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { PrincipalWelcome } from '@/components/website/home/PrincipalWelcome';
+import { Accreditations } from '@/components/website/home/Accreditations';
+import { LatestNews } from '@/components/website/home/LatestNews';
+import { Testimonials } from '@/components/website/home/Testimonials';
+import { HowToApply } from '@/components/website/home/HowToApply';
+import { Newsletter } from '@/components/website/home/Newsletter';
+import { WhatsAppFloat } from '@/components/website/home/WhatsAppFloat';
 
 // 1. Array storing your public folder background image assets
 const HERO_IMAGES = [
@@ -44,7 +51,7 @@ export const HomePage = () => {
           ))}
           
           {/* Constant dark scrim layer overlay + backdrop blur */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-[px]" />
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         </div>
 
         {/* Content Layer */}
@@ -97,6 +104,9 @@ export const HomePage = () => {
         </div>
       </section>
 
+      {/* Accreditations strip */}
+      <Accreditations />
+
       {/* Statistics Section */}
       <section className="py-16 bg-card/30">
         <div className="container mx-auto px-4">
@@ -120,6 +130,9 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Principal's Welcome */}
+      <PrincipalWelcome />
 
       {/* Why Choose Us Section */}
       <section className="py-16">
@@ -173,6 +186,18 @@ export const HomePage = () => {
         </div>
       </section>
 
+      {/* Latest News from CMS */}
+      <LatestNews />
+
+      {/* Testimonials */}
+      <Testimonials />
+
+      {/* How to Apply */}
+      <HowToApply />
+
+      {/* Newsletter */}
+      <Newsletter />
+
       {/* Call to Action */}
       <section className="py-16 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10">
         <div className="container mx-auto px-4 text-center">
@@ -195,6 +220,9 @@ export const HomePage = () => {
           </div>
         </div>
       </section>
+
+      {/* Floating WhatsApp */}
+      <WhatsAppFloat />
     </div>
   );
 };
