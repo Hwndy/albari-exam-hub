@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +35,38 @@ export const HomePage = () => {
 
   return (
     <div className="space-y-0">
+      <Helmet>
+        <title>Al-Bari Group of Schools — Excellence in Education Since 2004</title>
+        <meta
+          name="description"
+          content="Al-Bari Group of Schools offers nursery, primary and secondary education in Nigeria, nurturing future leaders through academic excellence and character building."
+        />
+        <link rel="canonical" href="https://www.albari.com.ng/" />
+        <meta property="og:title" content="Al-Bari Group of Schools — Excellence in Education Since 2004" />
+        <meta
+          property="og:description"
+          content="Nursery, primary and secondary education with a strong tradition of academic excellence, character and faith."
+        />
+        <meta property="og:url" content="https://www.albari.com.ng/" />
+        <meta property="og:type" content="website" />
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "EducationalOrganization",
+          name: "Al-Bari Group of Schools",
+          alternateName: "Al-Bari College",
+          url: "https://www.albari.com.ng/",
+          logo: "https://www.albari.com.ng/albari_logo.jpg",
+          foundingDate: "2004",
+          description:
+            "Al-Bari Group of Schools provides nursery, primary and secondary education in Nigeria with a focus on academic excellence, character and faith.",
+          address: {
+            "@type": "PostalAddress",
+            addressCountry: "NG"
+          },
+          sameAs: ["https://www.albari.com.ng/"]
+        })}</script>
+      </Helmet>
+
       {/* Hero Section with Slideshow Background */}
       <section className="relative min-h-[600px] flex items-center py-24 overflow-hidden">
         
