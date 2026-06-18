@@ -69,10 +69,10 @@
     --accent: 142 61% 96%;
     --accent-foreground: 142 61% 25%;
 
-    /* Gold - Prestige accent for marketing surfaces */
-    --gold: 43 57% 54%;
+    /* Lemon green accent for marketing surfaces (matches logo) */
+    --gold: 80 75% 50%;
     --gold-foreground: 142 61% 15%;
-    --gold-soft: 43 70% 92%;
+    --gold-soft: 80 75% 92%;
     
     /* Borders and Inputs */
     --border: 210 20% 88%;
