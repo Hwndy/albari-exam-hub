@@ -68,6 +68,11 @@
     /* Accent - Interactive Elements */
     --accent: 142 61% 96%;
     --accent-foreground: 142 61% 25%;
+
+    /* Gold - Prestige accent for marketing surfaces */
+    --gold: 43 57% 54%;
+    --gold-foreground: 142 61% 15%;
+    --gold-soft: 43 70% 92%;
     
     /* Borders and Inputs */
     --border: 210 20% 88%;
