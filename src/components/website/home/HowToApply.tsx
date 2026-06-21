@@ -35,7 +35,7 @@ export const HowToApply: React.FC = () => {
             <span className="h-px w-8 bg-gold" />
           </div>
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground">
-            Three steps to becoming an Al-Barian
+            Three steps to becoming an Al-Bari Student
           </h2>
         </div>
 
@@ -62,7 +62,7 @@ export const HowToApply: React.FC = () => {
 
         <div className="mt-12 text-center">
           <Button size="lg" asChild className="shadow-lg">
-            <Link to="/website/apply">
+            <Link to="/website/admissions">
               Start Your Application <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
