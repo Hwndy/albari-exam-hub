@@ -73,7 +73,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
             <div className="flex items-center space-x-4">
               <Logo size="lg" />
               <div className="hidden md:block">
-                <h1 className="text-lg font-bold text-foreground">Al-Bari College</h1>
+                <h1 className="text-lg font-bold text-foreground">Al-Bari Group of Schools</h1>
                 <p className="text-sm text-muted-foreground">Excellence in Education</p>
               </div>
             </div>
@@ -142,12 +142,12 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
               <div className="flex items-center space-x-4 mb-4">
                 <Logo size="md" />
                 <div>
-                  <h3 className="text-lg font-bold text-foreground">Al-Bari College</h3>
+                  <h3 className="text-lg font-bold text-foreground">Al-Bari Group of Schools</h3>
                   <p className="text-sm text-muted-foreground">Building Tomorrow's Leaders Today</p>
                 </div>
               </div>
               <p className="text-muted-foreground mb-4">
-                Al-Bari College is committed to providing quality education that nurtures the intellectual, 
+                Al-Bari Group of Schools is committed to providing quality education that nurtures the intellectual, 
                 moral, and social development of our students, preparing them for success in an ever-changing world.
               </p>
               <div className="flex space-x-4">
@@ -196,7 +196,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
           </div>
 
           <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
-            <p>&copy; {new Date().getFullYear()} Al-Bari College. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} Al-Bari Group of Schools. All rights reserved.</p>
           </div>
         </div>
       </footer>

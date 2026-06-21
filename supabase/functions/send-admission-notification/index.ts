@@ -60,7 +60,7 @@ const emailTemplates = {
     html: `
       <h1>Application Received!</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Thank you for applying to Al-Bari College. We have successfully received your application.</p>
+      <p>Thank you for applying to Al-Bari Group of Schools. We have successfully received your application.</p>
       <p><strong>Application Number:</strong> ${data.application_number}</p>
       <p>You will receive updates on your application status via email.</p>
       <p>Next Steps:</p>
@@ -69,7 +69,7 @@ const emailTemplates = {
         <li>You may be contacted for an interview</li>
         <li>Track your application status online using your application number</li>
       </ul>
-      <p>Best regards,<br>Al-Bari College Admissions Team</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
   under_review: (data: any) => ({
@@ -79,7 +79,7 @@ const emailTemplates = {
       <p>Dear ${data.first_name} ${data.last_name},</p>
       <p>Your application (${data.application_number}) is currently under review by our admissions team.</p>
       <p>We will contact you soon with the next steps.</p>
-      <p>Best regards,<br>Al-Bari College Admissions Team</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
   interview_scheduled: (data: any) => ({
@@ -92,7 +92,7 @@ const emailTemplates = {
       <ul>
         <li>Date: ${data.interview_date || 'To be confirmed'}</li>
         <li>Time: ${data.interview_time || 'To be confirmed'}</li>
-        <li>Location: ${data.interview_location || 'Al-Bari College Campus'}</li>
+        <li>Location: ${data.interview_location || 'Al-Bari Group of Schools Campus'}</li>
       </ul>
       <p>Please arrive 15 minutes early and bring the following:</p>
       <ul>
@@ -100,7 +100,7 @@ const emailTemplates = {
         <li>Original academic certificates</li>
         <li>Birth certificate</li>
       </ul>
-      <p>Best regards,<br>Al-Bari College Admissions Team</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
   accepted: (data: any) => ({
@@ -108,7 +108,7 @@ const emailTemplates = {
     html: `
       <h1>Congratulations! Admission Offer</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>We are delighted to offer you admission to Al-Bari College for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.</p>
+      <p>We are delighted to offer you admission to Al-Bari Group of Schools for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.</p>
       <p><strong>Application Number:</strong> ${data.application_number}</p>
       <p><strong>Class:</strong> ${data.class_name || 'As applied'}</p>
       <p><strong>Next Steps:</strong></p>
@@ -119,8 +119,8 @@ const emailTemplates = {
       </ol>
       <p>Payment Instructions:</p>
       <p>Please proceed to complete your acceptance fee payment to secure your spot.</p>
-      <p>Welcome to the Al-Bari College family!</p>
-      <p>Best regards,<br>Al-Bari College Admissions Team</p>
+      <p>Welcome to the Al-Bari Group of Schools family!</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
   rejected: (data: any) => ({
@@ -128,17 +128,17 @@ const emailTemplates = {
     html: `
       <h1>Application Status Update</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Thank you for your interest in Al-Bari College.</p>
+      <p>Thank you for your interest in Al-Bari Group of Schools.</p>
       <p>After careful consideration, we regret to inform you that we are unable to offer you admission at this time.</p>
       <p>We received an overwhelming number of applications this year, and our decision was difficult given the high caliber of all applicants.</p>
       <p>We encourage you to reapply in the future and wish you the very best in your educational journey.</p>
-      <p>Best regards,<br>Al-Bari College Admissions Team</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
   enrolled: (data: any) => ({
-    subject: `🎓 Welcome to Al-Bari College - Login Credentials`,
+    subject: `🎓 Welcome to Al-Bari Group of Schools - Login Credentials`,
     html: `
-      <h1>Welcome to Al-Bari College!</h1>
+      <h1>Welcome to Al-Bari Group of Schools!</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
       <p>Your enrollment is now complete! Here are your login credentials for the student portal:</p>
       <p><strong>Student Portal Login:</strong></p>
@@ -161,7 +161,7 @@ const emailTemplates = {
         <li>Download the school calendar</li>
       </ol>
       <p>We look forward to seeing you on campus!</p>
-      <p>Best regards,<br>Al-Bari College Administration</p>
+      <p>Best regards,<br>Al-Bari Group of Schools Administration</p>
     `,
   }),
 };
@@ -218,7 +218,7 @@ serve(async (req) => {
     try {
       // Send email with retry
       emailResult = await sendEmailWithRetry(resend, {
-        from: `Al-Bari College <${SENDER_EMAIL}>`,
+        from: `Al-Bari Group of Schools <${SENDER_EMAIL}>`,
         to: [application.email],
         reply_to: REPLY_TO,
         subject: template.subject,

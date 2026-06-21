@@ -55,7 +55,7 @@ export const AdmissionsPage = () => {
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="secondary" className="mb-6">
-              Join Al-Bari College
+              Join Al-Bari Group of Schools
             </Badge>
             <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
               Begin Your Journey to
@@ -87,7 +87,7 @@ export const AdmissionsPage = () => {
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Why Choose Al-Bari College?
+                Why Choose Al-Bari Group of Schools?
               </h2>
               <p className="text-lg text-muted-foreground">
                 Discover the advantages that make us the preferred choice for quality education

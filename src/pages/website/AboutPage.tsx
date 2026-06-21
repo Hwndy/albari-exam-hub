@@ -14,7 +14,7 @@ export const AboutPage = () => {
         <div className="absolute inset-0 z-0">
           <img 
             src="/albari-campus.png" // Path to your school building image
-            alt="Al-Bari College Campus Background" 
+            alt="Al-Bari Group of Schools Campus Background" 
             className="w-full h-full object-cover object-center"
           />
           {/* Constant dark scrim overlay + backdrop blur to ensure text readability */}
@@ -26,7 +26,7 @@ export const AboutPage = () => {
           <div className="max-w-4xl mx-auto text-center">
             {/* badge style slightly altered to stand out against dark bg */}
             <Badge className="mb-6 bg-primary text-primary-foreground border-none px-3 py-1 shadow-md">
-              About Al-Bari College
+              About Al-Bari Group of Schools
             </Badge>
             
             {/* typography colors altered for high-contrast presentation */}
@@ -35,7 +35,7 @@ export const AboutPage = () => {
               <span className="text-primary block mt-1 drop-shadow-sm text-white mb-6 leading-tight tracking-tight">Since 2004</span>
             </h1>
             <p className="text-lg sm:text-xl max-w-2xl mx-auto text-slate-200 font-medium leading-relaxed">
-              For over a decade, Al-Bari College has been at the forefront of educational excellence, 
+              For over a decade, Al-Bari Group of Schools has been at the forefront of educational excellence, 
               nurturing young minds and shaping future leaders through innovative teaching methods 
               and character development.
             </p>
@@ -54,7 +54,7 @@ export const AboutPage = () => {
               </h2>
               <div className="space-y-6 text-muted-foreground">
                 <p className="text-lg">
-                  Al-Bari College was founded in 2004 with a vision to provide quality education 
+                  Al-Bari Group of Schools was founded in 2004 with a vision to provide quality education 
                   that combines academic excellence with moral values. What started as a small 
                   institution with just 50 students has grown into one of Lagos' most respected 
                   educational establishments.
@@ -216,7 +216,7 @@ export const AboutPage = () => {
                 Our Leadership Team
               </h2>
               <p className="text-lg text-muted-foreground">
-                Experienced educators leading Al-Bari College towards excellence
+                Experienced educators leading Al-Bari Group of Schools towards excellence
               </p>
             </div>
 

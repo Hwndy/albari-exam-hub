@@ -197,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
     try {
       // Send email with retry via Resend
       const emailResponse = await sendEmailWithRetry({
-        from: `Al-Bari College <${SENDER_EMAIL}>`,
+        from: `Al-Bari Group of Schools <${SENDER_EMAIL}>`,
         to: [email],
         reply_to: REPLY_TO,
         subject: subject,

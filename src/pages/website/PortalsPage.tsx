@@ -45,7 +45,7 @@ export const PortalsPage = () => {
               Access Your Portal
             </h1>
             <p className="text-lg text-muted-foreground">
-              Choose your portal to access personalized features and stay connected with Al-Bari College
+              Choose your portal to access personalized features and stay connected with Al-Bari Group of Schools
             </p>
           </div>
         </div>

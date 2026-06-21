@@ -66,7 +66,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
-  doc.text('AL-BARI COLLEGE', pageWidth / 2, 20, { align: 'center' });
+  doc.text('AL-BARI Group of Schools', pageWidth / 2, 20, { align: 'center' });
   
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
@@ -103,7 +103,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   yPos += 15;
 
   // Body
-  const bodyText = `We are pleased to inform you that you have been offered admission to Al-Bari College for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.`;
+  const bodyText = `We are pleased to inform you that you have been offered admission to Al-Bari Group of Schools for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.`;
   const splitBody = doc.splitTextToSize(bodyText, pageWidth - 40);
   doc.text(splitBody, 20, yPos);
   yPos += splitBody.length * 7 + 10;
@@ -179,7 +179,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   // Closing
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('Welcome to the Al-Bari College family!', 20, yPos);
+  doc.text('Welcome to the Al-Bari Group of Schools family!', 20, yPos);
   
   yPos += 15;
   doc.text('Sincerely,', 20, yPos);
@@ -188,7 +188,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setFont('helvetica', 'bold');
   doc.text('Admissions Office', 20, yPos);
   doc.setFont('helvetica', 'normal');
-  doc.text('Al-Bari College', 20, yPos + 5);
+  doc.text('Al-Bari Group of Schools', 20, yPos + 5);
 
   // Footer
   const footerY = doc.internal.pageSize.getHeight() - 20;
@@ -197,7 +197,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   
   doc.setFontSize(8);
   doc.setTextColor(107, 114, 128);
-  doc.text('Al-Bari College | Excellence in Education', pageWidth / 2, footerY, { align: 'center' });
+  doc.text('Al-Bari Group of Schools | Excellence in Education', pageWidth / 2, footerY, { align: 'center' });
   doc.text('This is an official admission offer letter.', pageWidth / 2, footerY + 5, { align: 'center' });
   doc.text(`Generated on ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, footerY + 10, { align: 'center' });
 
@@ -353,7 +353,7 @@ serve(async (req) => {
 
     const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;
     
-    const emailSubject = `🎉 Admission Offer - Al-Bari College`;
+    const emailSubject = `🎉 Admission Offer - Al-Bari Group of Schools`;
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -365,7 +365,7 @@ serve(async (req) => {
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
           <!-- Header -->
           <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Al-Bari College</h1>
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Al-Bari Group of Schools</h1>
             <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 14px;">Excellence in Education</p>
           </div>
           
@@ -378,7 +378,7 @@ serve(async (req) => {
             </p>
             
             <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-              We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.
+              We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari Group of Schools</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.
             </p>
             
             <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #2563eb;">
@@ -435,7 +435,7 @@ serve(async (req) => {
             </div>
         <p>Dear ${application.first_name} ${application.last_name},</p>
         
-        <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari College</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
+        <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari Group of Schools</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
         
         <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h3 style="margin-top: 0;">Admission Details:</h3>
@@ -475,20 +475,20 @@ serve(async (req) => {
             </p>
 
             <p style="margin-top: 30px; color: #059669; font-weight: 600; font-size: 16px;">
-              Welcome to the Al-Bari College family! 🎓
+              Welcome to the Al-Bari Group of Schools family! 🎓
             </p>
           </div>
 
           <!-- Footer -->
           <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
             <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
-              Al-Bari College | Excellence in Education
+              Al-Bari Group of Schools | Excellence in Education
             </p>
             <p style="color: #9ca3af; font-size: 11px; margin: 0;">
               This is an automated message from the admissions office. Please do not reply to this email.
             </p>
             <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
-              &copy; ${new Date().getFullYear()} Al-Bari College. All rights reserved.
+              &copy; ${new Date().getFullYear()} Al-Bari Group of Schools. All rights reserved.
             </p>
           </div>
         </div>
@@ -511,7 +511,7 @@ serve(async (req) => {
       const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
       
       emailResult = await sendEmailWithRetry({
-        from: `Al-Bari College <${SENDER_EMAIL}>`,
+        from: `Al-Bari Group of Schools <${SENDER_EMAIL}>`,
         to: [application.email],
         reply_to: REPLY_TO,
         subject: emailSubject,

@@ -1,4 +1,4 @@
--- Create website CMS tables for Al-Bari College Website
+-- Create website CMS tables for Al-Bari Group of Schools Website
 
 -- Website pages for static content management
 CREATE TABLE public.website_pages (
@@ -189,7 +189,7 @@ CREATE TRIGGER update_website_settings_updated_at
 
 -- Insert initial school information
 INSERT INTO public.school_info (info_key, info_value, category) VALUES
-('school_name', 'Al-Bari College', 'general'),
+('school_name', 'Al-Bari Group of Schools', 'general'),
 ('phone', '+234 802 815 2097', 'contact'),
 ('email', 'info@albari.edu.ng', 'contact'),
 ('address', 'Lagos, Nigeria', 'contact'),
@@ -197,15 +197,15 @@ INSERT INTO public.school_info (info_key, info_value, category) VALUES
 ('student_count', '500+', 'statistics'),
 ('teacher_count', '50+', 'statistics'),
 ('success_rate', '98%', 'statistics'),
-('facebook', 'https://facebook.com/albaricollege', 'social'),
-('twitter', 'https://twitter.com/albaricollege', 'social'),
-('instagram', 'https://instagram.com/albaricollege', 'social');
+('facebook', 'https://facebook.com/albariGroup of Schools', 'social'),
+('twitter', 'https://twitter.com/albariGroup of Schools', 'social'),
+('instagram', 'https://instagram.com/albariGroup of Schools', 'social');
 
 -- Insert initial website settings
 INSERT INTO public.website_settings (setting_key, setting_value, description) VALUES
-('site_title', '"Al-Bari College - Excellence in Education"', 'Main site title'),
+('site_title', '"Al-Bari Group of Schools - Excellence in Education"', 'Main site title'),
 ('site_tagline', '"Building Tomorrow''s Leaders Today"', 'Site tagline/motto'),
 ('contact_email', '"info@albari.edu.ng"', 'Main contact email'),
 ('contact_phone', '"+234 802 815 2097"', 'Main contact phone'),
-('social_links', '{"facebook": "https://facebook.com/albaricollege", "twitter": "https://twitter.com/albaricollege", "instagram": "https://instagram.com/albaricollege"}', 'Social media links'),
+('social_links', '{"facebook": "https://facebook.com/albariGroup of Schools", "twitter": "https://twitter.com/albariGroup of Schools", "instagram": "https://instagram.com/albariGroup of Schools"}', 'Social media links'),
 ('school_colors', '{"primary": "#22c55e", "secondary": "#16a34a", "accent": "#15803d"}', 'School brand colors');

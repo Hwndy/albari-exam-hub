@@ -21,7 +21,7 @@ Until verification is complete, sending from `@albari.com.ng` will fail with a 4
 Use the existing `SENDER_EMAIL` secret (already in the project) as the canonical "From" address. Set its value to:
 
 ```
-Al-Bari College <admissions@albari.com.ng>
+Al-Bari Group of Schools <admissions@albari.com.ng>
 ```
 
 (Or whatever address the user prefers, e.g. `noreply@albari.com.ng`.)
@@ -38,7 +38,7 @@ Currently several functions hard-code `onboarding@resend.dev`. Update these to u
 
 Pattern:
 ```ts
-const FROM = Deno.env.get("SENDER_EMAIL") || "Al-Bari College <admissions@albari.com.ng>";
+const FROM = Deno.env.get("SENDER_EMAIL") || "Al-Bari Group of Schools <admissions@albari.com.ng>";
 ```
 
 ### 3. Add Reply-To
@@ -50,7 +50,7 @@ Deploy all affected functions after the edit so Resend picks up the new sender.
 ### 5. Verification step
 - Use the existing **Email Testing Panel** (Admin → Email Logs tab) to send a test of each notification type to a real inbox.
 - Check `email_logs` table for `status = sent`.
-- Confirm the recipient sees `From: Al-Bari College <admissions@albari.com.ng>` and that replies go to the right place.
+- Confirm the recipient sees `From: Al-Bari Group of Schools <admissions@albari.com.ng>` and that replies go to the right place.
 
 ## What I will NOT change
 - Templates, copy, or branding inside the email bodies (already in place).

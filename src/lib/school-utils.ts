@@ -17,7 +17,7 @@ export const detectSchoolFromDomain = (): string => {
     'localhost': 'bbe68d9f-b5b4-481e-81d9-0766f4e030da',
     '127.0.0.1': 'bbe68d9f-b5b4-481e-81d9-0766f4e030da',
     // Add other school subdomains as needed
-    // 'kings-college.example.com': 'd27769ed-a00d-40c7-aa15-76823f3a4143',
+    // 'kings-Group of Schools.example.com': 'd27769ed-a00d-40c7-aa15-76823f3a4143',
   };
   
   return schoolMapping[hostname] || schoolMapping['default'];

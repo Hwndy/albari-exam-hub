@@ -17,7 +17,7 @@ export const ApplyPage = () => {
               Admission Application
             </Badge>
             <h1 className="text-4xl lg:text-5xl font-bold text-foreground mb-4">
-              Apply to Al-Bari College
+              Apply to Al-Bari Group of Schools
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Complete the form below to submit your application. All fields marked with an asterisk (*) are required.

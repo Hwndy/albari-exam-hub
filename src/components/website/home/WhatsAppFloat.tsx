@@ -2,7 +2,7 @@ import React from 'react';
 
 export const WhatsAppFloat: React.FC<{ phone?: string; message?: string }> = ({
   phone = '2348028152097',
-  message = "Hello Al-Bari College, I'd like to know more about admissions.",
+  message = "Hello Al-Bari Group of Schools, I'd like to know more about admissions.",
 }) => {
   const href = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
   return (

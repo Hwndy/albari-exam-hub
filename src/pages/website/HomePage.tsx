@@ -53,7 +53,7 @@ export const HomePage = () => {
           "@context": "https://schema.org",
           "@type": "EducationalOrganization",
           name: "Al-Bari Group of Schools",
-          alternateName: "Al-Bari College",
+          alternateName: "Al-Bari Group of Schools",
           url: "https://www.albari.com.ng/",
           logo: "https://www.albari.com.ng/albari_logo.jpg",
           foundingDate: "2004",
@@ -68,7 +68,7 @@ export const HomePage = () => {
       </Helmet>
 
       {/* Hero Section with Slideshow Background */}
-      <section className="relative min-h-[600px] flex items-center py-24 overflow-hidden">
+      <section className="relative min-h-[500px] flex items-center py-24 overflow-hidden">
         
         {/* Background Slideshow Layer */}
         <div className="absolute inset-0 z-0">
@@ -76,7 +76,7 @@ export const HomePage = () => {
             <img
               key={imageSrc}
               src={imageSrc}
-              alt={`Al-Bari College Slideshow Background ${index + 1}`}
+              alt={`Al-Bari Group of Schools Slideshow Background ${index + 1}`}
               className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-1000 ease-in-out ${
                 index === currentSlide ? 'opacity-100' : 'opacity-0'
               }`}
@@ -100,7 +100,7 @@ export const HomePage = () => {
             </h1>
             
             <p className="text-lg sm:text-xl text-slate-200 font-medium max-w-2xl leading-relaxed">
-              At Al-Bari College, we are committed to nurturing young minds and developing future leaders 
+              At Al-Bari Group of Schools, we are committed to nurturing young minds and developing future leaders 
               through innovative education, character building, and academic excellence.
             </p>
             
@@ -172,7 +172,7 @@ export const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Why Choose Al-Bari College?
+              Why Choose Al-Bari Group of Schools?
             </h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Discover what makes us the preferred choice for parents and students seeking quality education.
@@ -235,7 +235,7 @@ export const HomePage = () => {
       <section className="py-16 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10">
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-            Ready to Join Al-Bari College?
+            Ready to Join Al-Bari Group of Schools?
           </h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
             Take the first step towards an exceptional education. Apply now and become part of our 

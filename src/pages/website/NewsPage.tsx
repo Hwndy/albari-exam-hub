@@ -18,7 +18,7 @@ export const NewsPage = () => {
               <span className="text-primary block">Latest News</span>
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Keep up with the latest happenings, events, and announcements at Al-Bari College.
+              Keep up with the latest happenings, events, and announcements at Al-Bari Group of Schools.
             </p>
           </div>
         </div>

@@ -1,7 +1,7 @@
-# Email System Guide - Al-Bari College
+# Email System Guide - Al-Bari Group of Schools
 
 ## Overview
-Complete email functionality has been implemented for the Al-Bari College admission system with retry logic, logging, and testing capabilities.
+Complete email functionality has been implemented for the Al-Bari Group of Schools admission system with retry logic, logging, and testing capabilities.
 
 ## ✅ What Was Fixed
 

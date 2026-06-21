@@ -13,19 +13,24 @@ export const PrincipalWelcome: React.FC = () => {
               <div className="relative h-full w-full rounded-2xl overflow-hidden border-4 border-gold/30 shadow-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center">
                 <img
                   src="/principal.jpg"
-                  alt="Principal of Al-Bari College"
+                  alt="Principal of Al-Bari Group of Schools"
                   loading="lazy"
                   className="h-full w-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-primary-foreground/90 pointer-events-none">
-                  <div className="text-7xl font-serif font-bold opacity-20">AB</div>
+                  <div>
+                      <img
+                        src="/awe.png" alt="Dr. Sulaimon Dhikroh Awe - Director of Studies"
+                      
+                      />
+                    </div>
                 </div>
               </div>
               {/* Floating signature card */}
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border shadow-xl rounded-xl px-6 py-3 text-center min-w-[220px]">
-                <p className="font-serif italic text-primary text-lg leading-tight">Dr. A. Bello</p>
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Principal</p>
+                <p className="font-serif italic text-primary text-lg leading-tight">Dr. Awe</p>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Director of Studies</p>
               </div>
             </div>
           </div>
@@ -42,9 +47,9 @@ export const PrincipalWelcome: React.FC = () => {
             <div className="relative pl-8">
               <Quote className="absolute -left-1 top-0 h-10 w-10 text-gold/40" />
               <p className="text-lg text-muted-foreground leading-relaxed">
-                For over two decades, Al-Bari College has been a sanctuary where bright minds are
+                For over two decades, Al-Bari Group of Schools has been a sanctuary where bright minds are
                 nurtured into principled leaders. We believe that true education is the marriage of
-                intellectual rigour and moral clarity — and every child who walks through our gates
+                intellectual rigour and moral clarity and every child who walks through our gates
                 is treated as a future custodian of that vision.
               </p>
               <p className="text-lg text-muted-foreground leading-relaxed mt-4">
