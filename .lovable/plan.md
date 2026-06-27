@@ -1,65 +1,51 @@
 
-# Use albari.com.ng with Resend for All Emails
+# Use albari.com.ng with Resend for all emails
 
-## Goal
-Switch every outgoing email (offer letters, admission notifications, OTPs, bulk emails, fee reminders, etc.) from the default `onboarding@resend.dev` sender to a branded `albari.com.ng` address, using the existing Resend integration.
+## Current state (good news)
 
-## Prerequisites (User Actions in Resend)
-The domain must be verified in Resend before branded emails will deliver. The user needs to:
+The edge functions are already wired to send from `@albari.com.ng`:
 
-1. Go to https://resend.com/domains and click **Add Domain**.
-2. Enter `albari.com.ng` (or a subdomain like `mail.albari.com.ng` — recommended to isolate from main MX).
-3. Resend will display DNS records (SPF/TXT, DKIM/CNAME x3, and optional DMARC).
-4. Add those DNS records in the domain registrar / DNS provider for albari.com.ng.
-5. Click **Verify** in Resend until status = Verified (usually 5–30 min).
+- `send-offer-letter` → `admissions@albari.com.ng` (with reply-to)
+- `send-admission-notification` → `admissions@albari.com.ng` (with reply-to)
+- `send-otp` → `noreply@albari.com.ng` (with reply-to)
+- `send-bulk-email` → falls back to `noreply@albari.com.ng`
+- All read `SENDER_EMAIL` / `REPLY_TO_EMAIL` from secrets first.
 
-Until verification is complete, sending from `@albari.com.ng` will fail with a 403 from Resend. The code will still work — only the sender domain needs to be flipped once verified.
+`SENDER_EMAIL` and `RESEND_API_KEY` are already saved.
 
-## Implementation Plan
+**So no code change is required to switch the sender.** What is missing is the one thing only the domain owner can do: **verify `albari.com.ng` in Resend via DNS**. Until that's done, Resend will reject every send from `@albari.com.ng` with a 403 and emails will fail.
 
-### 1. Add a single sender constant via Supabase secret
-Use the existing `SENDER_EMAIL` secret (already in the project) as the canonical "From" address. Set its value to:
+## What I'll do
 
-```
-Al-Bari Group of Schools <admissions@albari.com.ng>
-```
+1. **Align `SENDER_EMAIL` secret** to the exact address you want as the public "From". Recommended:
+   - `Al-Bari Group of Schools <admissions@albari.com.ng>` — best for admissions/offer letters, replies go to a real inbox.
+   - Alternative: `noreply@albari.com.ng` if you want a no-reply style.
+   Confirm which (or give me a different local-part) and I'll update the secret. No code change needed beyond that.
 
-(Or whatever address the user prefers, e.g. `noreply@albari.com.ng`.)
+2. **Audit the two remaining mail-touching functions** and align them to use `SENDER_EMAIL` / `REPLY_TO_EMAIL` the same way as the others:
+   - `supabase/functions/send-fee-reminders/index.ts`
+   - `supabase/functions/accept-offer/index.ts` (only if it actually sends mail — will check and skip otherwise)
 
-### 2. Update edge functions to read `SENDER_EMAIL`
-Currently several functions hard-code `onboarding@resend.dev`. Update these to use `Deno.env.get("SENDER_EMAIL")` with a safe fallback:
+3. **Redeploy** any function I touch so Resend picks up the change.
 
-- `supabase/functions/send-offer-letter/index.ts`
-- `supabase/functions/send-admission-notification/index.ts`
-- `supabase/functions/send-otp/index.ts`
-- `supabase/functions/send-bulk-email/index.ts` (already reads SENDER_EMAIL — verify default)
-- `supabase/functions/send-fee-reminders/index.ts` (audit and align)
-- `supabase/functions/accept-offer/index.ts` (if it sends mail)
+4. **Test path**: use the existing Admin → Email Logs → Email Testing Panel to fire one email of each type (submitted / accepted / offer / OTP) to your inbox, then check `email_logs.status = 'sent'` and confirm the `From:` header reads `Al-Bari Group of Schools <admissions@albari.com.ng>`.
 
-Pattern:
-```ts
-const FROM = Deno.env.get("SENDER_EMAIL") || "Al-Bari Group of Schools <admissions@albari.com.ng>";
-```
+## What you must do in Resend (cannot be automated)
 
-### 3. Add Reply-To
-Set `reply_to: "admissions@albari.com.ng"` on all admission/offer/notification emails so replies route to a real inbox.
+This is the actual blocker — without it nothing from `@albari.com.ng` will deliver.
 
-### 4. Redeploy edge functions
-Deploy all affected functions after the edit so Resend picks up the new sender.
+1. Go to https://resend.com/domains → **Add Domain**.
+2. Enter `albari.com.ng` (or a subdomain like `mail.albari.com.ng` — recommended, keeps transactional mail isolated from your main MX so a misconfig can't break info@ inboxes).
+3. Resend shows ~5 DNS records: SPF (TXT), DKIM (3× CNAME), and optionally DMARC (TXT).
+4. Add those records at the DNS provider for albari.com.ng (Namecheap, Cloudflare, your registrar, etc.).
+5. Click **Verify** in Resend until status = **Verified** (usually 5–30 min).
 
-### 5. Verification step
-- Use the existing **Email Testing Panel** (Admin → Email Logs tab) to send a test of each notification type to a real inbox.
-- Check `email_logs` table for `status = sent`.
-- Confirm the recipient sees `From: Al-Bari Group of Schools <admissions@albari.com.ng>` and that replies go to the right place.
-
-## What I will NOT change
-- Templates, copy, or branding inside the email bodies (already in place).
-- Resend SDK or API key handling (`RESEND_API_KEY` is already configured).
-- Retry/logging logic.
+Once verified, the next test send will succeed and every outgoing mail (offer letters, admission notifications, OTPs, bulk, fee reminders) will go out as `@albari.com.ng` automatically — no further code changes.
 
 ## Open questions
-1. Which exact local-part do you want? Options: `admissions@`, `noreply@`, `info@`, or something else.
-2. Do you want to use the root `albari.com.ng` or a subdomain like `mail.albari.com.ng` (recommended — safer for deliverability and won't interfere with the website's main mail).
-3. Confirm you can add DNS records at albari.com.ng's registrar — without this, branded sending won't work.
 
-Once you confirm 1–3, I'll make the code changes and deploy. The DNS/Resend verification you can do in parallel.
+1. **Local-part?** `admissions@`, `noreply@`, `info@`, or something else for the main `SENDER_EMAIL`?
+2. **Root or subdomain?** `albari.com.ng` or `mail.albari.com.ng` (recommended)?
+3. **Reply-to inbox?** Should replies route to `admissions@albari.com.ng` (default) or a different address?
+
+Confirm 1–3 and I'll do the code/secret work in parallel while you add the DNS records.
