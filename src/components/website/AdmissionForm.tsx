@@ -1246,19 +1246,21 @@ export const AdmissionForm = () => {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between pt-6">
-            <Button 
-              variant="outline" 
-              onClick={prevStep} 
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6">
+            <Button
+              variant="outline"
+              onClick={prevStep}
               disabled={currentStep === 0}
+              className="w-full sm:w-auto"
             >
               Previous
             </Button>
-            
+
             {currentStep === steps.length - 1 ? (
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={isSubmitting || !formData.declaration_accepted}
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -1273,7 +1275,7 @@ export const AdmissionForm = () => {
                 )}
               </Button>
             ) : (
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} className="w-full sm:w-auto">
                 Next
               </Button>
             )}
