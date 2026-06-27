@@ -836,10 +836,19 @@ export const AdmissionForm = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Parent/Guardian Information</h3>
               <Tabs defaultValue="father" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="father">Father's Details</TabsTrigger>
-                  <TabsTrigger value="mother">Mother's Details</TabsTrigger>
-                  <TabsTrigger value="guardian">Guardian's Details</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 h-auto">
+                  <TabsTrigger value="father" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Father</span>
+                    <span className="hidden sm:inline">Father's Details</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="mother" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Mother</span>
+                    <span className="hidden sm:inline">Mother's Details</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="guardian" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Guardian</span>
+                    <span className="hidden sm:inline">Guardian's Details</span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="father" className="space-y-4">
