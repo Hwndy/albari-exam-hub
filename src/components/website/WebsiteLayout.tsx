@@ -36,23 +36,23 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
         {/* Top bar with contact info */}
         <div className="border-b border-border/50 bg-primary/5">
           <div className="container mx-auto px-4 py-2">
-            <div className="flex justify-between items-center text-sm">
-              <div className="flex items-center space-x-6 text-muted-foreground">
-                <div className="flex items-center space-x-1">
-                  <Phone className="h-3 w-3" />
-                  <span>+234 802 815 2097</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Mail className="h-3 w-3" />
-                  <span>info@albari.edu.ng</span>
-                </div>
+            <div className="flex flex-wrap justify-between items-center gap-y-1 gap-x-4 text-xs sm:text-sm">
+              <div className="flex flex-wrap items-center gap-y-1 gap-x-4 text-muted-foreground min-w-0">
+                <a href="tel:+2348028152097" className="flex items-center space-x-1 min-w-0">
+                  <Phone className="h-3 w-3 shrink-0" />
+                  <span className="truncate">+234 802 815 2097</span>
+                </a>
+                <a href="mailto:info@albari.com.ng" className="hidden sm:flex items-center space-x-1 min-w-0">
+                  <Mail className="h-3 w-3 shrink-0" />
+                  <span className="truncate">info@albari.com.ng</span>
+                </a>
                 <div className="hidden md:flex items-center space-x-1">
-                  <MapPin className="h-3 w-3" />
+                  <MapPin className="h-3 w-3 shrink-0" />
                   <span>Lagos, Nigeria</span>
                 </div>
               </div>
-              
-              <div className="flex items-center space-x-3">
+
+              <div className="flex items-center space-x-3 shrink-0">
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                   <Facebook className="h-4 w-4" />
                 </a>
@@ -69,12 +69,12 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
 
         {/* Main navigation */}
         <div className="container mx-auto px-4">
-          <div className="flex items-center justify-between py-4">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center justify-between py-3 sm:py-4 gap-2">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
               <Logo size="lg" />
-              <div className="hidden md:block">
-                <h1 className="text-lg font-bold text-foreground">Al-Bari Group of Schools</h1>
-                <p className="text-sm text-muted-foreground">Excellence in Education</p>
+              <div className="min-w-0">
+                <h1 className="text-sm sm:text-lg font-bold text-foreground leading-tight truncate">Al-Bari Group of Schools</h1>
+                <p className="hidden sm:block text-xs sm:text-sm text-muted-foreground">Excellence in Education</p>
               </div>
             </div>
 
@@ -108,13 +108,13 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
 
           {/* Mobile Navigation */}
           {isMobileMenuOpen && (
-            <nav className="lg:hidden border-t border-border py-4">
-              <div className="flex flex-col space-y-4">
+            <nav className="lg:hidden border-t border-border py-2 max-h-[70vh] overflow-y-auto">
+              <div className="flex flex-col">
                 {navigation.map((item) => (
                   <Link
                     key={item.name}
                     to={item.href}
-                    className={`text-sm font-medium transition-colors hover:text-primary ${
+                    className={`text-base font-medium transition-colors hover:text-primary py-3 px-1 border-b border-border/40 last:border-b-0 ${
                       isActivePath(item.href) ? 'text-primary' : 'text-foreground/80'
                     }`}
                     onClick={() => setIsMobileMenuOpen(false)}
