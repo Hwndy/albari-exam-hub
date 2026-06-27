@@ -471,7 +471,7 @@ serve(async (req) => {
 
             <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
               If you have any questions, please contact our admissions office at 
-              <a href="mailto:admissions@albari.edu.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.edu.ng</a>
+              <a href="mailto:admissions@albari.com.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.com.ng</a>
             </p>
 
             <p style="margin-top: 30px; color: #059669; font-weight: 600; font-size: 16px;">
