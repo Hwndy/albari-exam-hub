@@ -1,43 +1,39 @@
+## Current finding
 
-## What's actually wrong
+The screenshot proves Resend is still receiving `from` as a Gmail address. The code fallbacks are already `@albari.com.ng`, so the most likely cause is the existing `SENDER_EMAIL` secret still contains the old Gmail value, or the edge functions have not picked up the updated secret after deployment.
 
-The red toast says it all:
+I cannot confirm Resend domain verification from here because email-domain setup/status requires workspace admin/owner permission. Please have a workspace admin check the Resend/Lovable email domain status for `albari.com.ng` and confirm it is `Verified`.
 
-> Resend error: The gmail.com domain is not verified. Please add and verify your domain on https://resend.com/domains
+## Plan
 
-Your `SENDER_EMAIL` secret is currently a `@gmail.com` address (likely set during testing). Resend **only** allows sending from a domain you own and have verified via DNS. Free inbox providers (gmail.com, yahoo.com, outlook.com) can never be used as the From address — this is a hard Resend policy, not a bug in the app.
+1. **Force the sender secret value**
+   - Update the existing `SENDER_EMAIL` runtime secret to exactly `admissions@albari.com.ng`.
+   - Keep `REPLY_TO_EMAIL` as `admissions@albari.com.ng`.
 
-The offer-letter code itself is fine. Every mail edge function already reads `SENDER_EMAIL` / `REPLY_TO_EMAIL` from secrets and falls back to `@albari.com.ng`. The fallback is being overridden by the gmail value in the secret.
+2. **Redeploy affected mail edge functions**
+   - Redeploy `send-offer-letter`.
+   - Redeploy `send-admission-notification`.
+   - Redeploy `send-bulk-email`.
+   - Redeploy `send-otp`.
+   - This ensures the functions stop using any stale Gmail sender value.
 
-## Fix — two parts, both required
+3. **Add a safe sender guard**
+   - Add a small helper in each mail function that blocks non-`albari.com.ng` sender values before calling Resend.
+   - If the secret is accidentally changed back to Gmail, the app will show a clear configuration error instead of sending a bad Resend request.
 
-### Part 1 — Verify `albari.com.ng` in Resend (you must do this)
-1. https://resend.com/domains → **Add Domain** → `albari.com.ng` (or a subdomain like `mail.albari.com.ng`, which is what Resend recommends).
-2. At your DNS provider for `albari.com.ng`, add the records Resend shows you:
-   - 1× SPF (TXT)
-   - 3× DKIM (CNAME)
-   - 1× DMARC (TXT, recommended)
-3. Back in Resend, click **Verify**. Status must read **Verified** (usually 5–30 min, can take up to a few hours).
+4. **Normalize all defaults**
+   - Set every mail function default sender to `admissions@albari.com.ng`, including OTP and bulk sends, so all mail types align with the verified school domain.
 
-Until this is Verified, **no** outgoing email from the app will work, no matter what we change in code.
+5. **Verify with logs after retry**
+   - Check edge function logs after sending an offer letter.
+   - Confirm the new error no longer mentions `gmail.com`; if the domain is not verified, the remaining Resend error should mention `albari.com.ng` instead.
 
-### Part 2 — Replace the bad `SENDER_EMAIL` secret
-Once the domain shows **Verified** in Resend, I'll open the secret update form so you can change:
+## Technical detail
 
-- `SENDER_EMAIL` → `admissions@albari.com.ng`
-- `REPLY_TO_EMAIL` → `admissions@albari.com.ng` (already set, will confirm)
+Code already uses:
 
-No code changes are needed — `send-offer-letter`, `send-admission-notification`, `send-otp`, and `send-bulk-email` all already read these secrets.
+```text
+Deno.env.get("SENDER_EMAIL") || "admissions@albari.com.ng"
+```
 
-### Part 3 — Verify
-After both above are done, I'll:
-1. Send a test offer letter from the admin UI to your own inbox.
-2. Tail `send-offer-letter` edge function logs to confirm Resend returns `200 OK` with a message id (no "domain not verified" error).
-3. Check it lands in inbox (not spam) — if SPF/DKIM/DMARC are all green this will be clean.
-
-## What I will NOT do
-- I won't try to "fix" this by editing edge function code — the code is correct; the secret + DNS are the problem.
-- I won't change the From address to `onboarding@resend.dev` as a workaround, because real applicants would receive offer letters from a generic Resend test address, which looks like spam.
-
-## Your next step
-Tell me when the domain shows **Verified** in https://resend.com/domains, and I'll open the secret update form for `SENDER_EMAIL` and re-test the offer letter flow.
+So the persistent Gmail error is not coming from the fallback. It is coming from the deployed environment value of `SENDER_EMAIL` or stale edge function runtime state.
