@@ -243,9 +243,6 @@ export const AdmissionsPage = () => {
         </div>
       </section>
 
-      {/* Fee Structure */}
-      /
-
       {/* Contact Information */}
       <section className="py-16">
         <div className="container mx-auto px-4">
