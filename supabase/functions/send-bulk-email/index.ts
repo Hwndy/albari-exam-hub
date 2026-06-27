@@ -4,6 +4,22 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
+const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
+const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
+const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
+
+function getSafeSchoolEmail(envName: string, fallback: string): string {
+  const configured = Deno.env.get(envName)?.trim() || fallback;
+  const domain = configured.split("@").pop()?.toLowerCase();
+
+  if (domain !== ALLOWED_EMAIL_DOMAIN) {
+    console.error(`${envName} is misconfigured. Expected @${ALLOWED_EMAIL_DOMAIN}, received @${domain || "unknown"}. Falling back to ${fallback}.`);
+    return fallback;
+  }
+
+  return configured;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -53,8 +69,8 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("id", schoolId)
       .single();
 
-    const senderEmail = Deno.env.get("SENDER_EMAIL") || "noreply@albari.com.ng";
-    const replyTo = Deno.env.get("REPLY_TO_EMAIL") || "admissions@albari.com.ng";
+    const senderEmail = getSafeSchoolEmail("SENDER_EMAIL", DEFAULT_SENDER_EMAIL);
+    const replyTo = getSafeSchoolEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
     const schoolName = school?.name || "School";
 
     // Process each recipient
