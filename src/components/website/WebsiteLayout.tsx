@@ -72,9 +72,9 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
           <div className="flex items-center justify-between py-3 sm:py-4 gap-2">
             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
               <Logo size="lg" />
-              <div className="min-w-0">
-                <h1 className="text-sm sm:text-lg font-bold text-foreground leading-tight truncate">Al-Bari Group of Schools</h1>
-                <p className="hidden sm:block text-xs sm:text-sm text-muted-foreground">Excellence in Education</p>
+              <div className="hidden md:block min-w-0">
+                <h1 className="text-lg font-bold text-foreground leading-tight truncate">Al-Bari Group of Schools</h1>
+                <p className="text-sm text-muted-foreground">Excellence in Education</p>
               </div>
             </div>
 
