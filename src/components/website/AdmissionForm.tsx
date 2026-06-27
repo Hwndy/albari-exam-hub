@@ -558,37 +558,38 @@ export const AdmissionForm = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-center">Al-Bari Group of Schools Admission Application</CardTitle>
+    <div className="max-w-4xl mx-auto p-0 sm:p-2">
+      <Card className="border-0 sm:border shadow-none sm:shadow-sm">
+        <CardHeader className="px-3 sm:px-6 pt-4 sm:pt-6">
+          <CardTitle className="text-center text-base sm:text-xl">Al-Bari Group of Schools Admission Application</CardTitle>
           <div className="space-y-4">
             <Progress value={progress} className="w-full" />
-            <div className="flex justify-between items-center text-sm">
+            <div className="flex justify-between items-center text-xs sm:text-sm">
               <span>Step {currentStep + 1} of {steps.length}</span>
               <span>{Math.round(progress)}% Complete</span>
             </div>
           </div>
-          
+
           {/* Step indicators */}
-          <div className="flex justify-between mt-6">
+          <div className="flex justify-between items-start gap-1 sm:gap-2 mt-4 sm:mt-6 overflow-x-auto -mx-1 px-1">
             {steps.map((step, index) => {
               const StepIcon = step.icon;
               return (
-                <div key={index} className="flex flex-col items-center">
+                <div key={index} className="flex flex-col items-center flex-1 min-w-[44px]">
                   <div className={cn(
-                    "w-10 h-10 rounded-full flex items-center justify-center border-2 mb-2",
-                    index <= currentStep 
-                      ? "bg-primary border-primary text-primary-foreground" 
+                    "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center border-2 mb-1 sm:mb-2 shrink-0",
+                    index <= currentStep
+                      ? "bg-primary border-primary text-primary-foreground"
                       : "border-muted-foreground text-muted-foreground"
                   )}>
-                    <StepIcon className="h-5 w-5" />
+                    <StepIcon className="h-4 w-4 sm:h-5 sm:w-5" />
                   </div>
                   <span className={cn(
-                    "text-xs text-center hidden sm:block",
+                    "text-[10px] sm:text-xs text-center leading-tight",
                     index <= currentStep ? "text-primary" : "text-muted-foreground"
                   )}>
-                    {step.title}
+                    <span className="hidden sm:inline">{step.title}</span>
+                    <span className="sm:hidden">{index + 1}</span>
                   </span>
                 </div>
               );
@@ -596,7 +597,7 @@ export const AdmissionForm = () => {
           </div>
         </CardHeader>
 
-        <CardContent className="p-6">
+        <CardContent className="p-3 sm:p-6">
           {/* Step 0: Personal Information */}
           {currentStep === 0 && (
             <div className="space-y-6">
@@ -835,10 +836,19 @@ export const AdmissionForm = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Parent/Guardian Information</h3>
               <Tabs defaultValue="father" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="father">Father's Details</TabsTrigger>
-                  <TabsTrigger value="mother">Mother's Details</TabsTrigger>
-                  <TabsTrigger value="guardian">Guardian's Details</TabsTrigger>
+                <TabsList className="grid w-full grid-cols-3 h-auto">
+                  <TabsTrigger value="father" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Father</span>
+                    <span className="hidden sm:inline">Father's Details</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="mother" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Mother</span>
+                    <span className="hidden sm:inline">Mother's Details</span>
+                  </TabsTrigger>
+                  <TabsTrigger value="guardian" className="text-xs sm:text-sm px-2 py-2">
+                    <span className="sm:hidden">Guardian</span>
+                    <span className="hidden sm:inline">Guardian's Details</span>
+                  </TabsTrigger>
                 </TabsList>
                 
                 <TabsContent value="father" className="space-y-4">
@@ -1236,19 +1246,21 @@ export const AdmissionForm = () => {
           )}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between pt-6">
-            <Button 
-              variant="outline" 
-              onClick={prevStep} 
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-6">
+            <Button
+              variant="outline"
+              onClick={prevStep}
               disabled={currentStep === 0}
+              className="w-full sm:w-auto"
             >
               Previous
             </Button>
-            
+
             {currentStep === steps.length - 1 ? (
-              <Button 
-                onClick={handleSubmit} 
+              <Button
+                onClick={handleSubmit}
                 disabled={isSubmitting || !formData.declaration_accepted}
+                className="w-full sm:w-auto"
               >
                 {isSubmitting ? (
                   <>
@@ -1263,7 +1275,7 @@ export const AdmissionForm = () => {
                 )}
               </Button>
             ) : (
-              <Button onClick={nextStep}>
+              <Button onClick={nextStep} className="w-full sm:w-auto">
                 Next
               </Button>
             )}
