@@ -51,27 +51,27 @@ export const AdmissionsPage = () => {
   return (
     <div className="space-y-0">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
+      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <Badge variant="secondary" className="mb-6">
               Join Al-Bari Group of Schools
             </Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-foreground mb-4 sm:mb-6">
               Begin Your Journey to
               <span className="text-primary block">Academic Excellence</span>
             </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
+            <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-6 sm:mb-8">
               We welcome bright, motivated students who are ready to embrace our culture of 
               excellence, integrity, and character development. Start your application today.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild>
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <Button size="lg" asChild className="w-full sm:w-auto">
                 <Link to="/website/admissions/apply">
                   Start Application <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" asChild>
+              <Button variant="outline" size="lg" asChild className="w-full sm:w-auto">
                 <Link to="/website/track-application">
                   Track Application
                 </Link>
