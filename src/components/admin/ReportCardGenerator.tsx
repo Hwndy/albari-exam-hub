@@ -163,6 +163,8 @@ export const ReportCardGenerator: React.FC = () => {
   const [reportCards, setReportCards] = useState<StudentReportCard[]>([]);
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [automation, setAutomation] = useState<AutomationSettings>(DEFAULT_AUTOMATION);
+  const [publishedKeys, setPublishedKeys] = useState<Set<string>>(new Set());
 
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTerm, setSelectedTerm] = useState<string>('First Term');
@@ -201,6 +203,28 @@ export const ReportCardGenerator: React.FC = () => {
             .order('start_date', { ascending: false })
         ),
       ]);
+
+      // Load automation settings (per school)
+      if (schoolId) {
+        const { data: auto } = await supabase
+          .from('result_automation_settings')
+          .select('*')
+          .eq('school_id', schoolId)
+          .maybeSingle();
+        if (auto) {
+          setAutomation({
+            min_promotion_average: Number(auto.min_promotion_average) || DEFAULT_AUTOMATION.min_promotion_average,
+            below_max: Number(auto.below_max) || DEFAULT_AUTOMATION.below_max,
+            average_max: Number(auto.average_max) || DEFAULT_AUTOMATION.average_max,
+            above_max: Number(auto.above_max) || DEFAULT_AUTOMATION.above_max,
+            principal_remark_below: auto.principal_remark_below || DEFAULT_AUTOMATION.principal_remark_below,
+            principal_remark_average: auto.principal_remark_average || DEFAULT_AUTOMATION.principal_remark_average,
+            principal_remark_above: auto.principal_remark_above || DEFAULT_AUTOMATION.principal_remark_above,
+            principal_remark_distinction: auto.principal_remark_distinction || DEFAULT_AUTOMATION.principal_remark_distinction,
+            show_parent_signature: !!auto.show_parent_signature,
+          });
+        }
+      }
 
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
