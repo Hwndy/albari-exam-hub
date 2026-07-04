@@ -6,8 +6,6 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface Payment {
   id: string;
   application_id: string;
@@ -27,7 +25,6 @@ interface Payment {
 }
 
 export const AdmissionPaymentVerification = () => {
-  const { withSchoolFilter } = useSchoolQuery();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "completed">("all");
@@ -38,7 +35,7 @@ export const AdmissionPaymentVerification = () => {
 
   const fetchPayments = async () => {
     try {
-      let query = withSchoolFilter(
+      let query = 
         supabase
           .from("admission_payments")
           .select(`
@@ -47,12 +44,11 @@ export const AdmissionPaymentVerification = () => {
               application_number,
               first_name,
               last_name,
-              email,
-              school_id
+              email
             )
           `)
           .order("created_at", { ascending: false })
-      );
+      ;
 
       if (filter !== "all") {
         query = query.eq("status", filter);

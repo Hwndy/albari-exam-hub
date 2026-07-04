@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +59,6 @@ const initials = (n?: string) =>
 export const StudentsByClass: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
   const navigate = useNavigate();
 
   const [classes, setClasses] = useState<ClassRow[]>([]);
@@ -86,31 +84,15 @@ export const StudentsByClass: React.FC = () => {
   const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
   useEffect(() => {
-    if (schoolId !== undefined) {
-      fetchAll();
-      fetchSchoolBranding();
-    }
-    // eslint-disable-next-line
-  }, [schoolId]);
+        // eslint-disable-next-line
+  }, []);
 
   const fetchSchoolBranding = async () => {
     try {
       let name = 'School';
       let address: string | undefined;
       let logo_url: string | null = null;
-      if (schoolId) {
-        const { data: s } = await supabase
-          .from('schools').select('name, logo_url, address').eq('id', schoolId).maybeSingle();
-        if (s) {
-          name = (s as any).name ?? name;
-          logo_url = (s as any).logo_url ?? null;
-          const a = (s as any).address;
-          if (a && typeof a === 'object') {
-            address = [a.street, a.city, a.state].filter(Boolean).join(', ');
-          } else if (typeof a === 'string') address = a;
-        }
-      }
-      const { data: infos } = await supabase
+            const { data: infos } = await supabase
         .from('school_info').select('info_key, info_value').in('info_key', ['school_name', 'address']);
       (infos ?? []).forEach((i: any) => {
         if (i.info_key === 'school_name' && i.info_value) name = i.info_value;
@@ -123,9 +105,9 @@ export const StudentsByClass: React.FC = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const { data: cls, error: clsErr } = await withSchoolFilter(
+      const { data: cls, error: clsErr } = await 
         supabase.from('classes').select('id, name, description').order('name')
-      );
+      ;
       if (clsErr) throw clsErr;
       const classRows = (cls ?? []) as ClassRow[];
       setClasses(classRows);

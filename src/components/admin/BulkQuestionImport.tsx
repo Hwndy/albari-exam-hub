@@ -9,8 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Upload, FileText, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface BulkQuestionImportProps {
   subjects: any[];
   classes: any[];
@@ -34,8 +32,6 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
     errors: []
   });
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
-
   const handleBulkImport = async () => {
     if (!subjectId || !classId || !questionsText.trim()) {
       toast({
@@ -70,19 +66,19 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
         .eq('class_id', classId)
         .single();
       
-      let { data: questionBank } = await withSchoolFilter(bankQuery);
+      let { data: questionBank } = await bankQuery;
 
       if (!questionBank) {
         const selectedSubject = subjects.find(s => s.id === subjectId);
         const selectedClass = classes.find(c => c.id === classId);
         
-        const bankData = withSchoolData({
+        const bankData = {
           name: `${selectedSubject?.name} - ${selectedClass?.name} Question Bank`,
           description: `Question bank for ${selectedSubject?.name} in ${selectedClass?.name}`,
           subject_id: subjectId,
           class_id: classId,
           created_by: (await supabase.auth.getUser()).data.user?.id || ''
-        });
+        };
         
         const { data: newBank } = await supabase
           .from('question_banks')
@@ -115,8 +111,7 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
                 created_by: (await supabase.auth.getUser()).data.user?.id || '',
                 question_bank_id: questionBank?.id,
                 class_id: classId,
-                school_id: schoolId,
-              })
+                              })
               .select()
               .single();
 
@@ -129,8 +124,7 @@ export const BulkQuestionImport: React.FC<BulkQuestionImportProps> = ({
                 option_text: opt.text,
                 is_correct: opt.isCorrect,
                 option_order: index + 1,
-                school_id: schoolId,
-              }));
+                              }));
 
               const { error: optionsError } = await supabase
                 .from('question_options')

@@ -16,8 +16,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface AdminStudentResult {
   id: string;
   student_name: string;
@@ -46,8 +44,6 @@ export const AdminStudentResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [loadingProgress, setLoadingProgress] = useState('');
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -59,8 +55,8 @@ export const AdminStudentResults: React.FC = () => {
       
       // Fetch all subjects and classes filtered by school
       const [subjectsData, classesData] = await Promise.all([
-        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name'))
+        supabase.from('subjects').select('id, name').order('name'),
+        supabase.from('classes').select('id, name').order('name')
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
@@ -100,7 +96,7 @@ export const AdminStudentResults: React.FC = () => {
           .order('ended_at', { ascending: false })
           .range(start, start + BATCH_SIZE - 1);
 
-        const { data: batchData, error } = await withSchoolFilter(sessionsQuery);
+        const { data: batchData, error } = await sessionsQuery;
         
         if (error) throw error;
         

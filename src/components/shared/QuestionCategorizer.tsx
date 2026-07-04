@@ -7,8 +7,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Search, Filter, BookOpen, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface Question {
   id: string;
   question_text: string;
@@ -38,8 +36,6 @@ export const QuestionCategorizer: React.FC<QuestionCategorizerProps> = ({
     type: 'all',
     search: ''
   });
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     fetchSubjectsAndClasses();
   }, []);
@@ -51,8 +47,8 @@ export const QuestionCategorizer: React.FC<QuestionCategorizerProps> = ({
   const fetchSubjectsAndClasses = async () => {
     try {
       const [subjectsData, classesData] = await Promise.all([
-        withSchoolFilter(supabase.from('subjects').select('*').order('name')),
-        withSchoolFilter(supabase.from('classes').select('*').order('name'))
+        supabase.from('subjects').select('*').order('name'),
+        supabase.from('classes').select('*').order('name')
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);

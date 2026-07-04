@@ -12,8 +12,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface StudentResult {
   id: string;
   student_name: string;
@@ -36,8 +34,6 @@ export const EnhancedExamResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -78,7 +74,7 @@ export const EnhancedExamResults: React.FC = () => {
         examsQuery = examsQuery.eq('created_by', user?.id);
       }
 
-      const { data: examsData } = await withSchoolFilter(examsQuery);
+      const { data: examsData } = await examsQuery;
 
       if (examsData) {
         setExams(examsData);
@@ -90,7 +86,7 @@ export const EnhancedExamResults: React.FC = () => {
       let resultsData: any[] = [];
       
       if (teacherExamIds.length > 0) {
-        const { data } = await withSchoolFilter(
+        const { data } = await 
           supabase
             .from('exam_sessions')
             .select(`
@@ -115,7 +111,7 @@ export const EnhancedExamResults: React.FC = () => {
             .eq('status', 'completed')
             .in('exam_id', teacherExamIds)
             .order('ended_at', { ascending: false })
-        );
+        ;
         resultsData = data || [];
       }
       if (resultsData.length > 0) {

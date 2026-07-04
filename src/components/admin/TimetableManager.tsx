@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Plus, Calendar, Clock, Users, BookOpen, Trash2, Edit, Save, AlertTriangle, Loader2 } from 'lucide-react';
 
 interface Period {
@@ -61,8 +60,6 @@ const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 
 export const TimetableManager: React.FC = () => {
   const { toast } = useToast();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-  
   const [isLoading, setIsLoading] = useState(true);
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [classes, setClasses] = useState<ClassData[]>([]);
@@ -88,7 +85,7 @@ export const TimetableManager: React.FC = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, [schoolId]);
+  }, []);
 
   useEffect(() => {
     if (selectedClass) {
@@ -100,15 +97,15 @@ export const TimetableManager: React.FC = () => {
     setIsLoading(true);
     try {
       const [classesRes, subjectsRes, periodsRes, roomsRes] = await Promise.all([
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('periods').select('*').order('period_number')),
-        withSchoolFilter(supabase.from('rooms').select('id, room_name, capacity').order('room_name')),
+        supabase.from('classes').select('id, name').order('name'),
+        supabase.from('subjects').select('id, name').order('name'),
+        supabase.from('periods').select('*').order('period_number'),
+        supabase.from('rooms').select('id, room_name, capacity').order('room_name'),
       ]);
 
       // Fetch teachers (users with teacher role)
-      const profilesQuery = supabase.from('profiles').select('user_id, full_name, school_id');
-      const profilesRes = await withSchoolFilter(profilesQuery);
+      const profilesQuery = supabase.from('profiles').select('user_id, full_name');
+      const profilesRes = await profilesQuery;
       
       const { data: teacherRoles } = await supabase
         .from('user_roles')
@@ -216,8 +213,7 @@ export const TimetableManager: React.FC = () => {
         teacher_id: editingEntry.teacher_id || null,
         room_id: editingEntry.room_id || null,
         notes: editingEntry.notes || null,
-        school_id: schoolId,
-      };
+              };
 
       if (editingEntry.id) {
         const { error } = await supabase
@@ -257,8 +253,7 @@ export const TimetableManager: React.FC = () => {
     try {
       const { error } = await supabase.from('periods').insert([{
         ...newPeriod,
-        school_id: schoolId,
-      }]);
+              }]);
       
       if (error) throw error;
       

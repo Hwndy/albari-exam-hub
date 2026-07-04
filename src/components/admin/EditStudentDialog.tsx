@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -29,8 +28,6 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
   open, onOpenChange, userId, onSaved,
 }) => {
   const { toast } = useToast();
-  const { schoolId, withSchoolFilter } = useSchoolQuery();
-
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [classes, setClasses] = useState<ClassOption[]>([]);
@@ -60,7 +57,7 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
       const [{ data: prof }, { data: stu }, { data: cls }, { data: assign }] = await Promise.all([
         supabase.from('profiles').select('full_name').eq('user_id', userId).maybeSingle(),
         supabase.from('students').select('*').eq('user_id', userId).maybeSingle(),
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
+        supabase.from('classes').select('id, name').order('name'),
         supabase.from('class_assignments').select('id, class_id').eq('student_id', userId).maybeSingle(),
       ]);
 
@@ -123,8 +120,7 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
           await supabase.from('class_assignments').insert({
             student_id: userId,
             class_id: classId,
-            school_id: schoolId,
-          } as any);
+                      } as any);
         }
       }
 

@@ -56,7 +56,7 @@ export const StudentTimetable: React.FC = () => {
       // Get student's class assignment
       const { data: classAssignment } = await supabase
         .from('class_assignments')
-        .select('class_id, classes(id, name, school_id)')
+        .select('class_id, classes(id, name)')
         .eq('student_id', user.id)
         .single();
 
@@ -72,7 +72,7 @@ export const StudentTimetable: React.FC = () => {
       const { data: periodsData } = await supabase
         .from('periods')
         .select('*')
-        .eq('school_id', classData?.school_id)
+        
         .order('period_number');
       
       setPeriods(periodsData || []);

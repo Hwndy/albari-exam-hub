@@ -18,8 +18,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface RandomizedExamGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
@@ -51,8 +49,6 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
   const [generating, setGenerating] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   useEffect(() => {
     if (isOpen) {
       fetchData();
@@ -62,20 +58,20 @@ export const RandomizedExamGenerator: React.FC<RandomizedExamGeneratorProps> = (
   const fetchData = async () => {
     try {
       // Fetch subjects
-      const { data: subjectsData } = await withSchoolFilter(
+      const { data: subjectsData } = await 
         supabase
           .from('subjects')
           .select('*')
           .order('name')
-      );
+      ;
 
       // Fetch classes
-      const { data: classesData } = await withSchoolFilter(
+      const { data: classesData } = await 
         supabase
           .from('classes')
           .select('*')
           .order('name')
-      );
+      ;
 
       // Fetch question banks with question counts
       const { data: questionsData } = await supabase

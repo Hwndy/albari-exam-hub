@@ -13,7 +13,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CreditCard, Plus, Search, Filter, FileDown, Receipt, AlertTriangle, CheckCircle, Clock, DollarSign, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -58,7 +57,6 @@ interface Class {
 }
 
 export const FeeManagement = () => {
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [feePayments, setFeePayments] = useState<FeePayment[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -92,14 +90,14 @@ export const FeeManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [schoolId]);
+  }, []);
 
   const fetchData = async () => {
     try {
       setIsLoading(true);
       
       // Fetch fee structures with school filter
-      const { data: feeStructuresData, error: feeStructuresError } = await withSchoolFilter(
+      const { data: feeStructuresData, error: feeStructuresError } = await 
         supabase
           .from('fee_structures')
           .select(`
@@ -109,12 +107,12 @@ export const FeeManagement = () => {
             )
           `)
           .order('created_at', { ascending: false })
-      );
+      ;
 
       if (feeStructuresError) throw feeStructuresError;
 
       // Fetch fee payments with school filter
-      const { data: feePaymentsData, error: feePaymentsError } = await withSchoolFilter(
+      const { data: feePaymentsData, error: feePaymentsError } = await 
         supabase
           .from('fee_payments')
           .select(`
@@ -125,7 +123,7 @@ export const FeeManagement = () => {
             )
           `)
           .order('created_at', { ascending: false })
-      );
+      ;
 
       if (feePaymentsError) throw feePaymentsError;
 
@@ -155,12 +153,12 @@ export const FeeManagement = () => {
       );
 
       // Fetch classes with school filter
-      const { data: classesData, error: classesError } = await withSchoolFilter(
+      const { data: classesData, error: classesError } = await 
         supabase
           .from('classes')
           .select('*')
           .order('name')
-      );
+      ;
 
       if (classesError) throw classesError;
 
@@ -190,14 +188,14 @@ export const FeeManagement = () => {
         return;
       }
 
-      const feeData = withSchoolData({
+      const feeData = {
         fee_type: newFeeStructure.fee_type,
         amount: parseFloat(newFeeStructure.amount),
         due_date: newFeeStructure.due_date ? format(newFeeStructure.due_date, 'yyyy-MM-dd') : null,
         academic_year: newFeeStructure.academic_year,
         class_id: newFeeStructure.class_id,
         is_mandatory: newFeeStructure.is_mandatory
-      });
+      };
 
       const { error } = await supabase
         .from('fee_structures')
@@ -261,7 +259,7 @@ export const FeeManagement = () => {
       // Generate receipt number if not provided
       const receiptNumber = newPayment.receipt_number || `RCP${Date.now()}`;
 
-      const paymentData = withSchoolData({
+      const paymentData = {
         student_id: student.id,
         fee_structure_id: newPayment.fee_structure_id,
         amount_paid: parseFloat(newPayment.amount_paid),
@@ -270,7 +268,7 @@ export const FeeManagement = () => {
         transaction_id: newPayment.transaction_id,
         receipt_number: receiptNumber,
         status: 'completed'
-      });
+      };
 
       const { error } = await supabase
         .from('fee_payments')

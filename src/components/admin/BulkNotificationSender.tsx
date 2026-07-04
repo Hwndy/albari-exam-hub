@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { 
   Mail, MessageSquare, Plus, Send, Clock, CheckCircle, 
   XCircle, Loader2, Users, FileText, Trash2, Edit 
@@ -60,8 +59,6 @@ const AVAILABLE_VARIABLES = [
 
 export const BulkNotificationSender: React.FC = () => {
   const { toast } = useToast();
-  const { schoolId } = useSchoolQuery();
-
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [templates, setTemplates] = useState<NotificationTemplate[]>([]);
@@ -89,8 +86,7 @@ export const BulkNotificationSender: React.FC = () => {
   });
 
   useEffect(() => {
-    if (schoolId) fetchData();
-  }, [schoolId]);
+      }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -99,7 +95,7 @@ export const BulkNotificationSender: React.FC = () => {
       const templatesRes = await supabase
         .from('notification_templates')
         .select('*')
-        .eq('school_id', schoolId)
+        
         .order('created_at', { ascending: false });
       
       setTemplates((templatesRes.data || []) as NotificationTemplate[]);
@@ -108,7 +104,7 @@ export const BulkNotificationSender: React.FC = () => {
       const queueRes = await supabase
         .from('notification_queue')
         .select('*')
-        .eq('school_id', schoolId)
+        
         .order('created_at', { ascending: false })
         .limit(50);
       
@@ -118,7 +114,7 @@ export const BulkNotificationSender: React.FC = () => {
       const classesRes = await supabase
         .from('classes')
         .select('id, name')
-        .eq('school_id', schoolId)
+        
         .order('name');
       
       setClasses((classesRes.data || []) as ClassOption[]);
@@ -158,8 +154,7 @@ export const BulkNotificationSender: React.FC = () => {
         const { error } = await supabase
           .from('notification_templates')
           .insert({
-            school_id: schoolId,
-            name: templateForm.name,
+                        name: templateForm.name,
             type: templateForm.type,
             subject: templateForm.type === 'email' ? templateForm.subject : null,
             body: templateForm.body,
@@ -208,7 +203,7 @@ export const BulkNotificationSender: React.FC = () => {
         const response = await (supabase.from('profiles') as any)
           .select('user_id, full_name')
           .eq('role', 'parent')
-          .eq('school_id', schoolId);
+          ;
         recipients = (response.data || []) as any[];
       } else if (sendForm.recipientType === 'class' && sendForm.selectedClasses.length > 0) {
         // Get students in selected classes, then their parents
@@ -232,8 +227,7 @@ export const BulkNotificationSender: React.FC = () => {
       const { error } = await supabase
         .from('notification_queue')
         .insert({
-          school_id: schoolId,
-          template_id: selectedTemplate.id,
+                    template_id: selectedTemplate.id,
           recipient_type: sendForm.recipientType,
           recipients: recipients,
           status: sendForm.scheduledAt ? 'pending' : 'processing',
@@ -252,7 +246,6 @@ export const BulkNotificationSender: React.FC = () => {
           body: {
             templateId: selectedTemplate.id,
             recipients,
-            schoolId,
           },
         });
 

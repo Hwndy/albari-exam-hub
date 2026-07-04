@@ -5,7 +5,6 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchool } from '@/contexts/SchoolContext';
 import { 
   subscribeToPushNotifications, 
   unsubscribeFromPushNotifications,
@@ -18,7 +17,6 @@ import { toast } from 'sonner';
 
 export const NotificationSettings: React.FC = () => {
   const { user } = useAuth();
-  const { schoolId } = useSchool();
   const [isLoading, setIsLoading] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [permissionStatus, setPermissionStatus] = useState<NotificationPermission>('default');
@@ -71,7 +69,7 @@ export const NotificationSettings: React.FC = () => {
           return;
         }
 
-        const success = await subscribeToPushNotifications(user.id, schoolId);
+        const success = await subscribeToPushNotifications(user.id, undefined);
         if (success) {
           setIsSubscribed(true);
           toast.success('Notifications enabled');

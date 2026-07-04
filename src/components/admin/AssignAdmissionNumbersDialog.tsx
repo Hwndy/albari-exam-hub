@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,8 +31,6 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
   open, onOpenChange, singleStudent, onDone,
 }) => {
   const { toast } = useToast();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   const [prefix, setPrefix] = useState('ALB');
   const [year, setYear] = useState(String(new Date().getFullYear()));
   const [pad, setPad] = useState(4);
@@ -58,9 +55,9 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
 
   const computeNextStart = async () => {
     try {
-      const { data } = await withSchoolFilter(
+      const { data } = await 
         supabase.from('students').select('admission_number').not('admission_number', 'is', null)
-      );
+      ;
       const re = new RegExp(`^${escapeRe(prefix)}/${escapeRe(year)}/(\\d+)$`);
       let max = 0;
       (data ?? []).forEach((r: any) => {
@@ -74,9 +71,9 @@ export const AssignAdmissionNumbersDialog: React.FC<Props> = ({
   const loadCandidates = async () => {
     setLoading(true);
     try {
-      const { data: cls } = await withSchoolFilter(
+      const { data: cls } = await 
         supabase.from('classes').select('id, name')
-      );
+      ;
       const classMap = new Map<string, string>(
         (cls ?? []).map((c: any) => [c.id as string, c.name as string])
       );

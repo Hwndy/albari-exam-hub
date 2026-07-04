@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { BookOpen, Search, Loader2, Clock, BookCheck, AlertTriangle } from 'lucide-react';
 import { format, differenceInDays } from 'date-fns';
@@ -43,8 +42,6 @@ const CATEGORIES = [
 export const LibraryCatalog: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter } = useSchoolQuery();
-
   const [isLoading, setIsLoading] = useState(true);
   const [books, setBooks] = useState<Book[]>([]);
   const [myIssues, setMyIssues] = useState<MyIssue[]>([]);
@@ -84,7 +81,7 @@ export const LibraryCatalog: React.FC = () => {
     setIsLoading(true);
     try {
       const [booksRes, issuesRes] = await Promise.all([
-        withSchoolFilter(supabase.from('library_books').select('*').order('title')),
+        supabase.from('library_books').select('*').order('title'),
         supabase
           .from('book_issues')
           .select('*, library_books(*)')

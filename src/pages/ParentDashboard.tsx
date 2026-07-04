@@ -44,7 +44,7 @@ export const ParentDashboard = () => {
       // Get parent record
       const { data: parentData, error: parentError } = await supabase
         .from('parents')
-        .select('id, school_id')
+        .select('id')
         .eq('user_id', user.id)
         .single();
 
@@ -113,7 +113,7 @@ export const ParentDashboard = () => {
       const { data: feeStructures } = await supabase
         .from('fee_structures')
         .select('id, amount')
-        .eq('school_id', parentData.school_id);
+        ;
 
       // Then get payments made by students
       const { data: payments } = await supabase

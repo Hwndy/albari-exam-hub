@@ -7,7 +7,6 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
 import { EnhancedQuestionForm } from '@/components/shared/EnhancedQuestionForm';
 import { CheckCircle, FileText, Plus, Edit, Trash2 } from 'lucide-react';
@@ -33,8 +32,6 @@ export const QuestionBank: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   useEffect(() => {
     fetchData();
   }, [user]);
@@ -59,8 +56,8 @@ export const QuestionBank: React.FC = () => {
       const teacherSubjectIds = subjectAssignments.data?.map(a => a.subject_id) || [];
 
       // Fetch classes and subjects (filtered for teachers)
-      let classesQuery = withSchoolFilter(supabase.from('classes').select('*').order('name'));
-      let subjectsQuery = withSchoolFilter(supabase.from('subjects').select('*').order('name'));
+      let classesQuery = supabase.from('classes').select('*').order('name');
+      let subjectsQuery = supabase.from('subjects').select('*').order('name');
 
       if (teacherClassIds.length > 0) {
         classesQuery = classesQuery.in('id', teacherClassIds);
@@ -138,12 +135,12 @@ export const QuestionBank: React.FC = () => {
         const subject = subjects.find(s => s.id === questionData.subjectId);
         const cls = classes.find(c => c.id === questionData.classId);
         
-        const questionBankData = withSchoolData({
+        const questionBankData = {
           name: `${subject?.name} - ${cls?.name || 'General'} Questions`,
           subject_id: questionData.subjectId,
           class_id: questionData.classId,
           created_by: user?.id,
-        });
+        };
 
         const { data: newQuestionBank, error: bankError } = await supabase
           .from('question_banks')
@@ -156,7 +153,7 @@ export const QuestionBank: React.FC = () => {
       }
 
       // Insert question with school_id
-      const questionInsertData = withSchoolData({
+      const questionInsertData = {
         question_text: questionData.questionText,
         question_type: questionData.questionType,
         difficulty_level: questionData.difficulty,
@@ -167,7 +164,7 @@ export const QuestionBank: React.FC = () => {
         question_bank_id: questionBankId,
         class_id: questionData.classId,
         created_by: user?.id,
-      });
+      };
 
       const { data: newQuestion, error: questionError } = await supabase
         .from('questions')

@@ -1,12 +1,9 @@
 import React, { ReactNode } from 'react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchool } from '@/contexts/SchoolContext';
 import { LogOut } from 'lucide-react';
 import { Logo } from '@/components/shared/Logo';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { SchoolSwitcher } from '@/components/shared/SchoolSwitcher';
-
 interface DashboardLayoutProps {
   children: ReactNode;
   title: string;
@@ -17,7 +14,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
   title,
 }) => {
   const { user, logout } = useAuth();
-  const { currentSchool, schoolId } = useSchool();
   const isMobile = useIsMobile();
 
   const handleLogout = () => {
@@ -38,9 +34,6 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             </div>
             
             <div className="flex items-center space-x-2 sm:space-x-4">
-              {/* School Switcher for Super Admins */}
-              {!isMobile && <SchoolSwitcher />}
-              
               {/* Desktop User Info */}
               {!isMobile && (
                 <div className="text-right">

@@ -9,8 +9,6 @@ import { Plus, Edit, Trash2, Users } from 'lucide-react';
 import { Class, ClassAssignment, Profile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 export const ClassManagement = () => {
   const [classes, setClasses] = useState<Class[]>([]);
   const [assignments, setAssignments] = useState<ClassAssignment[]>([]);
@@ -19,8 +17,6 @@ export const ClassManagement = () => {
   const [editingClass, setEditingClass] = useState<Class | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
-
   const [classForm, setClassForm] = useState({
     name: '',
     description: '',
@@ -39,13 +35,13 @@ export const ClassManagement = () => {
         .from('classes')
         .select('*')
         .order('name');
-      const { data: classesData } = await withSchoolFilter(classesQuery);
+      const { data: classesData } = await classesQuery;
 
       // Fetch class assignments - filtered by school
       const assignmentsQuery = supabase
         .from('class_assignments')
         .select('*');
-      const { data: assignmentsData } = await withSchoolFilter(assignmentsQuery);
+      const { data: assignmentsData } = await assignmentsQuery;
 
       // Fetch student profiles and their roles - filtered by school
       const { data: studentRoles } = await supabase
@@ -59,7 +55,7 @@ export const ClassManagement = () => {
         .from('profiles')
         .select('*')
         .in('user_id', studentUserIds);
-      const { data: profilesData } = await withSchoolFilter(profilesQuery);
+      const { data: profilesData } = await profilesQuery;
 
       const profilesWithRoles = profilesData?.map(profile => ({
         ...profile,
@@ -84,10 +80,10 @@ export const ClassManagement = () => {
     e.preventDefault();
     
     try {
-      const classData = withSchoolData({
+      const classData = {
         name: classForm.name,
         description: classForm.description,
-      });
+      };
       
       const { error } = await supabase
         .from('classes')

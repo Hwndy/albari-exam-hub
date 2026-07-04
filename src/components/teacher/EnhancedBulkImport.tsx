@@ -21,8 +21,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface EnhancedBulkImportProps {
   isOpen: boolean;
   onClose: () => void;
@@ -63,8 +61,6 @@ export const EnhancedBulkImport: React.FC<EnhancedBulkImportProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { schoolId } = useSchoolQuery();
-
   React.useEffect(() => {
     if (isOpen) {
       fetchQuestionBanks();
@@ -311,8 +307,7 @@ Explanation: Multiple acceptable answers can be provided`;
             explanation: question.explanation || null,
             question_bank_id: questionBankId,
             created_by: user?.id || '',
-            school_id: schoolId,
-          })
+                      })
           .select()
           .single();
 
@@ -337,8 +332,7 @@ Explanation: Multiple acceptable answers can be provided`;
             option_text: opt.text,
             option_order: opt.order,
             is_correct: opt.order === (question.correct_option?.toUpperCase().charCodeAt(0) || 65) - 64,
-            school_id: schoolId,
-          }));
+                      }));
 
           const { error: optionsError } = await supabase
             .from('question_options')
@@ -359,8 +353,7 @@ Explanation: Multiple acceptable answers can be provided`;
             option_text: ans,
             option_order: index + 1,
             is_correct: true,
-            school_id: schoolId,
-          }));
+                      }));
 
           const { error: answersError } = await supabase
             .from('question_options')

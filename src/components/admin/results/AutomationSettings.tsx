@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchool } from '@/contexts/SchoolContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface Settings {
@@ -35,7 +34,6 @@ const DEFAULTS: Settings = {
 };
 
 export const AutomationSettings: React.FC = () => {
-  const { schoolId } = useSchool();
   const { toast } = useToast();
   const [s, setS] = useState<Settings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
@@ -43,11 +41,10 @@ export const AutomationSettings: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      if (!schoolId) return;
-      const { data } = await supabase
+            const { data } = await supabase
         .from('result_automation_settings')
         .select('*')
-        .eq('school_id', schoolId)
+        
         .maybeSingle();
       if (data) {
         setS({
@@ -64,14 +61,16 @@ export const AutomationSettings: React.FC = () => {
       }
       setLoading(false);
     })();
-  }, [schoolId]);
+  }, []);
 
   const save = async () => {
-    if (!schoolId) return;
-    setSaving(true);
-    const { error } = await supabase
-      .from('result_automation_settings')
-      .upsert({ school_id: schoolId, ...s }, { onConflict: 'school_id' });
+        setSaving(true);
+    // Single-tenant: keep one settings row.
+    const { data: existing } = await supabase
+      .from('result_automation_settings').select('id').maybeSingle();
+    const { error } = existing
+      ? await supabase.from('result_automation_settings').update(s as any).eq('id', existing.id)
+      : await supabase.from('result_automation_settings').insert(s as any);
     setSaving(false);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

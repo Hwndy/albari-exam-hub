@@ -15,9 +15,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy, Shuffle, BookOpen, Target, Clock, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchool } from '@/contexts/SchoolContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { EnhancedQuestionForm } from './EnhancedQuestionForm';
 
 // Default to show all questions (high number that will be capped by total)
@@ -97,8 +95,6 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
-  
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [availableQuestions, setAvailableQuestions] = useState<Record<string, Record<string, number>>>({});
@@ -134,14 +130,8 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
 
   // Randomized generation
   const [criteria, setCriteria] = useState<QuestionCriteria[]>([]);
-
-  const { isLoading: schoolLoading } = useSchool();
-
   useEffect(() => {
-    if (isOpen && !schoolLoading && schoolId) {
-      fetchData();
-    }
-  }, [isOpen, schoolLoading, schoolId]);
+  }, [isOpen, false]);
 
   useEffect(() => {
     if (editingExam && isOpen) {
@@ -181,9 +171,9 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       }
 
       const [subjectsData, classesData, questionsQueryResult] = await Promise.all([
-        withSchoolFilter(subjectsQuery),
-        withSchoolFilter(classesQuery),
-        withSchoolFilter(supabase.from('questions').select(`
+        subjectsQuery,
+        classesQuery,
+        supabase.from('questions').select(`
           *,
           question_options(*),
           question_banks!inner(
@@ -194,7 +184,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
             subjects(name)
           ),
           classes(name)
-        `).order('created_at', { ascending: false }))
+        `).order('created_at', { ascending: false })
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
@@ -408,7 +398,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
       const poolSize = totalQuestions;
       const qps = Math.min(metadata.questionsPerStudent || poolSize, poolSize);
 
-      const examData = withSchoolData({
+      const examData = {
         title: metadata.title,
         description: metadata.description,
         instructions: metadata.instructions,
@@ -430,7 +420,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         exam_category: metadata.examCategory,
         status,
         created_by: user?.id,
-      });
+      };
 
       let exam;
       if (editingExam) {
@@ -487,12 +477,12 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
         // Create question bank and save manual questions
         const { data: questionBank } = await supabase
           .from('question_banks')
-          .insert(withSchoolData({
+          .insert({
             name: `${metadata.title} - Questions`,
             subject_id: metadata.subjectId,
             class_id: metadata.classId,
             created_by: user?.id,
-          }))
+          })
           .select()
           .single();
 
@@ -500,7 +490,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
           const question = questions[i];
           const { data: questionRecord } = await supabase
             .from('questions')
-            .insert(withSchoolData({
+            .insert({
               question_text: question.questionText,
               question_type: question.questionType,
               difficulty_level: question.difficultyLevel,
@@ -511,7 +501,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
               created_by: user?.id,
               question_bank_id: questionBank?.id,
               class_id: metadata.classId,
-            }))
+            })
             .select()
             .single();
 

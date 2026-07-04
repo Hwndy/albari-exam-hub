@@ -6,7 +6,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSchool } from "@/contexts/SchoolContext";
 import { FileText, Download, Printer, Search } from "lucide-react";
 import { format } from "date-fns";
 import jsPDF from "jspdf";
@@ -31,7 +30,6 @@ interface Payment {
 }
 
 export const FeeReceiptGenerator = () => {
-  const { schoolId } = useSchool();
   const [searchQuery, setSearchQuery] = useState("");
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -48,14 +46,7 @@ export const FeeReceiptGenerator = () => {
 
     setIsLoading(true);
 
-    // First, get school info
-    const { data: school } = await supabase
-      .from("schools")
-      .select("*")
-      .eq("id", schoolId)
-      .single();
-
-    setSchoolInfo(school);
+    setSchoolInfo({ name: 'Al-Bari Model Schools' } as any);
 
     // Search by receipt number
     let { data, error } = await supabase
@@ -68,7 +59,7 @@ export const FeeReceiptGenerator = () => {
         ),
         fee_structure:fee_structures(fee_type, academic_year)
       `)
-      .eq("school_id", schoolId)
+      
       .or(`receipt_number.ilike.%${searchQuery}%`);
 
     if (!error && data && data.length === 0) {
@@ -76,7 +67,7 @@ export const FeeReceiptGenerator = () => {
       const { data: students } = await supabase
         .from("students")
         .select("id")
-        .eq("school_id", schoolId)
+        
         .ilike("admission_number", `%${searchQuery}%`);
 
       if (students && students.length > 0) {
@@ -92,7 +83,7 @@ export const FeeReceiptGenerator = () => {
             ),
           fee_structure:fee_structures(fee_type, academic_year)
           `)
-          .eq("school_id", schoolId)
+          
           .in("student_id", studentIds);
 
         data = paymentData;

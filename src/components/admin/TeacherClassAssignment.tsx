@@ -7,8 +7,6 @@ import { Trash2, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface TeacherClassAssignmentProps {
   teacherId?: string;
 }
@@ -42,8 +40,6 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -69,7 +65,7 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', teacherIds);
-        const { data: profilesData } = await withSchoolFilter(profilesQuery);
+        const { data: profilesData } = await profilesQuery;
 
         if (profilesData) {
           setTeachers(profilesData.map(t => ({ id: t.user_id, full_name: t.full_name })));
@@ -81,7 +77,7 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
         .from('classes')
         .select('*')
         .order('name');
-      const { data: classesData } = await withSchoolFilter(classesQuery);
+      const { data: classesData } = await classesQuery;
       
       if (classesData) {
         setClasses(classesData);
@@ -153,10 +149,10 @@ export const TeacherClassAssignment: React.FC<TeacherClassAssignmentProps> = ({ 
       const existingClassIds = assignments.map(a => a.class_id);
       
       // Prepare assignment data with school_id
-      const assignmentData = withSchoolData({
+      const assignmentData = {
         teacher_id: selectedTeacher,
         class_id: selectedClass,
-      });
+      };
       
       // Use RPC function to bypass RLS, but include school_id in the data
       const { error } = await supabase

@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Plus, Edit, Trash2, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,8 +21,6 @@ export const TestimonialManager = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  const { withSchoolFilter } = useSchoolQuery();
-
   const { data: testimonials, isLoading } = useQuery({
     queryKey: ['testimonials'],
     queryFn: async () => {
@@ -31,7 +28,7 @@ export const TestimonialManager = () => {
         .from('testimonials')
         .select('*')
         .order('created_at', { ascending: false });
-      const { data, error } = await withSchoolFilter(query);
+      const { data, error } = await query;
       if (error) throw error;
       return data as Testimonial[];
     },
@@ -174,11 +171,9 @@ const TestimonialDialog = ({ testimonial, open, onOpenChange, userId }: Testimon
   const [isPublished, setIsPublished] = useState(testimonial?.is_published || false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { withSchoolData } = useSchoolQuery();
-
   const saveMutation = useMutation({
     mutationFn: async () => {
-      const data = withSchoolData({
+      const data = {
         name,
         role,
         content,
@@ -187,7 +182,7 @@ const TestimonialDialog = ({ testimonial, open, onOpenChange, userId }: Testimon
         is_featured: isFeatured,
         is_published: isPublished,
         created_by: userId,
-      });
+      };
 
       if (testimonial) {
         const { error } = await supabase.from('testimonials').update(data).eq('id', testimonial.id);

@@ -14,7 +14,6 @@ interface AuthContextType extends AuthState {
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
-    schoolId?: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -160,7 +159,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
-    schoolId?: string;
   }) => {
     setIsLoading(true);
     
@@ -173,8 +171,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           full_name: userData.fullName,
           role: userData.role || 'student',
           class_id: userData.classId,
-          subject_ids: userData.subjectIds,
-          school_id: userData.schoolId
+          subject_ids: userData.subjectIds
         }
       }
     });
@@ -184,21 +181,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error(error.message);
     }
 
-    // Update profile with school_id if provided
-    if (data.user && userData.schoolId) {
-      await supabase
-        .from('profiles')
-        .update({ school_id: userData.schoolId })
-        .eq('user_id', data.user.id);
-    }
-
     // Handle class and subject assignments after user creation
     if (data.user && userData.role === 'student' && userData.classId) {
       try {
         await supabase.from('class_assignments').insert({
           student_id: data.user.id,
-          class_id: userData.classId,
-          school_id: userData.schoolId
+          class_id: userData.classId
         });
       } catch (assignmentError) {
         console.error('Error assigning class:', assignmentError);

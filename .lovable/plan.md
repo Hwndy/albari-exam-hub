@@ -1,67 +1,75 @@
-## Results Management & Report Cards — plan
+# Remove Multitenancy — Al-Bari Only
 
-### Root cause of "N/A / 0" on Report Cards page
-The Save button on the Enter Scores tab returned "there is no unique or exclusion constraint matching the ON CONFLICT specification". The migration created a **partial** unique index (`WHERE session_id IS NOT NULL AND term IS NOT NULL`), which Postgres cannot match for `upsert(onConflict: ...)`. So no gradebook rows are being written, so the view returns 0 for every student → the table shows 0/0 and F.
+Goal: strip every multi-school concept (super admin, school switcher, `school_id` scoping, `schools` table) and dedicate the entire app to Al-Bari Model Schools (`bbe68d9f-b5b4-481e-81d9-0766f4e030da`).
 
-Fix: replace it with a plain unique constraint (no WHERE) and enforce `session_id`/`term` NOT NULL on rows we insert (already the case for manual entries). Also treat rows where `session_id`/`term` are null as legacy and leave them alone by scoping the constraint to only the manual-entry columns.
+This is destructive and irreversible. Rolling back means restoring from the History tab.
 
 ---
 
-### 1. Move "Enter Scores" out of Report Cards
-- Remove the Tabs from `ReportCardGenerator.tsx`; it goes back to being just the report-card list/preview/print.
-- Register a new admin sidebar entry **Results Management → Enter Scores** rendering `ManualScoresEntry` (already built).
-- Also expose the same page in the Teacher/Staff dashboard, gated so teachers only see the class/subject pairs assigned to them via `teacher_class_assignments` + `subject_assignments`.
+## 1. Data cleanup (destructive)
 
-### 2. Fix the ON CONFLICT error (migration)
-- Drop the current partial index `gradebook_entries_term_key`.
-- Add: `CREATE UNIQUE INDEX gradebook_entries_manual_key ON public.gradebook_entries (school_id, student_id, subject_id, class_id, session_id, term);` (no WHERE clause).
-- Backfill: for any legacy row with null `session_id`/`term`, leave as-is — the manual-entry pathway always sends both fields, so it will not collide.
+For every table that has a `school_id`, delete rows where `school_id != 'bbe68d9f-…'`. Then drop other schools from `public.schools`.
 
-### 3. Results Management — new features
-Add a new admin section **Results Management** with these sub-tabs:
+Order matters (children before parents). Roughly:
+- admission_workflow_logs, admission_documents, admission_payments, admission_offers, admission_interviews, admission_exam_assignments, admission_applications, admission_sessions
+- gradebook_entries, grades, grade_comments, report_card_comments, report_card_publications, result_automation_settings, assessments, assessment_types, grading_scales, promotion_history
+- exam_sessions, question_responses, exam_questions, questions, question_options, question_banks, exams
+- student_attendance, attendance_sessions, attendance_summary, staff_attendance, staff_details
+- class_timetables, timetable_templates, periods, rooms
+- book_issues, library_books
+- fee_payments, fee_installments, fee_installment_plans, fee_structures, fee_reminder_logs
+- notification_queue, notification_templates, email_logs, announcements, academic_calendar
+- news_articles, gallery, testimonials, website_pages, website_sections, website_settings, school_info
+- student_id_cards, student_parent_relationships, parents, students
+- teacher_class_assignments, subject_assignments, class_assignments, subjects, classes
+- profiles (delete profiles whose `school_id != Al-Bari` AND is not the super admin; then reassign the super admin's `school_id` to Al-Bari — see step 2)
+- schools: `DELETE WHERE id != 'bbe68d9f-…'`
 
-a. **Enter Scores** — the existing `ManualScoresEntry` (moved here).
-b. **Broadsheet (termly)** — grid of all students in a class × all subjects for a chosen term/session, showing Test1/Test2/Exam/Total/Grade, plus per-student totals/average/position and per-subject class average/high/low. Printable + CSV export. Reads from `v_student_term_scores`.
-c. **Automation settings** — new table `result_automation_settings` (per school):
-   - `min_promotion_average` (numeric, default 40)
-   - `principal_remark_below_average`, `principal_remark_average`, `principal_remark_above_average`, `principal_remark_distinction` (text templates)
-   - Thresholds `below_max`, `average_max`, `above_max` (numeric) that decide which template is auto-applied.
-   The report-card renderer will auto-fill Principal's remark from these templates based on the student's final average, unless a manual `principal_comment` is set.
-d. **End-of-year (Third Term) rollup** — when Third Term is picked, the broadsheet and report card also compute **Session Average = mean of first + second + third term averages**, per subject and overall. Stored on the fly (view or client-side aggregation across the three term rows).
-e. **Promotion / Archive** — new "Promotion" screen that, given a class + session:
-   - Lists students with their session average vs. `min_promotion_average` → Promote / Repeat suggestion.
-   - Bulk-promote to next class via `class_assignments` update; log entries to existing `promotion_history`.
-   - For SSS 3 (or any class flagged "terminal") auto-move to archive: add `students.archived_at` + `archived_reason` columns; hide archived students from active lists; new "Past Students" page under Results Management lists them.
+Also purge `auth.users` rows that belonged to other schools' profiles (via edge function or a service-role SQL block in the migration using `auth.admin_delete_user` equivalent — safest to just delete profiles + user_roles and leave orphaned auth rows; call out to user).
 
-### 4. Report Card visual/data fixes
-- **School name & logo header** — the header already reads `schoolInfo`; the reason it looks blank is `logo_url` and `address` are null on the current school row. No code change needed there, but add a small "School Branding" empty-state banner on the Report Cards page linking to the School Settings screen when logo/address are missing. Also render the logo `<img>` at 60×60 with graceful fallback to school initials.
-- **Student picture** — add `<img src={students.photo_url}>` (avatar circle) in the printable card header next to bio-data. Fallback to initials when null.
-- **Parents' signature** — hidden by default via a toggle in `result_automation_settings.show_parent_signature` (default false so it doesn't render). Admin can turn it back on.
-- **Staff signature upload** — add columns `staff_details.signature_url` + upload UI in Staff Management (uses existing `admission-documents` bucket or new `staff-signatures` bucket, admin-only). Class Teacher / Head Teacher / Principal signatures render in their respective boxes on the printable card based on assignments.
+## 2. Schema simplification
 
-### 5. Parent portal wiring
-- New parent page **Report Cards** listing each child's published term report cards.
-- Add `report_card_publications` table: `(school_id, student_id, class_id, session_id, term, published_at, published_by)`; admin gets a "Publish" button on each row in Report Cards page. Parents only see rows that exist here.
-- Parent view reuses `generatePrintableHTML` for print/PDF.
+- Reassign the current super admin: `UPDATE profiles SET school_id = 'bbe68d9f-…' WHERE school_id IS NULL AND user_id IN (SELECT user_id FROM user_roles WHERE role='admin')`.
+- Drop helper functions `is_super_admin`, `is_user_super_admin`, `create_super_admin`, `get_user_school_id`, `is_same_school`, `auto_populate_school_id_*`, and the triggers that call them.
+- Rewrite every RLS policy that references `school_id` / `is_super_admin()` / `get_user_school_id()` to drop the school clause (keep the role/ownership clause). Do this table-by-table across all ~60 tables.
+- Drop `school_id` columns from every table (and any indexes/FKs on them).
+- Drop `public.schools` table entirely.
+- Drop `profiles.school_id`.
 
-### 6. Files & migrations
+## 3. Frontend removal
 
-New/edited files
-- `supabase/migrations/*` — drop partial index; add full unique index; add `result_automation_settings`, `report_card_publications`; add `students.archived_at`, `students.archived_reason`, `staff_details.signature_url` columns; grants + RLS.
-- `src/components/admin/ReportCardGenerator.tsx` — remove Tabs, add branding banner, student photo, signatures, auto principal remark, session-average when Third Term, Publish button.
-- `src/components/admin/ManualScoresEntry.tsx` — no functional change (moves to new page).
-- New `src/components/admin/results/ResultsManagement.tsx` (tabs shell), `Broadsheet.tsx`, `AutomationSettings.tsx`, `PromotionPanel.tsx`, `PastStudents.tsx`.
-- New `src/components/parent/ParentReportCards.tsx` + route wiring.
-- New `src/components/admin/StaffSignatureUpload.tsx` inside Staff Management.
-- Sidebar / `AdminDashboard.tsx` / `TeacherDashboard.tsx` / `ParentDashboard.tsx` routing updates.
+Delete files:
+- `src/contexts/SchoolContext.tsx`
+- `src/hooks/useSchoolQuery.ts`
+- `src/lib/school-utils.ts`
+- `src/components/shared/SchoolSwitcher.tsx`
+- `src/components/admin/SchoolManagement.tsx`
+- `src/pages/SuperAdminDashboard.tsx`
+- `src/components/ui/super-admin-sidebar.tsx`
+- `supabase/functions/create-school/`
 
-### Order of implementation
-1. Migration fix + new tables (unblocks saves immediately).
-2. Move Enter Scores + build Results Management shell.
-3. Broadsheet + Automation settings + Promotion/Archive.
-4. Report Card visual fixes (logo/photo/signatures/auto remark/session average).
-5. Publish flow + Parent Report Cards page.
+Edits:
+- `src/App.tsx`: remove `SchoolProvider`, remove `SuperAdminDashboard` import + branch, remove `/super-admin` redirect, drop the super-admin check in `DashboardRouter` — admins always land on `AdminDashboard`.
+- Every component using `useSchool` / `useSchoolQuery` (grep across `src/`): remove the hook, drop `school_id` from selects/inserts/updates, remove `withSchoolFilter`/`withSchoolData` wrappers. Affects a large set of admin/teacher/parent/website components — will handle in bulk find-and-replace.
+- Edge functions that read/write `school_id` (create-student, create-school-admins, admission functions, offer/payment functions, bulk email/SMS, send-fee-reminders, track-application, submit_admission_application RPC): drop the `school_id` param and column write. The `submit_admission_application` RPC and `get_application_tracking` RPC need to be replaced with `school_id`-free versions.
+- `.lovable/plan.md` and any admin sidebar entries referencing "Schools" or "Super Admin" removed.
 
-### Out of scope
-- Rewriting the ID card, gradebook per-assessment CBT flow, or CBT scoring logic.
-- Bulk import of historical scores (can be added later; manual entry + CSV import can come as a follow-up).
+## 4. Regenerated types + smoke test
+
+- Types will regenerate after the migration runs.
+- After code edits, boot-check: `/dashboard` for admin/teacher/student/parent, Results Management, Admissions, Report Cards.
+
+---
+
+## Technical notes
+
+- Because `school_id` appears in ~40 RLS policies, the migration will be long (single file, ~400 SQL statements). All grouped into one migration for atomicity.
+- The `bbe68d9f-…` UUID is the Al-Bari school id detected from `src/lib/school-utils.ts`.
+- Auth users orphaned by deleted profiles: I will NOT delete `auth.users` rows automatically; you can purge them later via the Supabase dashboard if desired.
+
+## Out of scope
+- ID card / report card visual work (unchanged).
+- Feature behavior beyond removing the school filter.
+- Re-introducing multitenancy later (would require a full restore).
+
+Confirm and I'll execute in build mode.

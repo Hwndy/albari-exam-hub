@@ -245,8 +245,7 @@ export const EnhancedExamInterface: React.FC = () => {
           .insert({
             exam_id: examId,
             student_id: user!.id,
-            school_id: examData.school_id,
-            status: 'not_started',
+                        status: 'not_started',
             time_remaining_seconds: examData.duration_minutes * 60,
             ip_address: 'Unknown', // Would get real IP in production
             user_agent: navigator.userAgent

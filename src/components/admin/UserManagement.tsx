@@ -11,12 +11,7 @@ import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-import { useSchool } from '@/contexts/SchoolContext';
-
 export const UserManagement = () => {
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-  const { isLoading: schoolLoading } = useSchool();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -37,48 +32,20 @@ export const UserManagement = () => {
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
-    schoolId: '',
-    isSuperAdmin: false
   });
-  const [schools, setSchools] = useState<any[]>([]);
-  const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // Wait for school context to load before fetching data
   useEffect(() => {
-    if (!schoolLoading) {
-      fetchData();
-    }
-  }, [schoolLoading, schoolId]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Check if current user is super admin
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('school_id')
-          .eq('user_id', user.id)
-          .single();
-        
-        setCurrentUserSchoolId(profile?.school_id || null);
-        setIsSuperAdmin(profile?.school_id === null);
-      }
-      
-      // Fetch schools (for super admins)
-      const { data: schoolsData } = await supabase
-        .from('schools')
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
         .select('*')
-        .order('name');
-      if (schoolsData) setSchools(schoolsData);
-      
-      // Fetch profiles filtered by school using withSchoolFilter
-      const { data: profilesData } = await withSchoolFilter(
-        supabase.from('profiles').select('*').order('created_at', { ascending: false })
-      );
+        .order('created_at', { ascending: false });
 
       // Fetch user roles for the filtered profiles
       const profileUserIds = profilesData?.map(p => p.user_id) || [];
@@ -96,13 +63,13 @@ export const UserManagement = () => {
       }) || [];
 
       // Fetch classes and subjects filtered by school using withSchoolFilter
-      const { data: classesData } = await withSchoolFilter(
+      const { data: classesData } = await 
         supabase.from('classes').select('*').order('name')
-      );
+      ;
 
-      const { data: subjectsData } = await withSchoolFilter(
+      const { data: subjectsData } = await 
         supabase.from('subjects').select('*').order('name')
-      );
+      ;
 
       setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);
@@ -164,18 +131,13 @@ export const UserManagement = () => {
         throw new Error(data.error as string);
       }
 
-      // Determine school_id: use selected school or current user's school
-      const assignedSchoolId = userForm.schoolId || currentUserSchoolId;
-      
-      // Create the actual user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userForm.email,
         password: userForm.password,
         options: {
           data: {
             full_name: userForm.fullName,
-            role: userForm.role,
-            school_id: assignedSchoolId
+            role: userForm.role
           }
         }
       });
@@ -183,19 +145,13 @@ export const UserManagement = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Update profile with school_id
-        await supabase
-          .from('profiles')
-          .update({ school_id: assignedSchoolId })
-          .eq('user_id', authData.user.id);
         // Handle role-specific assignments
         if (userForm.role === 'student' && userForm.classId) {
           await supabase
             .from('class_assignments')
             .insert({
               student_id: authData.user.id,
-              class_id: userForm.classId,
-              school_id: assignedSchoolId
+              class_id: userForm.classId
             });
         }
 
@@ -241,24 +197,6 @@ export const UserManagement = () => {
             console.log('✅ Class assignments created successfully');
           }
         }
-
-        // Handle super admin promotion
-        if (userForm.role === 'admin' && userForm.isSuperAdmin) {
-          const { error: superAdminError } = await supabase.rpc('create_super_admin', {
-            admin_user_id: authData.user.id
-          });
-
-          if (superAdminError) {
-            console.error('Error creating super admin:', superAdminError);
-            toast({
-              title: 'Warning',
-              description: 'User created but super admin promotion failed',
-              variant: 'destructive',
-            });
-          } else {
-            console.log('✨ Super admin created successfully');
-          }
-        }
       }
 
       // If successful, refresh the profiles list
@@ -269,9 +207,7 @@ export const UserManagement = () => {
       
       toast({
         title: 'User Created',
-        description: userForm.isSuperAdmin 
-          ? `${userForm.fullName} has been added as a Super Admin.`
-          : `${userForm.fullName} has been added successfully.`,
+        description: `${userForm.fullName} has been added successfully.`,
       });
     } catch (error: any) {
       toast({
@@ -352,8 +288,6 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      schoolId: '',
-      isSuperAdmin: false
     });
   };
 
@@ -367,8 +301,6 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      schoolId: '',
-      isSuperAdmin: false
     });
   };
 
@@ -443,11 +375,6 @@ export const UserManagement = () => {
       setExporting(false);
     }
   };
-
-  if (loading || schoolLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
-  }
-
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -555,7 +482,7 @@ export const UserManagement = () => {
                 <Select
                   value={userForm.role}
                   onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [], isSuperAdmin: false })
+                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [] })
                   }
                 >
                   <SelectTrigger>
@@ -568,46 +495,6 @@ export const UserManagement = () => {
                   </SelectContent>
                 </Select>
               </div>
-
-              {/* School Selection - Only for super admins creating users for specific schools */}
-              {isSuperAdmin && !userForm.isSuperAdmin && (
-                <div className="space-y-2">
-                  <Label htmlFor="school">Assign to School</Label>
-                  <Select
-                    value={userForm.schoolId}
-                    onValueChange={(value) => setUserForm({ ...userForm, schoolId: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a school" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schools.map((school) => (
-                        <SelectItem key={school.id} value={school.id}>
-                          {school.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Leave empty to use your current school or make super admin
-                  </p>
-                </div>
-              )}
-
-              {userForm.role === 'admin' && (
-                <div className="flex items-center space-x-2 p-4 border border-border rounded-lg bg-muted/50">
-                  <input
-                    type="checkbox"
-                    id="isSuperAdmin"
-                    checked={userForm.isSuperAdmin}
-                    onChange={(e) => setUserForm({ ...userForm, isSuperAdmin: e.target.checked })}
-                    className="rounded border-input"
-                  />
-                  <Label htmlFor="isSuperAdmin" className="cursor-pointer font-medium">
-                    Make Super Admin (can manage all schools)
-                  </Label>
-                </div>
-              )}
 
               {userForm.role === 'student' && (
                 <div className="space-y-2">

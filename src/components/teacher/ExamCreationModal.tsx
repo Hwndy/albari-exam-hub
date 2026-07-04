@@ -14,8 +14,6 @@ import { Plus, Minus, Eye, Save, FileText, X, Flag, Copy } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface QuestionOption {
   id: string;
   text: string;
@@ -73,8 +71,6 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
 
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-  
   const [subjects, setSubjects] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('metadata');

@@ -9,8 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { Plus, Calendar, DollarSign, Users, CheckCircle, Clock, XCircle } from "lucide-react";
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface AdmissionSession {
   id: string;
   academic_year: string;
@@ -26,7 +24,6 @@ interface AdmissionSession {
 }
 
 export const AdmissionSessionManager = () => {
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   const [sessions, setSessions] = useState<AdmissionSession[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,12 +47,12 @@ export const AdmissionSessionManager = () => {
 
   const fetchSessions = async () => {
     try {
-      const { data, error } = await withSchoolFilter(
+      const { data, error } = await 
         supabase
           .from("admission_sessions")
           .select("*")
           .order("created_at", { ascending: false })
-      );
+      ;
 
       if (error) throw error;
       setSessions(data || []);
@@ -67,7 +64,7 @@ export const AdmissionSessionManager = () => {
   };
 
   const fetchClasses = async () => {
-    const { data } = await withSchoolFilter(supabase.from("classes").select("*").order("name"));
+    const { data } = await supabase.from("classes").select("*").order("name");
     setClasses(data || []);
   };
 
@@ -77,12 +74,12 @@ export const AdmissionSessionManager = () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       
-      const { error } = await supabase.from("admission_sessions").insert(withSchoolData({
+      const { error } = await supabase.from("admission_sessions").insert({
         ...formData,
         application_fee: parseFloat(formData.application_fee),
         max_applicants: formData.max_applicants ? parseInt(formData.max_applicants) : null,
         created_by: user?.id,
-      }));
+      });
 
       if (error) throw error;
 

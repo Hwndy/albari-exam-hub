@@ -20,7 +20,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { StudentResultDetails } from './StudentResultDetails';
 
@@ -59,8 +58,6 @@ export const ExamResults: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStudentResult, setSelectedStudentResult] = useState<ExamResultData | null>(null);
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     fetchExams();
   }, []);
@@ -76,7 +73,7 @@ export const ExamResults: React.FC = () => {
       setLoading(true);
       
       // Fetch exams with session analytics
-      const { data: examData, error } = await withSchoolFilter(
+      const { data: examData, error } = await 
         supabase
           .from('exams')
           .select(`
@@ -93,7 +90,7 @@ export const ExamResults: React.FC = () => {
           `)
           .eq('status', 'published')
           .order('created_at', { ascending: false })
-      );
+      ;
 
       if (error) throw error;
 

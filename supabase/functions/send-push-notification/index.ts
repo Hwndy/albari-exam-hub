@@ -8,7 +8,6 @@ const corsHeaders = {
 
 interface PushNotificationRequest {
   user_ids?: string[];
-  school_id?: string;
   title: string;
   body: string;
   url?: string;
@@ -26,17 +25,15 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { user_ids, school_id, title, body, url, data }: PushNotificationRequest = await req.json();
+    const { user_ids, title, body, url, data }: PushNotificationRequest = await req.json();
 
-    console.log('Sending push notifications:', { user_ids, school_id, title });
+    console.log('Sending push notifications:', { user_ids, title });
 
     // Get push subscriptions
     let query = supabase.from('push_subscriptions').select('*');
     
     if (user_ids && user_ids.length > 0) {
       query = query.in('user_id', user_ids);
-    } else if (school_id) {
-      query = query.eq('school_id', school_id);
     }
 
     const { data: subscriptions, error: fetchError } = await query;

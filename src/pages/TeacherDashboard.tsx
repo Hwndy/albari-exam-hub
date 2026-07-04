@@ -13,7 +13,6 @@ import { AttendanceSystem } from '@/components/teacher/AttendanceSystem';
 import { GradebookSystem } from '@/components/teacher/GradebookSystem';
 import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TeacherStats {
@@ -25,7 +24,6 @@ interface TeacherStats {
 
 export const TeacherDashboard = () => {
   const { user } = useAuth();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
   const [stats, setStats] = useState<TeacherStats>({
     totalExams: 0,
     questionsBank: 0,
@@ -37,7 +35,7 @@ export const TeacherDashboard = () => {
     if (user?.id) {
       fetchTeacherStats();
     }
-  }, [user?.id, schoolId]);
+  }, [user?.id]);
 
   const fetchTeacherStats = async () => {
     if (!user?.id) return;
@@ -49,7 +47,7 @@ export const TeacherDashboard = () => {
         .select('id', { count: 'exact' })
         .eq('created_by', user.id);
       
-      const { count: examCount } = await withSchoolFilter(examsQuery);
+      const { count: examCount } = await examsQuery;
 
       // Fetch questions created by this teacher
       const questionsQuery = supabase
@@ -57,15 +55,15 @@ export const TeacherDashboard = () => {
         .select('id', { count: 'exact' })
         .eq('created_by', user.id);
       
-      const { count: questionCount } = await withSchoolFilter(questionsQuery);
+      const { count: questionCount } = await questionsQuery;
 
       // Fetch exam sessions (submissions) for this teacher's exams
-      const { data: teacherExams } = await withSchoolFilter(
+      const { data: teacherExams } = await 
         supabase
           .from('exams')
           .select('id')
           .eq('created_by', user.id)
-      );
+      ;
 
       let submissionCount = 0;
       if (teacherExams && teacherExams.length > 0) {

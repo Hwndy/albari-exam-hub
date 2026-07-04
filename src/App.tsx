@@ -5,17 +5,14 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Toaster } from '@/components/ui/toaster';
 import { Toaster as Sonner } from '@/components/ui/sonner';
 import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import { SchoolProvider } from '@/contexts/SchoolContext';
 import { PWAProvider } from '@/contexts/PWAContext';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { SessionMonitor } from '@/components/security/SessionMonitor';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { AdminDashboard } from '@/pages/AdminDashboard';
-import { SuperAdminDashboard } from '@/pages/SuperAdminDashboard';
 import { StudentDashboard } from '@/pages/StudentDashboard';
 import { TeacherDashboard } from '@/pages/TeacherDashboard';
 import { ParentDashboard } from '@/pages/ParentDashboard';
-import { supabase } from '@/integrations/supabase/client';
 import { AuthPage } from '@/pages/AuthPage';
 import { ExamInstructionsPage } from '@/pages/ExamInstructionsPage';
 import { ExamPage } from '@/pages/ExamPage';
@@ -33,38 +30,8 @@ const queryClient = new QueryClient();
 // Dashboard Router Component
 const DashboardRouter = () => {
   const { user, isLoading } = useAuth();
-  const [checkingSuperAdmin, setCheckingSuperAdmin] = React.useState(true);
-  const [isSuperAdmin, setIsSuperAdmin] = React.useState(false);
-  
-  console.log('DashboardRouter - user:', user, 'isLoading:', isLoading);
-  
-  // Check if admin user is super admin
-  React.useEffect(() => {
-    const checkSuperAdmin = async () => {
-      if (user && user.role === 'admin') {
-        try {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('school_id')
-            .eq('user_id', user.id)
-            .single();
-          
-          const isSuperAdminUser = profile?.school_id === null;
-          setIsSuperAdmin(isSuperAdminUser);
-          console.log('Super admin check:', { userId: user.id, isSuperAdmin: isSuperAdminUser });
-        } catch (error) {
-          console.error('Error checking super admin status:', error);
-        }
-      }
-      setCheckingSuperAdmin(false);
-    };
-    
-    if (!isLoading) {
-      checkSuperAdmin();
-    }
-  }, [user, isLoading]);
-  
-  if (isLoading || checkingSuperAdmin) {
+
+  if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -99,10 +66,6 @@ const DashboardRouter = () => {
     case 'teacher':
       return <TeacherDashboard />;
     case 'admin':
-      // Route super admins to SuperAdminDashboard
-      if (isSuperAdmin) {
-        return <SuperAdminDashboard />;
-      }
       return <AdminDashboard />;
     case 'parent':
       return <ParentDashboard />;
@@ -118,8 +81,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <AuthProvider>
-          <SchoolProvider>
-            <PWAProvider>
+          <PWAProvider>
               <BrowserRouter>
                 <SessionMonitor>
                   {/* PWA Components */}
@@ -211,8 +173,7 @@ const App = () => (
                   </Routes>
                 </SessionMonitor>
               </BrowserRouter>
-            </PWAProvider>
-          </SchoolProvider>
+          </PWAProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

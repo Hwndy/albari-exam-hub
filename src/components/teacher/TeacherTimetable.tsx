@@ -6,7 +6,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Calendar, Clock, MapPin, BookOpen, Users, Loader2, Printer } from 'lucide-react';
 
 interface Period {
@@ -35,8 +34,6 @@ const SHORT_DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 export const TeacherTimetable: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-  
   const [isLoading, setIsLoading] = useState(true);
   const [periods, setPeriods] = useState<Period[]>([]);
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
@@ -55,9 +52,9 @@ export const TeacherTimetable: React.FC = () => {
     setIsLoading(true);
     try {
       // Fetch periods
-      const { data: periodsData } = await withSchoolFilter(
+      const { data: periodsData } = await 
         supabase.from('periods').select('*').order('period_number')
-      );
+      ;
       setPeriods(periodsData || []);
 
       // Fetch teacher's timetable entries

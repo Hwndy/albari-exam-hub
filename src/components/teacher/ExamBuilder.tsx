@@ -28,7 +28,6 @@ import { format } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { QuestionSelector } from './QuestionSelector';
 import { ExamCreationModal } from './ExamCreationModal';
 
@@ -70,8 +69,6 @@ export const ExamBuilder: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   const [examForm, setExamForm] = useState({
     title: '',
     description: '',
@@ -102,7 +99,7 @@ export const ExamBuilder: React.FC = () => {
       setLoading(true);
       
       // Fetch exams
-      const { data: examsData } = await withSchoolFilter(
+      const { data: examsData } = await 
         supabase
           .from('exams')
           .select(`
@@ -111,12 +108,12 @@ export const ExamBuilder: React.FC = () => {
             classes(name)
           `)
           .order('created_at', { ascending: false })
-      );
+      ;
 
       // Fetch subjects, classes, and questions
       const [subjectsData, classesData, questionsData] = await Promise.all([
-        withSchoolFilter(supabase.from('subjects').select('*').order('name')),
-        withSchoolFilter(supabase.from('classes').select('*').order('name')),
+        supabase.from('subjects').select('*').order('name'),
+        supabase.from('classes').select('*').order('name'),
         supabase.from('questions').select(`
           *,
           question_options(*),
