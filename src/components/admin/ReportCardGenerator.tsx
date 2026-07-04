@@ -597,9 +597,9 @@ export const ReportCardGenerator: React.FC = () => {
         <div class="header">
           ${schoolInfo?.logo_url ? `<img src="${schoolInfo.logo_url}" class="school-logo" alt="School Logo" />` : ''}
           <div class="school-name">${schoolInfo?.name || 'School Name'}</div>
-          <div class="school-address">${schoolInfo?.address || 'School Address'}</div>
-          <div class="school-address">Tel: ${schoolInfo?.phone || 'N/A'} | Email: ${schoolInfo?.email || 'N/A'}</div>
-          <div class="school-motto">"${schoolInfo?.motto || 'Excellence in Education'}"</div>
+          ${schoolInfo?.address ? `<div class="school-address">${schoolInfo.address}</div>` : ''}
+          ${(schoolInfo?.phone || schoolInfo?.email) ? `<div class="school-address">${schoolInfo?.phone ? 'Tel: ' + schoolInfo.phone : ''}${schoolInfo?.phone && schoolInfo?.email ? ' | ' : ''}${schoolInfo?.email ? 'Email: ' + schoolInfo.email : ''}</div>` : ''}
+          ${schoolInfo?.motto ? `<div class="school-motto">"${schoolInfo.motto}"</div>` : ''}
           <div class="report-title">STUDENT TERMINAL REPORT</div>
         </div>
 
