@@ -574,6 +574,7 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const handlePrintReportCard = (card: StudentReportCard) => {
+    // Handled via generatePrintableHTML which reads automation.
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -585,6 +586,16 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const generatePrintableHTML = (card: StudentReportCard): string => {
+    const autoRemark = (avg: number): string => {
+      if (avg <= automation.below_max) return automation.principal_remark_below;
+      if (avg <= automation.average_max) return automation.principal_remark_average;
+      if (avg <= automation.above_max) return automation.principal_remark_above;
+      return automation.principal_remark_distinction;
+    };
+    const principalText = card.comments.principal_comment && card.comments.principal_comment.trim()
+      ? card.comments.principal_comment
+      : autoRemark(card.average);
+
     const gradeRows = card.grades.map(g => `
       <tr>
         <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.subject_name}</td>
