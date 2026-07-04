@@ -9,7 +9,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { StaticFormLayout } from '@/components/layout/StaticFormLayout';
-import { detectSchoolFromDomain } from '@/lib/school-utils';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface RegisterFormProps {
@@ -44,23 +43,14 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [subjects, setSubjects] = useState<Array<{id: string, name: string}>>([]);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const detectedSchoolId = detectSchoolFromDomain();
-  const effectiveSchoolId = detectedSchoolId;
   const { register } = useAuth();
   const { toast } = useToast();
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!effectiveSchoolId) {
-        console.log('No school ID available for fetching data');
-        return;
-      }
-      
       console.log('Fetching classes and subjects...');
       
       try {
-        console.log('Fetching classes and subjects for school:', effectiveSchoolId);
-        
         // Fetch classes filtered by detected school
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
@@ -170,7 +160,6 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         classId: formData.role === 'student' ? formData.classId : undefined,
         classIds: formData.role === 'teacher' ? formData.classIds : undefined,
         subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined,
-        undefined: effectiveSchoolId
       });
       
       toast({
