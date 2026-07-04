@@ -10,6 +10,8 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, Mail, Phone, Calendar, MapPin, User, GraduationCap, Receipt, Users as UsersIcon } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { EditStudentDialog } from './EditStudentDialog';
 
 const initials = (n?: string) =>
   (n || '?').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
@@ -29,6 +31,7 @@ export const StudentDetail: React.FC = () => {
   const [attendance, setAttendance] = useState<any | null>(null);
   const [payments, setPayments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
+  const [editOpen, setEditOpen] = useState(false);
 
   useEffect(() => { if (userId) load(); }, [userId]); // eslint-disable-line
 
@@ -140,6 +143,9 @@ export const StudentDetail: React.FC = () => {
               )}
             </div>
           </div>
+          <Button onClick={() => setEditOpen(true)}>
+            <Pencil className="h-4 w-4 mr-2" /> Edit Student
+          </Button>
         </CardContent>
       </Card>
 
@@ -270,6 +276,15 @@ export const StudentDetail: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      {userId && (
+        <EditStudentDialog
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          userId={userId}
+          onSaved={load}
+        />
+      )}
     </div>
   );
 };
