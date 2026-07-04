@@ -58,8 +58,8 @@ export const ParentReportCards: React.FC = () => {
         const n = (profs || []).find((p: any) => p.user_id === s.user_id)?.full_name || '—';
         nameByStudent.set(s.id, n);
       });
-      const classMap = new Map((classes.data || []).map((c: any) => [c.id, c.name]));
-      const sessMap = new Map((sessions.data || []).map((s: any) => [s.id, s.session_name]));
+      const classMap = new Map<string, string>((classes.data || []).map((c: any) => [c.id, c.name as string]));
+      const sessMap = new Map<string, string>((sessions.data || []).map((s: any) => [s.id, s.session_name as string]));
 
       setRows((pubs || []).map((p: any) => ({
         id: p.id,
@@ -69,8 +69,8 @@ export const ParentReportCards: React.FC = () => {
         term: p.term,
         published_at: p.published_at,
         student_name: nameByStudent.get(p.student_id) || '—',
-        class_name: classMap.get(p.class_id) || '—',
-        session_name: sessMap.get(p.session_id) || '—',
+        class_name: classMap.get(p.class_id) ?? '—',
+        session_name: sessMap.get(p.session_id) ?? '—',
       })));
       setLoading(false);
     })();
