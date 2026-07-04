@@ -5,7 +5,6 @@ import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { TrendingUp, Award, BookOpen, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -26,7 +25,6 @@ interface GradeEntry {
 export const AcademicProgress = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
   const [grades, setGrades] = useState<GradeEntry[]>([]);
   const [selectedStudent, setSelectedStudent] = useState<string>('all');
   const [loading, setLoading] = useState(true);
@@ -71,7 +69,7 @@ export const AcademicProgress = () => {
       }
 
       // Fetch grades for all students with school filter
-      let query = withSchoolFilter(
+      let query = 
         supabase
           .from('gradebook_entries')
           .select(`
@@ -89,7 +87,7 @@ export const AcademicProgress = () => {
           `)
           .in('student_id', studentIds)
           .order('assessment_date', { ascending: false })
-      );
+      ;
 
       if (selectedStudent !== 'all') {
         query = query.eq('student_id', selectedStudent);

@@ -21,7 +21,6 @@ import {
 } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useToast } from '@/hooks/use-toast';
 import { Tags, Loader2 } from 'lucide-react';
 
@@ -73,7 +72,6 @@ export const TagExamsDialog: React.FC<Props> = ({ trigger, onTagged }) => {
   const [sessionId, setSessionId] = useState<string>('');
   const [term, setTerm] = useState<string>('');
   const [category, setCategory] = useState<string>('');
-  const { withSchoolFilter } = useSchoolQuery();
   const { toast } = useToast();
 
   useEffect(() => {
@@ -84,19 +82,19 @@ export const TagExamsDialog: React.FC<Props> = ({ trigger, onTagged }) => {
     setLoading(true);
     try {
       const [examsRes, sessionsRes] = await Promise.all([
-        withSchoolFilter(
+        
           supabase
             .from('exams')
             .select('id, title, session_id, term, assessment_category, subjects(name), classes(name)')
             .neq('exam_category', 'entrance')
             .order('created_at', { ascending: false })
-        ),
-        withSchoolFilter(
+        ,
+        
           supabase
             .from('admission_sessions')
             .select('id, session_name, academic_year, is_current')
             .order('start_date', { ascending: false })
-        ),
+        ,
       ]);
 
       const list: ExamRow[] = (examsRes.data || []).map((e: any) => ({

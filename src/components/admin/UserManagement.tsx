@@ -11,12 +11,7 @@ import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-import { useSchool } from '@/contexts/SchoolContext';
-
 export const UserManagement = () => {
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-  const { isLoading: schoolLoading } = useSchool();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -76,9 +71,9 @@ export const UserManagement = () => {
       if (schoolsData) setSchools(schoolsData);
       
       // Fetch profiles filtered by school using withSchoolFilter
-      const { data: profilesData } = await withSchoolFilter(
+      const { data: profilesData } = await 
         supabase.from('profiles').select('*').order('created_at', { ascending: false })
-      );
+      ;
 
       // Fetch user roles for the filtered profiles
       const profileUserIds = profilesData?.map(p => p.user_id) || [];
@@ -96,13 +91,13 @@ export const UserManagement = () => {
       }) || [];
 
       // Fetch classes and subjects filtered by school using withSchoolFilter
-      const { data: classesData } = await withSchoolFilter(
+      const { data: classesData } = await 
         supabase.from('classes').select('*').order('name')
-      );
+      ;
 
-      const { data: subjectsData } = await withSchoolFilter(
+      const { data: subjectsData } = await 
         supabase.from('subjects').select('*').order('name')
-      );
+      ;
 
       setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);
@@ -174,8 +169,7 @@ export const UserManagement = () => {
         options: {
           data: {
             full_name: userForm.fullName,
-            role: userForm.role,
-            school_id: assignedSchoolId
+            role: userForm.role
           }
         }
       });
@@ -194,8 +188,7 @@ export const UserManagement = () => {
             .from('class_assignments')
             .insert({
               student_id: authData.user.id,
-              class_id: userForm.classId,
-              school_id: assignedSchoolId
+              class_id: userForm.classId
             });
         }
 

@@ -18,7 +18,7 @@ serve(async (req) => {
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { school_id, reminder_days = [7, 3, 1] } = await req.json();
+    const { reminder_days = [7, 3, 1] } = await req.json();
 
     console.log(`Processing fee reminders for school: ${school_id}`);
 
@@ -39,7 +39,7 @@ serve(async (req) => {
           )
         )
       `)
-      .eq("school_id", school_id)
+      
       .in("status", ["pending", "partial"])
       .lt("due_date", today);
 
@@ -68,7 +68,7 @@ serve(async (req) => {
           )
         )
       `)
-      .eq("school_id", school_id)
+      
       .eq("status", "pending")
       .in("due_date", upcomingDates);
 
@@ -83,7 +83,7 @@ serve(async (req) => {
         *,
         class:classes(name)
       `)
-      .eq("school_id", school_id)
+      
       .lt("due_date", today);
 
     if (feeError) {
@@ -115,7 +115,6 @@ serve(async (req) => {
         });
 
         reminderLogs.push({
-          school_id,
           student_id: student.id,
           installment_id: installment.id,
           reminder_type: "email",
@@ -146,7 +145,6 @@ serve(async (req) => {
         });
 
         reminderLogs.push({
-          school_id,
           student_id: student.id,
           installment_id: installment.id,
           reminder_type: "email",

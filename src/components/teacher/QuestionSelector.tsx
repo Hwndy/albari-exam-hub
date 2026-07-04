@@ -19,8 +19,6 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface Question {
   id: string;
   question_text: string;
@@ -58,8 +56,6 @@ export const QuestionSelector: React.FC<QuestionSelectorProps> = ({
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     if (subjectId) {
       fetchQuestions();
@@ -81,12 +77,12 @@ export const QuestionSelector: React.FC<QuestionSelectorProps> = ({
       setLoading(true);
       
       // First get questions for the subject
-      const { data: questionBanks } = await withSchoolFilter(
+      const { data: questionBanks } = await 
         supabase
           .from('question_banks')
           .select('id')
           .eq('subject_id', subjectId)
-      );
+      ;
 
       if (!questionBanks || questionBanks.length === 0) {
         setQuestions([]);

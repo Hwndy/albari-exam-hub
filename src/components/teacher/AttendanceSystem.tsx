@@ -15,7 +15,6 @@ import { UserCheck, UserX, Clock, AlertCircle, Calendar as CalendarIcon, Users, 
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -72,7 +71,6 @@ interface Subject {
 
 export const AttendanceSystem = () => {
   const { user } = useAuth();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -115,12 +113,12 @@ export const AttendanceSystem = () => {
       setIsLoading(true);
       
       // Fetch teacher's class assignments
-      const { data: classAssignments, error: classError } = await withSchoolFilter(
+      const { data: classAssignments, error: classError } = await 
         supabase
           .from('teacher_class_assignments')
           .select('class_id')
           .eq('teacher_id', user?.id)
-      );
+      ;
 
       if (classError) throw classError;
 
@@ -186,12 +184,12 @@ export const AttendanceSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+      const { data: assignments, error: assignmentsError } = await 
         supabase
           .from('class_assignments')
           .select('student_id')
           .eq('class_id', selectedClass)
-      );
+      ;
 
       if (assignmentsError) throw assignmentsError;
 
@@ -247,7 +245,7 @@ export const AttendanceSystem = () => {
         return;
       }
 
-      const sessionData = withSchoolData({
+      const sessionData = {
         class_id: newSession.class_id,
         subject_id: newSession.subject_id,
         teacher_id: user?.id,
@@ -256,7 +254,7 @@ export const AttendanceSystem = () => {
         end_time: newSession.end_time,
         period_number: newSession.period_number,
         status: 'scheduled'
-      });
+      };
 
       const { data: session, error } = await supabase
         .from('attendance_sessions')

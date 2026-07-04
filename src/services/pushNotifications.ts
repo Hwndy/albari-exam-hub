@@ -76,8 +76,7 @@ export async function subscribeToPushNotifications(
     // Save subscription to Supabase using raw insert with explicit typing
     const insertData = {
       user_id: userId,
-      school_id: schoolId || null,
-      subscription: subscription.toJSON() as any,
+            subscription: subscription.toJSON() as any,
       device_info: navigator.userAgent,
       updated_at: new Date().toISOString(),
     };

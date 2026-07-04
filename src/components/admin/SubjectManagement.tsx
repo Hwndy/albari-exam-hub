@@ -9,8 +9,6 @@ import { Plus, Edit, Trash2, BookOpen, Users } from 'lucide-react';
 import { Subject, SubjectAssignment, Profile } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 export const SubjectManagement = () => {
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [assignments, setAssignments] = useState<SubjectAssignment[]>([]);
@@ -19,8 +17,6 @@ export const SubjectManagement = () => {
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   const [subjectForm, setSubjectForm] = useState({
     name: '',
     description: '',
@@ -39,19 +35,19 @@ export const SubjectManagement = () => {
         .from('subjects')
         .select('*')
         .order('name');
-      const { data: subjectsData } = await withSchoolFilter(subjectsQuery);
+      const { data: subjectsData } = await subjectsQuery;
 
       // Fetch subject assignments - filtered by school
       const assignmentsQuery = supabase
         .from('subject_assignments')
         .select('*');
-      const { data: assignmentsData } = await withSchoolFilter(assignmentsQuery);
+      const { data: assignmentsData } = await assignmentsQuery;
 
       // Fetch profiles and roles - filtered by school
       const profilesQuery = supabase
         .from('profiles')
         .select('*');
-      const { data: profilesData } = await withSchoolFilter(profilesQuery);
+      const { data: profilesData } = await profilesQuery;
 
       const { data: rolesData } = await supabase
         .from('user_roles')
@@ -83,10 +79,10 @@ export const SubjectManagement = () => {
     e.preventDefault();
     
     try {
-      const subjectData = withSchoolData({
+      const subjectData = {
         name: subjectForm.name,
         description: subjectForm.description,
-      });
+      };
       
       const { error } = await supabase
         .from('subjects')

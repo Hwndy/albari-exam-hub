@@ -14,7 +14,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Search, Download, Eye, Calendar, User, FileText, Award } from 'lucide-react';
 
 interface AdminResultsModalProps {
@@ -51,8 +50,6 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
   const [classes, setClasses] = useState<any[]>([]);
   
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
-
   useEffect(() => {
     if (open) {
       fetchResults();
@@ -97,7 +94,7 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
         .eq('status', 'completed')
         .order('ended_at', { ascending: false });
 
-      const { data, error } = await withSchoolFilter(sessionsQuery);
+      const { data, error } = await sessionsQuery;
 
       if (error) throw error;
 
@@ -131,8 +128,8 @@ export const AdminResultsModal: React.FC<AdminResultsModalProps> = ({
   const fetchFilters = async () => {
     try {
       const [subjectsData, classesData] = await Promise.all([
-        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name'))
+        supabase.from('subjects').select('id, name').order('name'),
+        supabase.from('classes').select('id, name').order('name')
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);

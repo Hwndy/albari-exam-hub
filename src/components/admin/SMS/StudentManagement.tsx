@@ -14,7 +14,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Plus, Search, Filter, FileDown, Upload, IdCard, GraduationCap, UserCheck, AlertCircle, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useSchool } from '@/contexts/SchoolContext';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -49,7 +48,6 @@ interface Class {
 export const StudentManagement = () => {
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
-  const { schoolId } = useSchool();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedClass, setSelectedClass] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
@@ -203,8 +201,7 @@ export const StudentManagement = () => {
           address: newStudent.address,
           emergency_contact: newStudent.emergency_contact,
           medical_info: newStudent.medical_info,
-          school_id: schoolId!,
-          status: 'active'
+                    status: 'active'
         })
         .select()
         .single();
@@ -217,8 +214,7 @@ export const StudentManagement = () => {
           .from('class_assignments')
           .insert({
             student_id: studentData.id,
-            class_id: newStudent.class_id,
-            school_id: schoolId
+            class_id: newStudent.class_id
           });
 
         if (assignmentError) throw assignmentError;

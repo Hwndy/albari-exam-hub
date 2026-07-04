@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
   BookOpen, Plus, Search, Edit, Trash2, Loader2, 
@@ -61,8 +60,6 @@ const FINE_PER_DAY = 50; // Naira per day overdue
 export const LibraryManager: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   const [isLoading, setIsLoading] = useState(true);
   const [books, setBooks] = useState<Book[]>([]);
   const [issues, setIssues] = useState<BookIssue[]>([]);
@@ -99,12 +96,12 @@ export const LibraryManager: React.FC = () => {
     setIsLoading(true);
     try {
       // Fetch books - cast to avoid deep type instantiation
-      const booksQuery = supabase.from('library_books').select('*').eq('school_id', schoolId).order('title');
+      const booksQuery = supabase.from('library_books').select('*').order('title');
       const booksData = await (booksQuery as any);
       setBooks((booksData.data || []) as Book[]);
 
       // Fetch issues
-      const issuesQuery = supabase.from('book_issues').select('*').eq('school_id', schoolId).order('issued_date', { ascending: false });
+      const issuesQuery = supabase.from('book_issues').select('*').order('issued_date', { ascending: false });
       const issuesData = await (issuesQuery as any);
       const issuesList = (issuesData.data || []) as any[];
       
@@ -150,8 +147,7 @@ export const LibraryManager: React.FC = () => {
       const { error } = await supabase.from('library_books').insert({
         ...bookForm,
         available_copies: bookForm.total_copies,
-        school_id: schoolId,
-      });
+              });
 
       if (error) throw error;
 
@@ -225,8 +221,7 @@ export const LibraryManager: React.FC = () => {
         due_date: format(dueDate, 'yyyy-MM-dd'),
         status: 'issued',
         issued_by: user?.id,
-        school_id: schoolId,
-      });
+              });
 
       if (issueError) throw issueError;
 

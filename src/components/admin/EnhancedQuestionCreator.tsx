@@ -11,8 +11,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Trash2, Upload, ImageIcon } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface QuestionOption {
   id: string;
   text: string;
@@ -69,8 +67,6 @@ export const EnhancedQuestionCreator: React.FC = () => {
   const [selectedSubject, setSelectedSubject] = useState<string>('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { schoolId } = useSchoolQuery();
-
   useEffect(() => {
     fetchSubjects();
   }, []);
@@ -281,8 +277,7 @@ export const EnhancedQuestionCreator: React.FC = () => {
             option_text: option.text,
             is_correct: option.isCorrect,
             option_order: index + 1,
-            school_id: schoolId,
-          }));
+                      }));
 
         if (optionsData.length > 0) {
           const { error: optionsError } = await supabase
@@ -302,8 +297,7 @@ export const EnhancedQuestionCreator: React.FC = () => {
             option_text: answer.trim(),
             is_correct: true,
             option_order: index + 1,
-            school_id: schoolId,
-          }));
+                      }));
 
         if (correctAnswersData.length > 0) {
           const { error: answersError } = await supabase

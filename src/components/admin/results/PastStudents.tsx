@@ -4,20 +4,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useToast } from '@/hooks/use-toast';
 
 export const PastStudents: React.FC = () => {
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
   const { toast } = useToast();
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = async () => {
     setLoading(true);
-    const { data: studs } = await withSchoolFilter(
+    const { data: studs } = await 
       supabase.from('students').select('id,user_id,registration_number,archived_at,archived_reason').not('archived_at', 'is', null)
-    );
+    ;
     const uids = (studs || []).map((s: any) => s.user_id);
     const nameMap = new Map<string, string>();
     if (uids.length) {

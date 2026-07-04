@@ -8,8 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Award } from "lucide-react";
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface ApplicationWithScore {
   id: string;
   application_number: string;
@@ -22,7 +20,6 @@ interface ApplicationWithScore {
 }
 
 export const AdmissionDecisionBoard = () => {
-  const { withSchoolFilter } = useSchoolQuery();
   const [applications, setApplications] = useState<ApplicationWithScore[]>([]);
   const [selectedApps, setSelectedApps] = useState<string[]>([]);
   const [cutoffScore, setCutoffScore] = useState<string>("");
@@ -34,13 +31,13 @@ export const AdmissionDecisionBoard = () => {
 
   const fetchApplications = async () => {
     try {
-      const { data, error } = await withSchoolFilter(
+      const { data, error } = await 
         supabase
           .from("admission_applications")
           .select("id, application_number, first_name, last_name, email, status, combined_score, merit_rank")
           .in("status", ["under_review", "interview_scheduled"])
           .order("combined_score", { ascending: false, nullsFirst: false })
-      );
+      ;
 
       if (error) throw error;
       setApplications(data || []);

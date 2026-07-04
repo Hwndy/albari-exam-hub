@@ -67,7 +67,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('id, name')
-          .eq('school_id', effectiveSchoolId)
+          
           .order('name');
 
         if (classesError) {
@@ -86,7 +86,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         const { data: subjectsData, error: subjectsError } = await supabase
           .from('subjects')
           .select('id, name')
-          .eq('school_id', effectiveSchoolId)
+          
           .order('name');
 
         if (subjectsError) {

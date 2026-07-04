@@ -8,20 +8,17 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Save } from 'lucide-react';
 import type { WebsiteSettings } from '@/types/website';
 
 export const SiteSettingsEditor = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
-
   const { data: settings, isLoading } = useQuery({
     queryKey: ['website-settings'],
     queryFn: async () => {
       const query = supabase.from('website_settings').select('*');
-      const { data, error } = await withSchoolFilter(query);
+      const { data, error } = await query;
       if (error) throw error;
       return data as WebsiteSettings[];
     },
@@ -29,10 +26,10 @@ export const SiteSettingsEditor = () => {
 
   const updateMutation = useMutation({
     mutationFn: async ({ key, value }: { key: string; value: any }) => {
-      const settingData = withSchoolData({
+      const settingData = {
         setting_key: key,
         setting_value: value,
-      });
+      };
       
       const { error } = await supabase
         .from('website_settings')

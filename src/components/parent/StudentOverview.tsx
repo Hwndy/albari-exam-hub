@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { User, GraduationCap, Calendar, Phone } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -23,7 +22,6 @@ interface Student {
 export const StudentOverview = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -87,12 +85,12 @@ export const StudentOverview = () => {
           .in('user_id', studentsData.map((s: any) => s.user_id));
         
         // Get class assignments for each student
-        const { data: classAssignments } = await withSchoolFilter(
+        const { data: classAssignments } = await 
           supabase
             .from('class_assignments')
             .select('student_id, classes(name)')
             .in('student_id', studentIds)
-        );
+        ;
         
         // Merge profile data and class data with student data
         studentsData.forEach((student: any) => {

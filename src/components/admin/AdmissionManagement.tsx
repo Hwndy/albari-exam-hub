@@ -10,7 +10,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchool } from '@/contexts/SchoolContext';
 import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, MapPin } from 'lucide-react';
 import { format } from 'date-fns';
 import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
@@ -41,7 +40,6 @@ interface Application {
 
 export const AdmissionManagement = () => {
   const { toast } = useToast();
-  const { schoolId } = useSchool();
   const [applications, setApplications] = useState<Application[]>([]);
   const [selectedApplication, setSelectedApplication] = useState<Application | null>(null);
   const [loading, setLoading] = useState(true);
@@ -58,7 +56,7 @@ export const AdmissionManagement = () => {
       let query = supabase
         .from('admission_applications')
         .select('*')
-        .eq('school_id', schoolId)
+        
         .order('application_date', { ascending: false });
 
       if (statusFilter !== 'all') {
@@ -174,8 +172,7 @@ export const AdmissionManagement = () => {
           date_of_birth: application.date_of_birth,
           gender: application.gender,
           address: application.address,
-          school_id: schoolId!,
-          status: 'active'
+                    status: 'active'
         })
         .select()
         .single();

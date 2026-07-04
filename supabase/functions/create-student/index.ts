@@ -122,8 +122,7 @@ serve(async (req) => {
     if (newUser.user) {
       const studentInsert: Record<string, any> = {
         user_id: newUser.user.id,
-        school_id: schoolId,
-      };
+              };
       if (admissionNumber) studentInsert.admission_number = admissionNumber;
       const { error: studentError } = await supabaseAdmin
         .from('students')
@@ -149,8 +148,7 @@ serve(async (req) => {
         .from('class_assignments')
         .insert({
           student_id: newUser.user.id,
-          class_id: classId,
-          school_id: schoolId
+          class_id: classId
         });
       
       if (assignError) {

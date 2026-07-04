@@ -11,7 +11,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Loader2, Printer, Eye, Save, MessageSquare, Send } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
@@ -154,8 +153,6 @@ interface AcademicSession {
 export const ReportCardGenerator: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   const [isLoading, setIsLoading] = useState(true);
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
@@ -193,15 +190,15 @@ export const ReportCardGenerator: React.FC = () => {
     setIsLoading(true);
     try {
       const [classesRes, subjectsRes, schoolRes, sessionsRes] = await Promise.all([
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('schools').select('name, address, contact_phone, contact_email, logo_url').single()),
-        withSchoolFilter(
+        supabase.from('classes').select('id, name').order('name'),
+        supabase.from('subjects').select('id, name').order('name'),
+        supabase.from('schools').select('name, address, contact_phone, contact_email, logo_url').single(),
+        
           supabase
             .from('admission_sessions')
             .select('id, session_name, academic_year, is_current')
             .order('start_date', { ascending: false })
-        ),
+        ,
       ]);
 
       // Load automation settings (per school)
@@ -209,7 +206,7 @@ export const ReportCardGenerator: React.FC = () => {
         const { data: auto } = await supabase
           .from('result_automation_settings')
           .select('*')
-          .eq('school_id', schoolId)
+          
           .maybeSingle();
         if (auto) {
           setAutomation({
@@ -539,13 +536,12 @@ export const ReportCardGenerator: React.FC = () => {
       const { error } = await supabase
         .from('report_card_publications')
         .upsert({
-          school_id: schoolId,
-          student_id: card.student_id,
+                    student_id: card.student_id,
           class_id: selectedClass,
           session_id: selectedSessionId,
           term: selectedTerm,
           published_by: user?.id,
-        }, { onConflict: 'school_id,student_id,class_id,session_id,term' });
+        }, { onConflict: 'student_id,class_id,session_id,term' });
       if (error) throw error;
       setPublishedKeys(prev => new Set(prev).add(card.student_id));
       toast({ title: 'Published', description: `${card.student_name}'s report card is now visible to parents.` });
@@ -572,8 +568,7 @@ export const ReportCardGenerator: React.FC = () => {
       const { error } = await supabase
         .from('report_card_comments')
         .upsert({
-          school_id: schoolId,
-          student_id: editingComments.studentId,
+                    student_id: editingComments.studentId,
           class_id: selectedClass,
           term: selectedTerm,
           academic_year:

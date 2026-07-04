@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -43,8 +42,6 @@ const gradeFor = (total: number) => {
 export const ManualScoresEntry: React.FC = () => {
   const { toast } = useToast();
   const { user } = useAuth();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   const [classes, setClasses] = useState<ClassData[]>([]);
   const [subjects, setSubjects] = useState<SubjectData[]>([]);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
@@ -62,14 +59,14 @@ export const ManualScoresEntry: React.FC = () => {
   useEffect(() => {
     (async () => {
       const [c, s, ss] = await Promise.all([
-        withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(
+        supabase.from('classes').select('id, name').order('name'),
+        supabase.from('subjects').select('id, name').order('name'),
+        
           supabase
             .from('admission_sessions')
             .select('id, session_name, academic_year, is_current')
             .order('start_date', { ascending: false })
-        ),
+        ,
       ]);
       setClasses(c.data || []);
       setSubjects(s.data || []);
@@ -167,8 +164,7 @@ export const ManualScoresEntry: React.FC = () => {
           const ex = clamp(row.exam, 60);
           const total = t1 + t2 + ex;
           return {
-            school_id: schoolId,
-            student_id: st.student_id,
+                        student_id: st.student_id,
             subject_id: subjectId,
             class_id: classId,
             session_id: sessionId,
@@ -195,7 +191,7 @@ export const ManualScoresEntry: React.FC = () => {
 
       const { error } = await supabase
         .from('gradebook_entries')
-        .upsert(rows, { onConflict: 'school_id,student_id,subject_id,class_id,session_id,term' });
+        .upsert(rows, { onConflict: 'student_id,subject_id,class_id,session_id,term' });
       if (error) throw error;
       toast({ title: 'Saved', description: `${rows.length} score row(s) saved.` });
     } catch (err: any) {

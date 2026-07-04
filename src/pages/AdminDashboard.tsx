@@ -7,8 +7,6 @@ import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchool } from '@/contexts/SchoolContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
@@ -18,7 +16,6 @@ import { AdminQuestionBank } from '@/components/admin/AdminQuestionBank';
 import { ExamManagement } from '@/components/admin/ExamManagement';
 import { AdminStudentResults } from '@/components/admin/AdminStudentResults';
 import { AdminResultsModal } from '@/components/admin/AdminResultsModal';
-import { SchoolManagement } from '@/components/admin/SchoolManagement';
 import { AdmissionsHub, type AdmissionTab } from '@/components/admin/admissions/AdmissionsHub';
 import { EmailLogsViewer } from '@/components/admin/EmailLogsViewer';
 import { EmailTestingPanel } from '@/components/admin/EmailTestingPanel';
@@ -78,9 +75,6 @@ export const AdminDashboard = () => {
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
   const { toast } = useToast();
   const { user, logout } = useAuth();
-  const { isLoading: schoolLoading } = useSchool();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'overview';
@@ -103,8 +97,8 @@ export const AdminDashboard = () => {
       // For user_roles, we need to join through profiles to filter by school_id
       const profilesQuery = supabase
         .from('profiles')
-        .select('user_id, school_id');
-      const schoolProfiles = await withSchoolFilter(profilesQuery);
+        .select('user_id');
+      const schoolProfiles = await profilesQuery;
       const schoolUserIds = schoolProfiles.data?.map(p => p.user_id) || [];
       
       const [
@@ -118,11 +112,11 @@ export const AdminDashboard = () => {
         schoolUserIds.length > 0 
           ? supabase.from('user_roles').select('role').in('user_id', schoolUserIds)
           : Promise.resolve({ data: [] }),
-        withSchoolFilter(supabase.from('classes').select('id')),
-        withSchoolFilter(supabase.from('subjects').select('id')),
-        withSchoolFilter(supabase.from('exams').select('id, status')),
-        withSchoolFilter(supabase.from('questions').select('id')),
-        withSchoolFilter(supabase.from('exam_sessions').select('id, status')),
+        supabase.from('classes').select('id'),
+        supabase.from('subjects').select('id'),
+        supabase.from('exams').select('id, status'),
+        supabase.from('questions').select('id'),
+        supabase.from('exam_sessions').select('id, status'),
       ]);
 
       // Calculate stats
@@ -163,7 +157,7 @@ export const AdminDashboard = () => {
         .order('created_at', { ascending: false })
         .limit(5);
 
-      const { data: recentExamsData } = await withSchoolFilter(recentExamsQuery);
+      const { data: recentExamsData } = await recentExamsQuery;
 
       if (recentExamsData) {
         const formattedExams = recentExamsData.map((exam: any) => ({

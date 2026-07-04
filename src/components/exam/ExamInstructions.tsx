@@ -122,8 +122,7 @@ export const ExamInstructions: React.FC = () => {
         .insert({
           exam_id: examId,
           student_id: user?.id,
-          school_id: examDetails!.school_id,
-          status: 'in_progress',
+                    status: 'in_progress',
           started_at: new Date().toISOString(),
           current_question_index: 0,
           time_remaining_seconds: examDetails!.duration_minutes * 60,

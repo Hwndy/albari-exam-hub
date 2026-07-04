@@ -5,7 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { DollarSign, Receipt, Calendar, AlertCircle, Download, CreditCard } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -46,7 +45,6 @@ interface Student {
 export const FeeManagementEnhanced = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter } = useSchoolQuery();
   const [feeStructures, setFeeStructures] = useState<FeeStructure[]>([]);
   const [payments, setPayments] = useState<FeePayment[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
@@ -108,17 +106,17 @@ export const FeeManagementEnhanced = () => {
         setStudents(studentsWithNames as Student[]);
 
         // Get class IDs with school filter
-        const { data: classAssignments } = await withSchoolFilter(
+        const { data: classAssignments } = await 
           supabase
             .from('class_assignments')
             .select('class_id')
             .in('student_id', studentsData.map((s: any) => s.id))
-        );
+        ;
 
         const classIds = classAssignments?.map(ca => ca.class_id) || [];
 
         // Fetch fee structures with school filter
-        const { data: feesData } = await withSchoolFilter(
+        const { data: feesData } = await 
           supabase
             .from('fee_structures')
             .select(`
@@ -126,12 +124,12 @@ export const FeeManagementEnhanced = () => {
               classes (name)
             `)
             .or(`class_id.in.(${classIds.join(',')}),class_id.is.null`)
-        );
+        ;
 
         setFeeStructures(feesData || []);
 
         // Fetch payments with school filter
-        const { data: paymentsData } = await withSchoolFilter(
+        const { data: paymentsData } = await 
           supabase
             .from('fee_payments')
             .select(`
@@ -143,7 +141,7 @@ export const FeeManagementEnhanced = () => {
             `)
             .in('student_id', studentsData.map((s: any) => s.id))
             .order('payment_date', { ascending: false })
-        );
+        ;
 
         setPayments(paymentsData || []);
       }

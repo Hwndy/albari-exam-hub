@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSchool } from "@/contexts/SchoolContext";
 import { ArrowUp, GraduationCap, RotateCcw, History, Users, AlertTriangle } from "lucide-react";
 
 interface Student {
@@ -50,7 +49,6 @@ interface PromotionRecord {
 }
 
 export const StudentPromotion = () => {
-  const { schoolId } = useSchool();
   const [classes, setClasses] = useState<Class[]>([]);
   const [students, setStudents] = useState<Student[]>([]);
   const [selectedClass, setSelectedClass] = useState<string>("");
@@ -80,7 +78,7 @@ export const StudentPromotion = () => {
     const { data, error } = await supabase
       .from("classes")
       .select("id, name")
-      .eq("school_id", schoolId)
+      
       .order("name");
 
     if (!error && data) {
@@ -97,7 +95,7 @@ export const StudentPromotion = () => {
         student_id,
         class_id
       `)
-      .eq("school_id", schoolId)
+      
       .eq("class_id", selectedClass);
     if (!error && assignments && assignments.length > 0) {
       const studentIds = assignments.map(a => a.student_id);
@@ -109,7 +107,7 @@ export const StudentPromotion = () => {
           admission_number,
           profile:profiles!students_user_id_fkey(full_name)
         `)
-        .eq("school_id", schoolId)
+        
         .in("id", studentIds)
         .eq("status", "active");
 
@@ -132,7 +130,7 @@ export const StudentPromotion = () => {
         from_class:classes!promotion_history_from_class_id_fkey(name),
         to_class:classes!promotion_history_to_class_id_fkey(name)
       `)
-      .eq("school_id", schoolId)
+      
       .order("promoted_at", { ascending: false })
       .limit(100);
 
@@ -185,8 +183,7 @@ export const StudentPromotion = () => {
 
       // Create promotion records
       const promotionRecords = selectedStudents.map((studentId) => ({
-        school_id: schoolId,
-        student_id: studentId,
+                student_id: studentId,
         from_class_id: selectedClass,
         to_class_id: promotionType === "graduated" ? null : targetClass,
         academic_year: academicYear,
@@ -207,13 +204,12 @@ export const StudentPromotion = () => {
         await supabase
           .from("class_assignments")
           .delete()
-          .eq("school_id", schoolId)
+          
           .eq("class_id", selectedClass)
           .in("student_id", selectedStudents);
 
         const newAssignments = selectedStudents.map(studentId => ({
-          school_id: schoolId,
-          student_id: studentId,
+                    student_id: studentId,
           class_id: targetClass
         }));
 

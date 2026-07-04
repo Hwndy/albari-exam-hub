@@ -7,7 +7,6 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Loader2, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchool } from '@/contexts/SchoolContext';
 import { useToast } from '@/hooks/use-toast';
 
 interface Settings {
@@ -35,7 +34,6 @@ const DEFAULTS: Settings = {
 };
 
 export const AutomationSettings: React.FC = () => {
-  const { schoolId } = useSchool();
   const { toast } = useToast();
   const [s, setS] = useState<Settings>(DEFAULTS);
   const [loading, setLoading] = useState(true);
@@ -47,7 +45,7 @@ export const AutomationSettings: React.FC = () => {
       const { data } = await supabase
         .from('result_automation_settings')
         .select('*')
-        .eq('school_id', schoolId)
+        
         .maybeSingle();
       if (data) {
         setS({

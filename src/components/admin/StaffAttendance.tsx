@@ -7,7 +7,6 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSchool } from "@/contexts/SchoolContext";
 import { Calendar, Clock, Users, CheckCircle2, XCircle, AlertCircle, Save } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
 
@@ -32,7 +31,6 @@ interface AttendanceRecord {
 }
 
 export const StaffAttendance = () => {
-  const { schoolId } = useSchool();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
   const [attendanceRecords, setAttendanceRecords] = useState<Record<string, AttendanceRecord>>({});
@@ -67,7 +65,7 @@ export const StaffAttendance = () => {
     const { data: staffData, error } = await supabase
       .from("staff_details")
       .select("id, user_id, employee_id, department, designation, status")
-      .eq("school_id", schoolId)
+      
       .eq("status", "active");
 
     if (error) {
@@ -100,7 +98,7 @@ export const StaffAttendance = () => {
     const { data, error } = await supabase
       .from("staff_attendance")
       .select("*")
-      .eq("school_id", schoolId)
+      
       .eq("date", selectedDate);
 
     if (!error && data) {
@@ -128,7 +126,7 @@ export const StaffAttendance = () => {
     const { data, error } = await supabase
       .from("staff_attendance")
       .select("status")
-      .eq("school_id", schoolId)
+      
       .gte("date", start)
       .lte("date", end);
 
@@ -185,8 +183,7 @@ export const StaffAttendance = () => {
         const { error } = await supabase
           .from("staff_attendance")
           .upsert({
-            school_id: schoolId,
-            staff_id: record.staff_id,
+                        staff_id: record.staff_id,
             date: selectedDate,
             status: record.status,
             check_in: record.check_in || null,

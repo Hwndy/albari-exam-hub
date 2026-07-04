@@ -17,8 +17,6 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 interface QuestionBulkImportProps {
   isOpen: boolean;
   onClose: () => void;
@@ -41,8 +39,6 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
   } | null>(null);
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   React.useEffect(() => {
     if (isOpen) {
       fetchQuestionBanks();
@@ -51,12 +47,12 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
 
   const fetchQuestionBanks = async () => {
     try {
-      const { data, error } = await withSchoolFilter(
+      const { data, error } = await 
         supabase
           .from('question_banks')
           .select('*')
           .order('name')
-      );
+      ;
 
       if (error) throw error;
       setQuestionBanks(data || []);
@@ -201,8 +197,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
               explanation: question.explanation || null,
               question_bank_id: questionBankId,
               created_by: user?.id || '',
-              school_id: schoolId,
-            })
+                          })
             .select()
             .single();
 
@@ -227,8 +222,7 @@ export const QuestionBulkImport: React.FC<QuestionBulkImportProps> = ({
               option_text: opt.text,
               option_order: opt.order,
               is_correct: opt.order === (question.correct_option?.toUpperCase().charCodeAt(0) - 64),
-              school_id: schoolId,
-            }));
+                          }));
 
             const { error: optionsError } = await supabase
               .from('question_options')

@@ -7,11 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Archive, ArrowRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useToast } from '@/hooks/use-toast';
 
 export const PromotionPanel: React.FC = () => {
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
   const { toast } = useToast();
   const [classes, setClasses] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -26,8 +24,8 @@ export const PromotionPanel: React.FC = () => {
   useEffect(() => {
     (async () => {
       const [c, ss] = await Promise.all([
-        withSchoolFilter(supabase.from('classes').select('id,name').order('name')),
-        withSchoolFilter(supabase.from('admission_sessions').select('id,session_name,is_current').order('start_date', { ascending: false })),
+        supabase.from('classes').select('id,name').order('name'),
+        supabase.from('admission_sessions').select('id,session_name,is_current').order('start_date', { ascending: false }),
       ]);
       setClasses(c.data || []);
       const list = ss.data || [];
@@ -35,7 +33,7 @@ export const PromotionPanel: React.FC = () => {
       const cur = list.find((x: any) => x.is_current) || list[0];
       if (cur) setSessionId(cur.id);
       if (schoolId) {
-        const { data: auto } = await supabase.from('result_automation_settings').select('min_promotion_average').eq('school_id', schoolId).maybeSingle();
+        const { data: auto } = await supabase.from('result_automation_settings').select('min_promotion_average').maybeSingle();
         if (auto?.min_promotion_average) setMinAvg(Number(auto.min_promotion_average));
       }
     })();

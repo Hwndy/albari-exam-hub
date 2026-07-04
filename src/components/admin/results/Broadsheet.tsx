@@ -6,14 +6,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Loader2, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
-
 const TERMS: Record<string, 'first' | 'second' | 'third'> = {
   'First Term': 'first', 'Second Term': 'second', 'Third Term': 'third',
 };
 
 export const Broadsheet: React.FC = () => {
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
   const [classes, setClasses] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [sessions, setSessions] = useState<any[]>([]);
@@ -27,9 +24,9 @@ export const Broadsheet: React.FC = () => {
   useEffect(() => {
     (async () => {
       const [c, s, ss] = await Promise.all([
-        withSchoolFilter(supabase.from('classes').select('id,name').order('name')),
-        withSchoolFilter(supabase.from('subjects').select('id,name').order('name')),
-        withSchoolFilter(supabase.from('admission_sessions').select('id,session_name,is_current').order('start_date', { ascending: false })),
+        supabase.from('classes').select('id,name').order('name'),
+        supabase.from('subjects').select('id,name').order('name'),
+        supabase.from('admission_sessions').select('id,session_name,is_current').order('start_date', { ascending: false }),
       ]);
       setClasses(c.data || []);
       setSubjects(s.data || []);

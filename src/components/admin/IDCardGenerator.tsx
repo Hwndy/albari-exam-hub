@@ -9,7 +9,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { 
   CreditCard, Printer, Download, QrCode, Loader2, 
   Users, Calendar, Search, Eye, Pencil
@@ -51,7 +50,6 @@ interface ClassOption {
 
 export const IDCardGenerator: React.FC = () => {
   const { toast } = useToast();
-  const { schoolId } = useSchoolQuery();
   const cardRef = useRef<HTMLDivElement>(null);
 
   const [isLoading, setIsLoading] = useState(true);
@@ -97,7 +95,7 @@ export const IDCardGenerator: React.FC = () => {
       const classesResponse = await supabase
         .from('classes')
         .select('id, name')
-        .eq('school_id', schoolId)
+        
         .order('name');
       
       setClasses((classesResponse.data || []) as ClassOption[]);
@@ -106,7 +104,7 @@ export const IDCardGenerator: React.FC = () => {
       const studentsResponse = await supabase
         .from('students')
         .select('id, user_id, admission_number, photo_url')
-        .eq('school_id', schoolId);
+        ;
       
       const studentsData = studentsResponse.data as any[] || [];
 
@@ -274,8 +272,7 @@ export const IDCardGenerator: React.FC = () => {
       
       // Record generated cards in database
       const cardRecords = selectedStudentObjects.map(student => ({
-        school_id: schoolId,
-        student_id: student.id,
+                student_id: student.id,
         card_number: `ID-${academicYear.replace('/', '')}-${student.admission_number || student.id.slice(0, 8)}`,
         academic_year: academicYear,
         issue_date: new Date().toISOString().split('T')[0],

@@ -9,7 +9,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useSchool } from "@/contexts/SchoolContext";
 import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar } from "lucide-react";
 import { format } from "date-fns";
 
@@ -48,7 +47,6 @@ interface StaffDetails {
 }
 
 export const StaffManagement = () => {
-  const { schoolId } = useSchool();
   const [staffMembers, setStaffMembers] = useState<StaffMember[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterDepartment, setFilterDepartment] = useState<string>("all");
@@ -83,7 +81,7 @@ export const StaffManagement = () => {
     const { data: staffData, error: staffError } = await supabase
       .from("staff_details")
       .select("*")
-      .eq("school_id", schoolId);
+      ;
 
     if (staffError) {
       console.error("Error fetching staff:", staffError);
@@ -131,14 +129,14 @@ export const StaffManagement = () => {
       
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("user_id, full_name, school_id")
+        .select("user_id, full_name")
         .in("user_id", userIds)
-        .eq("school_id", schoolId);
+        ;
 
       const { data: existingStaff } = await supabase
         .from("staff_details")
         .select("user_id")
-        .eq("school_id", schoolId);
+        ;
 
       const existingUserIds = existingStaff?.map(s => s.user_id) || [];
 
@@ -166,8 +164,7 @@ export const StaffManagement = () => {
       .from("staff_details")
       .insert({
         user_id: formData.user_id,
-        school_id: schoolId,
-        employee_id: formData.employee_id,
+                employee_id: formData.employee_id,
         department: formData.department,
         designation: formData.designation,
         join_date: formData.join_date || null,

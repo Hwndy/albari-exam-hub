@@ -16,7 +16,6 @@ import { BookOpen, Plus, Calculator, TrendingUp, Award, Calendar as CalendarIcon
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 
@@ -64,7 +63,6 @@ interface Subject {
 
 export const GradebookSystem = () => {
   const { user } = useAuth();
-  const { withSchoolFilter, withSchoolData } = useSchoolQuery();
   const [students, setStudents] = useState<Student[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
@@ -121,12 +119,12 @@ export const GradebookSystem = () => {
     try {
       setIsLoading(true);
       
-      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+      const { data: assignments, error: assignmentsError } = await 
         supabase
           .from('teacher_class_assignments')
           .select('class_id')
           .eq('teacher_id', user?.id)
-      );
+      ;
 
       if (assignmentsError) throw assignmentsError;
 
@@ -177,12 +175,12 @@ export const GradebookSystem = () => {
     try {
       if (!selectedClass) return;
 
-      const { data: assignments, error: assignmentsError } = await withSchoolFilter(
+      const { data: assignments, error: assignmentsError } = await 
         supabase
           .from('class_assignments')
           .select('student_id')
           .eq('class_id', selectedClass)
-      );
+      ;
 
       if (assignmentsError) throw assignmentsError;
 
@@ -237,7 +235,7 @@ export const GradebookSystem = () => {
 
   const fetchGradebookEntries = async () => {
     try {
-      const { data, error } = await withSchoolFilter(
+      const { data, error } = await 
         supabase
           .from('gradebook_entries')
           .select(`
@@ -250,7 +248,7 @@ export const GradebookSystem = () => {
           .eq('subject_id', selectedSubject)
           .eq('teacher_id', user?.id)
           .order('assessment_date', { ascending: false })
-      );
+      ;
 
       if (error) throw error;
 
@@ -322,7 +320,7 @@ export const GradebookSystem = () => {
       const obtainedScore = parseFloat(newGrade.obtained_score);
       const grade = calculateGrade(obtainedScore, maxScore);
 
-      const gradeData = withSchoolData({
+      const gradeData = {
         student_id: newGrade.student_id,
         subject_id: newGrade.subject_id,
         class_id: newGrade.class_id,
@@ -334,7 +332,7 @@ export const GradebookSystem = () => {
         grade,
         remarks: newGrade.remarks,
         teacher_id: user?.id
-      });
+      };
 
       const { error } = await supabase
         .from('gradebook_entries')
@@ -391,7 +389,7 @@ export const GradebookSystem = () => {
           const obtainedScore = parseFloat(data.obtained_score);
           const grade = calculateGrade(obtainedScore, maxScore);
           
-          return withSchoolData({
+          return {
             student_id: studentId,
             subject_id: bulkAssessment.subject_id,
             class_id: bulkAssessment.class_id,
@@ -403,7 +401,7 @@ export const GradebookSystem = () => {
             grade,
             remarks: data.remarks,
             teacher_id: user?.id
-          });
+          };
         });
 
       if (entries.length === 0) {

@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -60,7 +59,6 @@ const initials = (n?: string) =>
 export const StudentsByClass: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const { withSchoolFilter, withSchoolData, schoolId } = useSchoolQuery();
   const navigate = useNavigate();
 
   const [classes, setClasses] = useState<ClassRow[]>([]);
@@ -123,9 +121,9 @@ export const StudentsByClass: React.FC = () => {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const { data: cls, error: clsErr } = await withSchoolFilter(
+      const { data: cls, error: clsErr } = await 
         supabase.from('classes').select('id, name, description').order('name')
-      );
+      ;
       if (clsErr) throw clsErr;
       const classRows = (cls ?? []) as ClassRow[];
       setClasses(classRows);

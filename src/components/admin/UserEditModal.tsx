@@ -12,7 +12,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { User, Shield, Book, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { Profile } from '@/types/auth';
 
 interface UserEditModalProps {
@@ -44,8 +43,6 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const [userAssignments, setUserAssignments] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { withSchoolFilter, schoolId } = useSchoolQuery();
-
   useEffect(() => {
     if (user && isOpen) {
       fetchUserData();
@@ -130,8 +127,8 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const fetchSystemData = async () => {
     try {
       const [subjectsData, classesData] = await Promise.all([
-        withSchoolFilter(supabase.from('subjects').select('*').order('name')),
-        withSchoolFilter(supabase.from('classes').select('*').order('name'))
+        supabase.from('subjects').select('*').order('name'),
+        supabase.from('classes').select('*').order('name')
       ]);
 
       if (subjectsData.data) setSubjects(subjectsData.data);
@@ -195,8 +192,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         if (formData.subjects.length > 0) {
           const subjectAssignments = formData.subjects.map(subjectId => ({
             user_id: user.user_id,
-            subject_id: subjectId,
-            school_id: schoolId
+            subject_id: subjectId
           }));
 
           const { error: subjectError } = await supabase
@@ -210,8 +206,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         if (formData.classes.length > 0) {
           const classAssignments = formData.classes.map(classId => ({
             teacher_id: user.user_id,
-            class_id: classId,
-            school_id: schoolId
+            class_id: classId
           }));
 
           const { error: classError } = await supabase
@@ -234,8 +229,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
         if (formData.classes.length > 0) {
           const assignments = formData.classes.map(classId => ({
             student_id: user.user_id,
-            class_id: classId,
-            school_id: schoolId
+            class_id: classId
           }));
 
           const { error: assignError } = await supabase

@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
     // Fetch all profiles
     const { data: profiles, error: profilesError } = await supabaseAdmin
       .from('profiles')
-      .select('user_id, full_name, school_id, created_at')
+      .select('user_id, full_name, created_at')
       .order('created_at', { ascending: false });
 
     if (profilesError) {
