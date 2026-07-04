@@ -204,12 +204,12 @@ export const ReportCardGenerator: React.FC = () => {
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
       setSchoolInfo({
-        name: SCHOOL_INFO.name,
-        address: SCHOOL_INFO.address,
-        phone: SCHOOL_INFO.contact_phone,
-        email: SCHOOL_INFO.contact_email,
-        motto: SCHOOL_INFO.motto,
-        logo_url: SCHOOL_INFO.logo_url,
+        name: 'Al-Bari Model Schools',
+        address: '',
+        phone: '',
+        email: '',
+        motto: '',
+        logo_url: '',
       });
       const sessionList = (sessionsRes.data || []) as AcademicSession[];
       setSessions(sessionList);
