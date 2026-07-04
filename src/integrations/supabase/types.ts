@@ -3140,6 +3140,124 @@ export type Database = {
           },
         ]
       }
+      report_card_publications: {
+        Row: {
+          class_id: string
+          id: string
+          published_at: string
+          published_by: string | null
+          school_id: string
+          session_id: string
+          student_id: string
+          term: string
+        }
+        Insert: {
+          class_id: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          school_id: string
+          session_id: string
+          student_id: string
+          term: string
+        }
+        Update: {
+          class_id?: string
+          id?: string
+          published_at?: string
+          published_by?: string | null
+          school_id?: string
+          session_id?: string
+          student_id?: string
+          term?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "report_card_publications_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_publications_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_publications_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "admission_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_publications_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      result_automation_settings: {
+        Row: {
+          above_max: number
+          average_max: number
+          below_max: number
+          created_at: string
+          id: string
+          min_promotion_average: number
+          principal_remark_above: string
+          principal_remark_average: string
+          principal_remark_below: string
+          principal_remark_distinction: string
+          school_id: string
+          show_parent_signature: boolean
+          updated_at: string
+        }
+        Insert: {
+          above_max?: number
+          average_max?: number
+          below_max?: number
+          created_at?: string
+          id?: string
+          min_promotion_average?: number
+          principal_remark_above?: string
+          principal_remark_average?: string
+          principal_remark_below?: string
+          principal_remark_distinction?: string
+          school_id: string
+          show_parent_signature?: boolean
+          updated_at?: string
+        }
+        Update: {
+          above_max?: number
+          average_max?: number
+          below_max?: number
+          created_at?: string
+          id?: string
+          min_promotion_average?: number
+          principal_remark_above?: string
+          principal_remark_average?: string
+          principal_remark_below?: string
+          principal_remark_distinction?: string
+          school_id?: string
+          show_parent_signature?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "result_automation_settings_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: true
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -3333,6 +3451,7 @@ export type Database = {
           qualifications: Json | null
           salary: number | null
           school_id: string | null
+          signature_url: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -3351,6 +3470,7 @@ export type Database = {
           qualifications?: Json | null
           salary?: number | null
           school_id?: string | null
+          signature_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -3369,6 +3489,7 @@ export type Database = {
           qualifications?: Json | null
           salary?: number | null
           school_id?: string | null
+          signature_url?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
@@ -3558,6 +3679,8 @@ export type Database = {
           admission_date: string | null
           admission_number: string | null
           age: number | null
+          archived_at: string | null
+          archived_reason: string | null
           blood_group: string | null
           created_at: string | null
           date_of_birth: string | null
@@ -3580,6 +3703,8 @@ export type Database = {
           admission_date?: string | null
           admission_number?: string | null
           age?: number | null
+          archived_at?: string | null
+          archived_reason?: string | null
           blood_group?: string | null
           created_at?: string | null
           date_of_birth?: string | null
@@ -3602,6 +3727,8 @@ export type Database = {
           admission_date?: string | null
           admission_number?: string | null
           age?: number | null
+          archived_at?: string | null
+          archived_reason?: string | null
           blood_group?: string | null
           created_at?: string | null
           date_of_birth?: string | null
