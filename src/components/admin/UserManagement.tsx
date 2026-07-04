@@ -32,45 +32,20 @@ export const UserManagement = () => {
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
-    undefined: '',
-    isSuperAdmin: false
   });
-  const [schools, setSchools] = useState<any[]>([]);
-  const [currentUserSchoolId, setCurrentUserSchoolId] = useState<string | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // Wait for school context to load before fetching data
   useEffect(() => {
-  }, [false, undefined]);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      
-      // Check if current user is super admin
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('school_id')
-          .eq('user_id', user.id)
-          .single();
-        
-        setCurrentUserSchoolId(profile?.school_id || null);
-        setIsSuperAdmin(profile?.school_id === null);
-      }
-      
-      // Fetch schools (for super admins)
-      const { data: schoolsData } = await supabase
-        .from('schools')
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
         .select('*')
-        .order('name');
-      if (schoolsData) setSchools(schoolsData);
-      
-      // Fetch profiles filtered by school using withSchoolFilter
-      const { data: profilesData } = await 
-        supabase.from('profiles').select('*').order('created_at', { ascending: false })
-      ;
+        .order('created_at', { ascending: false });
 
       // Fetch user roles for the filtered profiles
       const profileUserIds = profilesData?.map(p => p.user_id) || [];
