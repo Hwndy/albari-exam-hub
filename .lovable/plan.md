@@ -1,66 +1,67 @@
-## Report Card fixes — plan
+## Results Management & Report Cards — plan
 
-### What's broken (root causes)
+### Root cause of "N/A / 0" on Report Cards page
+The Save button on the Enter Scores tab returned "there is no unique or exclusion constraint matching the ON CONFLICT specification". The migration created a **partial** unique index (`WHERE session_id IS NOT NULL AND term IS NOT NULL`), which Postgres cannot match for `upsert(onConflict: ...)`. So no gradebook rows are being written, so the view returns 0 for every student → the table shows 0/0 and F.
 
-1. **Report card page shows no data.**
-   - The page reads from view `v_student_term_scores`, which is fed by `gradebook_entries.test1_score / test2_score / exam_score / term / session_id` or by online CBT exams tagged with `assessment_category` + `session_id` + `term`.
-   - The existing `GradebookSystem` (teachers' gradebook) writes only `assessment_name` / `obtained_score` / `max_score`. It never writes `test1_score`, `test2_score`, `exam_score`, `term`, or `session_id`. So the view has nothing to return → 0 subjects, 0 total, F grade for everyone.
-   - `gradebook_entries` is currently empty.
+Fix: replace it with a plain unique constraint (no WHERE) and enforce `session_id`/`term` NOT NULL on rows we insert (already the case for manual entries). Also treat rows where `session_id`/`term` are null as legacy and leave them alone by scoping the constraint to only the manual-entry columns.
 
-2. **School name / logo / address blank on the printable card.**
-   - `ReportCardGenerator` selects `name, address, phone, email, motto, logo_url` from `schools`, but the `schools` table has no `phone`, `email`, or `motto` columns (real columns are `contact_phone`, `contact_email`, no motto). The select errors silently → `schoolInfo` stays `null` → header renders empty.
-   - The current school row also has null `logo_url` / `address`.
+---
 
-3. **No way for admin/teacher to record the school's written Test 1, Test 2, and written portion of the Exam per term/session/subject.** Only CBT results are captured today.
+### 1. Move "Enter Scores" out of Report Cards
+- Remove the Tabs from `ReportCardGenerator.tsx`; it goes back to being just the report-card list/preview/print.
+- Register a new admin sidebar entry **Results Management → Enter Scores** rendering `ManualScoresEntry` (already built).
+- Also expose the same page in the Teacher/Staff dashboard, gated so teachers only see the class/subject pairs assigned to them via `teacher_class_assignments` + `subject_assignments`.
 
-### Fix 1 — School header (small)
+### 2. Fix the ON CONFLICT error (migration)
+- Drop the current partial index `gradebook_entries_term_key`.
+- Add: `CREATE UNIQUE INDEX gradebook_entries_manual_key ON public.gradebook_entries (school_id, student_id, subject_id, class_id, session_id, term);` (no WHERE clause).
+- Backfill: for any legacy row with null `session_id`/`term`, leave as-is — the manual-entry pathway always sends both fields, so it will not collide.
 
-In `ReportCardGenerator.tsx`:
-- Change the `schools` select to `name, address, contact_phone, contact_email, logo_url`.
-- Drop `motto` from `SchoolInfo` (or fall back to a default string).
-- Map `contact_phone`→`phone`, `contact_email`→`email` in state.
-- In `generatePrintableHTML`, only render Tel/Email/Address/Motto lines when the value exists (no more "Tel: N/A").
-- Add a Settings note in the plan: admin needs to upload the school logo and fill address/contact via the existing School settings screen for them to appear.
+### 3. Results Management — new features
+Add a new admin section **Results Management** with these sub-tabs:
 
-### Fix 2 — New "Manual Scores Entry" tab in the Report Card page
+a. **Enter Scores** — the existing `ManualScoresEntry` (moved here).
+b. **Broadsheet (termly)** — grid of all students in a class × all subjects for a chosen term/session, showing Test1/Test2/Exam/Total/Grade, plus per-student totals/average/position and per-subject class average/high/low. Printable + CSV export. Reads from `v_student_term_scores`.
+c. **Automation settings** — new table `result_automation_settings` (per school):
+   - `min_promotion_average` (numeric, default 40)
+   - `principal_remark_below_average`, `principal_remark_average`, `principal_remark_above_average`, `principal_remark_distinction` (text templates)
+   - Thresholds `below_max`, `average_max`, `above_max` (numeric) that decide which template is auto-applied.
+   The report-card renderer will auto-fill Principal's remark from these templates based on the student's final average, unless a manual `principal_comment` is set.
+d. **End-of-year (Third Term) rollup** — when Third Term is picked, the broadsheet and report card also compute **Session Average = mean of first + second + third term averages**, per subject and overall. Stored on the fly (view or client-side aggregation across the three term rows).
+e. **Promotion / Archive** — new "Promotion" screen that, given a class + session:
+   - Lists students with their session average vs. `min_promotion_average` → Promote / Repeat suggestion.
+   - Bulk-promote to next class via `class_assignments` update; log entries to existing `promotion_history`.
+   - For SSS 3 (or any class flagged "terminal") auto-move to archive: add `students.archived_at` + `archived_reason` columns; hide archived students from active lists; new "Past Students" page under Results Management lists them.
 
-Add a new tab inside `ReportCardGenerator` (Tabs: **Report Cards** | **Enter Scores**) so admins/teachers can upload written test and written exam marks that flow into the report card immediately.
+### 4. Report Card visual/data fixes
+- **School name & logo header** — the header already reads `schoolInfo`; the reason it looks blank is `logo_url` and `address` are null on the current school row. No code change needed there, but add a small "School Branding" empty-state banner on the Report Cards page linking to the School Settings screen when logo/address are missing. Also render the logo `<img>` at 60×60 with graceful fallback to school initials.
+- **Student picture** — add `<img src={students.photo_url}>` (avatar circle) in the printable card header next to bio-data. Fallback to initials when null.
+- **Parents' signature** — hidden by default via a toggle in `result_automation_settings.show_parent_signature` (default false so it doesn't render). Admin can turn it back on.
+- **Staff signature upload** — add columns `staff_details.signature_url` + upload UI in Staff Management (uses existing `admission-documents` bucket or new `staff-signatures` bucket, admin-only). Class Teacher / Head Teacher / Principal signatures render in their respective boxes on the printable card based on assignments.
 
-**Enter Scores tab** — a spreadsheet-style grid:
+### 5. Parent portal wiring
+- New parent page **Report Cards** listing each child's published term report cards.
+- Add `report_card_publications` table: `(school_id, student_id, class_id, session_id, term, published_at, published_by)`; admin gets a "Publish" button on each row in Report Cards page. Parents only see rows that exist here.
+- Parent view reuses `generatePrintableHTML` for print/PDF.
 
-- Filters at top: Class, Session, Term, Subject.
-- Fetch students in the selected class from `class_assignments` + `profiles` + `students` (same pattern already used on this page).
-- For each student render 3 numeric inputs: `TEST 1 (/20)`, `TEST 2 (/20)`, `EXAM (/60)`.
-- Preload existing values from `gradebook_entries` matched on `(school_id, student_id, class_id, subject_id, session_id, term)`.
-- **Save all** button: for each row upsert into `gradebook_entries` with:
-  - `school_id`, `student_id`, `subject_id`, `class_id`, `session_id`, `term` (lowercase `first`/`second`/`third` — matches the view), `academic_year`,
-  - `test1_score`, `test2_score`, `exam_score`,
-  - Plus the not-null fields the table requires: `assessment_type='terminal'`, `assessment_name` = `${Term} ${Session} - Manual`, `assessment_date=today`, `max_score=100`, `obtained_score=test1+test2+exam`, `grade=<computed A–F>`, `teacher_id=current user`.
-  - Use `.upsert(..., { onConflict: 'school_id,student_id,subject_id,class_id,session_id,term' })`.
-- Requires a unique index on `gradebook_entries (school_id, student_id, subject_id, class_id, session_id, term)` — add via migration; without it `upsert` can't dedupe. Then bulk-clear obsolete rows for the same key so we don't duplicate.
-- After save: toast success and switch back to the Report Cards tab (which will now show real totals via the view).
+### 6. Files & migrations
 
-Once scores exist, the existing view already:
-- Combines them with any CBT online exam scores (CBT wins per component only if manual is null; manual takes precedence via `COALESCE(m.*, o.*)`).
-- Feeds subject rows, totals, class average/high/low, and positions on the printable card.
+New/edited files
+- `supabase/migrations/*` — drop partial index; add full unique index; add `result_automation_settings`, `report_card_publications`; add `students.archived_at`, `students.archived_reason`, `staff_details.signature_url` columns; grants + RLS.
+- `src/components/admin/ReportCardGenerator.tsx` — remove Tabs, add branding banner, student photo, signatures, auto principal remark, session-average when Third Term, Publish button.
+- `src/components/admin/ManualScoresEntry.tsx` — no functional change (moves to new page).
+- New `src/components/admin/results/ResultsManagement.tsx` (tabs shell), `Broadsheet.tsx`, `AutomationSettings.tsx`, `PromotionPanel.tsx`, `PastStudents.tsx`.
+- New `src/components/parent/ParentReportCards.tsx` + route wiring.
+- New `src/components/admin/StaffSignatureUpload.tsx` inside Staff Management.
+- Sidebar / `AdminDashboard.tsx` / `TeacherDashboard.tsx` / `ParentDashboard.tsx` routing updates.
 
-### Fix 3 — Report card table + PDF now show data
+### Order of implementation
+1. Migration fix + new tables (unblocks saves immediately).
+2. Move Enter Scores + build Results Management shell.
+3. Broadsheet + Automation settings + Promotion/Archive.
+4. Report Card visual fixes (logo/photo/signatures/auto remark/session average).
+5. Publish flow + Parent Report Cards page.
 
-No extra work: once Fix 2 writes rows, the existing `fetchStudentsAndGrades` + `generateReportCards` + `generatePrintableHTML` pipeline populates:
-- Subjects list, TEST 1 / TEST 2 / EXAM / TOTAL / GRADE / position / class avg / high / low / remark
-- Overall total, average, position, grade
-- Term + Session on the header
-
-### Files to change
-
-- `src/components/admin/ReportCardGenerator.tsx`
-  - Fix the `schools` select + `SchoolInfo` mapping and printable header conditional rendering.
-  - Wrap current UI in a Tabs container; add a new "Enter Scores" tab component (inline or extracted to `ManualScoresEntry.tsx`).
-- New migration under `supabase/migrations/`:
-  - `CREATE UNIQUE INDEX IF NOT EXISTS gradebook_entries_manual_key ON public.gradebook_entries (school_id, student_id, subject_id, class_id, session_id, term) WHERE session_id IS NOT NULL AND term IS NOT NULL;`
-
-### Out of scope (won't touch)
-
-- `GradebookSystem.tsx` (teacher dashboard) — keeping its current per-assessment workflow untouched; the new admin "Enter Scores" tab is the intended path for term-level Test 1 / Test 2 / Exam entry.
-- `v_student_term_scores` — already correct.
-- ID card / student pages.
+### Out of scope
+- Rewriting the ID card, gradebook per-assessment CBT flow, or CBT scoring logic.
+- Bulk import of historical scores (can be added later; manual entry + CSV import can come as a follow-up).
