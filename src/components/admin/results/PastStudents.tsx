@@ -26,7 +26,7 @@ export const PastStudents: React.FC = () => {
     setLoading(false);
   };
 
-  useEffect(() => { if (undefined) load(); }, []);
+  useEffect(() => { load(); }, []);
 
   const restore = async (id: string) => {
     await supabase.from('students').update({ archived_at: null, archived_reason: null }).eq('id', id);
