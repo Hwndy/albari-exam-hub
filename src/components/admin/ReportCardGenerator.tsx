@@ -270,6 +270,7 @@ export const ReportCardGenerator: React.FC = () => {
           weight: studentRecord?.weight,
           height: studentRecord?.height,
           section: studentRecord?.section,
+          photo_url: (studentRecord as any)?.photo_url ?? null,
         };
       });
 
@@ -448,6 +449,7 @@ export const ReportCardGenerator: React.FC = () => {
         gender: student.gender || 'N/A',
         weight: student.weight || null,
         height: student.height || null,
+        photo_url: student.photo_url || null,
         grades: gradeEntries,
         total_obtained: totalObtained,
         total_max: totalMax,
