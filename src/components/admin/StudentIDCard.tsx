@@ -33,7 +33,7 @@ export const StudentIDCard: React.FC<Props> = ({ student, school }) => {
       sch: school.name,
     });
     QRCode.toCanvas(qrRef.current, payload, {
-      width: 200,
+      width: 110,
       margin: 1,
       color: { dark: '#000000', light: '#ffffff' },
     }).catch(() => {});
@@ -50,67 +50,60 @@ export const StudentIDCard: React.FC<Props> = ({ student, school }) => {
       className="relative mx-auto bg-white text-black overflow-hidden shadow-2xl"
       style={{ width: 340, height: 540, borderRadius: 14, fontFamily: 'Inter, system-ui, sans-serif' }}
     >
-      {/* Faded building/diagonal watermark background */}
+      {/* Faded X watermark */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           backgroundImage:
-            `linear-gradient(135deg, transparent 0 60%, ${GREEN}11 60% 62%, transparent 62%), ` +
-            `linear-gradient(45deg, transparent 0 65%, ${GREEN}11 65% 67%, transparent 67%)`,
-          opacity: 0.5,
+            `linear-gradient(135deg, transparent 0 49.5%, ${GREEN} 49.5% 50.3%, transparent 50.3%), ` +
+            `linear-gradient(45deg, transparent 0 49.5%, ${GREEN} 49.5% 50.3%, transparent 50.3%)`,
+          opacity: 0.08,
         }}
       />
 
       {/* TOP DECORATIVE BANDS */}
-      <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{ height: 110 }}>
-        {/* dark charcoal slab (left) */}
+      <div className="absolute top-0 left-0 right-0 pointer-events-none" style={{ height: 95 }}>
+        {/* Yellow strip across top-right */}
+        <div className="absolute top-0" style={{ left: '42%', right: 0, height: 22, background: YELLOW }} />
+        {/* Diagonal green/white stripes right block */}
+        <div className="absolute" style={{
+          top: 22, left: '48%', right: 0, height: 60,
+          backgroundImage: `repeating-linear-gradient(115deg, ${GREEN} 0 8px, #ffffff 8px 16px)`,
+        }} />
+        {/* Dark charcoal slab (top-left) */}
         <div className="absolute top-0 left-0" style={{
-          width: '55%', height: 56, background: DARK,
-          clipPath: 'polygon(0 0, 100% 0, 86% 100%, 0 100%)',
+          width: '58%', height: 46, background: DARK,
+          clipPath: 'polygon(0 0, 100% 0, 82% 100%, 0 100%)',
         }} />
-        {/* small yellow tab under it */}
-        <div className="absolute" style={{ top: 56, left: 0, width: 16, height: 14, background: YELLOW }} />
-        {/* green slab on left */}
-        <div className="absolute" style={{
-          top: 24, left: 0, width: '45%', height: 56, background: GREEN,
-          clipPath: 'polygon(0 0, 100% 0, 80% 100%, 0 100%)',
+        {/* Green slab overlapping below charcoal */}
+        <div className="absolute left-0" style={{
+          top: 30, width: '50%', height: 46, background: GREEN,
+          clipPath: 'polygon(0 0, 100% 0, 78% 100%, 0 100%)',
         }} />
-        {/* yellow band right */}
-        <div className="absolute top-0 right-0" style={{ width: '55%', height: 24, background: YELLOW }} />
-        {/* diagonal green stripes right */}
-        <div className="absolute" style={{
-          top: 24, right: 0, width: '55%', height: 50,
-          backgroundImage: `repeating-linear-gradient(115deg, ${GREEN} 0 7px, #ffffff 7px 13px)`,
-        }} />
+        {/* Tiny yellow tab */}
+        <div className="absolute" style={{ top: 46, left: 0, width: 14, height: 12, background: YELLOW }} />
       </div>
 
-      {/* Header text + logo */}
-      <div className="relative flex items-start gap-2 px-3" style={{ paddingTop: 86 }}>
+      {/* Logo + school name */}
+      <div className="relative flex items-center gap-2 px-3" style={{ paddingTop: 100 }}>
         <img
           src={logoSrc}
           alt=""
           crossOrigin="anonymous"
           className="object-contain shrink-0"
-          style={{ width: 52, height: 52 }}
+          style={{ width: 44, height: 44 }}
           onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden'; }}
         />
-        <div className="leading-tight flex-1 min-w-0">
-          <p className="font-extrabold uppercase truncate" style={{ color: GREEN, fontSize: 13 }}>
-            {school.name}
-          </p>
-          {school.address && (
-            <p className="font-semibold mt-0.5" style={{ color: GREEN, fontSize: 9, lineHeight: 1.2 }}>
-              {school.address}
-            </p>
-          )}
-        </div>
+        <p className="font-extrabold uppercase truncate flex-1" style={{ color: GREEN, fontSize: 14, letterSpacing: 0.3 }}>
+          {school.name}
+        </p>
       </div>
 
       {/* Photo */}
-      <div className="relative flex justify-center" style={{ marginTop: 24 }}>
+      <div className="relative flex justify-center" style={{ marginTop: 18 }}>
         <div
           className="rounded-full overflow-hidden bg-gray-100 flex items-center justify-center"
-          style={{ width: 180, height: 180, border: `5px solid ${GREEN}` }}
+          style={{ width: 190, height: 190, border: `4px solid ${GREEN}` }}
         >
           {student.photo_url ? (
             <img
@@ -120,46 +113,47 @@ export const StudentIDCard: React.FC<Props> = ({ student, school }) => {
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-4xl font-bold" style={{ color: GREEN }}>
+            <span className="font-extrabold" style={{ color: GREEN, fontSize: 44 }}>
               {student.full_name.split(' ').map(s => s[0]).slice(0, 2).join('').toUpperCase()}
             </span>
           )}
         </div>
       </div>
 
-      {/* Name + ID */}
-      <div className="relative text-center px-3" style={{ marginTop: 14 }}>
-        <p className="font-black uppercase tracking-tight truncate" style={{ fontSize: 18, color: '#000' }}>
+      {/* Name + ID + Class */}
+      <div className="relative text-center px-3" style={{ marginTop: 12 }}>
+        <p className="font-black uppercase truncate" style={{ fontSize: 17, color: '#000', letterSpacing: 0.2 }}>
           {student.full_name}
         </p>
-        <p className="font-semibold mt-1" style={{ fontSize: 14, color: '#000' }}>
+        <p className="font-semibold" style={{ fontSize: 12, color: '#000', marginTop: 4 }}>
           ID: {student.admission_number || '#########'}
         </p>
         {student.class_name && (
-          <p className="font-semibold mt-0.5" style={{ fontSize: 11, color: GREEN }}>
+          <p className="font-semibold" style={{ fontSize: 11, color: '#000', marginTop: 2 }}>
             {student.class_name}
           </p>
         )}
       </div>
 
       {/* QR */}
-      <div className="relative flex justify-center" style={{ marginTop: 10 }}>
-        <canvas ref={qrRef} className="bg-white" />
+      <div className="relative flex justify-center" style={{ marginTop: 8 }}>
+        <canvas ref={qrRef} className="bg-white" style={{ width: 100, height: 100 }} />
       </div>
 
       {/* BOTTOM DECORATIVE BANDS */}
-      <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: 70 }}>
-        <div className="absolute bottom-0 left-0" style={{
-          width: '55%', height: 36, background: GREEN,
-          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 14% 100%)',
-        }} />
+      <div className="absolute bottom-0 left-0 right-0 pointer-events-none" style={{ height: 60 }}>
+        {/* Yellow angled slab (behind, right) */}
         <div className="absolute bottom-0 right-0" style={{
-          width: '60%', height: 28, background: YELLOW,
-          clipPath: 'polygon(0 0, 100% 0, 100% 100%, 8% 100%)',
+          width: '75%', height: 34, background: YELLOW,
+          clipPath: 'polygon(18% 0, 100% 0, 100% 100%, 0 100%)',
         }} />
+        {/* Green angled slab (front, left) */}
         <div className="absolute bottom-0 left-0" style={{
-          width: 18, height: 22, background: DARK,
+          width: '62%', height: 42, background: GREEN,
+          clipPath: 'polygon(0 30%, 100% 0, 100% 100%, 0 100%)',
         }} />
+        {/* Dark charcoal corner tab */}
+        <div className="absolute bottom-0 left-0" style={{ width: 16, height: 20, background: DARK }} />
       </div>
     </div>
   );
