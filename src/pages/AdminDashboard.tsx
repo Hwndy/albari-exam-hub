@@ -32,6 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FeeManagement } from '@/components/admin/SMS/FeeManagement';
 import { TimetableManager } from '@/components/admin/TimetableManager';
 import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
+import { ResultsManagement } from '@/components/admin/results/ResultsManagement';
 import { LibraryManager } from '@/components/admin/LibraryManager';
 import { BulkNotificationSender } from '@/components/admin/BulkNotificationSender';
 import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
@@ -349,6 +350,10 @@ export const AdminDashboard = () => {
         case 'report-cards': return <ReportCardGenerator />;
         default: return <ExamManagement />;
       }
+    }
+
+    if (activeTab === 'results-mgmt') {
+      return <ResultsManagement />;
     }
 
     if (activeTab === 'fees') {
