@@ -65,9 +65,12 @@ export const AutomationSettings: React.FC = () => {
 
   const save = async () => {
         setSaving(true);
-    const { error } = await supabase
-      .from('result_automation_settings')
-      .upsert({ school_id: undefined, ...s }, { onConflict: 'school_id' });
+    // Single-tenant: keep one settings row.
+    const { data: existing } = await supabase
+      .from('result_automation_settings').select('id').maybeSingle();
+    const { error } = existing
+      ? await supabase.from('result_automation_settings').update(s as any).eq('id', existing.id)
+      : await supabase.from('result_automation_settings').insert(s as any);
     setSaving(false);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });
