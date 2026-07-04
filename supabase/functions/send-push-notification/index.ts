@@ -8,7 +8,6 @@ const corsHeaders = {
 
 interface PushNotificationRequest {
   user_ids?: string[];
-  school_id?: string;
   title: string;
   body: string;
   url?: string;
@@ -35,8 +34,6 @@ serve(async (req: Request) => {
     
     if (user_ids && user_ids.length > 0) {
       query = query.in('user_id', user_ids);
-    } else if (school_id) {
-      query = query;
     }
 
     const { data: subscriptions, error: fetchError } = await query;
