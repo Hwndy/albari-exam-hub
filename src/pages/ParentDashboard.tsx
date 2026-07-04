@@ -8,6 +8,7 @@ import { AttendanceMonitor } from '@/components/parent/AttendanceMonitor';
 import { FeeManagementEnhanced } from '@/components/parent/FeeManagementEnhanced';
 import { CommunicationHub } from '@/components/parent/CommunicationHub';
 import { AcademicCalendar } from '@/components/parent/AcademicCalendar';
+import { ParentReportCards } from '@/components/parent/ParentReportCards';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Calendar, DollarSign, TrendingUp, Loader2 } from 'lucide-react';
@@ -242,6 +243,7 @@ export const ParentDashboard = () => {
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Overview</TabsTrigger>
               <TabsTrigger value="academics" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Academics</TabsTrigger>
+              <TabsTrigger value="report-cards" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Report Cards</TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Attendance</TabsTrigger>
               <TabsTrigger value="fees" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Fees</TabsTrigger>
               <TabsTrigger value="communication" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Messages</TabsTrigger>
@@ -255,6 +257,10 @@ export const ParentDashboard = () => {
 
           <TabsContent value="academics" className="space-y-4">
             <AcademicProgress />
+          </TabsContent>
+
+          <TabsContent value="report-cards" className="space-y-4">
+            <ParentReportCards />
           </TabsContent>
 
           <TabsContent value="attendance" className="space-y-4">

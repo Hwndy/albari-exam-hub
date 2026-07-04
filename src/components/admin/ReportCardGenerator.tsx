@@ -9,14 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
+import { FileText, Loader2, Printer, Eye, Save, MessageSquare, Send } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
-import { ManualScoresEntry } from '@/components/admin/ManualScoresEntry';
 
 interface ClassData {
   id: string;
@@ -38,6 +36,7 @@ interface StudentData {
   weight?: number;
   height?: number;
   section?: string;
+  photo_url?: string | null;
 }
 
 interface GradeEntry {
@@ -80,6 +79,7 @@ interface StudentReportCard {
   gender: string;
   weight: number | null;
   height: number | null;
+  photo_url: string | null;
   grades: GradeEntry[];
   total_obtained: number;
   total_max: number;
@@ -102,6 +102,30 @@ interface SchoolInfo {
   motto: string;
   logo_url: string;
 }
+
+interface AutomationSettings {
+  min_promotion_average: number;
+  below_max: number;
+  average_max: number;
+  above_max: number;
+  principal_remark_below: string;
+  principal_remark_average: string;
+  principal_remark_above: string;
+  principal_remark_distinction: string;
+  show_parent_signature: boolean;
+}
+
+const DEFAULT_AUTOMATION: AutomationSettings = {
+  min_promotion_average: 40,
+  below_max: 39,
+  average_max: 59,
+  above_max: 74,
+  principal_remark_below: 'Below Average. Needs to work much harder next term.',
+  principal_remark_average: 'A bit above average. Keep pushing to improve.',
+  principal_remark_above: 'Far above average. Well done, keep it up.',
+  principal_remark_distinction: 'Distinction. Excellent performance!',
+  show_parent_signature: false,
+};
 
 // Al-Bari A-F Grading Scale
 const GRADING_SCALE = [
@@ -139,6 +163,8 @@ export const ReportCardGenerator: React.FC = () => {
   const [reportCards, setReportCards] = useState<StudentReportCard[]>([]);
   const [schoolInfo, setSchoolInfo] = useState<SchoolInfo | null>(null);
   const [sessions, setSessions] = useState<AcademicSession[]>([]);
+  const [automation, setAutomation] = useState<AutomationSettings>(DEFAULT_AUTOMATION);
+  const [publishedKeys, setPublishedKeys] = useState<Set<string>>(new Set());
 
   const [selectedClass, setSelectedClass] = useState<string>('');
   const [selectedTerm, setSelectedTerm] = useState<string>('First Term');
@@ -177,6 +203,28 @@ export const ReportCardGenerator: React.FC = () => {
             .order('start_date', { ascending: false })
         ),
       ]);
+
+      // Load automation settings (per school)
+      if (schoolId) {
+        const { data: auto } = await supabase
+          .from('result_automation_settings')
+          .select('*')
+          .eq('school_id', schoolId)
+          .maybeSingle();
+        if (auto) {
+          setAutomation({
+            min_promotion_average: Number(auto.min_promotion_average) || DEFAULT_AUTOMATION.min_promotion_average,
+            below_max: Number(auto.below_max) || DEFAULT_AUTOMATION.below_max,
+            average_max: Number(auto.average_max) || DEFAULT_AUTOMATION.average_max,
+            above_max: Number(auto.above_max) || DEFAULT_AUTOMATION.above_max,
+            principal_remark_below: auto.principal_remark_below || DEFAULT_AUTOMATION.principal_remark_below,
+            principal_remark_average: auto.principal_remark_average || DEFAULT_AUTOMATION.principal_remark_average,
+            principal_remark_above: auto.principal_remark_above || DEFAULT_AUTOMATION.principal_remark_above,
+            principal_remark_distinction: auto.principal_remark_distinction || DEFAULT_AUTOMATION.principal_remark_distinction,
+            show_parent_signature: !!auto.show_parent_signature,
+          });
+        }
+      }
 
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
@@ -228,7 +276,7 @@ export const ReportCardGenerator: React.FC = () => {
       // Fetch student profiles and student records
       const [profilesRes, studentsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name').in('user_id', studentUserIds),
-        supabase.from('students').select('id, user_id, registration_number, age, gender, weight, height, section').in('user_id', studentUserIds),
+        supabase.from('students').select('id, user_id, registration_number, age, gender, weight, height, section, photo_url').in('user_id', studentUserIds),
       ]);
 
       const profiles = profilesRes.data || [];
@@ -246,6 +294,7 @@ export const ReportCardGenerator: React.FC = () => {
           weight: studentRecord?.weight,
           height: studentRecord?.height,
           section: studentRecord?.section,
+          photo_url: (studentRecord as any)?.photo_url ?? null,
         };
       });
 
@@ -308,6 +357,16 @@ export const ReportCardGenerator: React.FC = () => {
       const className = classes.find(c => c.id === selectedClass)?.name || '';
       const processedCards = generateReportCards(studentsList, grades, comments, attendance, className);
       setReportCards(processedCards);
+
+      // Load which of these are already published
+      const { data: pubs } = await supabase
+        .from('report_card_publications')
+        .select('student_id')
+        .in('student_id', studentIds)
+        .eq('class_id', selectedClass)
+        .eq('session_id', selectedSessionId)
+        .eq('term', selectedTerm);
+      setPublishedKeys(new Set((pubs || []).map((p: any) => p.student_id)));
     } catch (error) {
       console.error('Error fetching students and grades:', error);
       toast({ title: 'Error', description: 'Failed to load report card data', variant: 'destructive' });
@@ -424,6 +483,7 @@ export const ReportCardGenerator: React.FC = () => {
         gender: student.gender || 'N/A',
         weight: student.weight || null,
         height: student.height || null,
+        photo_url: student.photo_url || null,
         grades: gradeEntries,
         total_obtained: totalObtained,
         total_max: totalMax,
@@ -473,6 +533,27 @@ export const ReportCardGenerator: React.FC = () => {
     setPreviewOpen(true);
   };
 
+  const handlePublish = async (card: StudentReportCard) => {
+    if (!schoolId || !selectedClass || !selectedSessionId) return;
+    try {
+      const { error } = await supabase
+        .from('report_card_publications')
+        .upsert({
+          school_id: schoolId,
+          student_id: card.student_id,
+          class_id: selectedClass,
+          session_id: selectedSessionId,
+          term: selectedTerm,
+          published_by: user?.id,
+        }, { onConflict: 'school_id,student_id,class_id,session_id,term' });
+      if (error) throw error;
+      setPublishedKeys(prev => new Set(prev).add(card.student_id));
+      toast({ title: 'Published', description: `${card.student_name}'s report card is now visible to parents.` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const handleEditComments = (card: StudentReportCard) => {
     setEditingComments({
       studentId: card.student_id,
@@ -514,6 +595,7 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const handlePrintReportCard = (card: StudentReportCard) => {
+    // Handled via generatePrintableHTML which reads automation.
     const printWindow = window.open('', '_blank');
     if (!printWindow) return;
 
@@ -525,6 +607,16 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const generatePrintableHTML = (card: StudentReportCard): string => {
+    const autoRemark = (avg: number): string => {
+      if (avg <= automation.below_max) return automation.principal_remark_below;
+      if (avg <= automation.average_max) return automation.principal_remark_average;
+      if (avg <= automation.above_max) return automation.principal_remark_above;
+      return automation.principal_remark_distinction;
+    };
+    const principalText = card.comments.principal_comment && card.comments.principal_comment.trim()
+      ? card.comments.principal_comment
+      : autoRemark(card.average);
+
     const gradeRows = card.grades.map(g => `
       <tr>
         <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.subject_name}</td>
@@ -603,7 +695,13 @@ export const ReportCardGenerator: React.FC = () => {
           <div class="report-title">STUDENT TERMINAL REPORT</div>
         </div>
 
-        <div class="student-info">
+        <div class="student-info" style="display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;">
+          <div style="grid-row: span 5; display:flex; align-items:center; justify-content:center;">
+            ${card.photo_url
+              ? `<img src="${card.photo_url}" alt="Student" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid #1a365d;" />`
+              : `<div style="width:100px;height:100px;border-radius:50%;background:#1a365d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;">${(card.student_name || '?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()}</div>`
+            }
+          </div>
           <div class="info-row"><span class="info-label">Name:</span> ${card.student_name}</div>
           <div class="info-row"><span class="info-label">Session:</span> ${card.academic_year}</div>
           <div class="info-row"><span class="info-label">Reg. No:</span> ${card.registration_number}</div>
@@ -683,7 +781,7 @@ export const ReportCardGenerator: React.FC = () => {
           </div>
           <div class="comment-box">
             <div class="comment-label">PRINCIPAL'S REMARKS:</div>
-            <div>${card.comments.principal_comment || 'No comment'}</div>
+            <div>${principalText}</div>
           </div>
         </div>
 
@@ -691,16 +789,17 @@ export const ReportCardGenerator: React.FC = () => {
           <strong>GRADING SCALE:</strong> ${gradingScaleHTML}
         </div>
 
-        <div class="signatures">
+        <div class="signatures" style="grid-template-columns: repeat(${automation.show_parent_signature ? 3 : 2}, 1fr);">
           <div class="signature-box">
             <div class="signature-line">Class Teacher's Signature</div>
           </div>
           <div class="signature-box">
             <div class="signature-line">Principal's Signature</div>
           </div>
+          ${automation.show_parent_signature ? `
           <div class="signature-box">
             <div class="signature-line">Parent/Guardian's Signature</div>
-          </div>
+          </div>` : ''}
         </div>
       </body>
       </html>
@@ -748,13 +847,7 @@ export const ReportCardGenerator: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="cards" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="cards">Report Cards</TabsTrigger>
-          <TabsTrigger value="enter">Enter Scores</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="cards" className="space-y-6">
+      <div className="space-y-6">
           {/* Filters */}
           <Card>
         <CardHeader>
@@ -877,6 +970,14 @@ export const ReportCardGenerator: React.FC = () => {
                         <Button size="sm" variant="ghost" onClick={() => handlePrintReportCard(card)} title="Print">
                           <Printer className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant={publishedKeys.has(card.student_id) ? 'default' : 'ghost'}
+                          onClick={() => handlePublish(card)}
+                          title={publishedKeys.has(card.student_id) ? 'Published to parent' : 'Publish to parent'}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -901,12 +1002,7 @@ export const ReportCardGenerator: React.FC = () => {
           )}
         </CardContent>
       </Card>
-        </TabsContent>
-
-        <TabsContent value="enter">
-          <ManualScoresEntry />
-        </TabsContent>
-      </Tabs>
+      </div>
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
