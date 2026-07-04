@@ -16,6 +16,7 @@ import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
+import { ManualScoresEntry } from '@/components/admin/ManualScoresEntry';
 
 interface ClassData {
   id: string;
@@ -168,7 +169,7 @@ export const ReportCardGenerator: React.FC = () => {
       const [classesRes, subjectsRes, schoolRes, sessionsRes] = await Promise.all([
         withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
         withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('schools').select('name, address, phone, email, motto, logo_url').single()),
+        withSchoolFilter(supabase.from('schools').select('name, address, contact_phone, contact_email, logo_url').single()),
         withSchoolFilter(
           supabase
             .from('admission_sessions')
@@ -180,7 +181,15 @@ export const ReportCardGenerator: React.FC = () => {
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
       if (schoolRes.data) {
-        setSchoolInfo(schoolRes.data as SchoolInfo);
+        const s: any = schoolRes.data;
+        setSchoolInfo({
+          name: s.name || '',
+          address: s.address || '',
+          phone: s.contact_phone || '',
+          email: s.contact_email || '',
+          motto: '',
+          logo_url: s.logo_url || '',
+        });
       }
       const sessionList = (sessionsRes.data || []) as AcademicSession[];
       setSessions(sessionList);
@@ -588,9 +597,9 @@ export const ReportCardGenerator: React.FC = () => {
         <div class="header">
           ${schoolInfo?.logo_url ? `<img src="${schoolInfo.logo_url}" class="school-logo" alt="School Logo" />` : ''}
           <div class="school-name">${schoolInfo?.name || 'School Name'}</div>
-          <div class="school-address">${schoolInfo?.address || 'School Address'}</div>
-          <div class="school-address">Tel: ${schoolInfo?.phone || 'N/A'} | Email: ${schoolInfo?.email || 'N/A'}</div>
-          <div class="school-motto">"${schoolInfo?.motto || 'Excellence in Education'}"</div>
+          ${schoolInfo?.address ? `<div class="school-address">${schoolInfo.address}</div>` : ''}
+          ${(schoolInfo?.phone || schoolInfo?.email) ? `<div class="school-address">${schoolInfo?.phone ? 'Tel: ' + schoolInfo.phone : ''}${schoolInfo?.phone && schoolInfo?.email ? ' | ' : ''}${schoolInfo?.email ? 'Email: ' + schoolInfo.email : ''}</div>` : ''}
+          ${schoolInfo?.motto ? `<div class="school-motto">"${schoolInfo.motto}"</div>` : ''}
           <div class="report-title">STUDENT TERMINAL REPORT</div>
         </div>
 
@@ -739,8 +748,15 @@ export const ReportCardGenerator: React.FC = () => {
         </div>
       </div>
 
-      {/* Filters */}
-      <Card>
+      <Tabs defaultValue="cards" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="cards">Report Cards</TabsTrigger>
+          <TabsTrigger value="enter">Enter Scores</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="cards" className="space-y-6">
+          {/* Filters */}
+          <Card>
         <CardHeader>
           <CardTitle className="text-lg">Select Class & Term</CardTitle>
         </CardHeader>
@@ -885,6 +901,12 @@ export const ReportCardGenerator: React.FC = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="enter">
+          <ManualScoresEntry />
+        </TabsContent>
+      </Tabs>
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
