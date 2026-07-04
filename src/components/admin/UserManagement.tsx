@@ -495,46 +495,6 @@ export const UserManagement = () => {
                 </Select>
               </div>
 
-              {/* School Selection - Only for super admins creating users for specific schools */}
-              {isSuperAdmin && !userForm.isSuperAdmin && (
-                <div className="space-y-2">
-                  <Label htmlFor="school">Assign to School</Label>
-                  <Select
-                    value={userForm.undefined}
-                    onValueChange={(value) => setUserForm({ ...userForm, undefined: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a school" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {schools.map((school) => (
-                        <SelectItem key={school.id} value={school.id}>
-                          {school.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-xs text-muted-foreground">
-                    Leave empty to use your current school or make super admin
-                  </p>
-                </div>
-              )}
-
-              {userForm.role === 'admin' && (
-                <div className="flex items-center space-x-2 p-4 border border-border rounded-lg bg-muted/50">
-                  <input
-                    type="checkbox"
-                    id="isSuperAdmin"
-                    checked={userForm.isSuperAdmin}
-                    onChange={(e) => setUserForm({ ...userForm, isSuperAdmin: e.target.checked })}
-                    className="rounded border-input"
-                  />
-                  <Label htmlFor="isSuperAdmin" className="cursor-pointer font-medium">
-                    Make Super Admin (can manage all schools)
-                  </Label>
-                </div>
-              )}
-
               {userForm.role === 'student' && (
                 <div className="space-y-2">
                   <Label htmlFor="class">Class</Label>
