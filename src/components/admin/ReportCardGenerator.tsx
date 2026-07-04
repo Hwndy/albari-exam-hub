@@ -252,7 +252,7 @@ export const ReportCardGenerator: React.FC = () => {
       // Fetch student profiles and student records
       const [profilesRes, studentsRes] = await Promise.all([
         supabase.from('profiles').select('user_id, full_name').in('user_id', studentUserIds),
-        supabase.from('students').select('id, user_id, registration_number, age, gender, weight, height, section').in('user_id', studentUserIds),
+        supabase.from('students').select('id, user_id, registration_number, age, gender, weight, height, section, photo_url').in('user_id', studentUserIds),
       ]);
 
       const profiles = profilesRes.data || [];
