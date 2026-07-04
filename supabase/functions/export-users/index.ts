@@ -42,13 +42,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Check if user is super admin (admin with no school_id)
-    const { data: profile } = await supabaseAdmin
-      .from('profiles')
-      .select('school_id')
-      .eq('user_id', user.id)
-      .single();
-
     const { data: roleData } = await supabaseAdmin
       .from('user_roles')
       .select('role')
@@ -56,10 +49,10 @@ Deno.serve(async (req) => {
       .eq('role', 'admin')
       .single();
 
-    if (!roleData || profile?.school_id !== null) {
-      console.error('User is not a super admin');
+    if (!roleData) {
+      console.error('User is not an admin');
       return new Response(
-        JSON.stringify({ error: 'Only super admins can export all users' }),
+        JSON.stringify({ error: 'Only admins can export users' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -103,10 +96,6 @@ Deno.serve(async (req) => {
 
     const roleMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
 
-    // Fetch all schools
-    const { data: schools } = await supabaseAdmin.from('schools').select('id, name');
-    const schoolMap = new Map(schools?.map(s => [s.id, s.name]) || []);
-
     // Fetch class assignments for students
     const { data: classAssignments } = await supabaseAdmin
       .from('class_assignments')
@@ -123,14 +112,13 @@ Deno.serve(async (req) => {
     const usersData = profiles?.map(profile => {
       const role = roleMap.get(profile.user_id) || 'student';
       const email = emailMap.get(profile.user_id) || '';
-      const schoolName = profile.school_id ? (schoolMap.get(profile.school_id) || 'Unknown') : 'Super Admin';
       const className = role === 'student' ? (classMap.get(profile.user_id) || 'Not Assigned') : 'N/A';
 
       return {
         full_name: profile.full_name,
         email,
         role,
-        school: schoolName,
+        school: 'Al-Bari Model Schools',
         class_name: className,
         created_at: profile.created_at
       };
