@@ -16,6 +16,7 @@ import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
+import { ManualScoresEntry } from '@/components/admin/ManualScoresEntry';
 
 interface ClassData {
   id: string;
@@ -168,7 +169,7 @@ export const ReportCardGenerator: React.FC = () => {
       const [classesRes, subjectsRes, schoolRes, sessionsRes] = await Promise.all([
         withSchoolFilter(supabase.from('classes').select('id, name').order('name')),
         withSchoolFilter(supabase.from('subjects').select('id, name').order('name')),
-        withSchoolFilter(supabase.from('schools').select('name, address, phone, email, motto, logo_url').single()),
+        withSchoolFilter(supabase.from('schools').select('name, address, contact_phone, contact_email, logo_url').single()),
         withSchoolFilter(
           supabase
             .from('admission_sessions')
@@ -180,7 +181,15 @@ export const ReportCardGenerator: React.FC = () => {
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
       if (schoolRes.data) {
-        setSchoolInfo(schoolRes.data as SchoolInfo);
+        const s: any = schoolRes.data;
+        setSchoolInfo({
+          name: s.name || '',
+          address: s.address || '',
+          phone: s.contact_phone || '',
+          email: s.contact_email || '',
+          motto: '',
+          logo_url: s.logo_url || '',
+        });
       }
       const sessionList = (sessionsRes.data || []) as AcademicSession[];
       setSessions(sessionList);
