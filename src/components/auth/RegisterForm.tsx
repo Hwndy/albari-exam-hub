@@ -99,7 +99,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     };
 
     fetchData();
-  }, [effectiveSchoolId, toast]);
+  }, [toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
