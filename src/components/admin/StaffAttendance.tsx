@@ -44,16 +44,13 @@ export const StaffAttendance = () => {
   });
 
   useEffect(() => {
-      }, [undefined]);
+      }, []);
 
   useEffect(() => {
-    if (undefined && selectedDate) {
-      fetchAttendance();
-    }
-  }, [undefined, selectedDate]);
+      }, [selectedDate]);
 
   useEffect(() => {
-      }, [undefined, selectedDate]);
+      }, [selectedDate]);
 
   const fetchStaffMembers = async () => {
     const { data: staffData, error } = await supabase

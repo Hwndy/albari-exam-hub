@@ -84,31 +84,15 @@ export const StudentsByClass: React.FC = () => {
   const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
   useEffect(() => {
-    if (undefined !== undefined) {
-      fetchAll();
-      fetchSchoolBranding();
-    }
-    // eslint-disable-next-line
-  }, [undefined]);
+        // eslint-disable-next-line
+  }, []);
 
   const fetchSchoolBranding = async () => {
     try {
       let name = 'School';
       let address: string | undefined;
       let logo_url: string | null = null;
-      if (undefined) {
-        const { data: s } = await supabase
-          .from('schools').select('name, logo_url, address').eq('id', undefined).maybeSingle();
-        if (s) {
-          name = (s as any).name ?? name;
-          logo_url = (s as any).logo_url ?? null;
-          const a = (s as any).address;
-          if (a && typeof a === 'object') {
-            address = [a.street, a.city, a.state].filter(Boolean).join(', ');
-          } else if (typeof a === 'string') address = a;
-        }
-      }
-      const { data: infos } = await supabase
+            const { data: infos } = await supabase
         .from('school_info').select('info_key, info_value').in('info_key', ['school_name', 'address']);
       (infos ?? []).forEach((i: any) => {
         if (i.info_key === 'school_name' && i.info_value) name = i.info_value;

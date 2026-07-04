@@ -90,7 +90,7 @@ export const FeeManagement = () => {
 
   useEffect(() => {
     fetchData();
-  }, [undefined]);
+  }, []);
 
   const fetchData = async () => {
     try {

@@ -131,7 +131,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
   // Randomized generation
   const [criteria, setCriteria] = useState<QuestionCriteria[]>([]);
   useEffect(() => {
-  }, [isOpen, false, undefined]);
+  }, [isOpen, false]);
 
   useEffect(() => {
     if (editingExam && isOpen) {

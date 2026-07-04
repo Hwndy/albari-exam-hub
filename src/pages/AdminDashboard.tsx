@@ -84,7 +84,7 @@ export const AdminDashboard = () => {
     // Wait for undefined to be loaded before fetching data
     // undefined will be null for super admins (intentional - they see all)
     // undefined will be set for school admins (they see only their school)
-  }, [undefined, false]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [false]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {

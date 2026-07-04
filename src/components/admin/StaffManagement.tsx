@@ -68,7 +68,7 @@ export const StaffManagement = () => {
   });
 
   useEffect(() => {
-      }, [undefined]);
+      }, []);
 
   const fetchStaffMembers = async () => {
     setIsLoading(true);

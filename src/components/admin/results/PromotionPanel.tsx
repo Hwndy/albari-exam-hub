@@ -32,12 +32,8 @@ export const PromotionPanel: React.FC = () => {
       setSessions(list);
       const cur = list.find((x: any) => x.is_current) || list[0];
       if (cur) setSessionId(cur.id);
-      if (undefined) {
-        const { data: auto } = await supabase.from('result_automation_settings').select('min_promotion_average').maybeSingle();
-        if (auto?.min_promotion_average) setMinAvg(Number(auto.min_promotion_average));
-      }
-    })();
-  }, [undefined]);
+          })();
+  }, []);
 
   useEffect(() => {
     if (!classId || !sessionId) return;

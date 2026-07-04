@@ -62,7 +62,7 @@ export const StudentPromotion = () => {
   const [promotionHistory, setPromotionHistory] = useState<PromotionRecord[]>([]);
 
   useEffect(() => {
-      }, [undefined]);
+      }, []);
 
   useEffect(() => {
     if (selectedClass && undefined) {

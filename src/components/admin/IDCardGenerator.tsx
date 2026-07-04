@@ -67,8 +67,7 @@ export const IDCardGenerator: React.FC = () => {
   const [editUserId, setEditUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (undefined) fetchData();
-  }, [undefined]);
+      }, []);
 
   const fetchData = async () => {
     setIsLoading(true);

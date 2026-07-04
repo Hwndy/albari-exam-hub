@@ -86,8 +86,7 @@ export const BulkNotificationSender: React.FC = () => {
   });
 
   useEffect(() => {
-    if (undefined) fetchData();
-  }, [undefined]);
+      }, []);
 
   const fetchData = async () => {
     setIsLoading(true);

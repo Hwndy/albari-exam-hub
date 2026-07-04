@@ -35,7 +35,7 @@ export const Broadsheet: React.FC = () => {
       const cur = list.find((x: any) => x.is_current) || list[0];
       if (cur) setSessionId(cur.id);
     })();
-  }, [undefined]);
+  }, []);
 
   useEffect(() => {
     if (!classId || !sessionId) { setRows([]); return; }

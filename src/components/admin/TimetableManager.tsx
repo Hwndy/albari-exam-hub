@@ -85,7 +85,7 @@ export const TimetableManager: React.FC = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, [undefined]);
+  }, []);
 
   useEffect(() => {
     if (selectedClass) {

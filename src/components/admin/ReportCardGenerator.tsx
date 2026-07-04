@@ -178,7 +178,7 @@ export const ReportCardGenerator: React.FC = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, [undefined]);
+  }, []);
 
   useEffect(() => {
     if (selectedClass && selectedSessionId) {
@@ -202,27 +202,7 @@ export const ReportCardGenerator: React.FC = () => {
       ]);
 
       // Load automation settings (per school)
-      if (undefined) {
-        const { data: auto } = await supabase
-          .from('result_automation_settings')
-          .select('*')
-          
-          .maybeSingle();
-        if (auto) {
-          setAutomation({
-            min_promotion_average: Number(auto.min_promotion_average) || DEFAULT_AUTOMATION.min_promotion_average,
-            below_max: Number(auto.below_max) || DEFAULT_AUTOMATION.below_max,
-            average_max: Number(auto.average_max) || DEFAULT_AUTOMATION.average_max,
-            above_max: Number(auto.above_max) || DEFAULT_AUTOMATION.above_max,
-            principal_remark_below: auto.principal_remark_below || DEFAULT_AUTOMATION.principal_remark_below,
-            principal_remark_average: auto.principal_remark_average || DEFAULT_AUTOMATION.principal_remark_average,
-            principal_remark_above: auto.principal_remark_above || DEFAULT_AUTOMATION.principal_remark_above,
-            principal_remark_distinction: auto.principal_remark_distinction || DEFAULT_AUTOMATION.principal_remark_distinction,
-            show_parent_signature: !!auto.show_parent_signature,
-          });
-        }
-      }
-
+      
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
       if (schoolRes.data) {
@@ -531,8 +511,7 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const handlePublish = async (card: StudentReportCard) => {
-    if (!undefined || !selectedClass || !selectedSessionId) return;
-    try {
+        try {
       const { error } = await supabase
         .from('report_card_publications')
         .upsert({

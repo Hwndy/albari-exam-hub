@@ -13,7 +13,6 @@ import { detectSchoolFromDomain } from '@/lib/school-utils';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface RegisterFormProps {
-  undefined?: string;
   schoolName?: string;
   onToggleMode: () => void;
   allowStudentRegistration?: boolean;
@@ -46,7 +45,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const detectedSchoolId = detectSchoolFromDomain();
-  const effectiveSchoolId = undefined || detectedSchoolId;
+  const effectiveSchoolId = detectedSchoolId;
   const { register } = useAuth();
   const { toast } = useToast();
 

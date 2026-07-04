@@ -90,7 +90,7 @@ export const LibraryManager: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [undefined]);
+  }, []);
 
   const fetchData = async () => {
     setIsLoading(true);

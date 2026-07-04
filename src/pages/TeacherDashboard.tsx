@@ -35,7 +35,7 @@ export const TeacherDashboard = () => {
     if (user?.id) {
       fetchTeacherStats();
     }
-  }, [user?.id, undefined]);
+  }, [user?.id]);
 
   const fetchTeacherStats = async () => {
     if (!user?.id) return;
