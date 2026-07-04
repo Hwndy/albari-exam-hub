@@ -674,7 +674,13 @@ export const ReportCardGenerator: React.FC = () => {
           <div class="report-title">STUDENT TERMINAL REPORT</div>
         </div>
 
-        <div class="student-info">
+        <div class="student-info" style="display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;">
+          <div style="grid-row: span 5; display:flex; align-items:center; justify-content:center;">
+            ${card.photo_url
+              ? `<img src="${card.photo_url}" alt="Student" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid #1a365d;" />`
+              : `<div style="width:100px;height:100px;border-radius:50%;background:#1a365d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;">${(card.student_name || '?').split(' ').map(n=>n[0]).slice(0,2).join('').toUpperCase()}</div>`
+            }
+          </div>
           <div class="info-row"><span class="info-label">Name:</span> ${card.student_name}</div>
           <div class="info-row"><span class="info-label">Session:</span> ${card.academic_year}</div>
           <div class="info-row"><span class="info-label">Reg. No:</span> ${card.registration_number}</div>
@@ -754,7 +760,7 @@ export const ReportCardGenerator: React.FC = () => {
           </div>
           <div class="comment-box">
             <div class="comment-label">PRINCIPAL'S REMARKS:</div>
-            <div>${card.comments.principal_comment || 'No comment'}</div>
+            <div>${principalText}</div>
           </div>
         </div>
 
@@ -762,16 +768,17 @@ export const ReportCardGenerator: React.FC = () => {
           <strong>GRADING SCALE:</strong> ${gradingScaleHTML}
         </div>
 
-        <div class="signatures">
+        <div class="signatures" style="grid-template-columns: repeat(${automation.show_parent_signature ? 3 : 2}, 1fr);">
           <div class="signature-box">
             <div class="signature-line">Class Teacher's Signature</div>
           </div>
           <div class="signature-box">
             <div class="signature-line">Principal's Signature</div>
           </div>
+          ${automation.show_parent_signature ? `
           <div class="signature-box">
             <div class="signature-line">Parent/Guardian's Signature</div>
-          </div>
+          </div>` : ''}
         </div>
       </body>
       </html>
