@@ -772,13 +772,7 @@ export const ReportCardGenerator: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="cards" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="cards">Report Cards</TabsTrigger>
-          <TabsTrigger value="enter">Enter Scores</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="cards" className="space-y-6">
+      <div className="space-y-6">
           {/* Filters */}
           <Card>
         <CardHeader>
@@ -925,12 +919,7 @@ export const ReportCardGenerator: React.FC = () => {
           )}
         </CardContent>
       </Card>
-        </TabsContent>
-
-        <TabsContent value="enter">
-          <ManualScoresEntry />
-        </TabsContent>
-      </Tabs>
+      </div>
 
       {/* Preview Dialog */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
