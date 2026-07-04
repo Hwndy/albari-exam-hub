@@ -86,8 +86,8 @@ export const BulkNotificationSender: React.FC = () => {
   });
 
   useEffect(() => {
-    if (schoolId) fetchData();
-  }, [schoolId]);
+    if (undefined) fetchData();
+  }, [undefined]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -247,7 +247,7 @@ export const BulkNotificationSender: React.FC = () => {
           body: {
             templateId: selectedTemplate.id,
             recipients,
-            schoolId,
+            undefined,
           },
         });
 

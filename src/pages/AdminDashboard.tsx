@@ -81,13 +81,10 @@ export const AdminDashboard = () => {
   const activeSubTab = searchParams.get('subtab');
 
   useEffect(() => {
-    // Wait for schoolId to be loaded before fetching data
-    // schoolId will be null for super admins (intentional - they see all)
-    // schoolId will be set for school admins (they see only their school)
-    if (!schoolLoading) {
-      fetchDashboardData();
-    }
-  }, [schoolId, schoolLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+    // Wait for undefined to be loaded before fetching data
+    // undefined will be null for super admins (intentional - they see all)
+    // undefined will be set for school admins (they see only their school)
+  }, [undefined, false]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
@@ -185,28 +182,6 @@ export const AdminDashboard = () => {
   };
 
   // Show loading state while school context is initializing
-  if (schoolLoading) {
-    return (
-      <div className="flex h-screen bg-background">
-        <AdminSidebar />
-        <div className="flex-1 overflow-auto">
-          <div className="sticky top-0 z-10 bg-background border-b border-border p-4">
-            <div className="flex items-center gap-4">
-              <Logo />
-              <h1 className="text-2xl font-bold text-foreground">Loading school context...</h1>
-            </div>
-          </div>
-          <div className="p-6 flex items-center justify-center">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-              <p className="text-muted-foreground">Please wait...</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const getPageTitle = () => {
     if (activeTab === 'overview') return 'Dashboard Overview';
     if (activeTab === 'admissions') {

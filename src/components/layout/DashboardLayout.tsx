@@ -35,7 +35,7 @@ export const DashboardLayout: React.FC<DashboardLayoutProps> = ({
             
             <div className="flex items-center space-x-2 sm:space-x-4">
               {/* School Switcher for Super Admins */}
-              {!isMobile && <SchoolSwitcher />}
+              {!isMobile && }
               
               {/* Desktop User Info */}
               {!isMobile && (

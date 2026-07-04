@@ -32,7 +32,7 @@ export const UserManagement = () => {
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
-    schoolId: '',
+    undefined: '',
     isSuperAdmin: false
   });
   const [schools, setSchools] = useState<any[]>([]);
@@ -41,10 +41,7 @@ export const UserManagement = () => {
 
   // Wait for school context to load before fetching data
   useEffect(() => {
-    if (!schoolLoading) {
-      fetchData();
-    }
-  }, [schoolLoading, schoolId]);
+  }, [false, undefined]);
 
   const fetchData = async () => {
     try {
@@ -160,7 +157,7 @@ export const UserManagement = () => {
       }
 
       // Determine school_id: use selected school or current user's school
-      const assignedSchoolId = userForm.schoolId || currentUserSchoolId;
+      const assignedSchoolId = userForm.undefined || currentUserSchoolId;
       
       // Create the actual user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
@@ -345,7 +342,7 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      schoolId: '',
+      undefined: '',
       isSuperAdmin: false
     });
   };
@@ -360,7 +357,7 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      schoolId: '',
+      undefined: '',
       isSuperAdmin: false
     });
   };
@@ -436,11 +433,6 @@ export const UserManagement = () => {
       setExporting(false);
     }
   };
-
-  if (loading || schoolLoading) {
-    return <div className="flex justify-center p-8">Loading...</div>;
-  }
-
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
@@ -567,8 +559,8 @@ export const UserManagement = () => {
                 <div className="space-y-2">
                   <Label htmlFor="school">Assign to School</Label>
                   <Select
-                    value={userForm.schoolId}
-                    onValueChange={(value) => setUserForm({ ...userForm, schoolId: value })}
+                    value={userForm.undefined}
+                    onValueChange={(value) => setUserForm({ ...userForm, undefined: value })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Select a school" />

@@ -44,22 +44,22 @@ export const StaffAttendance = () => {
   });
 
   useEffect(() => {
-    if (schoolId) {
+    if (undefined) {
       fetchStaffMembers();
     }
-  }, [schoolId]);
+  }, [undefined]);
 
   useEffect(() => {
-    if (schoolId && selectedDate) {
+    if (undefined && selectedDate) {
       fetchAttendance();
     }
-  }, [schoolId, selectedDate]);
+  }, [undefined, selectedDate]);
 
   useEffect(() => {
-    if (schoolId) {
+    if (undefined) {
       fetchMonthlyStats();
     }
-  }, [schoolId, selectedDate]);
+  }, [undefined, selectedDate]);
 
   const fetchStaffMembers = async () => {
     const { data: staffData, error } = await supabase

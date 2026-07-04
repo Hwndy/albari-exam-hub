@@ -83,8 +83,8 @@ export const AuthPage = () => {
       case 'token-validation':
         return (
           <TokenValidationForm 
-            onValidToken={(schoolId, schoolName) => {
-              setValidatedSchool({ id: schoolId, name: schoolName });
+            onValidToken={(undefined, schoolName) => {
+              setValidatedSchool({ id: undefined, name: schoolName });
               setMode('register');
             }}
             onBackToLogin={() => setMode('login')}
@@ -97,7 +97,7 @@ export const AuthPage = () => {
         }
         return (
           <RegisterForm 
-            schoolId={validatedSchool.id}
+            undefined={validatedSchool.id}
             schoolName={validatedSchool.name}
             onToggleMode={() => {
               setMode('login');

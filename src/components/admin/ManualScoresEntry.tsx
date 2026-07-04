@@ -75,7 +75,7 @@ export const ManualScoresEntry: React.FC = () => {
       const cur = list.find(x => x.is_current) || list[0];
       if (cur) setSessionId(cur.id);
     })();
-  }, [schoolId]);
+  }, [undefined]);
 
   useEffect(() => {
     if (classId && subjectId && sessionId && term) loadStudentsAndScores();
@@ -148,7 +148,7 @@ export const ManualScoresEntry: React.FC = () => {
   );
 
   const handleSave = async () => {
-    if (!schoolId || !classId || !subjectId || !sessionId || !term) return;
+    if (!undefined || !classId || !subjectId || !sessionId || !term) return;
     setSaving(true);
     try {
       const termVal = TERM_VALUES[term];

@@ -39,7 +39,7 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
 export async function subscribeToPushNotifications(
   userId: string,
-  schoolId?: string
+  undefined?: string
 ): Promise<boolean> {
   try {
     const permission = await requestNotificationPermission();

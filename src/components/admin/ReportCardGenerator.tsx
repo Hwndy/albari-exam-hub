@@ -178,7 +178,7 @@ export const ReportCardGenerator: React.FC = () => {
 
   useEffect(() => {
     fetchInitialData();
-  }, [schoolId]);
+  }, [undefined]);
 
   useEffect(() => {
     if (selectedClass && selectedSessionId) {
@@ -202,7 +202,7 @@ export const ReportCardGenerator: React.FC = () => {
       ]);
 
       // Load automation settings (per school)
-      if (schoolId) {
+      if (undefined) {
         const { data: auto } = await supabase
           .from('result_automation_settings')
           .select('*')
@@ -531,7 +531,7 @@ export const ReportCardGenerator: React.FC = () => {
   };
 
   const handlePublish = async (card: StudentReportCard) => {
-    if (!schoolId || !selectedClass || !selectedSessionId) return;
+    if (!undefined || !selectedClass || !selectedSessionId) return;
     try {
       const { error } = await supabase
         .from('report_card_publications')

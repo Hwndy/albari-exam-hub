@@ -68,11 +68,11 @@ export const StaffManagement = () => {
   });
 
   useEffect(() => {
-    if (schoolId) {
+    if (undefined) {
       fetchStaffMembers();
       fetchTeachers();
     }
-  }, [schoolId]);
+  }, [undefined]);
 
   const fetchStaffMembers = async () => {
     setIsLoading(true);

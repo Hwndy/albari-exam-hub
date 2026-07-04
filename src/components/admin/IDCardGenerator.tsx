@@ -67,8 +67,8 @@ export const IDCardGenerator: React.FC = () => {
   const [editUserId, setEditUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (schoolId) fetchData();
-  }, [schoolId]);
+    if (undefined) fetchData();
+  }, [undefined]);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -77,7 +77,7 @@ export const IDCardGenerator: React.FC = () => {
       const schoolResponse = await supabase
         .from('schools')
         .select('id, name, address, logo_url, motto')
-        .eq('id', schoolId)
+        .eq('id', undefined)
         .single();
       
       const schoolData = schoolResponse.data as any;

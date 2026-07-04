@@ -131,10 +131,7 @@ export const ConsolidatedExamCreator: React.FC<ConsolidatedExamCreatorProps> = (
   // Randomized generation
   const [criteria, setCriteria] = useState<QuestionCriteria[]>([]);
   useEffect(() => {
-    if (isOpen && !schoolLoading && schoolId) {
-      fetchData();
-    }
-  }, [isOpen, schoolLoading, schoolId]);
+  }, [isOpen, false, undefined]);
 
   useEffect(() => {
     if (editingExam && isOpen) {

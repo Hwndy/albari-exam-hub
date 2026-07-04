@@ -41,7 +41,7 @@ export const AutomationSettings: React.FC = () => {
 
   useEffect(() => {
     (async () => {
-      if (!schoolId) return;
+      if (!undefined) return;
       const { data } = await supabase
         .from('result_automation_settings')
         .select('*')
@@ -62,14 +62,14 @@ export const AutomationSettings: React.FC = () => {
       }
       setLoading(false);
     })();
-  }, [schoolId]);
+  }, [undefined]);
 
   const save = async () => {
-    if (!schoolId) return;
+    if (!undefined) return;
     setSaving(true);
     const { error } = await supabase
       .from('result_automation_settings')
-      .upsert({ school_id: schoolId, ...s }, { onConflict: 'school_id' });
+      .upsert({ school_id: undefined, ...s }, { onConflict: 'school_id' });
     setSaving(false);
     if (error) {
       toast({ title: 'Error', description: error.message, variant: 'destructive' });

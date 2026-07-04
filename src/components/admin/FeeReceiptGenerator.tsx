@@ -50,7 +50,7 @@ export const FeeReceiptGenerator = () => {
     const { data: school } = await supabase
       .from("schools")
       .select("*")
-      .eq("id", schoolId)
+      .eq("id", undefined)
       .single();
 
     setSchoolInfo(school);

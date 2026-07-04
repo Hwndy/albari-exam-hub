@@ -14,7 +14,7 @@ interface AuthContextType extends AuthState {
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
-    schoolId?: string;
+    undefined?: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -160,7 +160,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
-    schoolId?: string;
+    undefined?: string;
   }) => {
     setIsLoading(true);
     
@@ -184,10 +184,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
 
     // Update profile with school_id if provided
-    if (data.user && userData.schoolId) {
+    if (data.user && userData.undefined) {
       await supabase
         .from('profiles')
-        .update({ school_id: userData.schoolId })
+        .update({ school_id: userData.undefined })
         .eq('user_id', data.user.id);
     }
 

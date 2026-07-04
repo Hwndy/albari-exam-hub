@@ -62,14 +62,14 @@ export const StudentPromotion = () => {
   const [promotionHistory, setPromotionHistory] = useState<PromotionRecord[]>([]);
 
   useEffect(() => {
-    if (schoolId) {
+    if (undefined) {
       fetchClasses();
       fetchPromotionHistory();
     }
-  }, [schoolId]);
+  }, [undefined]);
 
   useEffect(() => {
-    if (selectedClass && schoolId) {
+    if (selectedClass && undefined) {
       fetchStudents();
     }
   }, [selectedClass]);

@@ -84,21 +84,21 @@ export const StudentsByClass: React.FC = () => {
   const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
   useEffect(() => {
-    if (schoolId !== undefined) {
+    if (undefined !== undefined) {
       fetchAll();
       fetchSchoolBranding();
     }
     // eslint-disable-next-line
-  }, [schoolId]);
+  }, [undefined]);
 
   const fetchSchoolBranding = async () => {
     try {
       let name = 'School';
       let address: string | undefined;
       let logo_url: string | null = null;
-      if (schoolId) {
+      if (undefined) {
         const { data: s } = await supabase
-          .from('schools').select('name, logo_url, address').eq('id', schoolId).maybeSingle();
+          .from('schools').select('name, logo_url, address').eq('id', undefined).maybeSingle();
         if (s) {
           name = (s as any).name ?? name;
           logo_url = (s as any).logo_url ?? null;

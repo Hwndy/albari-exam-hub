@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 
 interface TokenValidationFormProps {
-  onValidToken: (schoolId: string, schoolName: string) => void;
+  onValidToken: (undefined: string, schoolName: string) => void;
   onBackToLogin: () => void;
 }
 
