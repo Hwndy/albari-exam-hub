@@ -482,6 +482,7 @@ export const UserManagement = () => {
                 <Select
                   value={userForm.role}
                   onValueChange={(value: 'admin' | 'teacher' | 'student') =>
+                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [] })
                   }
                 >
                   <SelectTrigger>
