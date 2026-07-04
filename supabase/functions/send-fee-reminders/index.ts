@@ -20,7 +20,7 @@ serve(async (req) => {
 
     const { reminder_days = [7, 3, 1] } = await req.json();
 
-    console.log(`Processing fee reminders for school: ${school_id}`);
+    console.log('Processing fee reminders');
 
     // Get overdue installments
     const today = new Date().toISOString().split("T")[0];
