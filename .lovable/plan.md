@@ -1,39 +1,56 @@
-## Current finding
+## Issues found
 
-The screenshot proves Resend is still receiving `from` as a Gmail address. The code fallbacks are already `@albari.com.ng`, so the most likely cause is the existing `SENDER_EMAIL` secret still contains the old Gmail value, or the edge functions have not picked up the updated secret after deployment.
+**1. "No class assigned" (—) in the ID Card Generator table**
+`src/components/admin/IDCardGenerator.tsx` fetches students and profiles but never fetches `class_assignments` → `classes`. Every row's `student.class?.name` is `undefined`, so the Class column and class filter always show `-`.
 
-I cannot confirm Resend domain verification from here because email-domain setup/status requires workspace admin/owner permission. Please have a workspace admin check the Resend/Lovable email domain status for `albari.com.ng` and confirm it is `Verified`.
+**2. ID Card Preview does not match the school design**
+The generator renders its own inline green gradient template (lines ~468–500 of `IDCardGenerator.tsx`) instead of the already-built `src/components/admin/StudentIDCard.tsx` component (green/yellow banded portrait card with logo, photo, name, admission #, class, QR). The Canva-referenced design maps closely to what `StudentIDCard` already produces, so the fix is to use that component.
+
+**3. Where to update a student's profile**
+Today `src/components/admin/StudentDetail.tsx` is read-only. Editing happens indirectly via `UserManagement → UserEditModal` (which only edits `profiles.full_name` / role) — there is no single place to edit a student's academic fields (DOB, gender, address, class, admission #, photo).
+
+---
 
 ## Plan
 
-1. **Force the sender secret value**
-   - Update the existing `SENDER_EMAIL` runtime secret to exactly `admissions@albari.com.ng`.
-   - Keep `REPLY_TO_EMAIL` as `admissions@albari.com.ng`.
+### A. Fix Class column in ID Card Generator
+In `IDCardGenerator.fetchData`:
+- After loading `students`, also query `class_assignments` for those `student_id`s (note: `class_assignments.student_id` = `students.user_id`) and join to `classes` for names.
+- Attach `class: { name }` to each `Student` so the table's Class column, the class filter, and the ID card preview all show the real class.
 
-2. **Redeploy affected mail edge functions**
-   - Redeploy `send-offer-letter`.
-   - Redeploy `send-admission-notification`.
-   - Redeploy `send-bulk-email`.
-   - Redeploy `send-otp`.
-   - This ensures the functions stop using any stale Gmail sender value.
+### B. Use the existing school-branded ID card in preview & downloads
+In `IDCardGenerator.tsx`:
+- Import `StudentIDCard` from `@/components/admin/StudentIDCard`.
+- Replace the inline gradient card (the `<div ref={cardRef} className="w-[340px] h-[214px] bg-gradient-to-br ...">` block) with `<div ref={cardRef}><StudentIDCard student={...} school={...} /></div>`.
+- Map data: `student.user_id`, `full_name`, `admission_number`, `photo_url` (from profile avatar), `class_name` (from step A); `school.name`, `address`, `logo_url`, `motto`.
+- Update the batch PDF layout: `StudentIDCard` is portrait 340×540 px. Change `cardWidth/cardHeight` in `generateBatchCards` to portrait ID proportions (~54 × 85.6 mm) and 2 cards per row × 4 rows per A4 page so the PDF matches the new aspect ratio and doesn't stretch.
+- Keep `html2canvas` at `scale: 3` for print quality.
 
-3. **Add a safe sender guard**
-   - Add a small helper in each mail function that blocks non-`albari.com.ng` sender values before calling Resend.
-   - If the secret is accidentally changed back to Gmail, the app will show a clear configuration error instead of sending a bad Resend request.
+### C. Make student profiles editable from Student Detail
+In `src/components/admin/StudentDetail.tsx`:
+- Add an "Edit Student" button in the header that opens a new `EditStudentDialog`.
+- Create `src/components/admin/EditStudentDialog.tsx` with fields:
+  - Profile: `full_name`, `avatar_url` (photo — used on the ID card)
+  - Student: `admission_number`, `date_of_birth`, `gender`, `blood_group`, `address`, `status`
+  - Class assignment: dropdown of school classes (upserts into `class_assignments`)
+- On save: update `profiles`, update `students`, and upsert `class_assignments` (delete existing row for `student_id` then insert new) — all scoped to `schoolId` via `useSchoolQuery`.
+- After save, reload the detail view.
+- Also expose an "Edit" action on the ID Card Generator row (opens the same dialog) so admins can fix a missing photo/class right before printing.
 
-4. **Normalize all defaults**
-   - Set every mail function default sender to `admissions@albari.com.ng`, including OTP and bulk sends, so all mail types align with the verified school domain.
+### D. Copy tweaks
+- ID Card Generator Class column empty state: keep `-` but the value will populate after A.
+- Preview card header: show `school.motto` under the school name when present (already supported by `StudentIDCard`).
 
-5. **Verify with logs after retry**
-   - Check edge function logs after sending an offer letter.
-   - Confirm the new error no longer mentions `gmail.com`; if the domain is not verified, the remaining Resend error should mention `albari.com.ng` instead.
+---
 
-## Technical detail
+## Technical notes
 
-Code already uses:
+- No DB migration required — all fields already exist on `profiles`, `students`, `class_assignments`, `classes`, `schools`.
+- Multi-tenant: every new query/mutation goes through `useSchoolQuery` / explicit `school_id` filters per project rules.
+- `class_assignments.student_id` stores the **auth user_id**, not `students.id` — the join uses `user_id`.
+- No changes to the Canva design pipeline; we reuse `StudentIDCard` which already implements the green/yellow banded school card.
 
-```text
-Deno.env.get("SENDER_EMAIL") || "admissions@albari.com.ng"
-```
-
-So the persistent Gmail error is not coming from the fallback. It is coming from the deployed environment value of `SENDER_EMAIL` or stale edge function runtime state.
+## Files touched
+- `src/components/admin/IDCardGenerator.tsx` (fetch classes, swap preview to `StudentIDCard`, adjust PDF layout, add Edit action)
+- `src/components/admin/StudentDetail.tsx` (add Edit button + reload)
+- `src/components/admin/EditStudentDialog.tsx` (new)
