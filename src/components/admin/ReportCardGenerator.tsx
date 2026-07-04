@@ -189,11 +189,9 @@ export const ReportCardGenerator: React.FC = () => {
   const fetchInitialData = async () => {
     setIsLoading(true);
     try {
-      const [classesRes, subjectsRes, schoolRes, sessionsRes] = await Promise.all([
+      const [classesRes, subjectsRes, sessionsRes] = await Promise.all([
         supabase.from('classes').select('id, name').order('name'),
         supabase.from('subjects').select('id, name').order('name'),
-        supabase.from('schools').select('name, address, contact_phone, contact_email, logo_url').single(),
-        
           supabase
             .from('admission_sessions')
             .select('id, session_name, academic_year, is_current')
@@ -205,17 +203,14 @@ export const ReportCardGenerator: React.FC = () => {
       
       setClasses(classesRes.data || []);
       setSubjects(subjectsRes.data || []);
-      if (schoolRes.data) {
-        const s: any = schoolRes.data;
-        setSchoolInfo({
-          name: s.name || '',
-          address: s.address || '',
-          phone: s.contact_phone || '',
-          email: s.contact_email || '',
-          motto: '',
-          logo_url: s.logo_url || '',
-        });
-      }
+      setSchoolInfo({
+        name: SCHOOL_INFO.name,
+        address: SCHOOL_INFO.address,
+        phone: SCHOOL_INFO.contact_phone,
+        email: SCHOOL_INFO.contact_email,
+        motto: SCHOOL_INFO.motto,
+        logo_url: SCHOOL_INFO.logo_url,
+      });
       const sessionList = (sessionsRes.data || []) as AcademicSession[];
       setSessions(sessionList);
       const current = sessionList.find(s => s.is_current) || sessionList[0];
