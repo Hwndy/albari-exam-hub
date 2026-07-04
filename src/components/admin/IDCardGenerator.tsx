@@ -67,28 +67,19 @@ export const IDCardGenerator: React.FC = () => {
   const [editUserId, setEditUserId] = useState<string | null>(null);
 
   useEffect(() => {
-      }, []);
+    fetchData();
+  }, []);
 
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // Fetch school info - use separate query and cast to avoid type issues
-      const schoolResponse = await supabase
-        .from('schools')
-        .select('id, name, address, logo_url, motto')
-        .eq('id', undefined)
-        .single();
-      
-      const schoolData = schoolResponse.data as any;
-      if (schoolData) {
-        setSchool({
-          id: schoolData.id,
-          name: schoolData.name,
-          address: schoolData.address,
-          logo_url: schoolData.logo_url,
-          motto: schoolData.motto,
-        });
-      }
+      setSchool({
+        id: 'al-bari',
+        name: 'Al-Bari Model Schools',
+        address: '',
+        logo_url: '',
+        motto: '',
+      } as any);
 
       // Fetch classes
       const classesResponse = await supabase
