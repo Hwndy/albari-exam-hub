@@ -288,8 +288,6 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      undefined: '',
-      isSuperAdmin: false
     });
   };
 
@@ -303,8 +301,6 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
-      undefined: '',
-      isSuperAdmin: false
     });
   };
 
@@ -486,7 +482,6 @@ export const UserManagement = () => {
                 <Select
                   value={userForm.role}
                   onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [], isSuperAdmin: false })
                   }
                 >
                   <SelectTrigger>
