@@ -131,10 +131,6 @@ export const UserManagement = () => {
         throw new Error(data.error as string);
       }
 
-      // Determine school_id: use selected school or current user's school
-      const assignedSchoolId = userForm.undefined || currentUserSchoolId;
-      
-      // Create the actual user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: userForm.email,
         password: userForm.password,
@@ -149,11 +145,6 @@ export const UserManagement = () => {
       if (authError) throw authError;
 
       if (authData.user) {
-        // Update profile with school_id
-        await supabase
-          .from('profiles')
-          .update({ school_id: assignedSchoolId })
-          .eq('user_id', authData.user.id);
         // Handle role-specific assignments
         if (userForm.role === 'student' && userForm.classId) {
           await supabase
@@ -206,24 +197,6 @@ export const UserManagement = () => {
             console.log('✅ Class assignments created successfully');
           }
         }
-
-        // Handle super admin promotion
-        if (userForm.role === 'admin' && userForm.isSuperAdmin) {
-          const { error: superAdminError } = await supabase.rpc('create_super_admin', {
-            admin_user_id: authData.user.id
-          });
-
-          if (superAdminError) {
-            console.error('Error creating super admin:', superAdminError);
-            toast({
-              title: 'Warning',
-              description: 'User created but super admin promotion failed',
-              variant: 'destructive',
-            });
-          } else {
-            console.log('✨ Super admin created successfully');
-          }
-        }
       }
 
       // If successful, refresh the profiles list
@@ -234,9 +207,7 @@ export const UserManagement = () => {
       
       toast({
         title: 'User Created',
-        description: userForm.isSuperAdmin 
-          ? `${userForm.fullName} has been added as a Super Admin.`
-          : `${userForm.fullName} has been added successfully.`,
+        description: `${userForm.fullName} has been added successfully.`,
       });
     } catch (error: any) {
       toast({
