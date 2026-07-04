@@ -3,17 +3,15 @@ import { Navigate } from 'react-router-dom';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
-import { TokenValidationForm } from '@/components/auth/TokenValidationForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-type AuthMode = 'login' | 'register' | 'forgot-password' | 'token-validation';
+type AuthMode = 'login' | 'register' | 'forgot-password';
 
 export const AuthPage = () => {
   const [mode, setMode] = useState<AuthMode>('login');
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
-  const [validatedSchool, setValidatedSchool] = useState<{id: string, name: string} | null>(null);
   const { isAuthenticated, user, isLoading, logout } = useAuth();
   
   // Check if user came from portal and needs forced login
@@ -76,34 +74,15 @@ export const AuthPage = () => {
       case 'login':
         return (
           <LoginForm 
-            onToggleMode={() => setMode('token-validation')}
+            onToggleMode={() => setMode('register')}
             onForgotPassword={() => setMode('forgot-password')}
           />
         );
-      case 'token-validation':
-        return (
-          <TokenValidationForm 
-            onValidToken={(undefined, schoolName) => {
-              setValidatedSchool({ id: undefined, name: schoolName });
-              setMode('register');
-            }}
-            onBackToLogin={() => setMode('login')}
-          />
-        );
       case 'register':
-        if (!validatedSchool) {
-          setMode('token-validation');
-          return null;
-        }
         return (
           <RegisterForm 
-            undefined={validatedSchool.id}
-            schoolName={validatedSchool.name}
-            onToggleMode={() => {
-              setMode('login');
-              setValidatedSchool(null);
-            }}
-            allowStudentRegistration={false}
+            onToggleMode={() => setMode('login')}
+            allowStudentRegistration={allowStudentRegistration}
           />
         );
       case 'forgot-password':
