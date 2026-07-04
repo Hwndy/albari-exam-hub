@@ -42,18 +42,6 @@ serve(async (req) => {
       });
     }
 
-    // Same-school check (unless super admin)
-    const { data: adminProfile } = await supabaseAdmin
-      .from('profiles').select('school_id').eq('user_id', user.id).maybeSingle();
-    const { data: targetProfile } = await supabaseAdmin
-      .from('profiles').select('school_id').eq('user_id', studentUserId).maybeSingle();
-    const isSuper = adminProfile && adminProfile.school_id === null;
-    if (!isSuper && adminProfile?.school_id !== targetProfile?.school_id) {
-      return new Response(JSON.stringify({ error: 'Not authorized for this student', code: 'cross_school' }), {
-        status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    }
-
     // Clean up dependent rows (best effort)
     await supabaseAdmin.from('class_assignments').delete().eq('student_id', studentUserId);
     await supabaseAdmin.from('students').delete().eq('user_id', studentUserId);
