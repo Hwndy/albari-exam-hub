@@ -247,7 +247,6 @@ export const BulkNotificationSender: React.FC = () => {
           body: {
             templateId: selectedTemplate.id,
             recipients,
-            undefined,
           },
         });
 

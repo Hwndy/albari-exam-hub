@@ -23,7 +23,6 @@ interface RegisterFormProps {
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
-  undefined,
   schoolName,
   onToggleMode, 
   allowStudentRegistration = true,
