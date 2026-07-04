@@ -970,6 +970,14 @@ export const ReportCardGenerator: React.FC = () => {
                         <Button size="sm" variant="ghost" onClick={() => handlePrintReportCard(card)} title="Print">
                           <Printer className="h-4 w-4" />
                         </Button>
+                        <Button
+                          size="sm"
+                          variant={publishedKeys.has(card.student_id) ? 'default' : 'ghost'}
+                          onClick={() => handlePublish(card)}
+                          title={publishedKeys.has(card.student_id) ? 'Published to parent' : 'Publish to parent'}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
