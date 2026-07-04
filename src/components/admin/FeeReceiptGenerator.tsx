@@ -46,14 +46,7 @@ export const FeeReceiptGenerator = () => {
 
     setIsLoading(true);
 
-    // First, get school info
-    const { data: school } = await supabase
-      .from("schools")
-      .select("*")
-      .eq("id", undefined)
-      .single();
-
-    setSchoolInfo(school);
+    setSchoolInfo({ name: 'Al-Bari Model Schools' } as any);
 
     // Search by receipt number
     let { data, error } = await supabase
