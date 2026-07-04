@@ -9,14 +9,12 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { useAuth } from '@/contexts/AuthContext';
-import { FileText, Loader2, Printer, Eye, Save, MessageSquare } from 'lucide-react';
+import { FileText, Loader2, Printer, Eye, Save, MessageSquare, Send } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
-import { ManualScoresEntry } from '@/components/admin/ManualScoresEntry';
 
 interface ClassData {
   id: string;
@@ -38,6 +36,7 @@ interface StudentData {
   weight?: number;
   height?: number;
   section?: string;
+  photo_url?: string | null;
 }
 
 interface GradeEntry {
@@ -80,6 +79,7 @@ interface StudentReportCard {
   gender: string;
   weight: number | null;
   height: number | null;
+  photo_url: string | null;
   grades: GradeEntry[];
   total_obtained: number;
   total_max: number;
@@ -102,6 +102,30 @@ interface SchoolInfo {
   motto: string;
   logo_url: string;
 }
+
+interface AutomationSettings {
+  min_promotion_average: number;
+  below_max: number;
+  average_max: number;
+  above_max: number;
+  principal_remark_below: string;
+  principal_remark_average: string;
+  principal_remark_above: string;
+  principal_remark_distinction: string;
+  show_parent_signature: boolean;
+}
+
+const DEFAULT_AUTOMATION: AutomationSettings = {
+  min_promotion_average: 40,
+  below_max: 39,
+  average_max: 59,
+  above_max: 74,
+  principal_remark_below: 'Below Average. Needs to work much harder next term.',
+  principal_remark_average: 'A bit above average. Keep pushing to improve.',
+  principal_remark_above: 'Far above average. Well done, keep it up.',
+  principal_remark_distinction: 'Distinction. Excellent performance!',
+  show_parent_signature: false,
+};
 
 // Al-Bari A-F Grading Scale
 const GRADING_SCALE = [
