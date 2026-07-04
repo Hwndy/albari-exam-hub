@@ -357,6 +357,16 @@ export const ReportCardGenerator: React.FC = () => {
       const className = classes.find(c => c.id === selectedClass)?.name || '';
       const processedCards = generateReportCards(studentsList, grades, comments, attendance, className);
       setReportCards(processedCards);
+
+      // Load which of these are already published
+      const { data: pubs } = await supabase
+        .from('report_card_publications')
+        .select('student_id')
+        .in('student_id', studentIds)
+        .eq('class_id', selectedClass)
+        .eq('session_id', selectedSessionId)
+        .eq('term', selectedTerm);
+      setPublishedKeys(new Set((pubs || []).map((p: any) => p.student_id)));
     } catch (error) {
       console.error('Error fetching students and grades:', error);
       toast({ title: 'Error', description: 'Failed to load report card data', variant: 'destructive' });
