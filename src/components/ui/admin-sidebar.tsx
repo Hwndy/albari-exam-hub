@@ -12,6 +12,7 @@ import {
   Library,
   Bell,
   CreditCard as IdCard,
+  ClipboardList,
 } from "lucide-react";
 
 import {
@@ -68,6 +69,18 @@ const menuItems = [
       { title: "Subjects", value: "subjects" },
       { title: "Timetable", value: "timetable" },
       { title: "Report Cards", value: "report-cards" },
+    ],
+  },
+  {
+    title: "Results Management",
+    icon: ClipboardList,
+    value: "results-mgmt",
+    sub: [
+      { title: "Enter Scores", value: "enter-scores" },
+      { title: "Broadsheet", value: "broadsheet" },
+      { title: "Promotion", value: "promotion" },
+      { title: "Past Students", value: "past-students" },
+      { title: "Automation", value: "automation" },
     ],
   },
   {
