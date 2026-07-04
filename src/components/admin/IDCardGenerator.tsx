@@ -12,11 +12,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSchoolQuery } from '@/hooks/useSchoolQuery';
 import { 
   CreditCard, Printer, Download, QrCode, Loader2, 
-  Users, Calendar, Search, Eye
+  Users, Calendar, Search, Eye, Pencil
 } from 'lucide-react';
 import { format, addYears } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { StudentIDCard } from './StudentIDCard';
+import { EditStudentDialog } from './EditStudentDialog';
 
 interface Student {
   id: string;
@@ -26,6 +28,7 @@ interface Student {
     full_name: string;
     avatar_url?: string;
   };
+  photo_url?: string | null;
   class?: {
     name: string;
   };
@@ -63,6 +66,7 @@ export const IDCardGenerator: React.FC = () => {
     `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`
   );
   const [previewStudent, setPreviewStudent] = useState<Student | null>(null);
+  const [editUserId, setEditUserId] = useState<string | null>(null);
 
   useEffect(() => {
     if (schoolId) fetchData();
@@ -101,7 +105,7 @@ export const IDCardGenerator: React.FC = () => {
       // Fetch students - use separate queries to avoid deep type instantiation
       const studentsResponse = await supabase
         .from('students')
-        .select('id, user_id, admission_number')
+        .select('id, user_id, admission_number, photo_url')
         .eq('school_id', schoolId);
       
       const studentsData = studentsResponse.data as any[] || [];
@@ -117,11 +121,30 @@ export const IDCardGenerator: React.FC = () => {
         
         const profilesData = profilesResponse.data as any[] || [];
 
+        // Fetch class assignments for these students (student_id = auth user_id)
+        const assignmentsResponse = await supabase
+          .from('class_assignments')
+          .select('student_id, class_id')
+          .in('student_id', userIds);
+        const assignments = (assignmentsResponse.data as any[]) || [];
+        const classesMap = new Map(
+          ((classesResponse.data as any[]) || []).map((c: any) => [c.id, c.name])
+        );
+        const userClassMap = new Map<string, string>();
+        for (const a of assignments) {
+          const name = classesMap.get(a.class_id);
+          if (name) userClassMap.set(a.student_id, name);
+        }
+
         const studentsWithProfiles: Student[] = studentsData.map((student: any) => ({
           id: student.id,
           user_id: student.user_id,
           admission_number: student.admission_number || `STU-${student.id.slice(0, 8).toUpperCase()}`,
           profile: profilesData.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' },
+          photo_url: student.photo_url,
+          class: userClassMap.has(student.user_id)
+            ? { name: userClassMap.get(student.user_id)! }
+            : undefined,
         }));
 
         setStudents(studentsWithProfiles);
@@ -210,8 +233,9 @@ export const IDCardGenerator: React.FC = () => {
     });
 
     const cardsPerPage = 4;
-    const cardWidth = 85.6; // Standard ID card width in mm
-    const cardHeight = 54; // Standard ID card height in mm
+    // Portrait ID card proportions matching StudentIDCard (340 x 540 px)
+    const cardWidth = 54;   // mm
+    const cardHeight = 85.6; // mm
     const margin = 10;
     const spacing = 5;
 
@@ -241,7 +265,7 @@ export const IDCardGenerator: React.FC = () => {
         const col = positionIndex % 2;
         
         const x = margin + col * (cardWidth + spacing);
-        const y = margin + row * (cardHeight + spacing + 20);
+        const y = margin + row * (cardHeight + spacing);
 
         pdf.addImage(imgData, 'PNG', x, y, cardWidth, cardHeight);
       }
@@ -434,6 +458,14 @@ export const IDCardGenerator: React.FC = () => {
                       <TableCell>{student.class?.name || '-'}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setEditUserId(student.user_id)}
+                            title="Edit student profile"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -465,77 +497,34 @@ export const IDCardGenerator: React.FC = () => {
             <CardTitle>ID Card Preview</CardTitle>
           </CardHeader>
           <CardContent className="flex justify-center">
-            <div 
-              ref={cardRef}
-              className="w-[340px] h-[214px] bg-gradient-to-br from-primary to-primary/80 rounded-xl p-4 text-white shadow-xl"
-              style={{ fontFamily: 'Arial, sans-serif' }}
-            >
-              {/* Header */}
-              <div className="flex items-center gap-3 mb-3 border-b border-white/30 pb-2">
-                {school?.logo_url ? (
-                  <img src={school.logo_url} alt="School Logo" className="h-12 w-12 rounded-full bg-white p-1" />
-                ) : (
-                  <div className="h-12 w-12 rounded-full bg-white flex items-center justify-center">
-                    <span className="text-primary font-bold text-lg">
-                      {school?.name?.charAt(0) || 'S'}
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1">
-                  <h2 className="font-bold text-sm leading-tight">{school?.name || 'School Name'}</h2>
-                  {school?.motto && (
-                    <p className="text-[10px] opacity-80 italic">"{school.motto}"</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="flex gap-3">
-                {/* Photo */}
-                <div className="w-20 h-24 bg-white rounded-lg flex items-center justify-center overflow-hidden">
-                  {previewStudent.profile.avatar_url ? (
-                    <img 
-                      src={previewStudent.profile.avatar_url} 
-                      alt="Student" 
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-primary text-3xl font-bold">
-                      {previewStudent.profile.full_name.charAt(0)}
-                    </div>
-                  )}
-                </div>
-
-                {/* Info */}
-                <div className="flex-1 text-xs space-y-1">
-                  <div>
-                    <p className="opacity-70">Name</p>
-                    <p className="font-bold">{previewStudent.profile.full_name}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-70">Admission No.</p>
-                    <p className="font-bold">{previewStudent.admission_number}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-70">Class</p>
-                    <p className="font-bold">{previewStudent.class?.name || '-'}</p>
-                  </div>
-                  <div>
-                    <p className="opacity-70">Valid</p>
-                    <p className="font-bold">{academicYear}</p>
-                  </div>
-                </div>
-
-                {/* QR Code Placeholder */}
-                <div className="w-16 h-16 bg-white rounded p-1 self-end">
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <QrCode className="h-8 w-8 text-muted-foreground" />
-                  </div>
-                </div>
-              </div>
+            <div ref={cardRef}>
+              <StudentIDCard
+                student={{
+                  user_id: previewStudent.user_id,
+                  full_name: previewStudent.profile.full_name,
+                  admission_number: previewStudent.admission_number,
+                  photo_url: previewStudent.photo_url || previewStudent.profile.avatar_url || null,
+                  class_name: previewStudent.class?.name || null,
+                }}
+                school={{
+                  name: school?.name || 'School Name',
+                  address: school?.address,
+                  logo_url: school?.logo_url || null,
+                  motto: school?.motto,
+                }}
+              />
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {editUserId && (
+        <EditStudentDialog
+          open={!!editUserId}
+          onOpenChange={(o) => !o && setEditUserId(null)}
+          userId={editUserId}
+          onSaved={() => { setEditUserId(null); fetchData(); }}
+        />
       )}
     </div>
   );
