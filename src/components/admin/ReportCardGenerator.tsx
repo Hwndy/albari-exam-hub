@@ -533,6 +533,27 @@ export const ReportCardGenerator: React.FC = () => {
     setPreviewOpen(true);
   };
 
+  const handlePublish = async (card: StudentReportCard) => {
+    if (!schoolId || !selectedClass || !selectedSessionId) return;
+    try {
+      const { error } = await supabase
+        .from('report_card_publications')
+        .upsert({
+          school_id: schoolId,
+          student_id: card.student_id,
+          class_id: selectedClass,
+          session_id: selectedSessionId,
+          term: selectedTerm,
+          published_by: user?.id,
+        }, { onConflict: 'school_id,student_id,class_id,session_id,term' });
+      if (error) throw error;
+      setPublishedKeys(prev => new Set(prev).add(card.student_id));
+      toast({ title: 'Published', description: `${card.student_name}'s report card is now visible to parents.` });
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
   const handleEditComments = (card: StudentReportCard) => {
     setEditingComments({
       studentId: card.student_id,
