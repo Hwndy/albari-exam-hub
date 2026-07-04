@@ -16,6 +16,17 @@ import { EditStudentDialog } from './EditStudentDialog';
 const initials = (n?: string) =>
   (n || '?').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
 
+const computeAge = (dob?: string | null): number | null => {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (isNaN(d.getTime())) return null;
+  const now = new Date();
+  let age = now.getFullYear() - d.getFullYear();
+  const m = now.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && now.getDate() < d.getDate())) age--;
+  return age >= 0 && age < 150 ? age : null;
+};
+
 export const StudentDetail: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -156,7 +167,7 @@ export const StudentDetail: React.FC = () => {
           <CardContent className="space-y-2 text-sm">
             <Row label="Gender" value={student?.gender} />
             <Row label="Date of Birth" value={student?.date_of_birth} icon={<Calendar className="h-3 w-3" />} />
-            <Row label="Age" value={student?.age} />
+            <Row label="Age" value={computeAge(student?.date_of_birth) ?? student?.age} />
             <Row label="Blood Group" value={student?.blood_group} />
             <Row label="Address" value={addressLine} icon={<MapPin className="h-3 w-3" />} />
           </CardContent>
@@ -169,7 +180,7 @@ export const StudentDetail: React.FC = () => {
             <Row label="Class" value={className} />
             <Row label="Section" value={student?.section} />
             <Row label="Admission Date" value={student?.admission_date} />
-            <Row label="Registration #" value={student?.registration_number} />
+            <Row label="Registration #" value={student?.registration_number || student?.admission_number} />
           </CardContent>
         </Card>
 
