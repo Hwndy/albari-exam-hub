@@ -181,14 +181,6 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error(error.message);
     }
 
-    // Update profile with school_id if provided
-    if (data.user && userData.undefined) {
-      await supabase
-        .from('profiles')
-        .update({ school_id: userData.undefined })
-        .eq('user_id', data.user.id);
-    }
-
     // Handle class and subject assignments after user creation
     if (data.user && userData.role === 'student' && userData.classId) {
       try {
