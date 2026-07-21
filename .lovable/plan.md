@@ -1,38 +1,32 @@
 
 ## Root cause
 
-The QR on the ID card encodes `${window.location.origin}/scan/<token>`. Two problems fall out of that:
+`record_scan_by_ref` (and the earlier `record_student_scan`) inserts into `student_attendance` with a `date` column, but that table has no such column. Its shape is:
 
-1. **Origin is baked into the QR.** Cards printed from the Lovable preview embed `https://…lovableproject.com/scan/<token>`. Once you move to production, existing cards still point at the preview host. You asked for the live URL — QR must always embed `https://albari.com.ng/scan/<token>` regardless of where the card is generated.
-2. **"Invalid token" on scan.** The RPC `record_student_scan` raises `Invalid token` when the UUID from the QR isn't in `student_qr_tokens` (or is revoked). Every current student has an active token, so this happens when the scanned card was printed against an **older token that was later rotated** by `issue_student_qr` (it revokes the previous one), or when the scanner picked up an old-format QR whose UUID is the student's `user_id` fallback — not a real token. Either way the station has no fallback path and no useful error.
+```
+id, attendance_session_id, student_id, status,
+marked_at, marked_by, notes,
+scanned_at, scan_direction, scanned_by
+```
+
+The daily bucket is held on `attendance_sessions.date`, and each `student_attendance` row is expected to hang off an `attendance_session_id`. That's why scanning fails with `column "date" of relation "student_attendance" does not exist`.
 
 ## Fix
 
-### 1. Live-URL QR payload
-- Add `src/lib/scan-url.ts` exporting `SCAN_BASE_URL = 'https://albari.com.ng'` and `buildScanUrl(token)`.
-- `StudentIDCard.tsx`: replace `window.location.origin` with `SCAN_BASE_URL`. Drop the `user_id` fallback (only real tokens are ever encoded; if `qr_token` is missing, encode admission number as plain text so scanners can still read it and manual-lookup works).
-- `IDCardGenerator.tsx`: same base URL for any QR it draws directly.
+Rewrite the RPCs to work with the actual schema by introducing a "walk-in scan" attendance session per day per scanner:
 
-### 2. Robust scan resolution
-- New RPC `record_scan_by_ref(p_ref text, p_direction text)` (SECURITY DEFINER, `is_teacher()` gate):
-  - Extract a UUID from `p_ref`; if found, look up in `student_qr_tokens` (active only).
-  - If no UUID or no active token, treat `p_ref` (trimmed) as an **admission number** and resolve via `students.admission_number`.
-  - On resolve, insert into `student_attendance` (same shape as today) and return the same JSON payload as `resolve_scan_token`.
-  - Raises distinct messages: `unknown_reference`, `token_revoked`, `student_not_found` — surfaced verbatim in the toast.
-- Keep `record_student_scan` for backwards compat.
+- Add a helper `get_or_create_scan_session(p_date date)` (SECURITY DEFINER):
+  - Finds or creates one `attendance_sessions` row per day used specifically for QR/ID scans (`class_id = NULL`, `subject_id = NULL`, `teacher_id = auth.uid()`, `period_number = 0`, `status = 'scan'`).
+  - Returns its id.
+- Update `record_scan_by_ref(p_ref, p_direction)`:
+  - Resolves the student the same way (UUID token → active token; else admission number).
+  - Calls the helper to get today's scan session id.
+  - Inserts into `student_attendance` with `attendance_session_id`, `student_id`, `status='present'`, `marked_at=now()`, `marked_by=auth.uid()`, `scanned_at=now()`, `scan_direction=p_direction`, `scanned_by=auth.uid()`. No `date` column.
+  - If a row already exists for that student in that session, update its `scan_direction`/`scanned_at` instead of inserting a duplicate (so a check-out after a check-in updates the same row).
+- Update `record_student_scan(p_token, p_direction)` the same way so any older callers keep working.
 
-### 3. Scan Station changes (`ScanStation.tsx`)
-- Call `record_scan_by_ref` for all student scans (camera, USB wedge, manual entry). This makes admission numbers and rotated-token cards work.
-- Show the RPC's error message in the toast instead of the generic "Invalid token".
-- Small UX: after a successful scan, clear the manual field and briefly disable the camera decode to avoid double-fire (already partly there via `busyRef`).
-
-### 4. Re-print guidance
-- No auto-regeneration of already-printed cards. New QRs from now on carry the live-URL payload. Old cards still work as long as their token hasn't been rotated; if it has, admins can fall back to typing the admission number in the manual box.
-
-## Out of scope
-- DNS/hosting for `albari.com.ng/scan/*` — that route already exists in `App.tsx`; it will resolve as soon as the domain points at this app. No code change needed there.
-- Staff and visitor flows (unchanged).
+No frontend changes needed — `ScanStation.tsx` already calls `record_scan_by_ref` and surfaces the returned error.
 
 ## Technical notes
-- Files touched: `src/lib/scan-url.ts` (new), `src/components/admin/StudentIDCard.tsx`, `src/components/admin/IDCardGenerator.tsx`, `src/components/attendance/ScanStation.tsx`.
-- One migration: `record_scan_by_ref` RPC + `GRANT EXECUTE … TO authenticated`.
+- One migration: `get_or_create_scan_session`, plus `CREATE OR REPLACE` for `record_scan_by_ref` and `record_student_scan`. Grants unchanged (still `authenticated`).
+- No data backfill needed.

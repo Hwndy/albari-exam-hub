@@ -3624,6 +3624,7 @@ export type Database = {
       }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_or_create_scan_session: { Args: { p_date: string }; Returns: string }
       get_parent_children: {
         Args: never
         Returns: {
