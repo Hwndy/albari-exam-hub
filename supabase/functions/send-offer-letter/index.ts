@@ -159,7 +159,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   // Admission Details Box
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.5);
-  doc.rect(15, yPos, pageWidth - 30, 50);
+  doc.rect(15, yPos, pageWidth - 30, 40);
   
   yPos += 10;
   doc.setFont('helvetica', 'bold');
@@ -170,9 +170,6 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
-  
-  yPos += 7;
-  doc.text(`Acceptance Fee: ₦50,000.00`, 20, yPos);
   
   yPos += 7;
   doc.setTextColor(220, 38, 38);
@@ -193,9 +190,8 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setFont('helvetica', 'normal');
   const steps = [
     '1. Accept this admission offer online or via email',
-    '2. Pay the acceptance fee of ₦50,000 before the deadline',
-    '3. Complete the enrollment process',
-    '4. Receive your student login credentials'
+    '2. Complete the enrollment process',
+    '3. Receive your student login credentials'
   ];
   
   steps.forEach(step => {
