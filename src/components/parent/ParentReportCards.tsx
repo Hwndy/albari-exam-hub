@@ -19,7 +19,7 @@ interface Pub {
   session_name: string;
 }
 
-export const ParentReportCards: React.FC = () => {
+export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ onViewResults }) => {
   const { user } = useAuth();
   const { selectedChild } = useChildren();
   const [rows, setRows] = useState<Pub[]>([]);
@@ -100,6 +100,7 @@ export const ParentReportCards: React.FC = () => {
                 <TableHead>Session</TableHead>
                 <TableHead>Term</TableHead>
                 <TableHead>Published</TableHead>
+                <TableHead className="text-right">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -110,6 +111,7 @@ export const ParentReportCards: React.FC = () => {
                   <TableCell>{r.session_name}</TableCell>
                   <TableCell>{r.term}</TableCell>
                   <TableCell>{new Date(r.published_at).toLocaleDateString()}</TableCell>
+                  <TableCell className="text-right"><Button size="sm" variant="outline" onClick={onViewResults}><FileText className="h-4 w-4 mr-2" />View results</Button></TableCell>
                 </TableRow>
               ))}
             </TableBody>

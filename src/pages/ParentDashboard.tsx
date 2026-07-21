@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChildrenOverview } from '@/components/parent/ChildrenOverview';
@@ -16,6 +16,7 @@ import { useAuth } from '@/contexts/AuthContext';
 const ParentDashboardInner: React.FC = () => {
   const { user } = useAuth();
   const { children, selectedChild } = useChildren();
+  const [activeTab, setActiveTab] = useState('overview');
 
   return (
     <DashboardLayout title="Parent Portal">
@@ -30,7 +31,7 @@ const ParentDashboardInner: React.FC = () => {
           {children.length > 0 && <ChildSelector />}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <div className="overflow-x-auto">
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Overview</TabsTrigger>
@@ -46,7 +47,7 @@ const ParentDashboardInner: React.FC = () => {
 
           <TabsContent value="overview"><ChildrenOverview /></TabsContent>
           <TabsContent value="academics"><ParentAcademics /></TabsContent>
-          <TabsContent value="report-cards"><ParentReportCards /></TabsContent>
+          <TabsContent value="report-cards"><ParentReportCards onViewResults={() => setActiveTab('academics')} /></TabsContent>
           <TabsContent value="attendance"><ParentAttendance /></TabsContent>
           <TabsContent value="fees"><ParentFees /></TabsContent>
           <TabsContent value="messages"><CommunicationHub /></TabsContent>
