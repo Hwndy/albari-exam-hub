@@ -14,6 +14,7 @@ interface AuthContextType extends AuthState {
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
+    phone?: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
