@@ -195,7 +195,7 @@ export const ScanStation: React.FC = () => {
 
             <TabsContent value="staff" className="mt-4 space-y-4">
               <CameraPanel scanning={scanning} onStart={startCamera} onStop={stopCamera} videoRef={videoRef} />
-              <ManualEntry manual={manual} setManual={setManual} onSubmit={() => { if (manual) { handleScan(manual); setManual(''); } }} placeholder="Scan card or enter employee ID" />
+              <ManualEntry manual={manual} setManual={setManual} onSubmit={() => { if (manual) { handleScan(manual); setManual(''); } }} label="Manual entry (scan card or type employee ID)" placeholder="Scan card or enter employee ID" />
             </TabsContent>
 
             <TabsContent value="visitor" className="mt-4">
@@ -264,9 +264,9 @@ const CameraPanel: React.FC<{ scanning: boolean; onStart: () => void; onStop: ()
   </div>
 );
 
-const ManualEntry: React.FC<{ manual: string; setManual: (v: string) => void; onSubmit: () => void; placeholder?: string }> = ({ manual, setManual, onSubmit, placeholder = 'Paste QR value or token' }) => (
+const ManualEntry: React.FC<{ manual: string; setManual: (v: string) => void; onSubmit: () => void; label?: string; placeholder?: string }> = ({ manual, setManual, onSubmit, label = 'Manual entry (paste token/URL or type admission #)', placeholder = 'Paste QR value or token' }) => (
   <div className="max-w-md">
-    <Label>Manual entry (paste token/URL or type admission #)</Label>
+    <Label>{label}</Label>
     <div className="flex gap-2 mt-1">
       <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder={placeholder} onKeyDown={(e) => e.key === 'Enter' && onSubmit()} />
       <Button onClick={onSubmit}>Submit</Button>
