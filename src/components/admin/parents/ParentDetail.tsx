@@ -95,7 +95,8 @@ export const ParentDetail: React.FC<Props> = ({ parentUserId, onBack }) => {
   };
 
   const togglePerm = async (rel: Child, key: 'can_view_grades' | 'can_view_attendance' | 'can_view_fees') => {
-    const { error } = await supabase.from('student_parent_relationships').update({ [key]: !rel[key] }).eq('id', rel.relationship_id);
+    const patch: Record<string, boolean> = { [key]: !rel[key] };
+    const { error } = await supabase.from('student_parent_relationships').update(patch as any).eq('id', rel.relationship_id);
     if (error) toast({ title: 'Failed', description: error.message, variant: 'destructive' });
     else load();
   };
