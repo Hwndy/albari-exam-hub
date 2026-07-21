@@ -76,8 +76,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.log('✅ Role fetched:', roleData);
               }
               
-              // Determine role (default to 'student' if not found)
-              const userRole = roleData?.role || 'student';
+               if (roleError || !roleData?.role) {
+                 console.error('Account setup is incomplete: no role is assigned');
+                 setUser(null);
+                 setIsLoading(false);
+                 return;
+               }
+
+               const userRole = roleData.role;
               console.log('📝 Final role assigned:', userRole);
               
               // Create user object
@@ -96,14 +102,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               console.error('❌ Auth state change error:', error);
               if (!mounted) return;
               
-              // Fallback user object
-              setUser({
-                id: session.user.id,
-                email: session.user.email!,
-                name: session.user.email!,
-                role: 'student',
-                createdAt: new Date().toISOString(),
-              });
+              setUser(null);
             }
             
             if (mounted) {
@@ -137,7 +136,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setIsLoading(true);
     console.log('Login attempt for:', credentials.email);
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: credentials.email,
       password: credentials.password,
     });
@@ -146,6 +145,17 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       console.log('Login error:', error.message);
       setIsLoading(false);
       throw new Error(error.message);
+    }
+
+    const { data: role, error: roleError } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+    if (roleError || !role?.role) {
+      await supabase.auth.signOut();
+      setIsLoading(false);
+      throw new Error('Your account setup is incomplete. Please contact the school administrator.');
     }
     
     console.log('Login successful, waiting for auth state change...');
@@ -245,6 +255,19 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         console.error('❌ Error assigning subjects/classes:', assignmentError);
       }
     }
+    if (data.user && userData.role === 'parent') {
+      const { data: parentRole, error: roleError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', data.user.id)
+        .eq('role', 'parent')
+        .maybeSingle();
+      if (roleError || !parentRole) {
+        setIsLoading(false);
+        throw new Error('Your parent profile could not be prepared. Please contact the school administrator.');
+      }
+    }
+    setIsLoading(false);
   };
 
   const logout = async () => {

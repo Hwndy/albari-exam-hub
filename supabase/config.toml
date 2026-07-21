@@ -59,3 +59,12 @@ verify_jwt = true
 
 [functions.send-fee-reminders]
 verify_jwt = true
+
+[functions.create-parent-account]
+verify_jwt = false
+
+[functions.initialize-fee-payment]
+verify_jwt = false
+
+[functions.verify-fee-payment]
+verify_jwt = false

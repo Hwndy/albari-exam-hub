@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useChildren } from '@/contexts/ChildContext';
 
 interface Pub {
   id: string;
@@ -20,6 +21,7 @@ interface Pub {
 
 export const ParentReportCards: React.FC = () => {
   const { user } = useAuth();
+  const { selectedChild } = useChildren();
   const [rows, setRows] = useState<Pub[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,8 +30,8 @@ export const ParentReportCards: React.FC = () => {
       if (!user?.id) return;
       const { data: parent } = await supabase.from('parents').select('id').eq('user_id', user.id).single();
       if (!parent) { setLoading(false); return; }
-      const { data: rels } = await supabase.from('student_parent_relationships').select('student_id').eq('parent_id', parent.id);
-      const ids = (rels || []).map((r: any) => r.student_id);
+      if (!selectedChild?.can_view_grades) { setRows([]); setLoading(false); return; }
+      const ids = [selectedChild.student_id];
       if (!ids.length) { setLoading(false); return; }
 
       const { data: pubs } = await supabase
@@ -74,7 +76,7 @@ export const ParentReportCards: React.FC = () => {
       })));
       setLoading(false);
     })();
-  }, [user?.id]);
+  }, [user?.id, selectedChild?.student_id, selectedChild?.can_view_grades]);
 
   return (
     <Card>

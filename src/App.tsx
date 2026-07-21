@@ -24,6 +24,7 @@ import { InstallPage } from '@/pages/InstallPage';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { UpdateAvailable } from '@/components/pwa/UpdateAvailable';
+import { FeePaymentCallback } from '@/pages/FeePaymentCallback';
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,10 @@ const App = () => (
                     
                     {/* Login route */}
                     <Route path="/login" element={<AuthPage />} />
+                    <Route
+                      path="/fees/payment-callback"
+                      element={<ProtectedRoute allowedRoles={['parent']}><FeePaymentCallback /></ProtectedRoute>}
+                    />
                     
                     {/* Install page for PWA */}
                     <Route path="/install" element={<InstallPage />} />

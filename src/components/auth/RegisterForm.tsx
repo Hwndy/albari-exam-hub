@@ -104,6 +104,19 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim().toLowerCase();
+    const phone = formData.phone.trim();
+
+    if (fullName.length < 2 || fullName.length > 120) {
+      toast({ title: 'Error', description: 'Enter a valid full name', variant: 'destructive' });
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: 'Error', description: 'Enter a valid email address', variant: 'destructive' });
+      return;
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast({
@@ -151,17 +164,22 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
       return;
     }
 
+    if (formData.role === 'parent' && !/^[+\d][\d\s()-]{6,19}$/.test(phone)) {
+      toast({ title: 'Error', description: 'Enter a valid parent phone number', variant: 'destructive' });
+      return;
+    }
+
     setIsLoading(true);
     try {
       await register({
-        email: formData.email,
+        email,
         password: formData.password,
-        fullName: formData.fullName,
+        fullName,
         role: formData.role,
         classId: formData.role === 'student' ? formData.classId : undefined,
         classIds: formData.role === 'teacher' ? formData.classIds : undefined,
         subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined,
-        phone: formData.role === 'parent' ? formData.phone : undefined,
+        phone: formData.role === 'parent' ? phone : undefined,
       });
       
       toast({
@@ -233,6 +251,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               placeholder="Enter your full name"
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                maxLength={120}
               required
             />
           </div>
@@ -245,6 +264,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
               placeholder="Enter your email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                maxLength={255}
               required
             />
           </div>
@@ -277,6 +297,9 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 placeholder="e.g. 08012345678"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                required
+                maxLength={20}
+                autoComplete="tel"
               />
               <p className="text-xs text-muted-foreground">
                 After sign-up you'll link your children using their admission number and date of birth.
