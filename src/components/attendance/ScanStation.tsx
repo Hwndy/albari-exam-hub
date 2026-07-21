@@ -19,13 +19,12 @@ interface ScanResult {
   photo_url?: string;
 }
 
-/** Parses a raw QR string into the token (uuid). Accepts /scan/<token> URLs or raw uuid. */
-function extractToken(raw: string): string | null {
-  const t = raw.trim();
-  const uuidRe = /[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i;
-  const m = t.match(uuidRe);
-  return m ? m[0] : null;
-}
+const ERROR_MESSAGES: Record<string, string> = {
+  unknown_reference: 'No QR value provided',
+  token_revoked: 'This card has been reissued — please reprint',
+  student_not_found: 'No student matches this card or admission number',
+};
+const humanizeError = (msg: string) => ERROR_MESSAGES[msg?.trim()] || msg;
 
 export const ScanStation: React.FC = () => {
   const { toast } = useToast();
@@ -108,18 +107,12 @@ export const ScanStation: React.FC = () => {
     setTimeout(() => { busyRef.current = false; }, 1500);
 
     if (mode === 'student') {
-      const token = extractToken(raw);
-      if (!token) {
-        beep(false);
-        toast({ title: 'Invalid QR', description: 'Not a valid student token', variant: 'destructive' });
-        return;
-      }
-      const { data, error } = await (supabase as any).rpc('record_student_scan', {
-        p_token: token, p_direction: direction,
+      const { data, error } = await (supabase as any).rpc('record_scan_by_ref', {
+        p_ref: raw, p_direction: direction,
       });
       if (error) {
         beep(false);
-        toast({ title: 'Scan failed', description: error.message, variant: 'destructive' });
+        toast({ title: 'Scan failed', description: humanizeError(error.message), variant: 'destructive' });
         return;
       }
       beep(true);
