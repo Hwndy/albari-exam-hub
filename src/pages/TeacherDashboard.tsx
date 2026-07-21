@@ -12,6 +12,7 @@ import { TeacherClassAssignment } from '@/components/admin/TeacherClassAssignmen
 import { AttendanceSystem } from '@/components/teacher/AttendanceSystem';
 import { GradebookSystem } from '@/components/teacher/GradebookSystem';
 import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
+import { TeacherResultsManagement } from '@/components/teacher/TeacherResultsManagement';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -167,6 +168,10 @@ export const TeacherDashboard = () => {
                 <Calculator className="h-4 w-4 mr-1 hidden sm:inline" />
                 Gradebook
               </TabsTrigger>
+              <TabsTrigger value="results-mgmt" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
+                Results Management
+              </TabsTrigger>
               <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>
               <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Class Assignments</TabsTrigger>
             </TabsList>
@@ -209,6 +214,10 @@ export const TeacherDashboard = () => {
 
           <TabsContent value="gradebook" className="space-y-4">
             <GradebookSystem />
+          </TabsContent>
+
+          <TabsContent value="results-mgmt" className="space-y-4">
+            <TeacherResultsManagement />
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
