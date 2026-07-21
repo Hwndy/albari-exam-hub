@@ -20,6 +20,15 @@ function getSafeSchoolEmail(envName: string, fallback: string): string {
   return configured;
 }
 
+function getReplyToEmail(envName: string, fallback: string): string {
+  const configured = Deno.env.get(envName)?.trim() || fallback;
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configured)) {
+    console.error(`${envName} is not a valid email (${configured}). Falling back to ${fallback}.`);
+    return fallback;
+  }
+  return configured;
+}
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
