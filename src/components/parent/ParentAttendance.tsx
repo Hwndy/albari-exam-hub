@@ -7,6 +7,7 @@ import { CalendarDays, CheckCircle2, XCircle, Clock, Loader2 } from 'lucide-reac
 import { format } from 'date-fns';
 
 interface AttRow { id: string; date: string; status: string; remarks: string | null; }
+interface RawRow { id: string; status: string; notes: string | null; attendance_sessions: { date: string } | null; }
 
 export const ParentAttendance: React.FC = () => {
   const { selectedChild } = useChildren();
@@ -19,11 +20,14 @@ export const ParentAttendance: React.FC = () => {
       setLoading(true);
       const { data } = await supabase
         .from('student_attendance')
-        .select('id,date,status,remarks')
+        .select('id,status,notes,attendance_sessions(date)')
         .eq('student_id', selectedChild.student_id)
-        .order('date', { ascending: false })
+        .order('marked_at', { ascending: false })
         .limit(180);
-      setRows((data || []) as AttRow[]);
+      const mapped: AttRow[] = ((data || []) as unknown as RawRow[])
+        .filter(r => r.attendance_sessions?.date)
+        .map(r => ({ id: r.id, status: r.status, date: r.attendance_sessions!.date, remarks: r.notes }));
+      setRows(mapped);
       setLoading(false);
     })();
   }, [selectedChild?.student_id]);
