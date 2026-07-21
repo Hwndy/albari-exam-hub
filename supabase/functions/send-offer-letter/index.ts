@@ -11,6 +11,7 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://irrxmoqbgygyyzozifdl.lovable.app";
+const LETTERHEAD_URL = `${FRONTEND_URL}/__l5e/assets-v1/5fe05427-7253-4d80-9bf2-ca75a2a096e5/albari-letterhead.png`;
 const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
 const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
@@ -77,30 +78,53 @@ async function logEmail(supabase: any, logData: any) {
   }
 }
 
+// Fetch letterhead PNG once and cache as base64 data URL for jsPDF
+let cachedLetterhead: string | null = null;
+async function getLetterheadDataUrl(): Promise<string | null> {
+  if (cachedLetterhead) return cachedLetterhead;
+  try {
+    const res = await fetch(LETTERHEAD_URL);
+    if (!res.ok) {
+      console.error("Failed to fetch letterhead:", res.status);
+      return null;
+    }
+    const buf = new Uint8Array(await res.arrayBuffer());
+    let binary = "";
+    for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+    cachedLetterhead = `data:image/png;base64,${btoa(binary)}`;
+    return cachedLetterhead;
+  } catch (e) {
+    console.error("Letterhead fetch error:", e);
+    return null;
+  }
+}
+
 // Function to generate offer letter PDF
 async function generateOfferLetterPDF(application: any, acceptanceDeadline: string): Promise<Uint8Array> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 20;
 
-  // Header
-  doc.setFillColor(37, 99, 235);
-  doc.rect(0, 0, pageWidth, 40, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(24);
-  doc.setFont('helvetica', 'bold');
-  doc.text('AL-BARI Group of Schools', pageWidth / 2, 20, { align: 'center' });
-  
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Excellence in Education', pageWidth / 2, 30, { align: 'center' });
-  
-  yPos = 60;
+  // Letterhead header (Al-Bari College official design)
+  const letterhead = await getLetterheadDataUrl();
+  if (letterhead) {
+    // Native letterhead aspect ~1275x1650 (H/W ~1.29). Fit to full width, ~55mm tall.
+    doc.addImage(letterhead, 'PNG', 0, 0, pageWidth, 65, undefined, 'FAST');
+    yPos = 75;
+  } else {
+    // Fallback header if fetch fails
+    doc.setFillColor(21, 128, 61);
+    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AL-BARI COLLEGE', pageWidth / 2, 18, { align: 'center' });
+    yPos = 45;
+  }
 
   // Title
-  doc.setTextColor(37, 99, 235);
-  doc.setFontSize(18);
+  doc.setTextColor(21, 128, 61);
+  doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
   doc.text('ADMISSION OFFER LETTER', pageWidth / 2, yPos, { align: 'center' });
   
