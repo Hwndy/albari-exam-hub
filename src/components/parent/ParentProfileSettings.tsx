@@ -23,7 +23,10 @@ export const ParentProfileSettings: React.FC = () => {
     (async () => {
       if (!user?.id) return;
       const { data } = await supabase.from('parents').select('*').eq('user_id', user.id).maybeSingle();
-      if (data) setProfile({ ...profile, ...data, notification_preferences: { ...profile.notification_preferences, ...(data.notification_preferences || {}) } });
+      if (data) {
+        const prefs = (data as any).notification_preferences || {};
+        setProfile((p: any) => ({ ...p, ...data, notification_preferences: { ...p.notification_preferences, ...prefs } }));
+      }
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
