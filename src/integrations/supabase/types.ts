@@ -1412,10 +1412,15 @@ export type Database = {
           amount_paid: number
           created_at: string | null
           created_by: string | null
+          fee_installment_id: string | null
           fee_structure_id: string | null
           id: string
+          metadata: Json | null
+          paid_at: string | null
+          parent_user_id: string | null
           payment_date: string | null
           payment_method: string | null
+          payment_reference: string | null
           receipt_number: string | null
           status: string | null
           student_id: string | null
@@ -1425,10 +1430,15 @@ export type Database = {
           amount_paid: number
           created_at?: string | null
           created_by?: string | null
+          fee_installment_id?: string | null
           fee_structure_id?: string | null
           id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          parent_user_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
+          payment_reference?: string | null
           receipt_number?: string | null
           status?: string | null
           student_id?: string | null
@@ -1438,16 +1448,28 @@ export type Database = {
           amount_paid?: number
           created_at?: string | null
           created_by?: string | null
+          fee_installment_id?: string | null
           fee_structure_id?: string | null
           id?: string
+          metadata?: Json | null
+          paid_at?: string | null
+          parent_user_id?: string | null
           payment_date?: string | null
           payment_method?: string | null
+          payment_reference?: string | null
           receipt_number?: string | null
           status?: string | null
           student_id?: string | null
           transaction_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fee_payments_fee_installment_id_fkey"
+            columns: ["fee_installment_id"]
+            isOneToOne: false
+            referencedRelation: "fee_installments"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fee_payments_fee_structure_id_fkey"
             columns: ["fee_structure_id"]
@@ -2089,6 +2111,7 @@ export type Database = {
           address: Json | null
           created_at: string | null
           id: string
+          notification_preferences: Json
           occupation: string | null
           phone_primary: string | null
           phone_secondary: string | null
@@ -2101,6 +2124,7 @@ export type Database = {
           address?: Json | null
           created_at?: string | null
           id?: string
+          notification_preferences?: Json
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
@@ -2113,6 +2137,7 @@ export type Database = {
           address?: Json | null
           created_at?: string | null
           id?: string
+          notification_preferences?: Json
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
@@ -3005,10 +3030,12 @@ export type Database = {
           id: string
           is_emergency_contact: boolean | null
           is_primary_contact: boolean | null
+          linked_at: string
           notification_preferences: Json | null
           parent_id: string | null
           relationship_type: string | null
           student_id: string | null
+          verified: boolean
         }
         Insert: {
           access_level?: string | null
@@ -3019,10 +3046,12 @@ export type Database = {
           id?: string
           is_emergency_contact?: boolean | null
           is_primary_contact?: boolean | null
+          linked_at?: string
           notification_preferences?: Json | null
           parent_id?: string | null
           relationship_type?: string | null
           student_id?: string | null
+          verified?: boolean
         }
         Update: {
           access_level?: string | null
@@ -3033,10 +3062,12 @@ export type Database = {
           id?: string
           is_emergency_contact?: boolean | null
           is_primary_contact?: boolean | null
+          linked_at?: string
           notification_preferences?: Json | null
           parent_id?: string | null
           relationship_type?: string | null
           student_id?: string | null
+          verified?: boolean
         }
         Relationships: [
           {
@@ -3455,6 +3486,18 @@ export type Database = {
       }
     }
     Functions: {
+      admin_link_parent_to_student: {
+        Args: {
+          p_parent_user_id: string
+          p_relationship_type?: string
+          p_student_id: string
+        }
+        Returns: string
+      }
+      admin_unlink_parent: {
+        Args: { p_relationship_id: string }
+        Returns: undefined
+      }
       calculate_exam_score: {
         Args: { session_id_param: string }
         Returns: Json
@@ -3492,6 +3535,23 @@ export type Database = {
       }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_parent_children: {
+        Args: never
+        Returns: {
+          admission_number: string
+          can_view_attendance: boolean
+          can_view_fees: boolean
+          can_view_grades: boolean
+          class_id: string
+          class_name: string
+          date_of_birth: string
+          full_name: string
+          gender: string
+          relationship_id: string
+          status: string
+          student_id: string
+        }[]
+      }
       get_user_email: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -3508,6 +3568,14 @@ export type Database = {
       is_parent_of_student: { Args: { _student_id: string }; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       is_teacher_v2: { Args: never; Returns: boolean }
+      link_parent_to_student: {
+        Args: {
+          p_admission_number: string
+          p_date_of_birth: string
+          p_relationship_type?: string
+        }
+        Returns: Json
+      }
       submit_admission_application: { Args: { payload: Json }; Returns: Json }
       transition_admission_status: {
         Args: {

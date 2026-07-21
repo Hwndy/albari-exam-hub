@@ -14,6 +14,7 @@ interface AuthContextType extends AuthState {
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
+    phone?: string;
   }) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
 }
@@ -159,6 +160,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     classId?: string;
     classIds?: string[];
     subjectIds?: string[];
+    phone?: string;
   }) => {
     setIsLoading(true);
     
@@ -171,7 +173,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
           full_name: userData.fullName,
           role: userData.role || 'student',
           class_id: userData.classId,
-          subject_ids: userData.subjectIds
+          subject_ids: userData.subjectIds,
+          phone: userData.phone,
         }
       }
     });
