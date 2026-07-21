@@ -1,32 +1,42 @@
+## Confirmed root cause
 
-## Root cause
+The scan RPC creates an `attendance_sessions` row with status `scan`, but the live database constraint only permits `scheduled`, `in_progress`, `completed`, or `cancelled`. This causes the exact error shown.
 
-`record_scan_by_ref` (and the earlier `record_student_scan`) inserts into `student_attendance` with a `date` column, but that table has no such column. Its shape is:
+The related audit also confirmed:
+- Attendance RLS policies exist but RLS is disabled on `attendance_sessions`, `student_attendance`, `staff_attendance`, `visitor_logs`, and `student_qr_tokens`.
+- `anon` currently has full table privileges on those tables and can execute the scan/QR RPCs.
+- Concurrent first scans could create duplicate daily scan sessions because there is no unique daily scan-session index.
+- Staff scanning currently ignores the scanned card value and records attendance against the signed-in operator instead.
+- All 362 students currently have an active QR token, so no token backfill is required.
 
-```
-id, attendance_session_id, student_id, status,
-marked_at, marked_by, notes,
-scanned_at, scan_direction, scanned_by
-```
+## Implementation
 
-The daily bucket is held on `attendance_sessions.date`, and each `student_attendance` row is expected to hang off an `attendance_session_id`. That's why scanning fails with `column "date" of relation "student_attendance" does not exist`.
+1. **Repair daily student scan sessions**
+   - Update the attendance-session status constraint to permit the intentional `scan` status.
+   - Add a unique partial index guaranteeing one global scan session per date.
+   - Rewrite `get_or_create_scan_session` to be concurrency-safe and usable only by authenticated teachers/admins through the recording RPC.
+   - Keep class attendance sessions and existing status behavior unchanged.
 
-## Fix
+2. **Harden student scan recording**
+   - Keep support for full live URLs, raw UUID tokens, and admission/registration numbers.
+   - Make repeated check-in/check-out scans update the same daily attendance row instead of creating duplicates.
+   - Add a unique index for one student record per attendance session and make the RPC concurrency-safe.
+   - Return clear application error codes for invalid, revoked, unauthorized, and unmatched cards.
 
-Rewrite the RPCs to work with the actual schema by introducing a "walk-in scan" attendance session per day per scanner:
+3. **Fix related database security**
+   - Enable RLS on all five attendance/scan tables that already have policies.
+   - Remove broad anonymous write/read privileges from private attendance and QR data.
+   - Restrict scan and QR-management function execution to `authenticated` and `service_role`; revoke execution from `PUBLIC` and `anon`.
+   - Preserve teacher/admin management and parent access to linked children’s attendance.
 
-- Add a helper `get_or_create_scan_session(p_date date)` (SECURITY DEFINER):
-  - Finds or creates one `attendance_sessions` row per day used specifically for QR/ID scans (`class_id = NULL`, `subject_id = NULL`, `teacher_id = auth.uid()`, `period_number = 0`, `status = 'scan'`).
-  - Returns its id.
-- Update `record_scan_by_ref(p_ref, p_direction)`:
-  - Resolves the student the same way (UUID token → active token; else admission number).
-  - Calls the helper to get today's scan session id.
-  - Inserts into `student_attendance` with `attendance_session_id`, `student_id`, `status='present'`, `marked_at=now()`, `marked_by=auth.uid()`, `scanned_at=now()`, `scan_direction=p_direction`, `scanned_by=auth.uid()`. No `date` column.
-  - If a row already exists for that student in that session, update its `scan_direction`/`scanned_at` instead of inserting a duplicate (so a check-out after a check-in updates the same row).
-- Update `record_student_scan(p_token, p_direction)` the same way so any older callers keep working.
+4. **Correct staff scanning behavior**
+   - Add a protected staff-scan RPC that resolves the scanned employee ID/card reference rather than using the operator’s account.
+   - Record check-in and check-out times on the staff member’s single daily row, honoring the existing unique `(staff_id, date)` rule.
+   - Update the scan station to pass the scanned value and show the resolved staff member/result.
+   - Since no staff profiles currently exist, keep this ready for newly created staff without fabricating records.
 
-No frontend changes needed — `ScanStation.tsx` already calls `record_scan_by_ref` and surfaces the returned error.
-
-## Technical notes
-- One migration: `get_or_create_scan_session`, plus `CREATE OR REPLACE` for `record_scan_by_ref` and `record_student_scan`. Grants unchanged (still `authenticated`).
-- No data backfill needed.
+5. **Validate related flows**
+   - Test student scans using a full `https://albari.com.ng/scan/...` URL, raw token, and admission number.
+   - Test first scan, repeat scan, check-in then check-out, revoked/invalid token, and unauthorized access.
+   - Verify visitor sign-in/sign-out still works under enabled RLS.
+   - Run the Supabase security linter and verify the attendance-specific findings are resolved without changing unrelated modules.
