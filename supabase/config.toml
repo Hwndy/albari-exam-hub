@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.verify-fee-payment]
 verify_jwt = false
+
+[functions.delete-parent-account]
+verify_jwt = false

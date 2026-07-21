@@ -13,6 +13,7 @@ import {
   Bell,
   CreditCard as IdCard,
   ClipboardList,
+  Heart,
 } from "lucide-react";
 
 import {
@@ -107,6 +108,16 @@ const menuItems = [
     title: "Users",
     icon: Users,
     value: "users",
+  },
+  {
+    title: "Parents",
+    icon: Heart,
+    value: "parents",
+    sub: [
+      { title: "Parents", value: "list" },
+      { title: "Child Links", value: "links" },
+      { title: "Announcements", value: "announcements" },
+    ],
   },
   {
     title: "Website",
