@@ -15,7 +15,9 @@ type Direction = 'in' | 'out';
 interface ScanResult {
   full_name: string;
   admission_number?: string;
+  employee_id?: string;
   class_name?: string;
+  designation?: string;
   photo_url?: string;
 }
 
@@ -23,8 +25,14 @@ const ERROR_MESSAGES: Record<string, string> = {
   unknown_reference: 'No QR value provided',
   token_revoked: 'This card has been reissued — please reprint',
   student_not_found: 'No student matches this card or admission number',
+  staff_not_found: 'No staff member matches this card or employee ID',
+  not_authorized: 'Only authorized teachers and administrators can record scans',
+  invalid_direction: 'Choose check-in or check-out and try again',
 };
-const humanizeError = (msg: string) => ERROR_MESSAGES[msg?.trim()] || msg;
+const humanizeError = (msg: string) => {
+  const normalized = msg?.replace(/^.*?:\s*/, '').trim();
+  return ERROR_MESSAGES[normalized] || ERROR_MESSAGES[msg?.trim()] || msg;
+};
 
 export const ScanStation: React.FC = () => {
   const { toast } = useToast();
@@ -126,19 +134,23 @@ export const ScanStation: React.FC = () => {
       setLast(result);
       setRecent(r => [{ ...result, at: new Date().toLocaleTimeString(), dir: direction }, ...r].slice(0, 8));
     } else if (mode === 'staff') {
-      // Staff scan uses admission-style ID directly (staff_details.employee_id or user email)
-      const { data: user } = await supabase.auth.getUser();
-      const { error } = await supabase.from('staff_attendance').insert({
-        staff_id: user.user?.id!,
-        date: new Date().toISOString().split('T')[0],
-        status: 'present',
-        scanned_at: new Date().toISOString(),
-        scan_direction: direction,
-        scanned_by: user.user?.id,
-      } as any);
-      if (error) { beep(false); toast({ title: 'Scan failed', description: error.message, variant: 'destructive' }); return; }
+      const { data, error } = await (supabase as any).rpc('record_staff_scan', {
+        p_ref: raw,
+        p_direction: direction,
+      });
+      if (error) {
+        beep(false);
+        toast({ title: 'Scan failed', description: humanizeError(error.message), variant: 'destructive' });
+        return;
+      }
       beep(true);
-      toast({ title: `Staff ${direction === 'in' ? 'clock-in' : 'clock-out'} recorded` });
+      const info = data as ScanResult;
+      setLast(info);
+      setRecent(r => [{ ...info, at: new Date().toLocaleTimeString(), dir: direction }, ...r].slice(0, 8));
+      toast({
+        title: `${info.full_name || 'Staff'} checked ${direction}`,
+        description: info.employee_id || info.designation || undefined,
+      });
     }
   };
 
@@ -172,7 +184,7 @@ export const ScanStation: React.FC = () => {
 
             <TabsContent value="staff" className="mt-4 space-y-4">
               <CameraPanel scanning={scanning} onStart={startCamera} onStop={stopCamera} videoRef={videoRef} />
-              <p className="text-sm text-muted-foreground">Staff card scan records clock-{direction} against the signed-in staff account.</p>
+              <ManualEntry manual={manual} setManual={setManual} onSubmit={() => { if (manual) { handleScan(manual); setManual(''); } }} placeholder="Scan card or enter employee ID" />
             </TabsContent>
 
             <TabsContent value="visitor" className="mt-4">
@@ -182,7 +194,7 @@ export const ScanStation: React.FC = () => {
         </CardContent>
       </Card>
 
-      {last && mode === 'student' && (
+      {last && mode !== 'visitor' && (
         <Card>
           <CardHeader><CardTitle>Last scan</CardTitle></CardHeader>
           <CardContent className="flex items-center gap-4">
@@ -191,7 +203,11 @@ export const ScanStation: React.FC = () => {
             </div>
             <div>
               <p className="text-xl font-bold">{last.full_name}</p>
-              <p className="text-sm text-muted-foreground">{last.admission_number} • {last.class_name || 'No class'}</p>
+              <p className="text-sm text-muted-foreground">
+                {mode === 'student'
+                  ? `${last.admission_number || 'No registration number'} • ${last.class_name || 'No class'}`
+                  : `${last.employee_id || 'No employee ID'} • ${last.designation || 'Staff'}`}
+              </p>
               <p className="text-sm text-primary font-medium">{direction === 'in' ? 'Checked in' : 'Checked out'} at {new Date().toLocaleTimeString()}</p>
             </div>
           </CardContent>
@@ -206,7 +222,7 @@ export const ScanStation: React.FC = () => {
               {recent.map((r, i) => (
                 <div key={i} className="flex items-center justify-between py-2 text-sm">
                   <span className="font-medium">{r.full_name}</span>
-                  <span className="text-muted-foreground">{r.class_name} • {r.dir} • {r.at}</span>
+                   <span className="text-muted-foreground">{r.class_name || r.designation || r.employee_id} • {r.dir} • {r.at}</span>
                 </div>
               ))}
             </div>
@@ -237,11 +253,11 @@ const CameraPanel: React.FC<{ scanning: boolean; onStart: () => void; onStop: ()
   </div>
 );
 
-const ManualEntry: React.FC<{ manual: string; setManual: (v: string) => void; onSubmit: () => void }> = ({ manual, setManual, onSubmit }) => (
+const ManualEntry: React.FC<{ manual: string; setManual: (v: string) => void; onSubmit: () => void; placeholder?: string }> = ({ manual, setManual, onSubmit, placeholder = 'Paste QR value or token' }) => (
   <div className="max-w-md">
     <Label>Manual entry (paste token/URL or type admission #)</Label>
     <div className="flex gap-2 mt-1">
-      <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder="Paste QR value or token" onKeyDown={(e) => e.key === 'Enter' && onSubmit()} />
+      <Input value={manual} onChange={(e) => setManual(e.target.value)} placeholder={placeholder} onKeyDown={(e) => e.key === 'Enter' && onSubmit()} />
       <Button onClick={onSubmit}>Submit</Button>
     </div>
   </div>
