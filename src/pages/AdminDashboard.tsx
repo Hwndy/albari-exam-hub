@@ -35,6 +35,7 @@ import { BulkNotificationSender } from '@/components/admin/BulkNotificationSende
 import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
 import { StudentsByClass } from '@/components/admin/StudentsByClass';
 import { StudentDetail } from '@/components/admin/StudentDetail';
+import { ParentsHub } from '@/components/admin/parents/ParentsHub';
 
 interface DashboardStats {
   totalStudents: number;
@@ -343,6 +344,10 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'users') {
       return <UserManagement />;
+    }
+
+    if (activeTab === 'parents') {
+      return <ParentsHub />;
     }
 
     if (activeTab === 'website') {
