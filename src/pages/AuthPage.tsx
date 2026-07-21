@@ -10,7 +10,8 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 type AuthMode = 'login' | 'register' | 'forgot-password';
 
 export const AuthPage = () => {
-  const [mode, setMode] = useState<AuthMode>('login');
+  const initialMode = new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login';
+  const [mode, setMode] = useState<AuthMode>(initialMode);
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
   const { isAuthenticated, user, isLoading, logout } = useAuth();
   

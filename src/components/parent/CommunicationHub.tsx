@@ -61,7 +61,10 @@ export const CommunicationHub = () => {
         return;
       }
 
-      setAnnouncements(announcementsData || []);
+      setAnnouncements((announcementsData || []).filter((announcement) => {
+        const audiences = announcement.target_audience || [];
+        return audiences.length === 0 || audiences.includes('parent') || audiences.includes('parents') || audiences.includes('all');
+      }));
     } catch (error) {
       console.error('Error in fetchCommunications:', error);
       toast({
@@ -138,10 +141,7 @@ export const CommunicationHub = () => {
                   <h3 className="font-semibold text-red-700">{announcement.title}</h3>
                   <Badge variant="destructive">URGENT</Badge>
                 </div>
-                <div 
-                  className="text-sm text-gray-700 mb-3"
-                  dangerouslySetInnerHTML={{ __html: announcement.content }}
-                />
+                <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{announcement.content}</p>
                          <div className="flex justify-between items-center text-xs text-gray-500">
                            <span>From School Admin</span>
                            <span>{new Date(announcement.publish_date).toLocaleDateString()}</span>
@@ -214,10 +214,7 @@ export const CommunicationHub = () => {
                         </div>
                       </div>
                       
-                      <div 
-                        className="text-sm text-muted-foreground mb-3"
-                        dangerouslySetInnerHTML={{ __html: announcement.content }}
-                      />
+                      <p className="text-sm text-muted-foreground mb-3 whitespace-pre-wrap">{announcement.content}</p>
                       
                       {announcement.target_audience && announcement.target_audience.length > 0 && (
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -257,13 +254,10 @@ export const CommunicationHub = () => {
             <CardContent>
               <div className="text-center py-8">
                 <MessageSquare className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Messages</h3>
+                <h3 className="text-lg font-semibold mb-2">Direct messaging is not enabled</h3>
                 <p className="text-muted-foreground mb-4">
                   You don't have any direct messages yet.
                 </p>
-                <Button variant="outline">
-                  Compose Message
-                </Button>
               </div>
             </CardContent>
           </Card>
@@ -284,9 +278,6 @@ export const CommunicationHub = () => {
                 <p className="text-muted-foreground mb-4">
                   All caught up! No new notifications.
                 </p>
-                <Button variant="outline">
-                  Notification Settings
-                </Button>
               </div>
             </CardContent>
           </Card>
