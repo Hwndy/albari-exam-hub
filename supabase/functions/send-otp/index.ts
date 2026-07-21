@@ -23,6 +23,16 @@ function getSafeSchoolEmail(envName: string, fallback: string): string {
   return configured;
 }
 
+function getReplyToEmail(envName: string, fallback: string): string {
+  const configured = Deno.env.get(envName)?.trim() || fallback;
+  // Reply-to can be any valid email (e.g. a Gmail inbox the school actually reads).
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configured)) {
+    console.error(`${envName} is not a valid email (${configured}). Falling back to ${fallback}.`);
+    return fallback;
+  }
+  return configured;
+}
+
 // Helper function to send email with retry logic
 async function sendEmailWithRetry(emailData: any, maxRetries = MAX_RETRIES): Promise<any> {
   let lastError;
