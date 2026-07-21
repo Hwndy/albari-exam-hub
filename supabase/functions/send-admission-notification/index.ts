@@ -8,7 +8,7 @@ const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
 const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
 const SENDER_EMAIL = getSafeSchoolEmail("SENDER_EMAIL", DEFAULT_SENDER_EMAIL);
-const REPLY_TO = getSafeSchoolEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
+const REPLY_TO = getReplyToEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
 
 function getSafeSchoolEmail(envName: string, fallback: string): string {
   const configured = Deno.env.get(envName)?.trim() || fallback;
