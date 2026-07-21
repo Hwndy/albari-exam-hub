@@ -7,7 +7,7 @@ const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
 const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
 const SENDER_EMAIL = getSafeSchoolEmail("SENDER_EMAIL", DEFAULT_SENDER_EMAIL);
-const REPLY_TO = getSafeSchoolEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
+const REPLY_TO = getReplyToEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
