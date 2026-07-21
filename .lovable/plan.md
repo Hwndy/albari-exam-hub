@@ -1,67 +1,71 @@
-# Parent portal onboarding and workflow plan
+## Goal
+Give admins a dedicated area to manage everything related to parents and the parent portal, instead of the current single "Add Parent" entry inside Users.
 
-## Confirmed current state
-- The active registration form no longer contains a registration-token step, and the signup backend does not use a token or school assignment.
-- The screenshot’s `4250645` authorization screen is therefore a stale multitenancy flow. Restoring a raw public lookup would expose unnecessary school data and would not affect account provisioning.
-- Parent self-registration already sends the `parent` role and phone number. The database signup trigger provisions `profiles`, `user_roles`, and `parents` rows.
-- Parent login routing already sends a correctly provisioned parent to `ParentDashboard`.
-- Two existing students can be used for an end-to-end linked-account test; both currently have no assigned class.
-- The current admin “Add User” implementation only supports admin/teacher/student and performs a second client-side signup, which can replace the admin session. It is not suitable for parent creation.
+## New admin surface: "Parents" tab in Admin Dashboard
 
-## 1. Remove the stale registration-token blocker
-- Locate and remove any remaining route, component, cached redirect, or service-worker artifact that can still render “Authorization Required.”
-- Keep registration single-school and remove the dead token dependency rather than reopening anonymous access to the former schools data.
-- Update the PWA/service-worker cache version if required so deployed clients stop serving the obsolete screen.
-- Confirm `/auth?mode=register` opens the real role-based registration form directly on mobile and desktop.
+Add a top-level `Parents` tab in `AdminDashboard.tsx` that renders a new `ParentsHub` component with 4 sub-tabs:
 
-## 2. Harden parent self-registration
-- Keep `4250645` as a backward-compatible accepted code only if a token field still exists in any reachable client bundle during cleanup; it will not be used for tenant assignment.
-- Validate parent name, email, phone, password, and confirmation client-side.
-- Preserve server-side provisioning through `handle_new_user`: profile, parent role, and parent record must be created atomically.
-- Remove the dangerous fallback that silently treats a missing role as `student`; show a clear account-setup error instead.
-- After email confirmation, route parent login to the parent dashboard and display a clear empty-child state when no child is linked.
+### 1. Parents (list)
+`src/components/admin/parents/ParentsList.tsx`
+- Table of all parent accounts: name, email, phone, # linked children, last sign-in, status.
+- Search by name/email/phone. Filter: has children / no children.
+- Row actions:
+  - View details (opens Parent Detail drawer)
+  - Edit profile (name, phone, notification prefs) — reuses `UserEditModal` pattern
+  - Resend invitation (calls existing invite flow)
+  - Reset password (calls existing `update-user-password` edge function)
+  - Deactivate / delete account (edge function; cascades relationships)
+- "Add Parent" button → reuses existing `create-parent-account` edge function via a dialog (same fields as current Users flow).
+- CSV export of parent list.
 
-## 3. Add secure admin-created parent accounts
-- Create a dedicated authenticated edge function for parent creation instead of calling `supabase.auth.admin` or `signUp` from the browser.
-- Validate the caller’s JWT and admin role, then validate all parent inputs server-side.
-- Create the auth user using the service client without modifying the caller’s session.
-- Provision parent metadata through the existing signup trigger and verify the parent role/record exists.
-- Support two secure onboarding modes:
-  - Send an account invitation/password-setup email.
-  - Create with a temporary password and force the parent through password reset before normal use.
-- Extend Admin → User Management with a Parent role, phone field, optional student selection, relationship type, and access toggles for results, attendance, and fees.
-- Link the selected student using the existing admin RPC after account creation; never trust a client-supplied parent identity without server authorization.
+### 2. Parent Detail (drawer/page)
+`src/components/admin/parents/ParentDetail.tsx`
+- Header: parent profile + contact.
+- Sections:
+  - **Linked children**: table with student name, admission #, class, relationship, permissions (grades/attendance/fees), verified flag. Actions: edit permissions, unlink (uses `admin_unlink_parent`), link another child.
+  - **Fee activity**: recent `fee_payments` across all their children.
+  - **Login activity**: last sign-in, account created.
+  - **Notification preferences** (read-only view of `parents.notification_preferences`).
 
-## 4. Create and link a working test parent
-- Use clearly labelled test data rather than impersonating a real person.
-- Link the test parent to an existing student with a valid admission number and date of birth.
-- Because the available students currently have no class assignment, explicitly show “Not assigned” rather than implying the parent linkage failed.
-- Do not expose a password in source code, logs, documentation, or chat; use invitation/password setup or a one-time reset flow.
+### 3. Child Links
+`src/components/admin/parents/ChildLinks.tsx`
+- All `student_parent_relationships` rows in one view — useful for auditing.
+- Filter by class, verified/unverified, permission flags.
+- Bulk actions: verify, unlink.
+- "Link parent ↔ student" dialog using existing `admin_link_parent_to_student` RPC (search parent, search student, set relationship + permissions).
 
-## 5. Complete the parent-side workflow
-- Verify child switching for one and multiple linked children.
-- Verify parent access controls for results, report-card publications, attendance, fee balances, installments, and payment history.
-- Ensure report cards respect the relationship’s grade-access flag and provide a usable open/download action when a published report exists.
-- Filter announcements to parent/all audiences; label unfinished messaging surfaces accurately instead of presenting inactive controls.
-- Verify the Paystack initialization path exists and that the authenticated parent can only initiate payment for a linked child.
+### 4. Announcements to Parents
+`src/components/admin/parents/ParentAnnouncements.tsx`
+- Thin wrapper around existing announcements creator, pre-filtering `target_audience` to `parent`/`all`.
+- List of past parent-targeted announcements with edit/delete.
 
-## 6. Create the explanatory file
-Create `PARENT_WORKFLOW.md` covering:
-- Parent self-registration and email confirmation.
-- Parent login URL and dashboard routing.
-- Admin-created parent invitation/password setup.
-- How to link one or multiple children using admission number + DOB or the admin interface.
-- What each parent dashboard section shows.
-- Relationship access flags and RLS protection.
-- Fee payment and callback flow.
-- Common support issues: wrong DOB, missing parent role, no class assignment, unpublished results, no configured fee structure, and payment initialization errors.
-- A short admin checklist for onboarding a parent safely.
+## Wiring
+- Add `Parents` icon/tab in `AdminDashboard.tsx` nav.
+- Route: keep inside dashboard tabs (no new URL) to match existing patterns; or add `/admin/parents` if the dashboard uses routes — will follow whatever `AdminDashboard.tsx` currently does.
+- Remove the "Parent" option from the existing generic `UserManagement.tsx` Add User flow (or keep it and just link out to the new hub) — will keep it as a shortcut that opens the ParentsHub Add dialog to avoid duplicate code paths.
 
-## 7. End-to-end verification
-- Self-register a parent and confirm the auth user, profile, parent role, and parent row are all created.
-- Log out and log back in; confirm routing to the parent dashboard.
-- Admin-create a second parent and confirm the admin session remains intact.
-- Link a child through both parent self-service and admin-assisted paths; attempt an invalid admission number/DOB and confirm no link is created.
-- Verify a parent cannot read or pay for an unlinked student.
-- Verify results, attendance, fees, payment history, announcements, child switching, and profile settings at desktop and mobile widths.
-- Re-run focused auth/RLS checks and confirm no service key or temporary password reaches frontend code.
+## Backend
+No schema changes needed. Reuses:
+- `create-parent-account` edge function (add)
+- `admin_link_parent_to_student` RPC (link)
+- `admin_unlink_parent` RPC (unlink)
+- `update-user-password` edge function (reset)
+- `parents`, `student_parent_relationships`, `profiles`, `fee_payments` tables
+
+One new edge function: `delete-parent-account` — deletes auth user + cascades parent row & relationships (admin-only, mirrors `delete-student`).
+
+## Out of scope
+- Direct messaging parent↔admin (not implemented yet).
+- SMS/email templates redesign.
+- Changes to the parent-facing portal itself.
+
+## Deliverables
+- `src/components/admin/parents/ParentsHub.tsx`
+- `src/components/admin/parents/ParentsList.tsx`
+- `src/components/admin/parents/ParentDetail.tsx`
+- `src/components/admin/parents/ChildLinks.tsx`
+- `src/components/admin/parents/ParentAnnouncements.tsx`
+- `src/components/admin/parents/AddParentDialog.tsx` (extracted from UserManagement)
+- `src/components/admin/parents/LinkParentStudentDialog.tsx`
+- `supabase/functions/delete-parent-account/index.ts`
+- `AdminDashboard.tsx` — add Parents tab
