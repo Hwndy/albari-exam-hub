@@ -79,7 +79,7 @@ const handler = async (req: Request): Promise<Response> => {
       .single();
 
     const senderEmail = getSafeSchoolEmail("SENDER_EMAIL", DEFAULT_SENDER_EMAIL);
-    const replyTo = getSafeSchoolEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
+    const replyTo = getReplyToEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
     const schoolName = school?.name || "School";
 
     // Process each recipient
