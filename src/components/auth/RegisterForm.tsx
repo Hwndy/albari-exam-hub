@@ -33,10 +33,11 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student' as 'teacher' | 'student',
+    role: 'student' as 'teacher' | 'student' | 'parent',
     classId: '',
     classIds: [] as string[],
-    subjectIds: [] as string[]
+    subjectIds: [] as string[],
+    phone: '',
   });
   const [isLoading, setIsLoading] = useState(false);
   const [classes, setClasses] = useState<Array<{id: string, name: string}>>([]);
@@ -160,6 +161,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
         classId: formData.role === 'student' ? formData.classId : undefined,
         classIds: formData.role === 'teacher' ? formData.classIds : undefined,
         subjectIds: formData.role === 'teacher' ? formData.subjectIds : undefined,
+        phone: formData.role === 'parent' ? formData.phone : undefined,
       });
       
       toast({
@@ -251,8 +253,8 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
             <Label htmlFor="role">Role</Label>
             <Select 
               value={formData.role} 
-              onValueChange={(value: 'teacher' | 'student') => 
-                setFormData({ ...formData, role: value, classId: '', classIds: [], subjectIds: [] })
+              onValueChange={(value: 'teacher' | 'student' | 'parent') => 
+                setFormData({ ...formData, role: value, classId: '', classIds: [], subjectIds: [], phone: '' })
               }
             >
               <SelectTrigger className="w-full">
@@ -261,9 +263,26 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
                 <SelectContent className="bg-popover border shadow-lg z-50">
                   <SelectItem value="student">Student</SelectItem>
                   <SelectItem value="teacher">Teacher</SelectItem>
+                  <SelectItem value="parent">Parent / Guardian</SelectItem>
               </SelectContent>
             </Select>
           </div>
+
+          {formData.role === 'parent' && (
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone number</Label>
+              <Input
+                id="phone"
+                type="tel"
+                placeholder="e.g. 08012345678"
+                value={formData.phone}
+                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              />
+              <p className="text-xs text-muted-foreground">
+                After sign-up you'll link your children using their admission number and date of birth.
+              </p>
+            </div>
+          )}
 
           {formData.role === 'student' && (
             <div className="space-y-2">
