@@ -159,7 +159,7 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   // Admission Details Box
   doc.setDrawColor(37, 99, 235);
   doc.setLineWidth(0.5);
-  doc.rect(15, yPos, pageWidth - 30, 50);
+  doc.rect(15, yPos, pageWidth - 30, 40);
   
   yPos += 10;
   doc.setFont('helvetica', 'bold');
@@ -170,9 +170,6 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
-  
-  yPos += 7;
-  doc.text(`Acceptance Fee: ₦50,000.00`, 20, yPos);
   
   yPos += 7;
   doc.setTextColor(220, 38, 38);
@@ -193,9 +190,8 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.setFont('helvetica', 'normal');
   const steps = [
     '1. Accept this admission offer online or via email',
-    '2. Pay the acceptance fee of ₦50,000 before the deadline',
-    '3. Complete the enrollment process',
-    '4. Receive your student login credentials'
+    '2. Complete the enrollment process',
+    '3. Receive your student login credentials'
   ];
   
   steps.forEach(step => {
@@ -440,10 +436,6 @@ serve(async (req) => {
                   <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.classes?.name || 'N/A'}</td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">₦50,000</td>
-                </tr>
-                <tr>
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
                   <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 </tr>
@@ -452,7 +444,7 @@ serve(async (req) => {
 
             <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">
               <p style="margin: 0; color: #713f12; font-size: 14px; line-height: 1.5;">
-                <strong>⚠️ Important:</strong> You must accept and pay the acceptance fee by <strong>${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> to secure your place.
+                <strong>⚠️ Important:</strong> You must accept your offer by <strong>${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> to secure your place.
               </p>
             </div>
 
@@ -460,19 +452,15 @@ serve(async (req) => {
               <h4 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">🎯 Next Steps:</h4>
               <ol style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
                 <li>Click the button below to accept or decline your offer</li>
-                <li>If you accept, you'll be directed to pay the acceptance fee (₦50,000)</li>
-                <li>Complete the enrollment process after payment confirmation</li>
+                <li>Complete the enrollment process</li>
                 <li>Receive your student login credentials via email</li>
               </ol>
             </div>
 
             <div style="text-align: center; margin: 35px 0;">
               <a href="${acceptanceUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
-                Accept Offer & Pay Fee →
+                Accept Offer →
               </a>
-              <p style="margin-top: 15px; color: #6b7280; font-size: 13px;">
-                The acceptance page includes a secure payment button
-              </p>
             </div>
 
             <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; text-align: center; margin: 25px 0;">
@@ -480,42 +468,6 @@ serve(async (req) => {
                 📎 Your official offer letter is attached to this email as a PDF document.
               </p>
             </div>
-        <p>Dear ${application.first_name} ${application.last_name},</p>
-        
-        <p>We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari Group of Schools</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.</p>
-        
-        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0;">Admission Details:</h3>
-          <ul style="list-style: none; padding: 0;">
-            <li><strong>Application Number:</strong> ${application.application_number}</li>
-            <li><strong>Class:</strong> ${application.classes?.name || 'N/A'}</li>
-            <li><strong>Acceptance Fee:</strong> ₦50,000</li>
-            <li><strong>Deadline:</strong> ${new Date(acceptance_deadline).toLocaleDateString()}</li>
-          </ul>
-        </div>
-
-        <p><strong>Next Steps:</strong></p>
-        <ol>
-          <li>Click the button below to accept or decline your offer</li>
-          <li>If you accept, you'll be directed to pay the acceptance fee</li>
-          <li>Complete the enrollment process after payment confirmation</li>
-        </ol>
-
-        <div style="text-align: center; margin: 30px 0;">
-          <a href="${acceptanceUrl}" style="background: #2563eb; color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; display: inline-block; font-weight: bold; margin-bottom: 10px;">
-            Accept Offer & Pay Fee
-          </a>
-          <p style="margin-top: 15px; color: #6b7280; font-size: 14px;">
-            The acceptance page includes a secure payment button
-          </p>
-        </div>
-
-        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0;">
-          <p style="margin: 0; color: #92400e;">
-            <strong>⚠️ Important:</strong> You must accept and pay the acceptance fee by <strong>${new Date(acceptance_deadline).toLocaleDateString()}</strong> to secure your place.
-          </p>
-        </div>
-
             <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
               If you have any questions, please contact our admissions office at 
               <a href="mailto:admissions@albari.com.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.com.ng</a>
