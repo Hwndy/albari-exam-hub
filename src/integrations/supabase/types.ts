@@ -3671,6 +3671,10 @@ export type Database = {
         Args: { p_direction: string; p_ref: string }
         Returns: Json
       }
+      record_staff_scan: {
+        Args: { p_direction: string; p_ref: string }
+        Returns: Json
+      }
       record_student_scan: {
         Args: { p_direction: string; p_token: string }
         Returns: Json
