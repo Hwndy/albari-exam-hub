@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Edit, Trash2, Search, Download } from 'lucide-react';
 import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +16,7 @@ export const UserManagement = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [students, setStudents] = useState<Array<{ id: string; admission_number: string | null; full_name: string }>>([]);
   const [isAddingUser, setIsAddingUser] = useState(false);
   const [editingUser, setEditingUser] = useState<Profile | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,10 +30,16 @@ export const UserManagement = () => {
     fullName: '',
     email: '',
     password: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: 'student' as 'admin' | 'teacher' | 'student' | 'parent',
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
+    phone: '',
+    studentId: '',
+    relationshipType: 'parent',
+    canViewGrades: true,
+    canViewAttendance: true,
+    canViewFees: true,
   });
 
   useEffect(() => {
@@ -71,9 +79,20 @@ export const UserManagement = () => {
         supabase.from('subjects').select('*').order('name')
       ;
 
+      const { data: studentRows } = await supabase.from('students').select('id,user_id,admission_number').order('admission_number');
+      const studentUserIds = (studentRows || []).map((student) => student.user_id).filter(Boolean);
+      const { data: studentProfiles } = studentUserIds.length
+        ? await supabase.from('profiles').select('user_id,full_name').in('user_id', studentUserIds)
+        : { data: [] as Array<{ user_id: string; full_name: string }> };
+
       setProfiles(profilesWithRoles);
       if (classesData) setClasses(classesData);
       if (subjectsData) setSubjects(subjectsData);
+      setStudents((studentRows || []).map((student) => ({
+        id: student.id,
+        admission_number: student.admission_number,
+        full_name: studentProfiles?.find((profile) => profile.user_id === student.user_id)?.full_name || student.admission_number || 'Student',
+      })));
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -117,6 +136,33 @@ export const UserManagement = () => {
     }
     
     try {
+      if (userForm.role === 'parent') {
+        if (!/^[+\d][\d\s()-]{6,19}$/.test(userForm.phone.trim())) {
+          throw new Error('Enter a valid parent phone number');
+        }
+        const { data, error } = await supabase.functions.invoke('create-parent-account', {
+          body: {
+            fullName: userForm.fullName.trim(),
+            email: userForm.email.trim().toLowerCase(),
+            phone: userForm.phone.trim(),
+            studentId: userForm.studentId || undefined,
+            relationshipType: userForm.relationshipType,
+            canViewGrades: userForm.canViewGrades,
+            canViewAttendance: userForm.canViewAttendance,
+            canViewFees: userForm.canViewFees,
+          },
+        });
+        if (error || !data?.success) throw new Error(data?.error || error?.message || 'Failed to create parent');
+        await fetchData();
+        setIsAddingUser(false);
+        resetUserForm();
+        toast({
+          title: 'Parent invited',
+          description: `${userForm.fullName} can set a password from the invitation email.${data.childLinked ? ' The child is linked.' : ''}`,
+        });
+        return;
+      }
+
       // Use the create_user_with_profile function
       const { data, error } = await supabase.rpc('create_user_with_profile', {
         user_email: userForm.email,
@@ -288,6 +334,12 @@ export const UserManagement = () => {
       classId: '',
       classIds: [],
       subjectIds: [],
+      phone: '',
+      studentId: '',
+      relationshipType: 'parent',
+      canViewGrades: true,
+      canViewAttendance: true,
+      canViewFees: true,
     });
   };
 
@@ -297,10 +349,16 @@ export const UserManagement = () => {
       fullName: profile.full_name,
       email: '',
       password: '',
-      role: profile.role as 'admin' | 'teacher' | 'student',
+      role: profile.role as 'admin' | 'teacher' | 'student' | 'parent',
       classId: '',
       classIds: [],
       subjectIds: [],
+      phone: '',
+      studentId: '',
+      relationshipType: 'parent',
+      canViewGrades: true,
+      canViewAttendance: true,
+      canViewFees: true,
     });
   };
 
@@ -316,6 +374,7 @@ export const UserManagement = () => {
       students: profiles.filter(p => p.role === 'student').length,
       teachers: profiles.filter(p => p.role === 'teacher').length,
       admins: profiles.filter(p => p.role === 'admin').length,
+      parents: profiles.filter(p => p.role === 'parent').length,
     };
   };
 
@@ -378,11 +437,17 @@ export const UserManagement = () => {
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="text-2xl font-bold">{stats.total}</div>
             <div className="text-sm text-muted-foreground">Total Users</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="text-2xl font-bold">{stats.parents}</div>
+            <div className="text-sm text-muted-foreground">Parents</div>
           </CardContent>
         </Card>
         <Card>
@@ -425,6 +490,7 @@ export const UserManagement = () => {
               <SelectItem value="all">All Roles</SelectItem>
               <SelectItem value="student">Students</SelectItem>
               <SelectItem value="teacher">Teachers</SelectItem>
+              <SelectItem value="parent">Parents</SelectItem>
               <SelectItem value="admin">Admins</SelectItem>
             </SelectContent>
           </Select>
@@ -467,7 +533,7 @@ export const UserManagement = () => {
                   required
                 />
               </div>
-              <div className="space-y-2">
+              {userForm.role !== 'parent' && <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -476,13 +542,13 @@ export const UserManagement = () => {
                   onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
                   required
                 />
-              </div>
+              </div>}
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={userForm.role}
-                  onValueChange={(value: 'admin' | 'teacher' | 'student') =>
-                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [] })
+                  onValueChange={(value: 'admin' | 'teacher' | 'student' | 'parent') =>
+                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [], studentId: '' })
                   }
                 >
                   <SelectTrigger>
@@ -491,6 +557,7 @@ export const UserManagement = () => {
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="teacher">Teacher</SelectItem>
+                    <SelectItem value="parent">Parent / Guardian</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
                   </SelectContent>
                 </Select>
@@ -516,6 +583,43 @@ export const UserManagement = () => {
                       )}
                     </SelectContent>
                   </Select>
+                </div>
+              )}
+
+              {userForm.role === 'parent' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="parent-phone">Phone number</Label>
+                    <Input id="parent-phone" type="tel" maxLength={20} required value={userForm.phone} onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Link a child (optional)</Label>
+                    <Select value={userForm.studentId || 'none'} onValueChange={(value) => setUserForm({ ...userForm, studentId: value === 'none' ? '' : value })}>
+                      <SelectTrigger><SelectValue placeholder="Choose a student" /></SelectTrigger>
+                      <SelectContent className="max-h-64">
+                        <SelectItem value="none">Link later</SelectItem>
+                        {students.map((student) => <SelectItem key={student.id} value={student.id}>{student.full_name} · {student.admission_number || 'No admission number'}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {userForm.studentId && <>
+                    <div className="space-y-2">
+                      <Label>Relationship</Label>
+                      <Select value={userForm.relationshipType} onValueChange={(value) => setUserForm({ ...userForm, relationshipType: value })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="parent">Parent</SelectItem><SelectItem value="mother">Mother</SelectItem><SelectItem value="father">Father</SelectItem><SelectItem value="guardian">Guardian</SelectItem><SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {([['canViewGrades', 'Results and report cards'], ['canViewAttendance', 'Attendance'], ['canViewFees', 'Fees and payments']] as const).map(([key, label]) => (
+                      <div key={key} className="flex items-center gap-2">
+                        <Checkbox id={key} checked={userForm[key]} onCheckedChange={(checked) => setUserForm({ ...userForm, [key]: checked === true })} />
+                        <Label htmlFor={key}>{label}</Label>
+                      </div>
+                    ))}
+                  </>}
+                  <p className="text-sm text-muted-foreground">An invitation email will let the parent set a private password.</p>
                 </div>
               )}
 
