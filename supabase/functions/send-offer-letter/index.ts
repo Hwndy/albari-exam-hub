@@ -411,10 +411,9 @@ serve(async (req) => {
       </head>
       <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Header -->
-          <div style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px 20px; text-align: center;">
-            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: bold;">Al-Bari Group of Schools</h1>
-            <p style="color: #e0e7ff; margin: 10px 0 0 0; font-size: 14px;">Excellence in Education</p>
+          <!-- Letterhead -->
+          <div style="text-align: center; background-color: #ffffff;">
+            <img src="${LETTERHEAD_URL}" alt="Al-Bari College Letterhead" style="display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto;" />
           </div>
           
           <!-- Content -->
