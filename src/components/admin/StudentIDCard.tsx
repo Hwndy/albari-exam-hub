@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
+import { buildScanUrl } from '@/lib/scan-url';
 
 export interface IDCardStudent {
   user_id: string;
@@ -44,10 +45,9 @@ export const StudentIDCard: React.FC<Props> = ({ student, school, showBack = tru
   useEffect(() => {
     if (!qrRef.current) return;
     // Prefer token URL; fallback to raw token or admission number.
-    const origin = typeof window !== 'undefined' ? window.location.origin : '';
     const payload = student.qr_token
-      ? `${origin}/scan/${student.qr_token}`
-      : student.admission_number || student.user_id;
+      ? buildScanUrl(student.qr_token)
+      : (student.admission_number || '');
     QRCode.toCanvas(qrRef.current, payload, {
       width: 150,
       margin: 1,
