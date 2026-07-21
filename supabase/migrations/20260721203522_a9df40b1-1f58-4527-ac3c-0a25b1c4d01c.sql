@@ -1,0 +1,1 @@
+ALTER TABLE public.parents ADD COLUMN IF NOT EXISTS notification_preferences jsonb NOT NULL DEFAULT '{"email":true,"sms":true,"results":true,"attendance":true,"fees":true,"announcements":true}'::jsonb;

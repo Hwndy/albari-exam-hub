@@ -2111,6 +2111,7 @@ export type Database = {
           address: Json | null
           created_at: string | null
           id: string
+          notification_preferences: Json
           occupation: string | null
           phone_primary: string | null
           phone_secondary: string | null
@@ -2123,6 +2124,7 @@ export type Database = {
           address?: Json | null
           created_at?: string | null
           id?: string
+          notification_preferences?: Json
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
@@ -2135,6 +2137,7 @@ export type Database = {
           address?: Json | null
           created_at?: string | null
           id?: string
+          notification_preferences?: Json
           occupation?: string | null
           phone_primary?: string | null
           phone_secondary?: string | null
