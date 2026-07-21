@@ -1,26 +1,29 @@
+# Route Applicant Replies to Your Gmail
 
-## Root cause
+## Goal
+Any applicant who clicks "Reply" on an admission email should land in `suleayo04@gmail.com` — no mailbox hosting, no MX changes. The `From` address stays `admissions@albari.com.ng` (once Resend DNS is verified) so branding is preserved.
 
-The Admissions page (and every other data-driven page) fails because **every table in the `public` schema currently has zero grants** for the `anon`, `authenticated`, and `service_role` roles. This was collateral damage from the previous multitenancy purge — dropping `school_id` and rebuilding policies did not re-issue the `GRANT` statements PostgREST requires.
+## How it works
+Every email sending helper in the project already reads two secrets:
+- `SENDER_EMAIL` → shown as the "From" address
+- `REPLY_TO_EMAIL` → the address Gmail/Outlook use when the recipient hits Reply
 
-Verified via `information_schema.role_table_grants` — the query returns 0 rows for all 70 public tables. Without grants, RLS policies never even get evaluated; PostgREST returns "permission denied" (which the UI surfaces as "Failed to load applications").
+We just point `REPLY_TO_EMAIL` at your personal Gmail. Zero code changes required for the reply-routing itself — only a secret update.
 
-The stale `column school_id does not exist` errors in the DB logs are from the previous turn's timestamps (before the multitenancy rewrite finished) — current source no longer references `school_id`, so this is not the active bug.
+## Steps
 
-## Fix (one migration)
+1. **Update the `REPLY_TO_EMAIL` secret** to `suleayo04@gmail.com`. A secure form opens for you to paste it in.
+2. **Verify each mail edge function actually reads `REPLY_TO_EMAIL`** and passes it as `reply_to` to Resend. Files to audit:
+   - `supabase/functions/send-offer-letter/index.ts`
+   - `supabase/functions/send-admission-notification/index.ts`
+   - `supabase/functions/send-otp/index.ts`
+   - `supabase/functions/send-bulk-email/index.ts`
+   - `supabase/functions/send-interview-notification/index.ts` (if present)
+   Any function currently hard-coding a reply-to (or omitting it) gets patched to use the secret.
+3. **Redeploy** any functions changed in step 2. Functions that already read the secret pick up the new value automatically — no redeploy needed for those.
+4. **Smoke test**: submit a test application, trigger an offer letter to a throwaway address, hit Reply from that inbox, confirm it arrives in `suleayo04@gmail.com`.
 
-1. Loop over every base table in `public` and grant:
-   - `SELECT, INSERT, UPDATE, DELETE` to `authenticated`
-   - `ALL` to `service_role`
-2. Grant `SELECT` to `anon` on the public-facing tables the website + public admission form need:
-   `classes`, `school_info`, `news_articles`, `gallery`, `testimonials`, `website_pages`, `website_sections`, `website_settings`, `academic_calendar`, `admission_sessions`.
-3. Grant `INSERT` to `anon` on `admission_applications` and `admission_documents` (public admission submissions).
-4. Grant `USAGE` on all sequences in `public` to all three roles.
-
-No RLS policy changes — existing policies are already correct (`is_admin()` / `has_role()` / owner checks). This purely restores the missing table-level privileges.
-
-## Expected outcome
-
-- Admin admissions pages load applications, decisions board, exams, interviews, payments, analytics.
-- All other admin/teacher/student/parent screens that were silently returning permission errors start working again.
-- Public website and admission form continue to work (anon reads/writes preserved where needed).
+## Notes
+- This is independent of Resend DNS verification. Even before `albari.com.ng` is verified, if we temporarily switch `SENDER_EMAIL` to `onboarding@resend.dev` for testing, replies still route to your Gmail because `reply_to` is a separate header.
+- Once Resend verifies `albari.com.ng`, sends go out from `admissions@albari.com.ng` with `Reply-To: suleayo04@gmail.com` — recipients see the school domain, replies land in your Gmail.
+- No inbox exists at `admissions@albari.com.ng` itself. If anyone sends a fresh email TO that address (not a reply), it will bounce until you add MX records with a mailbox or forwarding provider. Tell me later if you want to add Cloudflare Email Routing (free) for that case.

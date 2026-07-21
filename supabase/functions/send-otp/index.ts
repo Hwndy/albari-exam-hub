@@ -7,7 +7,7 @@ const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
 const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
 const SENDER_EMAIL = getSafeSchoolEmail("SENDER_EMAIL", DEFAULT_SENDER_EMAIL);
-const REPLY_TO = getSafeSchoolEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
+const REPLY_TO = getReplyToEmail("REPLY_TO_EMAIL", DEFAULT_REPLY_TO_EMAIL);
 const MAX_RETRIES = 3;
 const RETRY_DELAY_MS = 1000;
 
@@ -20,6 +20,16 @@ function getSafeSchoolEmail(envName: string, fallback: string): string {
     return fallback;
   }
 
+  return configured;
+}
+
+function getReplyToEmail(envName: string, fallback: string): string {
+  const configured = Deno.env.get(envName)?.trim() || fallback;
+  // Reply-to can be any valid email (e.g. a Gmail inbox the school actually reads).
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(configured)) {
+    console.error(`${envName} is not a valid email (${configured}). Falling back to ${fallback}.`);
+    return fallback;
+  }
   return configured;
 }
 
