@@ -36,6 +36,7 @@ import { IDCardGenerator } from '@/components/admin/IDCardGenerator';
 import { StudentsByClass } from '@/components/admin/StudentsByClass';
 import { StudentDetail } from '@/components/admin/StudentDetail';
 import { ParentsHub } from '@/components/admin/parents/ParentsHub';
+import { ScanStation } from '@/components/attendance/ScanStation';
 
 interface DashboardStats {
   totalStudents: number;
@@ -340,6 +341,10 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'id-cards') {
       return <IDCardGenerator />;
+    }
+
+    if (activeTab === 'attendance-scan') {
+      return <ScanStation />;
     }
 
     if (activeTab === 'users') {

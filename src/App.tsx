@@ -25,6 +25,7 @@ import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { UpdateAvailable } from '@/components/pwa/UpdateAvailable';
 import { FeePaymentCallback } from '@/pages/FeePaymentCallback';
+import { ScanStation } from '@/components/attendance/ScanStation';
 
 const queryClient = new QueryClient();
 
@@ -103,6 +104,16 @@ const App = () => (
                     
                     {/* Install page for PWA */}
                     <Route path="/install" element={<InstallPage />} />
+
+                    {/* QR scan landing — requires teacher/admin login */}
+                    <Route
+                      path="/scan/:token"
+                      element={
+                        <ProtectedRoute allowedRoles={['admin','teacher']}>
+                          <div className="p-6"><ScanStation /></div>
+                        </ProtectedRoute>
+                      }
+                    />
                     
                     {/* Protected dashboard routes */}
                     <Route

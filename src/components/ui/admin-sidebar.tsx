@@ -14,6 +14,7 @@ import {
   CreditCard as IdCard,
   ClipboardList,
   Heart,
+  ScanLine,
 } from "lucide-react";
 
 import {
@@ -103,6 +104,11 @@ const menuItems = [
     title: "ID Cards",
     icon: IdCard,
     value: "id-cards",
+  },
+  {
+    title: "Scan Attendance",
+    icon: ScanLine,
+    value: "attendance-scan",
   },
   {
     title: "Users",

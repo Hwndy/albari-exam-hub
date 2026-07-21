@@ -2856,6 +2856,9 @@ export type Database = {
           leave_type: string | null
           marked_by: string | null
           notes: string | null
+          scan_direction: string | null
+          scanned_at: string | null
+          scanned_by: string | null
           staff_id: string
           status: string
         }
@@ -2868,6 +2871,9 @@ export type Database = {
           leave_type?: string | null
           marked_by?: string | null
           notes?: string | null
+          scan_direction?: string | null
+          scanned_at?: string | null
+          scanned_by?: string | null
           staff_id: string
           status: string
         }
@@ -2880,6 +2886,9 @@ export type Database = {
           leave_type?: string | null
           marked_by?: string | null
           notes?: string | null
+          scan_direction?: string | null
+          scanned_at?: string | null
+          scanned_by?: string | null
           staff_id?: string
           status?: string
         }
@@ -2949,6 +2958,9 @@ export type Database = {
           marked_at: string | null
           marked_by: string | null
           notes: string | null
+          scan_direction: string | null
+          scanned_at: string | null
+          scanned_by: string | null
           status: string | null
           student_id: string | null
         }
@@ -2958,6 +2970,9 @@ export type Database = {
           marked_at?: string | null
           marked_by?: string | null
           notes?: string | null
+          scan_direction?: string | null
+          scanned_at?: string | null
+          scanned_by?: string | null
           status?: string | null
           student_id?: string | null
         }
@@ -2967,6 +2982,9 @@ export type Database = {
           marked_at?: string | null
           marked_by?: string | null
           notes?: string | null
+          scan_direction?: string | null
+          scanned_at?: string | null
+          scanned_by?: string | null
           status?: string | null
           student_id?: string | null
         }
@@ -3079,6 +3097,38 @@ export type Database = {
           },
           {
             foreignKeyName: "student_parent_relationships_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_qr_tokens: {
+        Row: {
+          id: string
+          issued_at: string
+          revoked_at: string | null
+          student_id: string
+          token: string
+        }
+        Insert: {
+          id?: string
+          issued_at?: string
+          revoked_at?: string | null
+          student_id: string
+          token?: string
+        }
+        Update: {
+          id?: string
+          issued_at?: string
+          revoked_at?: string | null
+          student_id?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_qr_tokens_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -3354,6 +3404,45 @@ export type Database = {
         }
         Relationships: []
       }
+      visitor_logs: {
+        Row: {
+          badge_no: string | null
+          created_at: string
+          full_name: string
+          host_name: string | null
+          id: string
+          phone: string | null
+          purpose: string | null
+          signed_in_at: string
+          signed_in_by: string | null
+          signed_out_at: string | null
+        }
+        Insert: {
+          badge_no?: string | null
+          created_at?: string
+          full_name: string
+          host_name?: string | null
+          id?: string
+          phone?: string | null
+          purpose?: string | null
+          signed_in_at?: string
+          signed_in_by?: string | null
+          signed_out_at?: string | null
+        }
+        Update: {
+          badge_no?: string | null
+          created_at?: string
+          full_name?: string
+          host_name?: string | null
+          id?: string
+          phone?: string | null
+          purpose?: string | null
+          signed_in_at?: string
+          signed_in_by?: string | null
+          signed_out_at?: string | null
+        }
+        Relationships: []
+      }
       website_pages: {
         Row: {
           content: string | null
@@ -3568,6 +3657,7 @@ export type Database = {
       is_parent_of_student: { Args: { _student_id: string }; Returns: boolean }
       is_teacher: { Args: never; Returns: boolean }
       is_teacher_v2: { Args: never; Returns: boolean }
+      issue_student_qr: { Args: { p_student_id: string }; Returns: string }
       link_parent_to_student: {
         Args: {
           p_admission_number: string
@@ -3576,6 +3666,11 @@ export type Database = {
         }
         Returns: Json
       }
+      record_student_scan: {
+        Args: { p_direction: string; p_token: string }
+        Returns: Json
+      }
+      resolve_scan_token: { Args: { p_token: string }; Returns: Json }
       submit_admission_application: { Args: { payload: Json }; Returns: Json }
       transition_admission_status: {
         Args: {

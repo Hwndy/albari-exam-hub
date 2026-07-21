@@ -31,6 +31,8 @@ interface Student {
   class?: {
     name: string;
   };
+  qr_token?: string | null;
+  date_of_birth?: string | null;
 }
 
 interface School {
@@ -93,7 +95,7 @@ export const IDCardGenerator: React.FC = () => {
       // Fetch students - use separate queries to avoid deep type instantiation
       const studentsResponse = await supabase
         .from('students')
-        .select('id, user_id, admission_number, photo_url')
+        .select('id, user_id, admission_number, photo_url, date_of_birth')
         ;
       
       const studentsData = studentsResponse.data as any[] || [];
@@ -124,12 +126,26 @@ export const IDCardGenerator: React.FC = () => {
           if (name) userClassMap.set(a.student_id, name);
         }
 
+        // QR tokens
+        const studentIds = studentsData.map(s => s.id);
+        const tokensResponse = await supabase
+          .from('student_qr_tokens')
+          .select('student_id, token')
+          .is('revoked_at', null)
+          .in('student_id', studentIds);
+        const tokenMap = new Map<string, string>();
+        for (const t of (tokensResponse.data as any[]) || []) {
+          tokenMap.set(t.student_id, t.token);
+        }
+
         const studentsWithProfiles: Student[] = studentsData.map((student: any) => ({
           id: student.id,
           user_id: student.user_id,
           admission_number: student.admission_number || `STU-${student.id.slice(0, 8).toUpperCase()}`,
           profile: profilesData.find(p => p.user_id === student.user_id) || { full_name: 'Unknown' },
           photo_url: student.photo_url,
+          date_of_birth: student.date_of_birth,
+          qr_token: tokenMap.get(student.id) || null,
           class: userClassMap.has(student.user_id)
             ? { name: userClassMap.get(student.user_id)! }
             : undefined,
@@ -492,12 +508,16 @@ export const IDCardGenerator: React.FC = () => {
                   admission_number: previewStudent.admission_number,
                   photo_url: previewStudent.photo_url || previewStudent.profile.avatar_url || null,
                   class_name: previewStudent.class?.name || null,
+                  date_of_birth: previewStudent.date_of_birth || null,
+                  session: academicYear,
+                  qr_token: previewStudent.qr_token || null,
                 }}
                 school={{
                   name: school?.name || 'School Name',
                   address: school?.address,
                   logo_url: school?.logo_url || null,
                   motto: school?.motto,
+                  phone: school?.phone,
                 }}
               />
             </div>
