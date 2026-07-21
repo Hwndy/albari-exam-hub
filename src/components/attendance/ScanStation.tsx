@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Camera, LogIn, LogOut, User, UserPlus, ScanLine } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 
 type Mode = 'student' | 'staff' | 'visitor';
 type Direction = 'in' | 'out';
@@ -36,6 +37,7 @@ const humanizeError = (msg: string) => {
 
 export const ScanStation: React.FC = () => {
   const { toast } = useToast();
+  const { token } = useParams<{ token?: string }>();
   const [mode, setMode] = useState<Mode>('student');
   const [direction, setDirection] = useState<Direction>('in');
   const [scanning, setScanning] = useState(false);
@@ -45,6 +47,7 @@ export const ScanStation: React.FC = () => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
   const busyRef = useRef(false);
+  const routeTokenHandledRef = useRef(false);
 
   // Keyboard-wedge (USB QR/barcode scanner) support
   useEffect(() => {
@@ -153,6 +156,14 @@ export const ScanStation: React.FC = () => {
       });
     }
   };
+
+  useEffect(() => {
+    if (!token || routeTokenHandledRef.current) return;
+    routeTokenHandledRef.current = true;
+    handleScan(token);
+    // The route token must be recorded once only; direction defaults to check-in.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   return (
     <div className="space-y-6">
