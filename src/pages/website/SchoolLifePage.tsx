@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Users, Microscope, Calculator, Globe, Palette, Music, Trophy } from 'lucide-react';
+import { SEO } from '@/components/website/SEO';
 
 export const SchoolLifePage = () => {
   const academicPrograms = [

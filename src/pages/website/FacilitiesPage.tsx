@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings, useGallery, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap,

@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, FileText, CreditCard, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/website/SEO';
 
 export const AdmissionsPage = () => {
   const admissionSteps = [

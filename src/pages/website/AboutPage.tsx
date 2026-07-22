@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles };
 

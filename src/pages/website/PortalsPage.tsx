@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Users, GraduationCap, UserCheck, Shield, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Users, GraduationCap, UserCheck, Shield, Briefcase, BookOpen,
