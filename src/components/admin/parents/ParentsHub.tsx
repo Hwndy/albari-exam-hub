@@ -4,6 +4,7 @@ import { ParentsList } from './ParentsList';
 import { ParentDetail } from './ParentDetail';
 import { ChildLinks } from './ChildLinks';
 import { ParentAnnouncements } from './ParentAnnouncements';
+import { MessagesInbox } from './MessagesInbox';
 
 export const ParentsHub: React.FC = () => {
   const [selectedParentId, setSelectedParentId] = useState<string | null>(null);
@@ -18,10 +19,12 @@ export const ParentsHub: React.FC = () => {
       <TabsList>
         <TabsTrigger value="list">Parents</TabsTrigger>
         <TabsTrigger value="links">Child Links</TabsTrigger>
+        <TabsTrigger value="messages">Messages</TabsTrigger>
         <TabsTrigger value="announcements">Announcements</TabsTrigger>
       </TabsList>
       <TabsContent value="list"><ParentsList onView={setSelectedParentId} /></TabsContent>
       <TabsContent value="links"><ChildLinks /></TabsContent>
+      <TabsContent value="messages"><MessagesInbox /></TabsContent>
       <TabsContent value="announcements"><ParentAnnouncements /></TabsContent>
     </Tabs>
   );
