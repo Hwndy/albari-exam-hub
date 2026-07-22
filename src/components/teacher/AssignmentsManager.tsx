@@ -148,7 +148,12 @@ export const AssignmentsManager: React.FC = () => {
                 <Label>Attachment (optional, max 10MB)</Label>
                 <Input type="file" onChange={(e) => {
                   const file = e.target.files?.[0] || null;
-                  if (file && file.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return; }
+                  if (file) {
+                    // eslint-disable-next-line @typescript-eslint/no-var-requires
+                    const { validateUpload } = require('@/lib/file-upload-guards');
+                    const err = validateUpload(file);
+                    if (err) { toast.error(err); return; }
+                  }
                   setForm(f => ({ ...f, attachment: file }));
                 }} />
               </div>
