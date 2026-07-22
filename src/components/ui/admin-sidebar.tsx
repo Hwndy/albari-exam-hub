@@ -15,6 +15,8 @@ import {
   ClipboardList,
   Heart,
   ScanLine,
+  Megaphone,
+  UserSquare2,
 } from "lucide-react";
 
 import {
@@ -101,9 +103,18 @@ const menuItems = [
     value: "notifications",
   },
   {
+    title: "Announcements",
+    icon: Megaphone,
+    value: "announcements",
+  },
+  {
     title: "ID Cards",
     icon: IdCard,
     value: "id-cards",
+    sub: [
+      { title: "Student ID Cards", value: "students" },
+      { title: "Staff ID Cards", value: "staff" },
+    ],
   },
   {
     title: "Scan Attendance",
@@ -136,6 +147,11 @@ const menuItems = [
       { title: "School Info", value: "school-info" },
       { title: "Site Settings", value: "site-settings" },
     ],
+  },
+  {
+    title: "Settings",
+    icon: Settings,
+    value: "settings",
   },
   {
     title: "System",
