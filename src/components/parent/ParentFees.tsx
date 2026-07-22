@@ -5,9 +5,11 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useChildren } from '@/contexts/ChildContext';
 import { useToast } from '@/hooks/use-toast';
-import { CreditCard, Receipt, Loader2, AlertCircle } from 'lucide-react';
+import { CreditCard, Receipt, Loader2, AlertCircle, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import jsPDF from 'jspdf';
 
 interface FeeStructure {
   id: string;
@@ -58,6 +60,7 @@ export const ParentFees: React.FC = () => {
   const [installments, setInstallments] = useState<Installment[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState<string | null>(null);
+  const [receiptFor, setReceiptFor] = useState<FeePayment | null>(null);
 
   useEffect(() => {
     if (selectedChild) load();
@@ -142,6 +145,27 @@ export const ParentFees: React.FC = () => {
   const nextDue = structures
     .filter(s => s.due_date && paidFor(s.id) < s.amount)
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
+
+  const downloadReceipt = (p: FeePayment) => {
+    const doc = new jsPDF();
+    const w = doc.internal.pageSize.getWidth();
+    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
+    doc.text('Al-Bari Model Schools', w / 2, 20, { align: 'center' });
+    doc.setFontSize(12); doc.setFont('helvetica', 'normal');
+    doc.text('Fee Payment Receipt', w / 2, 30, { align: 'center' });
+    doc.setLineWidth(0.3); doc.line(15, 34, w - 15, 34);
+    let y = 46; const l = 20; const r = w / 2 + 5;
+    const line = (label: string, val: string, col = l) => { doc.setFont('helvetica','normal'); doc.text(label, col, y); doc.setFont('helvetica','bold'); doc.text(val, col + 40, y); };
+    line('Receipt #:', p.receipt_number || '—'); line('Date:', p.payment_date ? format(new Date(p.payment_date), 'PP') : '—', r); y += 10;
+    line('Student:', selectedChild?.full_name || ''); line('Admission:', selectedChild?.admission_number || '', r); y += 10;
+    line('Reference:', p.payment_reference || '—'); y += 10;
+    doc.setFillColor(240,240,240); doc.rect(l - 3, y - 5, w - 2 * l + 6, 14, 'F');
+    doc.setFontSize(14); doc.text('Amount Paid:', l, y + 4);
+    doc.setFont('helvetica','bold'); doc.text(NGN(Number(p.amount_paid)), w - l - 5, y + 4, { align: 'right' });
+    doc.setFontSize(9); doc.setFont('helvetica','normal');
+    doc.text('Computer-generated receipt. Thank you for your payment.', w / 2, 280, { align: 'center' });
+    doc.save(`receipt-${p.receipt_number || p.id}.pdf`);
+  };
 
   return (
     <div className="space-y-6">
@@ -261,7 +285,7 @@ export const ParentFees: React.FC = () => {
             <Table>
               <TableHeader><TableRow>
                 <TableHead>Date</TableHead><TableHead>Reference</TableHead><TableHead>Receipt</TableHead>
-                <TableHead className="text-right">Amount</TableHead><TableHead>Status</TableHead>
+                <TableHead className="text-right">Amount</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
               </TableRow></TableHeader>
               <TableBody>
                 {payments.map(p => (
@@ -271,6 +295,11 @@ export const ParentFees: React.FC = () => {
                     <TableCell className="font-mono text-xs">{p.receipt_number || '—'}</TableCell>
                     <TableCell className="text-right">{NGN(Number(p.amount_paid))}</TableCell>
                     <TableCell><Badge variant={p.status === 'completed' ? 'secondary' : 'outline'}>{p.status}</Badge></TableCell>
+                    <TableCell className="text-right">
+                      {p.status === 'completed' && (
+                        <Button size="sm" variant="ghost" onClick={() => downloadReceipt(p)}><Download className="h-4 w-4"/></Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
