@@ -5,6 +5,7 @@ import { AutomationSettings } from '@/components/admin/results/AutomationSetting
 import { Broadsheet } from '@/components/admin/results/Broadsheet';
 import { PromotionPanel } from '@/components/admin/results/PromotionPanel';
 import { PastStudents } from '@/components/admin/results/PastStudents';
+import { BulkReportCards } from '@/components/admin/results/BulkReportCards';
 
 export const ResultsManagement: React.FC = () => {
   return (
@@ -17,12 +18,14 @@ export const ResultsManagement: React.FC = () => {
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="enter">Enter Scores</TabsTrigger>
           <TabsTrigger value="broadsheet">Broadsheet</TabsTrigger>
+          <TabsTrigger value="bulk">Bulk Report Cards</TabsTrigger>
           <TabsTrigger value="promotion">Promotion</TabsTrigger>
           <TabsTrigger value="past">Past Students</TabsTrigger>
           <TabsTrigger value="automation">Automation</TabsTrigger>
         </TabsList>
         <TabsContent value="enter"><ManualScoresEntry /></TabsContent>
         <TabsContent value="broadsheet"><Broadsheet /></TabsContent>
+        <TabsContent value="bulk"><BulkReportCards /></TabsContent>
         <TabsContent value="promotion"><PromotionPanel /></TabsContent>
         <TabsContent value="past"><PastStudents /></TabsContent>
         <TabsContent value="automation"><AutomationSettings /></TabsContent>
