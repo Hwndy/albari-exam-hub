@@ -948,6 +948,45 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          after_data: Json | null
+          before_data: Json | null
+          created_at: string
+          id: string
+          metadata: Json | null
+          row_id: string | null
+          table_name: string | null
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          row_id?: string | null
+          table_name?: string | null
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          after_data?: Json | null
+          before_data?: Json | null
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          row_id?: string | null
+          table_name?: string | null
+        }
+        Relationships: []
+      }
       book_issues: {
         Row: {
           book_id: string | null
@@ -2491,6 +2530,7 @@ export type Database = {
           created_at: string
           full_name: string
           id: string
+          must_change_password: boolean
           updated_at: string
           user_id: string
         }
@@ -2498,6 +2538,7 @@ export type Database = {
           created_at?: string
           full_name: string
           id?: string
+          must_change_password?: boolean
           updated_at?: string
           user_id: string
         }
@@ -2505,6 +2546,7 @@ export type Database = {
           created_at?: string
           full_name?: string
           id?: string
+          must_change_password?: boolean
           updated_at?: string
           user_id?: string
         }
@@ -3849,6 +3891,7 @@ export type Database = {
         Returns: Json
       }
       delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
+      expire_old_qr_tokens: { Args: never; Returns: number }
       get_application_tracking: {
         Args: { p_app_no: string; p_email: string }
         Returns: Json
