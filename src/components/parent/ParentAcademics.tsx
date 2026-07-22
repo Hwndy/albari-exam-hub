@@ -6,6 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useChildren } from '@/contexts/ChildContext';
 import { Loader2, TrendingUp, Award, BookOpen } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { getGradingScale, gradeFor, gradeColor, GradeBand } from '@/lib/grading';
 
 interface ScoreRow {
   student_id: string; session_id: string; term: string; class_id: string;
@@ -21,11 +22,14 @@ export const ParentAcademics: React.FC = () => {
   const [sessionId, setSessionId] = useState<string>('all');
   const [term, setTerm] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [bands, setBands] = useState<GradeBand[]>([]);
 
   useEffect(() => {
     (async () => {
       if (!selectedChild) return;
       setLoading(true);
+      const b = await getGradingScale();
+      setBands(b);
       const { data } = await supabase
         .from('v_student_term_scores')
         .select('*')
@@ -56,12 +60,10 @@ export const ParentAcademics: React.FC = () => {
     : 0;
   const best = filtered.length ? Math.max(...filtered.map(r => r.total || 0)) : 0;
 
-  const grade = (score: number) =>
-    score >= 75 ? { label: 'A', color: 'text-green-600' } :
-    score >= 65 ? { label: 'B', color: 'text-blue-600' } :
-    score >= 50 ? { label: 'C', color: 'text-yellow-600' } :
-    score >= 40 ? { label: 'D', color: 'text-orange-600' } :
-    { label: 'F', color: 'text-red-600' };
+  const grade = (score: number) => {
+    const b = gradeFor(score, bands);
+    return { label: b.grade, color: gradeColor(b.grade) };
+  };
 
   if (!selectedChild) return <Card><CardContent className="p-6 text-center text-muted-foreground">Select a child.</CardContent></Card>;
   if (!selectedChild.can_view_grades) return <Card><CardContent className="p-6 text-center text-muted-foreground">No grades access.</CardContent></Card>;
