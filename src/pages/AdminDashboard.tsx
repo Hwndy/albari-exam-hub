@@ -26,7 +26,7 @@ import { SchoolInfoEditor } from '@/components/admin/CMS/SchoolInfoEditor';
 import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { FeeManagement } from '@/components/admin/SMS/FeeManagement';
+import { FeesHub } from '@/components/admin/fees/FeesHub';
 import { TimetableManager } from '@/components/admin/TimetableManager';
 import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
 import { ResultsManagement } from '@/components/admin/results/ResultsManagement';
@@ -328,7 +328,7 @@ export const AdminDashboard = () => {
     }
 
     if (activeTab === 'fees') {
-      return <FeeManagement />;
+      return <FeesHub />;
     }
 
     if (activeTab === 'library') {
