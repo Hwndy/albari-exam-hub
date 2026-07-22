@@ -71,3 +71,6 @@ verify_jwt = false
 
 [functions.delete-parent-account]
 verify_jwt = false
+
+[functions.paystack-reconcile]
+verify_jwt = true
