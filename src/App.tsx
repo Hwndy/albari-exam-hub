@@ -26,6 +26,8 @@ import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
 import { UpdateAvailable } from '@/components/pwa/UpdateAvailable';
 import { FeePaymentCallback } from '@/pages/FeePaymentCallback';
 import { ScanStation } from '@/components/attendance/ScanStation';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ResetPasswordPage } from '@/pages/ResetPasswordPage';
 
 const queryClient = new QueryClient();
 
@@ -78,6 +80,7 @@ const DashboardRouter = () => {
 };
 
 const App = () => (
+  <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
@@ -97,6 +100,7 @@ const App = () => (
                     
                     {/* Login route */}
                     <Route path="/login" element={<AuthPage />} />
+                    <Route path="/reset-password" element={<ResetPasswordPage />} />
                     <Route
                       path="/fees/payment-callback"
                       element={<ProtectedRoute allowedRoles={['parent']}><FeePaymentCallback /></ProtectedRoute>}
@@ -193,6 +197,7 @@ const App = () => (
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
