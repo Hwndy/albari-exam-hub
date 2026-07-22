@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Loader2, FileText, Download } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useChildren } from '@/contexts/ChildContext';
 import { useReportCardBuilder } from '@/hooks/useReportCardBuilder';
 import { useToast } from '@/hooks/use-toast';
 
@@ -16,14 +15,12 @@ interface Pub {
   session_id: string;
   term: string;
   published_at: string;
-  student_name: string;
   class_name: string;
   session_name: string;
 }
 
-export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ onViewResults }) => {
+export const StudentReportCards: React.FC = () => {
   const { user } = useAuth();
-  const { selectedChild } = useChildren();
   const [rows, setRows] = useState<Pub[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
@@ -33,41 +30,28 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
   useEffect(() => {
     (async () => {
       if (!user?.id) return;
-      const { data: parent } = await supabase.from('parents').select('id').eq('user_id', user.id).single();
-      if (!parent) { setLoading(false); return; }
-      if (!selectedChild?.can_view_grades) { setRows([]); setLoading(false); return; }
-      const ids = [selectedChild.student_id];
-      if (!ids.length) { setLoading(false); return; }
-
+      const { data: studentRow } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (!studentRow?.id) {
+        setLoading(false);
+        return;
+      }
       const { data: pubs } = await supabase
         .from('report_card_publications')
         .select('*')
-        .in('student_id', ids)
+        .eq('student_id', studentRow.id)
         .order('published_at', { ascending: false });
-
-      const studentIds = Array.from(new Set((pubs || []).map((p: any) => p.student_id)));
       const classIds = Array.from(new Set((pubs || []).map((p: any) => p.class_id)));
       const sessionIds = Array.from(new Set((pubs || []).map((p: any) => p.session_id)));
-
-      const [studs, classes, sessions] = await Promise.all([
-        studentIds.length ? supabase.from('students').select('id,user_id').in('id', studentIds) : Promise.resolve({ data: [] as any }),
+      const [classes, sessions] = await Promise.all([
         classIds.length ? supabase.from('classes').select('id,name').in('id', classIds) : Promise.resolve({ data: [] as any }),
         sessionIds.length ? supabase.from('admission_sessions').select('id,session_name').in('id', sessionIds) : Promise.resolve({ data: [] as any }),
       ]);
-
-      const uids = (studs.data || []).map((s: any) => s.user_id);
-      const { data: profs } = uids.length
-        ? await supabase.from('profiles').select('user_id,full_name').in('user_id', uids)
-        : { data: [] as any };
-
-      const nameByStudent = new Map<string, string>();
-      (studs.data || []).forEach((s: any) => {
-        const n = (profs || []).find((p: any) => p.user_id === s.user_id)?.full_name || '—';
-        nameByStudent.set(s.id, n);
-      });
-      const classMap = new Map<string, string>((classes.data || []).map((c: any) => [c.id, c.name as string]));
-      const sessMap = new Map<string, string>((sessions.data || []).map((s: any) => [s.id, s.session_name as string]));
-
+      const classMap = new Map<string, string>((classes.data || []).map((c: any) => [c.id, c.name]));
+      const sessMap = new Map<string, string>((sessions.data || []).map((s: any) => [s.id, s.session_name]));
       setRows((pubs || []).map((p: any) => ({
         id: p.id,
         student_id: p.student_id,
@@ -75,13 +59,12 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
         session_id: p.session_id,
         term: p.term,
         published_at: p.published_at,
-        student_name: nameByStudent.get(p.student_id) || '—',
         class_name: classMap.get(p.class_id) ?? '—',
         session_name: sessMap.get(p.session_id) ?? '—',
       })));
       setLoading(false);
     })();
-  }, [user?.id, selectedChild?.student_id, selectedChild?.can_view_grades]);
+  }, [user?.id]);
 
   const handleDownload = async (r: Pub) => {
     setDownloadingId(r.id);
@@ -102,7 +85,7 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Published Report Cards</CardTitle>
+        <CardTitle>My Report Cards</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         {loading ? (
@@ -116,7 +99,6 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Student</TableHead>
                 <TableHead>Class</TableHead>
                 <TableHead>Session</TableHead>
                 <TableHead>Term</TableHead>
@@ -127,21 +109,15 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
             <TableBody>
               {rows.map(r => (
                 <TableRow key={r.id}>
-                  <TableCell className="font-medium">{r.student_name}</TableCell>
                   <TableCell>{r.class_name}</TableCell>
                   <TableCell>{r.session_name}</TableCell>
                   <TableCell>{r.term}</TableCell>
                   <TableCell>{new Date(r.published_at).toLocaleDateString()}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={onViewResults}>
-                        <FileText className="h-4 w-4 mr-2" />Results
-                      </Button>
-                      <Button size="sm" onClick={() => handleDownload(r)} disabled={downloadingId === r.id}>
-                        {downloadingId === r.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
-                        Download
-                      </Button>
-                    </div>
+                    <Button size="sm" onClick={() => handleDownload(r)} disabled={downloadingId === r.id}>
+                      {downloadingId === r.id ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Download className="h-4 w-4 mr-2" />}
+                      Download
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -153,4 +129,4 @@ export const ParentReportCards: React.FC<{ onViewResults?: () => void }> = ({ on
   );
 };
 
-export default ParentReportCards;
+export default StudentReportCards;
