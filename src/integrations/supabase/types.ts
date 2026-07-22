@@ -1416,6 +1416,7 @@ export type Database = {
           fee_structure_id: string | null
           id: string
           metadata: Json | null
+          notes: string | null
           paid_at: string | null
           parent_user_id: string | null
           payment_date: string | null
@@ -1434,6 +1435,7 @@ export type Database = {
           fee_structure_id?: string | null
           id?: string
           metadata?: Json | null
+          notes?: string | null
           paid_at?: string | null
           parent_user_id?: string | null
           payment_date?: string | null
@@ -1452,6 +1454,7 @@ export type Database = {
           fee_structure_id?: string | null
           id?: string
           metadata?: Json | null
+          notes?: string | null
           paid_at?: string | null
           parent_user_id?: string | null
           payment_date?: string | null
@@ -1551,6 +1554,7 @@ export type Database = {
           fee_type: string
           id: string
           is_mandatory: boolean | null
+          term: string | null
         }
         Insert: {
           academic_year: string
@@ -1561,6 +1565,7 @@ export type Database = {
           fee_type: string
           id?: string
           is_mandatory?: boolean | null
+          term?: string | null
         }
         Update: {
           academic_year?: string
@@ -1571,6 +1576,7 @@ export type Database = {
           fee_type?: string
           id?: string
           is_mandatory?: boolean | null
+          term?: string | null
         }
         Relationships: [
           {
@@ -3642,6 +3648,7 @@ export type Database = {
           student_id: string
         }[]
       }
+      get_student_fee_summary: { Args: { _student_id: string }; Returns: Json }
       get_user_email: { Args: never; Returns: string }
       has_role: {
         Args: {
