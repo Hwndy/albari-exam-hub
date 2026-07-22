@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, Trophy, Clock, TrendingUp, Calendar, Library, FileText } from 'lucide-react';
+import { BookOpen, Trophy, Clock, TrendingUp, Calendar, Library, FileText, ClipboardList, NotebookPen } from 'lucide-react';
 import { ExamList } from '@/components/student/ExamList';
 import { StudentTimetable } from '@/components/student/StudentTimetable';
 import { LibraryCatalog } from '@/components/student/LibraryCatalog';
 import { StudentReportCards } from '@/components/student/StudentReportCards';
+import { StudentAssignments } from '@/components/student/StudentAssignments';
+import { StudentLessonNotes } from '@/components/student/StudentLessonNotes';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -186,6 +188,14 @@ export const StudentDashboard = () => {
                 <Library className="h-4 w-4 mr-1 hidden sm:inline" />
                 Library
               </TabsTrigger>
+              <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <ClipboardList className="h-4 w-4 mr-1 hidden sm:inline" />
+                Assignments
+              </TabsTrigger>
+              <TabsTrigger value="notes" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <NotebookPen className="h-4 w-4 mr-1 hidden sm:inline" />
+                Lesson Notes
+              </TabsTrigger>
               <TabsTrigger value="report-cards" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
                 Report Cards
@@ -203,6 +213,14 @@ export const StudentDashboard = () => {
 
           <TabsContent value="library">
             <LibraryCatalog />
+          </TabsContent>
+
+          <TabsContent value="assignments">
+            <StudentAssignments />
+          </TabsContent>
+
+          <TabsContent value="notes">
+            <StudentLessonNotes />
           </TabsContent>
 
           <TabsContent value="report-cards">
