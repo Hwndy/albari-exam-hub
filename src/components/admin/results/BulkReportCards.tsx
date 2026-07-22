@@ -12,11 +12,6 @@ import { useToast } from '@/hooks/use-toast';
 import JSZip from 'jszip';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import {
-  generateReportCardHTML,
-  type ReportCardSchoolInfo,
-  DEFAULT_REPORT_CARD_AUTOMATION,
-} from '@/lib/report-card-html';
 
 interface ClassRow { id: string; name: string; }
 interface SessionRow { id: string; session_name: string; academic_year: string; is_current?: boolean; }
@@ -24,22 +19,9 @@ interface StudentRow { id: string; admission_number: string; full_name: string; 
 
 const TERMS = ['First Term', 'Second Term', 'Third Term'];
 
-// Uses the same builder as the single-download flow, but instead of opening a print window
-// it returns the HTML so we can zip it up as PDFs.
-async function buildStudentHtml(args: { studentId: string; classId: string; sessionId: string; term: string }): Promise<{ html: string; name: string }> {
-  // We reuse the builder hook indirectly by calling supabase again — cheaper: replicate the fetch
-  // The single-student hook opens a window; here we call an internal helper that returns HTML.
-  const mod = await import('@/hooks/useReportCardBuilder');
-  // The hook has a react-hook signature; we instead rely on server-generated HTML via generateReportCardHTML.
-  // For simplicity: call the same public path — reimport hook won't work here. So we build HTML inline via a mini-fetch.
-  // Note: we duplicated the fetch inside useReportCardBuilder; to avoid huge dup we call print in a hidden iframe.
-  void mod;
-  throw new Error('use buildAndPrint fallback');
-}
-
 export const BulkReportCards: React.FC = () => {
   const { toast } = useToast();
-  const { buildAndPrint } = useReportCardBuilder();
+  const { buildHtml } = useReportCardBuilder();
 
   const [classes, setClasses] = useState<ClassRow[]>([]);
   const [sessions, setSessions] = useState<SessionRow[]>([]);
@@ -94,35 +76,18 @@ export const BulkReportCards: React.FC = () => {
     setProgress({ done: 0, total: chosen.length });
     try {
       const zip = new JSZip();
-      // Render each report card into a hidden iframe, snap with html2canvas, then jsPDF
       for (let i = 0; i < chosen.length; i++) {
         const st = chosen[i];
+        const { html, filename } = await buildHtml({ studentId: st.id, classId, sessionId, term });
         const iframe = document.createElement('iframe');
         iframe.style.position = 'fixed'; iframe.style.left = '-10000px'; iframe.style.top = '0';
         iframe.style.width = '900px'; iframe.style.height = '1400px';
         document.body.appendChild(iframe);
         try {
-          // Reuse buildAndPrint HTML by intercepting window.open — simplest path: open + auto-close
-          await new Promise<void>((resolve, reject) => {
-            const originalOpen = window.open;
-            (window as any).open = (_url?: string) => {
-              const w = {
-                document: iframe.contentDocument!,
-                focus: () => {},
-                print: () => {},
-                close: () => {},
-              } as any;
-              // Provide the same doc.open/.write/.close API
-              return w;
-            };
-            buildAndPrint({ studentId: st.id, classId, sessionId, term })
-              .then(() => resolve())
-              .catch(reject)
-              .finally(() => { (window as any).open = originalOpen; });
-          });
-          // wait for images
-          await new Promise(r => setTimeout(r, 400));
-          const target = iframe.contentDocument?.body;
+          const doc = iframe.contentDocument!;
+          doc.open(); doc.write(html); doc.close();
+          await new Promise(r => setTimeout(r, 500));
+          const target = doc.body;
           if (target) {
             const canvas = await html2canvas(target as HTMLElement, { scale: 2, useCORS: true, backgroundColor: '#ffffff' });
             const img = canvas.toDataURL('image/jpeg', 0.92);
@@ -133,7 +98,7 @@ export const BulkReportCards: React.FC = () => {
             const w = canvas.width * ratio; const h = canvas.height * ratio;
             pdf.addImage(img, 'JPEG', (pageW - w) / 2, 20, w, h);
             const blob = pdf.output('blob');
-            zip.file(`${st.admission_number || st.id}_${st.full_name.replace(/[^a-z0-9]+/gi, '_')}.pdf`, blob);
+            zip.file(filename, blob);
           }
         } finally {
           document.body.removeChild(iframe);
