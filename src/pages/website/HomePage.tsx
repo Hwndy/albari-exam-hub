@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -12,9 +12,10 @@ import { Testimonials } from '@/components/website/home/Testimonials';
 import { HowToApply } from '@/components/website/home/HowToApply';
 import { Newsletter } from '@/components/website/home/Newsletter';
 import { WhatsAppFloat } from '@/components/website/home/WhatsAppFloat';
+import { useWebsiteSettings, useSchoolInfo, settingValue } from '@/hooks/useCms';
 
-// 1. Array storing your public folder background image assets
-const HERO_IMAGES = [
+// Fallback hero image slideshow when nothing is configured in the CMS.
+const DEFAULT_HERO_IMAGES = [
   '/albari-campus.png',      // Your cleaned up campus image
   '/img1.png',       // Placeholder: Add your second image here
   '/img2.png',
@@ -23,15 +24,30 @@ const HERO_IMAGES = [
 
 export const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const { settings } = useWebsiteSettings();
+  const { info } = useSchoolInfo();
+
+  const heroImages = useMemo(() => {
+    const raw = settingValue<string[]>(settings, 'hero_images', DEFAULT_HERO_IMAGES);
+    return Array.isArray(raw) && raw.length > 0 ? raw : DEFAULT_HERO_IMAGES;
+  }, [settings]);
+
+  const heroBadge = settingValue<string>(settings, 'hero_badge', 'Excellence in Education Since 2004');
+  const heroTitle = settingValue<string>(settings, 'hero_title', "Building Tomorrow's");
+  const heroTitleHighlight = settingValue<string>(settings, 'hero_title_highlight', 'Leaders Today');
+  const heroSubtitle = settingValue<string>(settings, 'hero_subtitle',
+    'At Al-Bari Group of Schools, we are committed to nurturing young minds and developing future leaders through innovative education, character building, and academic excellence.');
+  const heroCtaPrimary = settingValue<string>(settings, 'hero_cta_primary_label', 'Apply Now');
+  const heroCtaSecondary = settingValue<string>(settings, 'hero_cta_secondary_label', 'Learn More');
 
   // 2. Setup interval timer to advance the background automatically
   useEffect(() => {
     const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % HERO_IMAGES.length);
+      setCurrentSlide((prev) => (prev + 1) % heroImages.length);
     }, 5000); // Transitions slide every 5000ms (5 seconds)
 
     return () => clearInterval(timer);
-  }, []);
+  }, [heroImages.length]);
 
   return (
     <div className="space-y-0">
@@ -72,7 +88,7 @@ export const HomePage = () => {
         
         {/* Background Slideshow Layer */}
         <div className="absolute inset-0 z-0">
-          {HERO_IMAGES.map((imageSrc, index) => (
+          {heroImages.map((imageSrc, index) => (
             <img
               key={imageSrc}
               src={imageSrc}
@@ -91,23 +107,22 @@ export const HomePage = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-3xl space-y-6">
             <Badge className="w-fit bg-primary text-primary-foreground border-none px-3 py-1 text-sm shadow-md">
-              Excellence in Education Since 2004
+              {heroBadge}
             </Badge>
             
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
-              Building Tomorrow's
-              <span className="text-primary block mt-1 drop-shadow-sm text-white leading-tight tracking-tight">Leaders Today</span>
+              {heroTitle}
+              <span className="text-primary block mt-1 drop-shadow-sm text-white leading-tight tracking-tight">{heroTitleHighlight}</span>
             </h1>
             
             <p className="text-lg sm:text-xl text-slate-200 font-medium max-w-2xl leading-relaxed">
-              At Al-Bari Group of Schools, we are committed to nurturing young minds and developing future leaders 
-              through innovative education, character building, and academic excellence.
+              {heroSubtitle}
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-2">
               <Button size="lg" className="shadow-lg text-base" asChild>
                 <Link to="/website/admissions">
-                  Apply Now <ArrowRight className="ml-2 h-5 w-5" />
+                  {heroCtaPrimary} <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button 
@@ -116,7 +131,7 @@ export const HomePage = () => {
                 className="bg-white/10 hover:bg-white/20 text-white border-white/30 backdrop-blur-sm shadow-lg text-base" 
                 asChild
               >
-                <Link to="/website/about">Learn More</Link>
+                <Link to="/website/about">{heroCtaSecondary}</Link>
               </Button>
             </div>
           </div>
@@ -124,7 +139,7 @@ export const HomePage = () => {
 
         {/* Interactive Slide Navigation Dots Indicator */}
         <div className="absolute bottom-6 right-6 z-20 flex space-x-2 bg-black/30 backdrop-blur-sm py-2 px-3 rounded-full border border-white/10">
-          {HERO_IMAGES.map((_, index) => (
+          {heroImages.map((_, index) => (
             <button
               key={index}
               onClick={() => setCurrentSlide(index)}
@@ -145,19 +160,19 @@ export const HomePage = () => {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">1000+</div>
+              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_students}</div>
               <div className="text-muted-foreground">Students</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">50+</div>
+              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_teachers}</div>
               <div className="text-muted-foreground">Teachers</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">98%</div>
+              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_success_rate}</div>
               <div className="text-muted-foreground">Success Rate</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">22+</div>
+              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_years}</div>
               <div className="text-muted-foreground">Years Excellence</div>
             </div>
           </div>
