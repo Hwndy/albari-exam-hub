@@ -223,6 +223,8 @@ export const AdminDashboard = () => {
     }
     if (activeTab === 'announcements') return 'Announcements';
     if (activeTab === 'settings') return 'Settings';
+    if (activeTab === 'attendance-reports') return 'Attendance Reports';
+    if (activeTab === 'attendance-scan') return 'Scan Attendance';
     if (activeTab === 'users') return 'User Management';
     if (activeTab === 'website') {
       const titles: Record<string, string> = {
