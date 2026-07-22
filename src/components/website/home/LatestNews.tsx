@@ -1,37 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
 import { Calendar, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { supabase } from '@/integrations/supabase/client';
-
-interface NewsItem {
-  id: string;
-  title: string;
-  slug: string;
-  excerpt: string | null;
-  category: string;
-  featured_image: string | null;
-  published_at: string | null;
-  event_date: string | null;
-}
+import { useNews } from '@/hooks/useCms';
 
 export const LatestNews: React.FC = () => {
-  const [items, setItems] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from('news_articles')
-        .select('id,title,slug,excerpt,category,featured_image,published_at,event_date')
-        .eq('is_published', true)
-        .order('published_at', { ascending: false })
-        .limit(3);
-      setItems(data || []);
-      setLoading(false);
-    })();
-  }, []);
-
+  const { data: items = [], isLoading: loading } = useNews({ limit: 3 });
   if (!loading && items.length === 0) return null;
 
   return (
@@ -54,8 +28,9 @@ export const LatestNews: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {(loading ? Array.from({ length: 3 }) : items).map((item: any, i) => (
-            <article
+          {(loading ? (Array.from({ length: 3 }) as any[]) : items).map((item: any, i: number) => (
+            <Link
+              to={item?.slug ? `/website/news/${item.slug}` : '/website/news'}
               key={item?.id || i}
               className="group relative overflow-hidden rounded-2xl border border-border bg-card hover:shadow-xl transition-all duration-300"
             >
@@ -92,7 +67,7 @@ export const LatestNews: React.FC = () => {
                   {item?.excerpt || (loading ? '' : '')}
                 </p>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </div>
