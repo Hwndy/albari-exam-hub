@@ -720,6 +720,126 @@ export type Database = {
           },
         ]
       }
+      assignment_submissions: {
+        Row: {
+          assignment_id: string
+          attachment_url: string | null
+          content: string | null
+          created_at: string
+          feedback: string | null
+          graded_at: string | null
+          graded_by: string | null
+          id: string
+          score: number | null
+          student_id: string
+          submitted_at: string
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          attachment_url?: string | null
+          content?: string | null
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          score?: number | null
+          student_id: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          attachment_url?: string | null
+          content?: string | null
+          created_at?: string
+          feedback?: string | null
+          graded_at?: string | null
+          graded_by?: string | null
+          id?: string
+          score?: number | null
+          student_id?: string
+          submitted_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_submissions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assignments: {
+        Row: {
+          attachment_url: string | null
+          class_id: string
+          created_at: string
+          due_date: string | null
+          id: string
+          instructions: string | null
+          is_published: boolean
+          max_score: number | null
+          subject_id: string | null
+          teacher_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          attachment_url?: string | null
+          class_id: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          instructions?: string | null
+          is_published?: boolean
+          max_score?: number | null
+          subject_id?: string | null
+          teacher_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          attachment_url?: string | null
+          class_id?: string
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          instructions?: string | null
+          is_published?: boolean
+          max_score?: number | null
+          subject_id?: string | null
+          teacher_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       attendance_sessions: {
         Row: {
           class_id: string | null
@@ -1942,6 +2062,69 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      lesson_notes: {
+        Row: {
+          attachment_url: string | null
+          class_id: string
+          content: string | null
+          created_at: string
+          id: string
+          is_published: boolean
+          session_id: string | null
+          subject_id: string | null
+          teacher_id: string
+          term: string | null
+          title: string
+          updated_at: string
+          week_number: number | null
+        }
+        Insert: {
+          attachment_url?: string | null
+          class_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          session_id?: string | null
+          subject_id?: string | null
+          teacher_id: string
+          term?: string | null
+          title: string
+          updated_at?: string
+          week_number?: number | null
+        }
+        Update: {
+          attachment_url?: string | null
+          class_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean
+          session_id?: string | null
+          subject_id?: string | null
+          teacher_id?: string
+          term?: string | null
+          title?: string
+          updated_at?: string
+          week_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lesson_notes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lesson_notes_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -3677,6 +3860,7 @@ export type Database = {
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
+      get_grade_for_score: { Args: { _score: number }; Returns: Json }
       get_or_create_scan_session: { Args: { p_date: string }; Returns: string }
       get_parent_children: {
         Args: never
