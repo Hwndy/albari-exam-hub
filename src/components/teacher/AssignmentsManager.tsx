@@ -149,8 +149,6 @@ export const AssignmentsManager: React.FC = () => {
                 <Input type="file" onChange={(e) => {
                   const file = e.target.files?.[0] || null;
                   if (file) {
-                    // eslint-disable-next-line @typescript-eslint/no-var-requires
-                    const { validateUpload } = require('@/lib/file-upload-guards');
                     const err = validateUpload(file);
                     if (err) { toast.error(err); return; }
                   }
