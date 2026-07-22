@@ -2112,6 +2112,48 @@ export type Database = {
         }
         Relationships: []
       }
+      parent_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          parent_user_id: string
+          read_at: string | null
+          sender_role: string
+          sender_user_id: string
+          student_id: string | null
+          subject: string | null
+          thread_id: string
+          updated_at: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          parent_user_id: string
+          read_at?: string | null
+          sender_role: string
+          sender_user_id: string
+          student_id?: string | null
+          subject?: string | null
+          thread_id?: string
+          updated_at?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          parent_user_id?: string
+          read_at?: string | null
+          sender_role?: string
+          sender_user_id?: string
+          student_id?: string | null
+          subject?: string | null
+          thread_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       parents: {
         Row: {
           address: Json | null
@@ -3628,8 +3670,13 @@ export type Database = {
         Args: { p_app_no: string; p_email: string }
         Returns: Json
       }
+      get_attendance_summary: {
+        Args: { p_class_id?: string; p_end: string; p_start: string }
+        Returns: Json
+      }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
       get_or_create_scan_session: { Args: { p_date: string }; Returns: string }
       get_parent_children: {
         Args: never
