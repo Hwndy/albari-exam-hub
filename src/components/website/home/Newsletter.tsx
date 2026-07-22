@@ -2,10 +2,14 @@ import React, { useState } from 'react';
 import { Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 
 export const Newsletter: React.FC = () => {
+  const { settings } = useWebsiteSettings();
+  const enabled = settingValue<boolean>(settings, 'newsletter_enabled', true);
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  if (!enabled) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
