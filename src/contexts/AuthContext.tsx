@@ -26,6 +26,26 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Sprint E: idle timeout — auto sign-out after 30 min of inactivity.
+  useEffect(() => {
+    if (!session) return;
+    const IDLE_MS = 30 * 60 * 1000;
+    let timer: number | undefined;
+    const bump = () => {
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        supabase.auth.signOut().catch(() => {});
+      }, IDLE_MS);
+    };
+    const events = ['mousemove', 'keydown', 'click', 'touchstart', 'scroll'];
+    events.forEach((e) => window.addEventListener(e, bump, { passive: true }));
+    bump();
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      events.forEach((e) => window.removeEventListener(e, bump));
+    };
+  }, [session]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -157,7 +177,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setIsLoading(false);
       throw new Error('Your account setup is incomplete. Please contact the school administrator.');
     }
-    
+
+    // Sprint E: force password change on first login for admin-provisioned accounts.
+    const { data: prof } = await supabase
+      .from('profiles')
+      .select('must_change_password')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+    if (prof?.must_change_password) {
+      window.location.replace('/reset-password');
+      return;
+    }
+
     console.log('Login successful, waiting for auth state change...');
     // Don't set loading to false here - let the auth state change handle it
   };
