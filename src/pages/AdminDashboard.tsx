@@ -37,6 +37,9 @@ import { StudentsByClass } from '@/components/admin/StudentsByClass';
 import { StudentDetail } from '@/components/admin/StudentDetail';
 import { ParentsHub } from '@/components/admin/parents/ParentsHub';
 import { ScanStation } from '@/components/attendance/ScanStation';
+import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
+import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
+import { SettingsHub } from '@/components/admin/SettingsHub';
 
 interface DashboardStats {
   totalStudents: number;
@@ -213,7 +216,12 @@ export const AdminDashboard = () => {
     if (activeTab === 'fees') return 'Fee Management';
     if (activeTab === 'library') return 'Library Management';
     if (activeTab === 'notifications') return 'Bulk Notifications';
-    if (activeTab === 'id-cards') return 'Student ID Cards';
+    if (activeTab === 'id-cards') {
+      if (activeSubTab === 'staff') return 'Staff ID Cards';
+      return 'Student ID Cards';
+    }
+    if (activeTab === 'announcements') return 'Announcements';
+    if (activeTab === 'settings') return 'Settings';
     if (activeTab === 'users') return 'User Management';
     if (activeTab === 'website') {
       const titles: Record<string, string> = {
@@ -340,7 +348,19 @@ export const AdminDashboard = () => {
     }
 
     if (activeTab === 'id-cards') {
-      return <IDCardGenerator />;
+      switch (activeSubTab) {
+        case 'staff': return <StaffIDCardGenerator />;
+        case 'students':
+        default: return <IDCardGenerator />;
+      }
+    }
+
+    if (activeTab === 'announcements') {
+      return <AnnouncementsComposer />;
+    }
+
+    if (activeTab === 'settings') {
+      return <SettingsHub />;
     }
 
     if (activeTab === 'attendance-scan') {

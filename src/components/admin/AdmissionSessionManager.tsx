@@ -21,6 +21,7 @@ interface AdmissionSession {
   required_documents: any;
   max_applicants: number | null;
   created_at: string;
+  is_current?: boolean;
 }
 
 export const AdmissionSessionManager = () => {
@@ -105,6 +106,19 @@ export const AdmissionSessionManager = () => {
       fetchSessions();
     } catch (error: any) {
       toast.error("Failed to update session: " + error.message);
+    }
+  };
+
+  const markCurrent = async (sessionId: string) => {
+    try {
+      // Only one current session at a time.
+      await supabase.from("admission_sessions").update({ is_current: false } as any).neq("id", sessionId);
+      const { error } = await supabase.from("admission_sessions").update({ is_current: true } as any).eq("id", sessionId);
+      if (error) throw error;
+      toast.success("Marked as current academic session");
+      fetchSessions();
+    } catch (error: any) {
+      toast.error("Failed to set current session: " + error.message);
     }
   };
 
@@ -315,6 +329,15 @@ export const AdmissionSessionManager = () => {
                   )}
                 </div>
               )}
+              <Button
+                size="sm"
+                variant={session.is_current ? "secondary" : "outline"}
+                className="w-full"
+                disabled={session.is_current}
+                onClick={() => markCurrent(session.id)}
+              >
+                {session.is_current ? "Current session ✓" : "Mark as current session"}
+              </Button>
             </CardContent>
           </Card>
         ))}
