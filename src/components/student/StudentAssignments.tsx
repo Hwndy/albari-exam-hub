@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { validateUpload } from '@/lib/file-upload-guards';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -125,7 +126,7 @@ const SubmitDialog: React.FC<{ assignment: any; studentId: string; existing: any
           <div><Label>Attachment (optional, max 10MB)</Label>
             <Input type="file" onChange={(e) => {
               const f = e.target.files?.[0] || null;
-              if (f && f.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return; }
+              if (f) { const err = validateUpload(f); if (err) { toast.error(err); return; } }
               setFile(f);
             }} />
           </div>

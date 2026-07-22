@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Paperclip, Trash2, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { validateUpload } from '@/lib/file-upload-guards';
 
 interface Assignment {
   id: string;
@@ -148,7 +149,10 @@ export const AssignmentsManager: React.FC = () => {
                 <Label>Attachment (optional, max 10MB)</Label>
                 <Input type="file" onChange={(e) => {
                   const file = e.target.files?.[0] || null;
-                  if (file && file.size > 10 * 1024 * 1024) { toast.error('Max 10MB'); return; }
+                  if (file) {
+                    const err = validateUpload(file);
+                    if (err) { toast.error(err); return; }
+                  }
                   setForm(f => ({ ...f, attachment: file }));
                 }} />
               </div>
