@@ -6,6 +6,7 @@ import { ParentAcademics } from '@/components/parent/ParentAcademics';
 import { ParentAttendance } from '@/components/parent/ParentAttendance';
 import { ParentFees } from '@/components/parent/ParentFees';
 import { CommunicationHub } from '@/components/parent/CommunicationHub';
+import { ParentMessagesInbox } from '@/components/parent/ParentMessagesInbox';
 import { AcademicCalendar } from '@/components/parent/AcademicCalendar';
 import { ParentReportCards } from '@/components/parent/ParentReportCards';
 import { ParentProfileSettings } from '@/components/parent/ParentProfileSettings';
@@ -50,7 +51,12 @@ const ParentDashboardInner: React.FC = () => {
           <TabsContent value="report-cards"><ParentReportCards onViewResults={() => setActiveTab('academics')} /></TabsContent>
           <TabsContent value="attendance"><ParentAttendance /></TabsContent>
           <TabsContent value="fees"><ParentFees /></TabsContent>
-          <TabsContent value="messages"><CommunicationHub /></TabsContent>
+          <TabsContent value="messages">
+            <div className="space-y-6">
+              <ParentMessagesInbox />
+              <CommunicationHub />
+            </div>
+          </TabsContent>
           <TabsContent value="calendar"><AcademicCalendar /></TabsContent>
           <TabsContent value="settings"><ParentProfileSettings /></TabsContent>
         </Tabs>
