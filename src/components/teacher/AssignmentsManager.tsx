@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, Plus, Paperclip, Trash2, GraduationCap } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { validateUpload } from '@/lib/file-upload-guards';
 
 interface Assignment {
   id: string;
