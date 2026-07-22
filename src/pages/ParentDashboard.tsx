@@ -5,6 +5,8 @@ import { ChildrenOverview } from '@/components/parent/ChildrenOverview';
 import { ParentAcademics } from '@/components/parent/ParentAcademics';
 import { ParentAttendance } from '@/components/parent/ParentAttendance';
 import { ParentFees } from '@/components/parent/ParentFees';
+import { ParentAssignments } from '@/components/parent/ParentAssignments';
+import { ParentLessonNotes } from '@/components/parent/ParentLessonNotes';
 import { CommunicationHub } from '@/components/parent/CommunicationHub';
 import { ParentMessagesInbox } from '@/components/parent/ParentMessagesInbox';
 import { AcademicCalendar } from '@/components/parent/AcademicCalendar';
@@ -37,6 +39,8 @@ const ParentDashboardInner: React.FC = () => {
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="overview" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Overview</TabsTrigger>
               <TabsTrigger value="academics" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Academics</TabsTrigger>
+              <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Assignments</TabsTrigger>
+              <TabsTrigger value="notes" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Lesson Notes</TabsTrigger>
               <TabsTrigger value="report-cards" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Report Cards</TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Attendance</TabsTrigger>
               <TabsTrigger value="fees" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Fees</TabsTrigger>
@@ -48,6 +52,8 @@ const ParentDashboardInner: React.FC = () => {
 
           <TabsContent value="overview"><ChildrenOverview /></TabsContent>
           <TabsContent value="academics"><ParentAcademics /></TabsContent>
+          <TabsContent value="assignments"><ParentAssignments /></TabsContent>
+          <TabsContent value="notes"><ParentLessonNotes /></TabsContent>
           <TabsContent value="report-cards"><ParentReportCards onViewResults={() => setActiveTab('academics')} /></TabsContent>
           <TabsContent value="attendance"><ParentAttendance /></TabsContent>
           <TabsContent value="fees"><ParentFees /></TabsContent>
