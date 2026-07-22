@@ -40,6 +40,7 @@ import { ScanStation } from '@/components/attendance/ScanStation';
 import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
 import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
 import { SettingsHub } from '@/components/admin/SettingsHub';
+import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
 
 interface DashboardStats {
   totalStudents: number;
@@ -365,6 +366,10 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'attendance-scan') {
       return <ScanStation />;
+    }
+
+    if (activeTab === 'attendance-reports') {
+      return <AttendanceReports />;
     }
 
     if (activeTab === 'users') {
