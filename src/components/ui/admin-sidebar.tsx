@@ -82,10 +82,16 @@ const menuItems = [
     sub: [
       { title: "Enter Scores", value: "enter-scores" },
       { title: "Broadsheet", value: "broadsheet" },
+      { title: "Bulk Report Cards", value: "bulk-reports" },
       { title: "Promotion", value: "promotion" },
       { title: "Past Students", value: "past-students" },
       { title: "Automation", value: "automation" },
     ],
+  },
+  {
+    title: "Attendance Reports",
+    icon: ClipboardList,
+    value: "attendance-reports",
   },
   {
     title: "Fee Management",
@@ -133,6 +139,7 @@ const menuItems = [
     sub: [
       { title: "Parents", value: "list" },
       { title: "Child Links", value: "links" },
+      { title: "Messages", value: "messages" },
       { title: "Announcements", value: "announcements" },
     ],
   },
