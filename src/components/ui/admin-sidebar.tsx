@@ -18,6 +18,7 @@ import {
   Megaphone,
   UserSquare2,
 } from "lucide-react";
+import { BarChart3, Bus, Package, Briefcase, CalendarClock, Wallet } from "lucide-react";
 
 import {
   Sidebar,
@@ -46,6 +47,11 @@ const menuItems = [
     title: "Dashboard",
     icon: LayoutDashboard,
     value: "overview",
+  },
+  {
+    title: "Analytics",
+    icon: BarChart3,
+    value: "analytics",
   },
   {
     title: "Admissions",
@@ -159,6 +165,26 @@ const menuItems = [
     title: "Settings",
     icon: Settings,
     value: "settings",
+  },
+  {
+    title: "HR",
+    icon: Briefcase,
+    value: "hr",
+    sub: [
+      { title: "Leave Requests", value: "leave" },
+      { title: "Payroll", value: "payroll" },
+      { title: "Careers", value: "careers" },
+    ],
+  },
+  {
+    title: "Transport",
+    icon: Bus,
+    value: "transport",
+  },
+  {
+    title: "Assets",
+    icon: Package,
+    value: "assets",
   },
   {
     title: "System",

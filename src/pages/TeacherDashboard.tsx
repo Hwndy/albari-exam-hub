@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2, Calendar, ClipboardList, NotebookPen } from 'lucide-react';
+import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2, Calendar, ClipboardList, NotebookPen, CalendarClock } from 'lucide-react';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { TeacherExamBuilder } from '@/components/teacher/TeacherExamBuilder';
 import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
@@ -15,6 +15,7 @@ import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
 import { TeacherResultsManagement } from '@/components/teacher/TeacherResultsManagement';
 import { AssignmentsManager } from '@/components/teacher/AssignmentsManager';
 import { LessonNotesManager } from '@/components/teacher/LessonNotesManager';
+import { LeaveRequestForm } from '@/components/teacher/LeaveRequestForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -182,6 +183,10 @@ export const TeacherDashboard = () => {
                 <NotebookPen className="h-4 w-4 mr-1 hidden sm:inline" />
                 Lesson Notes
               </TabsTrigger>
+              <TabsTrigger value="leave" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <CalendarClock className="h-4 w-4 mr-1 hidden sm:inline" />
+                Leave
+              </TabsTrigger>
               <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>
               <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Class Assignments</TabsTrigger>
             </TabsList>
@@ -236,6 +241,10 @@ export const TeacherDashboard = () => {
 
           <TabsContent value="lesson-notes" className="space-y-4">
             <LessonNotesManager />
+          </TabsContent>
+
+          <TabsContent value="leave" className="space-y-4">
+            <LeaveRequestForm />
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
