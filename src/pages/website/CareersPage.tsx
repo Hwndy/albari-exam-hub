@@ -23,6 +23,7 @@ export const CareersPage: React.FC = () => {
       <SEO
         title="Careers | Al-Bari Model Schools"
         description="Join our team. Explore teaching and support staff opportunities at Al-Bari Model Schools."
+        path="/careers"
       />
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
