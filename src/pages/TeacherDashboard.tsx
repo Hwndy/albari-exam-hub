@@ -3,7 +3,7 @@ import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2, Calendar } from 'lucide-react';
+import { BookOpen, Users, FileText, Plus, ClipboardCheck, Calculator, Loader2, Calendar, ClipboardList, NotebookPen } from 'lucide-react';
 import { ConsolidatedExamCreator } from '@/components/shared/ConsolidatedExamCreator';
 import { TeacherExamBuilder } from '@/components/teacher/TeacherExamBuilder';
 import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
@@ -13,6 +13,8 @@ import { AttendanceSystem } from '@/components/teacher/AttendanceSystem';
 import { GradebookSystem } from '@/components/teacher/GradebookSystem';
 import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
 import { TeacherResultsManagement } from '@/components/teacher/TeacherResultsManagement';
+import { AssignmentsManager } from '@/components/teacher/AssignmentsManager';
+import { LessonNotesManager } from '@/components/teacher/LessonNotesManager';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -172,6 +174,14 @@ export const TeacherDashboard = () => {
                 <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
                 Results Management
               </TabsTrigger>
+              <TabsTrigger value="assignments-mgr" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <ClipboardList className="h-4 w-4 mr-1 hidden sm:inline" />
+                Assignments
+              </TabsTrigger>
+              <TabsTrigger value="lesson-notes" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
+                <NotebookPen className="h-4 w-4 mr-1 hidden sm:inline" />
+                Lesson Notes
+              </TabsTrigger>
               <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>
               <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Class Assignments</TabsTrigger>
             </TabsList>
@@ -218,6 +228,14 @@ export const TeacherDashboard = () => {
 
           <TabsContent value="results-mgmt" className="space-y-4">
             <TeacherResultsManagement />
+          </TabsContent>
+
+          <TabsContent value="assignments-mgr" className="space-y-4">
+            <AssignmentsManager />
+          </TabsContent>
+
+          <TabsContent value="lesson-notes" className="space-y-4">
+            <LessonNotesManager />
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
