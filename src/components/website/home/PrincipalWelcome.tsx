@@ -1,7 +1,18 @@
 import React from 'react';
 import { Quote } from 'lucide-react';
+import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 
 export const PrincipalWelcome: React.FC = () => {
+  const { settings } = useWebsiteSettings();
+  const name = settingValue<string>(settings, 'principal_name', 'Dr. Awe');
+  const title = settingValue<string>(settings, 'principal_title', 'Director of Studies');
+  const photo = settingValue<string>(settings, 'principal_photo_url', '/awe.png');
+  const message = settingValue<string>(
+    settings,
+    'principal_message',
+    "For over two decades, Al-Bari Group of Schools has been a sanctuary where bright minds are nurtured into principled leaders."
+  );
+  const paragraphs = message.split(/\n{2,}/);
   return (
     <section className="py-20 bg-gradient-to-b from-background to-accent/30">
       <div className="container mx-auto px-4">
@@ -12,25 +23,17 @@ export const PrincipalWelcome: React.FC = () => {
               <div className="absolute -inset-4 bg-gradient-to-br from-gold/40 via-primary/20 to-primary/40 rounded-2xl blur-2xl opacity-60" />
               <div className="relative h-full w-full rounded-2xl overflow-hidden border-4 border-gold/30 shadow-2xl bg-gradient-to-br from-primary to-primary-hover flex items-center justify-center">
                 <img
-                  src="/principal.jpg"
-                  alt="Principal of Al-Bari Group of Schools"
+                  src={photo}
+                  alt={`${name} — ${title}`}
                   loading="lazy"
                   className="h-full w-full object-cover"
                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-primary-foreground/90 pointer-events-none">
-                  <div>
-                      <img
-                        src="/awe.png" alt="Dr. Sulaimon Dhikroh Awe - Director of Studies"
-                      
-                      />
-                    </div>
-                </div>
               </div>
               {/* Floating signature card */}
               <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-card border border-border shadow-xl rounded-xl px-6 py-3 text-center min-w-[220px]">
-                <p className="font-serif italic text-primary text-lg leading-tight">Dr. Awe</p>
-                <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Director of Studies</p>
+                <p className="font-serif italic text-primary text-lg leading-tight">{name}</p>
+                <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">{title}</p>
               </div>
             </div>
           </div>
@@ -46,15 +49,11 @@ export const PrincipalWelcome: React.FC = () => {
             </h2>
             <div className="relative pl-8">
               <Quote className="absolute -left-1 top-0 h-10 w-10 text-gold/40" />
-              <p className="text-lg text-muted-foreground leading-relaxed">
-                For over two decades, Al-Bari Group of Schools has been a sanctuary where bright minds are
-                nurtured into principled leaders. We believe that true education is the marriage of
-                intellectual rigour and moral clarity and every child who walks through our gates
-                is treated as a future custodian of that vision.
-              </p>
-              <p className="text-lg text-muted-foreground leading-relaxed mt-4">
-                Welcome to a community that will challenge, support and celebrate your child.
-              </p>
+              {paragraphs.map((p, i) => (
+                <p key={i} className={`text-lg text-muted-foreground leading-relaxed ${i > 0 ? 'mt-4' : ''}`}>
+                  {p}
+                </p>
+              ))}
             </div>
             <div className="flex items-center gap-6 pt-2">
               <div className="h-1 w-12 bg-gold rounded-full" />

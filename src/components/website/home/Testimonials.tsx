@@ -1,31 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Star, Quote } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-
-interface Testimonial {
-  id: string;
-  name: string;
-  role: string;
-  content: string;
-  rating: number | null;
-  image_url: string | null;
-}
+import { useTestimonials } from '@/hooks/useCms';
 
 export const Testimonials: React.FC = () => {
-  const [items, setItems] = useState<Testimonial[]>([]);
-
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase
-        .from('testimonials')
-        .select('id,name,role,content,rating,image_url')
-        .eq('is_published', true)
-        .order('is_featured', { ascending: false })
-        .limit(6);
-      setItems(data || []);
-    })();
-  }, []);
-
+  const { data: items = [] } = useTestimonials({ limit: 6 });
   if (items.length === 0) return null;
 
   return (
