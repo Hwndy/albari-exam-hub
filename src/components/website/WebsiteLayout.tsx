@@ -18,6 +18,7 @@ const navigation = [
   { name: 'Gallery', href: '/website/gallery' },
   { name: 'Testimonials', href: '/website/testimonials' },
   { name: 'Facilities', href: '/website/facilities' },
+  { name: 'Careers', href: '/website/careers' },
   { name: 'Portals', href: '/website/portals' },
 ];
 
