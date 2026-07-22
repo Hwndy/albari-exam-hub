@@ -177,11 +177,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "admission_applications_admitted_to_class_id_fkey"
+            columns: ["admitted_to_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "admission_applications_applying_for_class_id_fkey"
             columns: ["applying_for_class_id"]
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_applications_applying_for_class_id_fkey"
+            columns: ["applying_for_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "admission_applications_student_id_fkey"
@@ -394,6 +408,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admission_offers_offered_class_id_fkey"
+            columns: ["offered_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
         ]
       }
@@ -648,6 +669,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assessment_types_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "assessment_types_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -712,10 +740,144 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assessments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "assessments_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
             referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      asset_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      asset_movements: {
+        Row: {
+          asset_id: string
+          from_location: string | null
+          from_staff: string | null
+          id: string
+          moved_at: string
+          moved_by: string | null
+          note: string | null
+          to_location: string | null
+          to_staff: string | null
+        }
+        Insert: {
+          asset_id: string
+          from_location?: string | null
+          from_staff?: string | null
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          note?: string | null
+          to_location?: string | null
+          to_staff?: string | null
+        }
+        Update: {
+          asset_id?: string
+          from_location?: string | null
+          from_staff?: string | null
+          id?: string
+          moved_at?: string
+          moved_by?: string | null
+          note?: string | null
+          to_location?: string | null
+          to_staff?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_movements_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      assets: {
+        Row: {
+          asset_tag: string
+          assigned_to_staff: string | null
+          category_id: string | null
+          condition: string
+          cost: number | null
+          created_at: string
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          purchased_on: string | null
+          serial_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          asset_tag: string
+          assigned_to_staff?: string | null
+          category_id?: string | null
+          condition?: string
+          cost?: number | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          purchased_on?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          asset_tag?: string
+          assigned_to_staff?: string | null
+          category_id?: string | null
+          condition?: string
+          cost?: number | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          purchased_on?: string | null
+          serial_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "asset_categories"
             referencedColumns: ["id"]
           },
         ]
@@ -770,6 +932,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "assignments"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignment_submissions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "v_assignment_completion"
+            referencedColumns: ["assignment_id"]
           },
           {
             foreignKeyName: "assignment_submissions_student_id_fkey"
@@ -832,6 +1001,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "assignments_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -886,6 +1062,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "attendance_sessions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "attendance_sessions_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -938,6 +1121,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_summary_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "attendance_summary_student_id_fkey"
@@ -1069,6 +1259,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "class_assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "class_assignments_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
@@ -1124,6 +1321,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_timetables_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "class_timetables_period_id_fkey"
@@ -1443,6 +1647,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "exams_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "exams_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -1745,6 +1956,13 @@ export type Database = {
             referencedRelation: "classes"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fee_structures_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
         ]
       }
       gallery: {
@@ -1830,6 +2048,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grade_comments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "grade_comments_student_id_fkey"
@@ -1918,6 +2143,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gradebook_entries_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "gradebook_entries_session_id_fkey"
@@ -2104,6 +2336,99 @@ export type Database = {
           },
         ]
       }
+      job_openings: {
+        Row: {
+          apply_email: string
+          closes_on: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string
+          employment_type: string
+          id: string
+          is_open: boolean
+          location: string | null
+          requirements: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          apply_email: string
+          closes_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string | null
+          requirements?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          apply_email?: string
+          closes_on?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string
+          employment_type?: string
+          id?: string
+          is_open?: boolean
+          location?: string | null
+          requirements?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      leave_requests: {
+        Row: {
+          approver_id: string | null
+          created_at: string
+          decided_at: string | null
+          decision_notes: string | null
+          end_date: string
+          id: string
+          leave_type: string
+          reason: string | null
+          staff_id: string
+          start_date: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approver_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          end_date: string
+          id?: string
+          leave_type: string
+          reason?: string | null
+          staff_id: string
+          start_date: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approver_id?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decision_notes?: string | null
+          end_date?: string
+          id?: string
+          leave_type?: string
+          reason?: string | null
+          staff_id?: string
+          start_date?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       lesson_notes: {
         Row: {
           attachment_url: string | null
@@ -2159,6 +2484,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lesson_notes_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "lesson_notes_subject_id_fkey"
             columns: ["subject_id"]
             isOneToOne: false
@@ -2205,6 +2537,90 @@ export type Database = {
           total_copies?: number | null
         }
         Relationships: []
+      }
+      meal_plans: {
+        Row: {
+          billing_cycle: string
+          created_at: string
+          days: Json
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          billing_cycle?: string
+          created_at?: string
+          days?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          price?: number
+          updated_at?: string
+        }
+        Update: {
+          billing_cycle?: string
+          created_at?: string
+          days?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      meal_subscriptions: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          plan_id: string
+          start_date: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          plan_id: string
+          start_date?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          plan_id?: string
+          start_date?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meal_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "meal_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meal_subscriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       news_articles: {
         Row: {
@@ -2448,6 +2864,89 @@ export type Database = {
         }
         Relationships: []
       }
+      payroll_items: {
+        Row: {
+          allowances: Json
+          created_at: string
+          deductions: Json
+          gross_salary: number
+          id: string
+          net_pay: number
+          notes: string | null
+          paid_at: string | null
+          period_id: string
+          staff_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          allowances?: Json
+          created_at?: string
+          deductions?: Json
+          gross_salary?: number
+          id?: string
+          net_pay?: number
+          notes?: string | null
+          paid_at?: string | null
+          period_id: string
+          staff_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          allowances?: Json
+          created_at?: string
+          deductions?: Json
+          gross_salary?: number
+          id?: string
+          net_pay?: number
+          notes?: string | null
+          paid_at?: string | null
+          period_id?: string
+          staff_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_items_period_id_fkey"
+            columns: ["period_id"]
+            isOneToOne: false
+            referencedRelation: "payroll_periods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll_periods: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          period_month: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          period_month: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          period_month?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       paystack_webhooks: {
         Row: {
           created_at: string
@@ -2598,6 +3097,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "promotion_history_from_class_id_fkey"
+            columns: ["from_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "promotion_history_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
@@ -2610,6 +3116,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "promotion_history_to_class_id_fkey"
+            columns: ["to_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
         ]
       }
@@ -2678,6 +3191,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_banks_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "question_banks_subject_id_fkey"
@@ -2854,6 +3374,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "questions_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "questions_question_bank_id_fkey"
             columns: ["question_bank_id"]
             isOneToOne: false
@@ -2948,6 +3475,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "report_card_comments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
             foreignKeyName: "report_card_comments_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
@@ -2991,6 +3525,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "report_card_publications_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "report_card_publications_session_id_fkey"
@@ -3409,6 +3950,64 @@ export type Database = {
           },
         ]
       }
+      student_transport: {
+        Row: {
+          active: boolean
+          created_at: string
+          ended_on: string | null
+          id: string
+          route_id: string
+          started_on: string
+          stop_id: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          route_id: string
+          started_on?: string
+          stop_id?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          ended_on?: string | null
+          id?: string
+          route_id?: string
+          started_on?: string
+          stop_id?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_transport_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transport_stop_id_fkey"
+            columns: ["stop_id"]
+            isOneToOne: false
+            referencedRelation: "transport_stops"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_transport_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       students: {
         Row: {
           address: Json | null
@@ -3510,6 +4109,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "classes"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subject_assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
           {
             foreignKeyName: "subject_assignments_subject_id_fkey"
@@ -3652,6 +4258,89 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      transport_routes: {
+        Row: {
+          capacity: number
+          created_at: string
+          driver_name: string | null
+          driver_phone: string | null
+          id: string
+          is_active: boolean
+          monthly_fee: number
+          name: string
+          notes: string | null
+          updated_at: string
+          vehicle_reg: string | null
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_fee?: number
+          name: string
+          notes?: string | null
+          updated_at?: string
+          vehicle_reg?: string | null
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          driver_name?: string | null
+          driver_phone?: string | null
+          id?: string
+          is_active?: boolean
+          monthly_fee?: number
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          vehicle_reg?: string | null
+        }
+        Relationships: []
+      }
+      transport_stops: {
+        Row: {
+          created_at: string
+          dropoff_time: string | null
+          id: string
+          name: string
+          pickup_time: string | null
+          route_id: string
+          stop_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          dropoff_time?: string | null
+          id?: string
+          name: string
+          pickup_time?: string | null
+          route_id: string
+          stop_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          dropoff_time?: string | null
+          id?: string
+          name?: string
+          pickup_time?: string | null
+          route_id?: string
+          stop_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transport_stops_route_id_fkey"
+            columns: ["route_id"]
+            isOneToOne: false
+            referencedRelation: "transport_routes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
@@ -3831,6 +4520,66 @@ export type Database = {
       }
     }
     Views: {
+      v_admission_funnel: {
+        Row: {
+          count: number | null
+          status: string | null
+        }
+        Relationships: []
+      }
+      v_assignment_completion: {
+        Row: {
+          assignment_id: string | null
+          class_id: string | null
+          class_name: string | null
+          graded_count: number | null
+          submitted_count: number | null
+          title: string | null
+          total_students: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "assignments_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+        ]
+      }
+      v_attendance_trend: {
+        Row: {
+          absent: number | null
+          day: string | null
+          late: number | null
+          present: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
+      v_enrolment_by_class: {
+        Row: {
+          class_id: string | null
+          class_name: string | null
+          student_count: number | null
+        }
+        Relationships: []
+      }
+      v_fee_collections_daily: {
+        Row: {
+          collected: number | null
+          day: string | null
+          payments: number | null
+        }
+        Relationships: []
+      }
       v_student_term_scores: {
         Row: {
           class_id: string | null
@@ -3892,6 +4641,7 @@ export type Database = {
       }
       delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
       expire_old_qr_tokens: { Args: never; Returns: number }
+      get_admin_analytics: { Args: never; Returns: Json }
       get_application_tracking: {
         Args: { p_app_no: string; p_email: string }
         Returns: Json
@@ -3924,6 +4674,7 @@ export type Database = {
       }
       get_student_fee_summary: { Args: { _student_id: string }; Returns: Json }
       get_user_email: { Args: never; Returns: string }
+      global_search: { Args: { q: string }; Returns: Json }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
