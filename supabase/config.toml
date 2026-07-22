@@ -74,3 +74,9 @@ verify_jwt = false
 
 [functions.paystack-reconcile]
 verify_jwt = true
+
+[functions.send-report-cards]
+verify_jwt = true
+
+[functions.notify-absentees]
+verify_jwt = false

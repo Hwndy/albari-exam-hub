@@ -29,7 +29,7 @@ interface Args {
  * parents/students see the exact same numbers.
  */
 export function useReportCardBuilder() {
-  const buildAndPrint = useCallback(async ({ studentId, classId, sessionId, term }: Args) => {
+  const buildHtml = useCallback(async ({ studentId, classId, sessionId, term }: Args): Promise<{ html: string; filename: string; studentName: string; admissionNumber: string; }> => {
     // Fetch context in parallel
     const termValue = TERM_VALUES[term] || 'first';
     const [sessionRes, classRes, schoolRes] = await Promise.all([
@@ -218,8 +218,15 @@ export function useReportCardBuilder() {
     const automation: ReportCardAutomation = DEFAULT_REPORT_CARD_AUTOMATION;
 
     const html = generateReportCardHTML(card, school, automation);
-    openReportCardPrintWindow(html);
+    const safeName = (prof?.full_name || 'student').replace(/[^a-z0-9]+/gi, '_');
+    const filename = `${(studentRow as any).admission_number || studentId}_${safeName}.pdf`;
+    return { html, filename, studentName: prof?.full_name || '—', admissionNumber: (studentRow as any).admission_number || '' };
   }, []);
 
-  return { buildAndPrint };
+  const buildAndPrint = useCallback(async (args: Args) => {
+    const { html } = await buildHtml(args);
+    openReportCardPrintWindow(html);
+  }, [buildHtml]);
+
+  return { buildAndPrint, buildHtml };
 }

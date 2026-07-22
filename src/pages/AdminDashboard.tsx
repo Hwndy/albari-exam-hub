@@ -40,6 +40,7 @@ import { ScanStation } from '@/components/attendance/ScanStation';
 import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
 import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
 import { SettingsHub } from '@/components/admin/SettingsHub';
+import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
 
 interface DashboardStats {
   totalStudents: number;
@@ -222,6 +223,8 @@ export const AdminDashboard = () => {
     }
     if (activeTab === 'announcements') return 'Announcements';
     if (activeTab === 'settings') return 'Settings';
+    if (activeTab === 'attendance-reports') return 'Attendance Reports';
+    if (activeTab === 'attendance-scan') return 'Scan Attendance';
     if (activeTab === 'users') return 'User Management';
     if (activeTab === 'website') {
       const titles: Record<string, string> = {
@@ -365,6 +368,10 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'attendance-scan') {
       return <ScanStation />;
+    }
+
+    if (activeTab === 'attendance-reports') {
+      return <AttendanceReports />;
     }
 
     if (activeTab === 'users') {
