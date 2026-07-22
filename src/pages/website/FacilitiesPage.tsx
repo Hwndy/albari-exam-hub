@@ -27,6 +27,11 @@ export const FacilitiesPage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="Facilities — Al-Bari Group of Schools"
+        description="Explore Al-Bari's world-class facilities: modern classrooms, science labs, library, computer lab, sports complex, cafeteria, and safe transportation."
+        path="/website/facilities"
+      />
       <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">

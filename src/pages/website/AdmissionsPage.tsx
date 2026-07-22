@@ -51,6 +51,11 @@ export const AdmissionsPage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="Admissions — Al-Bari Group of Schools"
+        description="Admission requirements, process, and important dates for Al-Bari Group of Schools. Apply online for nursery, primary, and secondary placement."
+        path="/website/admissions"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-12 sm:py-16 lg:py-20">
         <div className="container mx-auto px-4">

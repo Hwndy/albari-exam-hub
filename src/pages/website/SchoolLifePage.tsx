@@ -57,6 +57,11 @@ export const SchoolLifePage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="School Life — Al-Bari Group of Schools"
+        description="Discover academic tracks, clubs, sports, and student life experiences that shape well-rounded scholars at Al-Bari Group of Schools."
+        path="/website/school-life"
+      />
       {/* Hero Section */}
       <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
         <div className="container mx-auto px-4">
