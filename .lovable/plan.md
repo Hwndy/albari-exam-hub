@@ -1,68 +1,63 @@
-## Sprint C — Website Polish
+## Sprint D — Academics Depth
 
-Focus: turn the public site into a fully browsable, shareable, and search-indexable experience. Build on the existing `useCms` hook and CMS tables already wired in Admin.
+Focus: give teachers, students, and parents the day-to-day academic tooling that sits between attendance and report cards. Everything plugs into the existing `classes`, `subjects`, `class_assignments`, `teacher_class_assignments`, and `profiles` tables.
 
-### 1. News & Events detail pages
-- New route `/news/:slug` → `src/pages/website/NewsDetailPage.tsx` using existing `useNewsArticle(slug)`.
-- Rich article layout: hero image, category chip, published date, author (if present), body (render markdown/HTML safely), share buttons (WhatsApp, X, Facebook, copy link), "Back to news" and "Related posts" (same category, limit 3).
-- Update `NewsPage.tsx` list cards + `LatestNews.tsx` homepage section to link to `/news/:slug`.
-- Per-route `<Helmet>`: title, description (from excerpt), canonical, `og:title/description/image/url`, `Article` JSON-LD.
-- Wire route in `WebsiteRouter.tsx`.
+### 1. Homework / Assignments
+New tables:
+- `assignments` — `class_id`, `subject_id`, `teacher_id`, `title`, `instructions` (text), `attachment_url?`, `due_date`, `max_score?`, `is_published`.
+- `assignment_submissions` — `assignment_id`, `student_id`, `submitted_at`, `content?`, `attachment_url?`, `score?`, `feedback?`, `graded_by?`, `graded_at?`.
+- Storage bucket `assignments` (private) for teacher attachments + student uploads.
+- RLS: teachers manage rows for their assigned classes; students read published assignments for their class and manage their own submission; parents read via `is_parent_of_student`; admins full access.
 
-### 2. Public Gallery page
-- New route `/gallery` → `src/pages/website/GalleryPage.tsx` using existing `useGallery()`.
-- Category filter chips (facilities / events / activities / general), responsive masonry grid, lightbox viewer (keyboard nav + swipe on mobile).
-- Featured strip on homepage: add `GalleryHighlights.tsx` section to `HomePage.tsx` pulling `useGallery({ featured: true, limit: 6 })`.
-- Add nav link in `WebsiteLayout.tsx` header + footer.
-- Per-route Helmet + `ImageGallery` JSON-LD.
+UI:
+- Teacher: `src/components/teacher/AssignmentsManager.tsx` — list/create/edit assignments, view submissions, grade + feedback. New tab in `TeacherDashboard`.
+- Student: `src/components/student/StudentAssignments.tsx` — upcoming/past assignments, submit dialog (text + file). New tab in `StudentDashboard`.
+- Parent: read-only assignments card inside `ParentAcademics.tsx` (per selected child).
 
-### 3. Events listing
-- Extend `NewsPage.tsx` with an **Events** tab that filters `category === 'events'` and sorts by upcoming `event_date` first (past events collapsed below).
-- Event card shows date badge + "Add to calendar" (.ics download generated client-side).
+### 2. Lesson Notes / Scheme of Work
+New table:
+- `lesson_notes` — `class_id`, `subject_id`, `teacher_id`, `title`, `week_number?`, `term?`, `session_id?`, `content` (HTML/markdown), `attachment_url?`, `is_published`.
+- Reuse `assignments` storage bucket (folder `lesson-notes/`).
+- RLS mirrors assignments (teachers own; students/parents read published for their class; admins all).
 
-### 4. Testimonials page
-- New route `/testimonials` → `src/pages/website/TestimonialsPage.tsx` using `useTestimonials()` (grid, filter by role).
-- Homepage `Testimonials.tsx` links "See all" to this route.
+UI:
+- Teacher: `src/components/teacher/LessonNotesManager.tsx` — rich-text (existing textarea + sanitize on render), publish toggle. New tab in `TeacherDashboard`.
+- Admin review: `src/components/admin/LessonNotesReview.tsx` — approve/reject flag column `approved_by`, `approved_at`, `review_notes` (optional; MVP just lets admin see & unpublish).
+- Student/Parent: read-only viewer inside academics section.
 
-### 5. SEO foundation
-- `public/robots.txt`: allow all, add `Sitemap:` line pointing to `/sitemap.xml`.
-- New `scripts/generate-sitemap.ts` wired via `predev` + `prebuild` in `package.json`:
-  - Static routes: `/`, `/about`, `/admissions`, `/apply`, `/track`, `/facilities`, `/school-life`, `/news`, `/gallery`, `/testimonials`, `/portals`.
-  - Dynamic: one entry per published `news_articles.slug` and (optionally) per gallery category page.
-  - `BASE_URL = "https://www.albari.com.ng"`.
-- Sitewide head in `index.html`: verify title/description/canonical/og set to albari.com.ng; add `Organization` + `WebSite` JSON-LD (already partially present — reconcile with `EducationalOrganization`).
-- Per-route `<Helmet>` for each public page (About, Admissions, Apply, Facilities, School Life, News list, Gallery, Testimonials, Portals) with unique title + description + canonical + og.
-- Alt text: audit `AboutPage`, `FacilitiesPage`, `Gallery` cards, hero images — fill from CMS `alt_text` where available, sensible defaults elsewhere.
+### 3. Grading Scale (single source of truth)
+- `grading_scales` table already exists. Seed the Al-Bari A–F scale via migration if empty, and add helper RPC `public.get_grade_for_score(score numeric)` returning `{grade, remark}`.
+- Refactor `src/lib/report-card-html.ts` and `ManualScoresEntry.tsx` to call the RPC / read the table instead of any hardcoded ladders — one canonical scale used everywhere (report cards, gradebook, broadsheet).
+- Admin editor: `src/components/admin/GradingScaleEditor.tsx` inside `SettingsHub` → new "Grading" tab.
 
-### 6. Navigation & footer polish
-- `WebsiteLayout.tsx`: add Gallery + Testimonials + News to primary nav; group secondary (Portals, Track Application) in a right-side cluster; ensure mobile drawer includes them.
-- Footer: quick links block (About, Admissions, News, Gallery, Contact), social icons pulled from `school_info` (facebook/twitter/instagram/youtube/tiktok), newsletter signup already present.
+### 4. Timetable → student/parent visibility polish
+Small touch-ups only:
+- Ensure `StudentTimetable` and a new `ParentTimetable` (per selected child) render from `class_timetables` for the child's class.
+- Add "Today" filter chip.
 
-### 7. Performance & a11y basics
-- Lazy-load below-the-fold sections on `HomePage.tsx` with `React.lazy` + Suspense skeletons for `LatestNews`, `Testimonials`, `GalleryHighlights`.
-- `loading="lazy"` + explicit width/height on all CMS images to prevent CLS.
-- Ensure single `<h1>` per page; semantic `<section>`/`<article>`/`<nav>`.
+### 5. Wiring & nav
+- `TeacherDashboard`: add `Assignments`, `Lesson Notes` tabs.
+- `StudentDashboard`: add `Assignments`, `Lesson Notes` tabs.
+- `ParentDashboard` → `ParentAcademics`: add Assignments + Lesson Notes cards; add Timetable tab.
+- `SettingsHub`: add `Grading Scale` tab.
 
 ### Technical notes
-- Body rendering: news `content` may be HTML — sanitize with `dompurify` (add dep) before `dangerouslySetInnerHTML`.
-- Lightbox: use `yet-another-react-lightbox` (small, unstyled-friendly) or hand-rolled dialog with existing `Dialog` primitive to avoid new dep.
-- Sitemap generator queries Supabase via anon key for published news — keep read-only and cached in `public/sitemap.xml`.
-- All new pages use `WebsiteLayout` wrapper for consistent header/footer.
-- No new secrets, no schema changes — CMS tables already exist.
+- Sanitize any HTML rendered from `lesson_notes.content` and assignment instructions with `dompurify` (already installed in Sprint C).
+- File uploads: use signed URLs; validate mime + size client-side (max 10 MB).
+- All new tables follow the required order: `CREATE TABLE` → `GRANT SELECT, INSERT, UPDATE, DELETE ON ... TO authenticated; GRANT ALL ... TO service_role;` → `ENABLE RLS` → policies using existing `is_teacher()`, `is_admin()`, `is_my_student_record()`, `is_parent_of_student()` helpers.
+- No new secrets, no edge functions required for MVP (grading + submissions are pure DB).
 
 ### Deliverables checklist
 ```text
-[ ] /news/:slug detail page + Helmet + Article JSON-LD
-[ ] /gallery page with filters + lightbox
-[ ] Homepage GalleryHighlights section
-[ ] Events tab on /news with .ics download
-[ ] /testimonials page
-[ ] robots.txt Sitemap directive
-[ ] scripts/generate-sitemap.ts + predev/prebuild wiring
-[ ] Per-route Helmet on all public pages
-[ ] Nav + footer updates (Gallery, Testimonials, socials from CMS)
-[ ] Image alt-text audit + lazy-loading
-[ ] Sanitize news HTML with dompurify
+[ ] assignments + assignment_submissions tables + RLS + storage bucket
+[ ] Teacher AssignmentsManager + Student/Parent views
+[ ] lesson_notes table + RLS
+[ ] Teacher LessonNotesManager + Student/Parent viewer
+[ ] Grading scale seed + get_grade_for_score RPC
+[ ] Refactor report card + manual scores to use canonical scale
+[ ] GradingScaleEditor in SettingsHub
+[ ] Parent/Student timetable views polished
+[ ] Dashboard tabs + navigation wired
 ```
 
 Approve to build.
