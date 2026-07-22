@@ -41,6 +41,13 @@ import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
 import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
 import { SettingsHub } from '@/components/admin/SettingsHub';
 import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
+import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
+import { LeaveManagement } from '@/components/admin/hr/LeaveManagement';
+import { PayrollHub } from '@/components/admin/hr/PayrollHub';
+import { CareersManager } from '@/components/admin/hr/CareersManager';
+import { TransportHub } from '@/components/admin/transport/TransportHub';
+import { AssetsHub } from '@/components/admin/assets/AssetsHub';
+import { GlobalSearch } from '@/components/admin/GlobalSearch';
 
 interface DashboardStats {
   totalStudents: number;
@@ -374,6 +381,17 @@ export const AdminDashboard = () => {
       return <AttendanceReports />;
     }
 
+    if (activeTab === 'analytics') return <AnalyticsDashboard />;
+    if (activeTab === 'transport') return <TransportHub />;
+    if (activeTab === 'assets') return <AssetsHub />;
+    if (activeTab === 'hr') {
+      switch (activeSubTab) {
+        case 'payroll': return <PayrollHub />;
+        case 'careers': return <CareersManager />;
+        default: return <LeaveManagement />;
+      }
+    }
+
     if (activeTab === 'users') {
       return <UserManagement />;
     }
@@ -429,6 +447,7 @@ export const AdminDashboard = () => {
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
         <AdminSidebar />
+        <GlobalSearch />
         
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
