@@ -15,6 +15,8 @@ const navigation = [
   { name: 'School Life', href: '/website/school-life' },
   { name: 'Admissions', href: '/website/admissions' },
   { name: 'News & Events', href: '/website/news' },
+  { name: 'Gallery', href: '/website/gallery' },
+  { name: 'Testimonials', href: '/website/testimonials' },
   { name: 'Facilities', href: '/website/facilities' },
   { name: 'Portals', href: '/website/portals' },
 ];
@@ -177,6 +179,8 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
                 <li><Link to="/website/admissions" className="text-muted-foreground hover:text-primary transition-colors">Admissions</Link></li>
                 <li><Link to="/website/school-life" className="text-muted-foreground hover:text-primary transition-colors">Academics</Link></li>
                 <li><Link to="/website/news" className="text-muted-foreground hover:text-primary transition-colors">News & Events</Link></li>
+                <li><Link to="/website/gallery" className="text-muted-foreground hover:text-primary transition-colors">Gallery</Link></li>
+                <li><Link to="/website/testimonials" className="text-muted-foreground hover:text-primary transition-colors">Testimonials</Link></li>
                 <li><Link to="/website/portals" className="text-muted-foreground hover:text-primary transition-colors">Portals</Link></li>
               </ul>
             </div>

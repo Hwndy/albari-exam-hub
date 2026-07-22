@@ -12,6 +12,7 @@ import { Testimonials } from '@/components/website/home/Testimonials';
 import { HowToApply } from '@/components/website/home/HowToApply';
 import { Newsletter } from '@/components/website/home/Newsletter';
 import { WhatsAppFloat } from '@/components/website/home/WhatsAppFloat';
+import { GalleryHighlights } from '@/components/website/home/GalleryHighlights';
 import { useWebsiteSettings, useSchoolInfo, settingValue } from '@/hooks/useCms';
 
 // Fallback hero image slideshow when nothing is configured in the CMS.
@@ -236,6 +237,9 @@ export const HomePage = () => {
 
       {/* Latest News from CMS */}
       <LatestNews />
+
+      {/* Gallery Highlights */}
+      <GalleryHighlights />
 
       {/* Testimonials */}
       <Testimonials />

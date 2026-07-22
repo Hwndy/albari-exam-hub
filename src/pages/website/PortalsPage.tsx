@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Users, GraduationCap, UserCheck, Shield, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Users, GraduationCap, UserCheck, Shield, Briefcase, BookOpen,
@@ -31,6 +32,11 @@ export const PortalsPage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="Portals — Al-Bari Group of Schools"
+        description="Sign in to the Al-Bari student, parent, teacher, or admin portal to access grades, results, fees, communications, and school resources."
+        path="/website/portals"
+      />
       <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">

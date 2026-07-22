@@ -3,10 +3,16 @@ import { Badge } from '@/components/ui/badge';
 import { AdmissionForm } from '@/components/website/AdmissionForm';
 import { FileText, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { SEO } from '@/components/website/SEO';
 
 export const ApplyPage = () => {
   return (
     <div className="min-h-screen py-8 sm:py-12 bg-gradient-to-b from-background to-card/20">
+      <SEO
+        title="Apply Online — Al-Bari Group of Schools Admissions"
+        description="Start your child's Al-Bari journey. Complete the online admission form to apply for nursery, primary or secondary school placement."
+        path="/website/admissions/apply"
+      />
       <div className="container mx-auto px-3 sm:px-4">
         <div className="max-w-5xl mx-auto">
           {/* Header */}

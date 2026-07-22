@@ -12,6 +12,8 @@ import { TrackApplicationPage } from './TrackApplicationPage';
 import { ApplyPage } from './ApplyPage';
 import { AcceptOfferPage } from './AcceptOfferPage';
 import { PaymentCallbackPage } from './PaymentCallbackPage';
+import { GalleryPage } from './GalleryPage';
+import { TestimonialsPage } from './TestimonialsPage';
 
 export const WebsiteRouter = () => {
   return (
@@ -27,6 +29,8 @@ export const WebsiteRouter = () => {
         <Route path="/payment-callback" element={<PaymentCallbackPage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/testimonials" element={<TestimonialsPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
         <Route path="/portals" element={<PortalsPage />} />
       </Routes>

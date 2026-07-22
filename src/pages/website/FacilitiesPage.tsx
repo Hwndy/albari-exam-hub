@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings, useGallery, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap,
@@ -26,6 +27,11 @@ export const FacilitiesPage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="Facilities — Al-Bari Group of Schools"
+        description="Explore Al-Bari's world-class facilities: modern classrooms, science labs, library, computer lab, sports complex, cafeteria, and safe transportation."
+        path="/website/facilities"
+      />
       <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
+import { SEO } from '@/components/website/SEO';
 
 const ICONS: Record<string, React.ComponentType<any>> = { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles };
 
@@ -45,6 +46,11 @@ export const AboutPage = () => {
 
   return (
     <div className="space-y-0">
+      <SEO
+        title="About Us — Al-Bari Group of Schools"
+        description="Learn about Al-Bari Group of Schools: our vision, mission, core values, and leadership team shaping the next generation of Nigerian leaders."
+        path="/website/about"
+      />
       <section className="relative py-24 overflow-hidden">
         <div className="absolute inset-0 z-0">
           <img src={heroImage} alt="Al-Bari Group of Schools Campus Background" className="w-full h-full object-cover object-center" />
