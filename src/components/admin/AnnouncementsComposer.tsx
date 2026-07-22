@@ -75,12 +75,12 @@ export const AnnouncementsComposer: React.FC = () => {
         title: form.title.trim(),
         content: form.content.trim(),
         priority: form.priority,
-        target_audience: form.audiences,
+        target_audience: form.audiences as any,
         is_published: true,
         publish_date: new Date().toISOString(),
         expiry_date: form.expiry_date ? new Date(form.expiry_date).toISOString() : null,
         created_by: user?.id,
-      });
+      } as any);
       if (error) throw error;
       toast({ title: 'Announcement published' });
       setForm({ title: '', content: '', priority: 'normal', audiences: ['all'], expiry_date: '' });
