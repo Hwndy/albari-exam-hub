@@ -12,7 +12,7 @@ interface Step { n: string; icon?: string; title: string; body: string }
 
 const DEFAULTS: Step[] = [
   { n: '01', icon: 'FileText', title: 'Submit Application', body: "Complete the online application with your child's details and upload required documents." },
-  { n: '02', icon: 'CreditCard', title: 'Sit Entrance Assessment', body: 'Pay the application fee and attend the scheduled entrance examination and interview.' },
+  { n: '02', icon: 'CreditCard', title: 'Entrance Assessment', body: 'Pay the application fee and attend the scheduled entrance examination and interview.' },
   { n: '03', icon: 'GraduationCap', title: 'Accept Your Offer', body: 'Receive your offer letter, pay acceptance fees and join the Al-Bari family.' },
 ];
 
