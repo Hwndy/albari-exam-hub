@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Testimonial } from '@/types/website';
+import { ImageUrlInput } from './ImageUrlInput';
 
 export const TestimonialManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
