@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Trash2, Edit, Star } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { GalleryItem } from '@/types/website';
+import { ImageUrlInput } from './ImageUrlInput';
 
 export const GalleryManager = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -209,10 +210,12 @@ const GalleryItemDialog = ({ item, open, onOpenChange, userId }: GalleryItemDial
             <Label>Title *</Label>
             <Input value={title} onChange={(e) => setTitle(e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Image URL *</Label>
-            <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-          </div>
+          <ImageUrlInput
+            label="Image *"
+            value={imageUrl}
+            onChange={setImageUrl}
+            folder="gallery"
+          />
           <div className="space-y-2">
             <Label>Description</Label>
             <Input value={description} onChange={(e) => setDescription(e.target.value)} />

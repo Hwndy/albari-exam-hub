@@ -245,10 +245,12 @@ const TestimonialDialog = ({ testimonial, open, onOpenChange, userId }: Testimon
                 onChange={(e) => setRating(parseInt(e.target.value))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-            </div>
+            <ImageUrlInput
+              label="Image"
+              value={imageUrl}
+              onChange={setImageUrl}
+              folder="testimonials"
+            />
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
