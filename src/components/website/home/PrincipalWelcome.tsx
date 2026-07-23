@@ -5,7 +5,7 @@ import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 export const PrincipalWelcome: React.FC = () => {
   const { settings } = useWebsiteSettings();
   const name = settingValue<string>(settings, 'principal_name', 'Dr. Awe');
-  const title = settingValue<string>(settings, 'principal_title', 'Director of Studies');
+  const title = settingValue<string>(settings, 'principal_title', 'Director of Academics');
   const photo = settingValue<string>(settings, 'principal_photo_url', '/awe.png');
   const message = settingValue<string>(
     settings,
