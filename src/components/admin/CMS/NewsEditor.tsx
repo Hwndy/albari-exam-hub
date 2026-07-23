@@ -12,6 +12,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { RichTextEditor } from '@/components/ui/rich-text-editor';
 import type { NewsArticle } from '@/types/website';
 import { useAuth } from '@/contexts/AuthContext';
+import { ImageUrlInput } from './ImageUrlInput';
 
 interface NewsEditorProps {
   article: NewsArticle | null;
@@ -145,15 +146,13 @@ export const NewsEditor = ({ article, onClose }: NewsEditorProps) => {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="featured-image">Featured Image URL</Label>
-              <Input
-                id="featured-image"
-                value={featuredImage}
-                onChange={(e) => setFeaturedImage(e.target.value)}
-                placeholder="https://example.com/image.jpg"
-              />
-            </div>
+            <ImageUrlInput
+              id="featured-image"
+              label="Featured Image"
+              value={featuredImage}
+              onChange={setFeaturedImage}
+              folder="news"
+            />
           </div>
 
           <div className="space-y-2">
