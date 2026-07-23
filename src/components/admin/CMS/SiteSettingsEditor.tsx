@@ -10,6 +10,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useToast } from '@/hooks/use-toast';
 import { Save } from 'lucide-react';
 import type { WebsiteSettings } from '@/types/website';
+import { ImageUrlInput } from './ImageUrlInput';
 
 export const SiteSettingsEditor = () => {
   const { toast } = useToast();
@@ -73,15 +74,14 @@ export const SiteSettingsEditor = () => {
             <AccordionItem value="branding">
               <AccordionTrigger>Branding</AccordionTrigger>
               <AccordionContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="logo-url">Logo URL</Label>
-                  <Input
-                    id="logo-url"
-                    defaultValue={getValue('logo_url')}
-                    onChange={(e) => setLogoUrl(e.target.value)}
-                    placeholder="https://example.com/logo.png"
-                  />
-                </div>
+                <ImageUrlInput
+                  id="logo-url"
+                  label="Logo"
+                  value={logoUrl || String(getValue('logo_url') || '')}
+                  onChange={setLogoUrl}
+                  folder="site"
+                  placeholder="https://example.com/logo.png"
+                />
                 <Button onClick={() => handleSave('logo_url', logoUrl)}>
                   <Save className="h-4 w-4 mr-2" />
                   Save Logo

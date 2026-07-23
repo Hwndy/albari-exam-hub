@@ -14,6 +14,7 @@ import { Plus, Edit, Trash2, Star } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/AuthContext';
 import type { Testimonial } from '@/types/website';
+import { ImageUrlInput } from './ImageUrlInput';
 
 export const TestimonialManager = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -245,10 +246,12 @@ const TestimonialDialog = ({ testimonial, open, onOpenChange, userId }: Testimon
                 onChange={(e) => setRating(parseInt(e.target.value))}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Image URL</Label>
-              <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} />
-            </div>
+            <ImageUrlInput
+              label="Image"
+              value={imageUrl}
+              onChange={setImageUrl}
+              folder="testimonials"
+            />
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center space-x-2">
