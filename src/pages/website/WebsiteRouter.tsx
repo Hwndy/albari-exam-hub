@@ -1,6 +1,7 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import { WebsiteLayout } from '@/components/website/WebsiteLayout';
+import { ScrollToTop } from '@/components/website/ScrollToTop';
 import { HomePage } from './HomePage';
 import { AboutPage } from './AboutPage';
 import { SchoolLifePage } from './SchoolLifePage';
@@ -19,6 +20,7 @@ import { CareersPage } from './CareersPage';
 export const WebsiteRouter = () => {
   return (
     <WebsiteLayout>
+      <ScrollToTop />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/about" element={<AboutPage />} />
