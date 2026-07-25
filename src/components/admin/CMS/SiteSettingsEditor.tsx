@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,11 +49,19 @@ export const SiteSettingsEditor = () => {
     return setting?.setting_value || '';
   };
 
-  const [logoUrl, setLogoUrl] = useState('');
+  const [logoUrl, setLogoUrl] = useState<string>('');
   const [footerText, setFooterText] = useState('');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
   const [analyticsCode, setAnalyticsCode] = useState('');
+
+  const [logoInitialized, setLogoInitialized] = useState(false);
+  useEffect(() => {
+    if (!logoInitialized && settings) {
+      setLogoUrl(String(getValue('logo_url') || ''));
+      setLogoInitialized(true);
+    }
+  }, [settings, logoInitialized]);
 
   const handleSave = (key: string, value: any) => {
     updateMutation.mutate({ key, value });
@@ -77,7 +85,7 @@ export const SiteSettingsEditor = () => {
                 <ImageUrlInput
                   id="logo-url"
                   label="Logo"
-                  value={logoUrl || String(getValue('logo_url') || '')}
+                  value={logoUrl}
                   onChange={setLogoUrl}
                   folder="site"
                   placeholder="https://example.com/logo.png"
