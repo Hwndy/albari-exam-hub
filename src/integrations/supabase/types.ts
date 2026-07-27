@@ -4642,6 +4642,28 @@ export type Database = {
       delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
       expire_old_qr_tokens: { Args: never; Returns: number }
       get_admin_analytics: { Args: never; Returns: Json }
+      get_application_documents: {
+        Args: { p_application_id: string }
+        Returns: {
+          application_id: string
+          document_name: string
+          document_type: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          uploaded_at: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "admission_documents"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       get_application_tracking: {
         Args: { p_app_no: string; p_email: string }
         Returns: Json

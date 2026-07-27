@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { FileText, Download, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { FileText, Download, CheckCircle, XCircle, AlertCircle, ExternalLink } from "lucide-react";
 
 interface Document {
   id: string;
@@ -34,34 +34,23 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
 
   const fetchDocuments = async () => {
     try {
-      // Check authentication first
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
-        console.error('User not authenticated');
         setDocuments([]);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("admission_documents")
-        .select("*")
-        .eq("application_id", applicationId)
-        .order("uploaded_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_application_documents", {
+        p_application_id: applicationId,
+      });
 
       if (error) {
-        // Only show permission error if it's actually a permission issue and user is authenticated
-        if (error.code === '42501') {
-          console.error('Permission denied for authenticated user:', error);
-          toast.error("Unable to load documents. Please contact support.");
-        } else {
-          console.error('Error fetching documents:', error);
-          toast.error("Failed to load documents");
-        }
+        console.error("Error fetching documents:", error);
+        toast.error(error.message || "Failed to load documents");
         setDocuments([]);
       } else {
-        setDocuments(data || []);
+        setDocuments(((data as unknown) as Document[]) || []);
       }
     } catch (error: any) {
       console.error('Error fetching documents:', error);
@@ -96,14 +85,49 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
     }
   };
 
-  const handleDownload = async (fileUrl: string, fileName: string) => {
+  const resolveObjectPath = (fileUrl: string) => {
+    const marker = "/admission-documents/";
+    const idx = fileUrl.indexOf(marker);
+    if (idx !== -1) return fileUrl.slice(idx + marker.length);
+    return fileUrl.replace(/^admission-documents\//, "");
+  };
+
+  const openInNewTab = async (fileUrl: string) => {
     try {
+      if (/^https?:\/\//i.test(fileUrl)) {
+        window.open(fileUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const path = resolveObjectPath(fileUrl);
       const { data, error } = await supabase.storage
         .from("admission-documents")
-        .download(fileUrl);
+        .createSignedUrl(path, 60 * 10);
+      if (!error && data?.signedUrl) {
+        window.open(data.signedUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const pub = supabase.storage.from("admission-documents").getPublicUrl(path);
+      if (pub.data?.publicUrl) {
+        window.open(pub.data.publicUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      throw error ?? new Error("Unable to build URL");
+    } catch (error: any) {
+      toast.error("Failed to open document: " + (error?.message || "unknown error"));
+    }
+  };
 
+  const handleDownload = async (fileUrl: string, fileName: string) => {
+    try {
+      if (/^https?:\/\//i.test(fileUrl)) {
+        window.open(fileUrl, "_blank", "noopener,noreferrer");
+        return;
+      }
+      const path = resolveObjectPath(fileUrl);
+      const { data, error } = await supabase.storage
+        .from("admission-documents")
+        .download(path);
       if (error) throw error;
-
       const url = URL.createObjectURL(data);
       const a = document.createElement("a");
       a.href = url;
@@ -113,7 +137,7 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
     } catch (error: any) {
-      toast.error("Failed to download document: " + error.message);
+      toast.error("Failed to download document: " + (error?.message || "unknown error"));
     }
   };
 
@@ -167,6 +191,14 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
               >
                 <Download className="h-4 w-4 mr-2" />
                 Download
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openInNewTab(doc.file_url)}
+              >
+                <ExternalLink className="h-4 w-4 mr-2" />
+                Preview
               </Button>
               {!doc.verified && (
                 <>
