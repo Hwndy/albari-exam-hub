@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { FileText, Download, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import { FileText, Download, CheckCircle, XCircle, AlertCircle, ExternalLink } from "lucide-react";
 
 interface Document {
   id: string;
