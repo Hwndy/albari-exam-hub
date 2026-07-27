@@ -34,34 +34,23 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
 
   const fetchDocuments = async () => {
     try {
-      // Check authentication first
       const { data: { user } } = await supabase.auth.getUser();
-      
       if (!user) {
-        console.error('User not authenticated');
         setDocuments([]);
         setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("admission_documents")
-        .select("*")
-        .eq("application_id", applicationId)
-        .order("uploaded_at", { ascending: false });
+      const { data, error } = await supabase.rpc("get_application_documents", {
+        p_application_id: applicationId,
+      });
 
       if (error) {
-        // Only show permission error if it's actually a permission issue and user is authenticated
-        if (error.code === '42501') {
-          console.error('Permission denied for authenticated user:', error);
-          toast.error("Unable to load documents. Please contact support.");
-        } else {
-          console.error('Error fetching documents:', error);
-          toast.error("Failed to load documents");
-        }
+        console.error("Error fetching documents:", error);
+        toast.error(error.message || "Failed to load documents");
         setDocuments([]);
       } else {
-        setDocuments(data || []);
+        setDocuments(((data as unknown) as Document[]) || []);
       }
     } catch (error: any) {
       console.error('Error fetching documents:', error);
