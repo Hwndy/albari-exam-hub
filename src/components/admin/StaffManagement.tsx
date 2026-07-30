@@ -57,6 +57,16 @@ export const StaffManagement = () => {
   const [selectedStaff, setSelectedStaff] = useState<StaffDetails | null>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    id: string;
+    employee_id: string;
+    department: string;
+    designation: string;
+    join_date: string;
+    employment_type: string;
+    status: string;
+  } | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -182,11 +192,10 @@ export const StaffManagement = () => {
 
       const rows: any[] = [];
       for (const userId of missing) {
-        const { data: empId } = await supabase.rpc("next_employee_id");
         const role = ((roleRows as any[]) || []).find((r) => r.user_id === userId)?.role;
         rows.push({
           user_id: userId,
-          employee_id: empId || null,
+          // employee_id is issued by the database (unique, sequence-backed)
           designation: role === "admin" ? "Administrator" : "Teacher",
           department: role === "admin" ? "Administration" : "Academics",
           employment_type: "full-time",
@@ -207,8 +216,8 @@ export const StaffManagement = () => {
   };
 
   const handleAddStaff = async () => {
-    if (!formData.user_id || !formData.employee_id) {
-      toast.error("Please fill in all required fields");
+    if (!formData.user_id) {
+      toast.error("Please select a user");
       return;
     }
 
@@ -218,7 +227,7 @@ export const StaffManagement = () => {
       .from("staff_details")
       .insert({
         user_id: formData.user_id,
-                employee_id: formData.employee_id,
+        employee_id: formData.employee_id.trim() || null,
         department: formData.department,
         designation: formData.designation,
         join_date: formData.join_date || null,
@@ -256,6 +265,67 @@ export const StaffManagement = () => {
       setSelectedStaff(data);
       setShowViewDialog(true);
     }
+  };
+
+  const openEdit = (staff: StaffMember) => {
+    setEditForm({
+      id: staff.id,
+      employee_id: staff.employee_id || "",
+      department: staff.department || "",
+      designation: staff.designation || "",
+      join_date: staff.join_date || "",
+      employment_type: staff.employment_type || "full-time",
+      status: staff.status || "active",
+    });
+    setShowEditDialog(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editForm) return;
+    setIsLoading(true);
+    const { error } = await supabase
+      .from("staff_details")
+      .update({
+        employee_id: editForm.employee_id.trim() || null,
+        department: editForm.department || null,
+        designation: editForm.designation || null,
+        join_date: editForm.join_date || null,
+        employment_type: editForm.employment_type,
+        status: editForm.status,
+      })
+      .eq("id", editForm.id);
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Staff record updated");
+    setShowEditDialog(false);
+    setEditForm(null);
+    fetchStaffMembers();
+  };
+
+  const exportDirectory = () => {
+    const header = ["Employee ID", "Name", "Role", "Department", "Designation", "Join Date", "Type", "Status"];
+    const rows = filteredStaff.map((s) => [
+      s.employee_id || "",
+      s.profile?.full_name || "",
+      s.user_roles?.[0]?.role || "",
+      s.department || "",
+      s.designation || "",
+      s.join_date || "",
+      s.employment_type || "",
+      s.status || "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `staff-directory-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const getStatusBadge = (status: string) => {
