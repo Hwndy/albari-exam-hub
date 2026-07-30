@@ -189,9 +189,30 @@ serve(async (req) => {
             if (existing && !ownedByOther) {
               userId = existing.id;
               loginEmail = candidate;
-              // Never reset a password the applicant may already have received.
-              password = null;
-              await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+              // The login already exists from an earlier (failed) enrolment run.
+              // If the student has never signed in and set their own password,
+              // issue a fresh temporary one so the welcome email always carries
+              // working credentials. Otherwise leave their password alone.
+              const { data: existingProfile } = await supabase
+                .from("profiles")
+                .select("must_change_password")
+                .eq("user_id", userId)
+                .maybeSingle();
+              const neverSignedIn =
+                !existingProfile || existingProfile.must_change_password !== false;
+              if (neverSignedIn) {
+                const { error: pwError } = await supabase.auth.admin.updateUserById(userId, {
+                  password: password as string,
+                  email_confirm: true,
+                });
+                if (pwError) {
+                  console.error("Could not reset temporary password:", pwError.message);
+                  password = null;
+                }
+              } else {
+                password = null;
+                await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+              }
               break;
             }
             if (!existing) throw authError;
