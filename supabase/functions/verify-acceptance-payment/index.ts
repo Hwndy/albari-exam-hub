@@ -84,7 +84,8 @@ serve(async (req) => {
             enrollment = {
               already_enrolled: true,
               admission_number: existingStudent?.admission_number ?? null,
-              login_email: application.email,
+              login_email: application.login_email ?? application.email,
+              contact_email: application.email,
               application_number: application.application_number,
               student_name: `${application.first_name} ${application.last_name}`,
             };
@@ -98,6 +99,28 @@ serve(async (req) => {
           const sequence = String((count || 0) + 1).padStart(4, "0");
           const admissionNumber = `ALB/${year}/${sequence}`;
 
+          // ---------------------------------------------------------------
+          // School-issued student login ID.
+          // Families often share ONE email across several children, so the
+          // family email can never be the student's login. We mint a unique
+          // login from the admission number instead; all correspondence still
+          // goes to application.email (the parent).
+          // ---------------------------------------------------------------
+          const { data: domainSetting } = await supabase
+            .from("app_settings")
+            .select("setting_value")
+            .eq("setting_key", "student_login_domain")
+            .maybeSingle();
+          const rawDomain = domainSetting?.setting_value;
+          const loginDomain =
+            (typeof rawDomain === "string" ? rawDomain : rawDomain?.toString?.()) ||
+            "students.albari.com.ng";
+          const localPart = admissionNumber
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/^-+|-+$/g, "");
+          let loginEmail = application.login_email || `${localPart}@${loginDomain}`;
+
           // Generate an unambiguous temporary password (no 0/O/1/l/I).
           const alphabet = "abcdefghjkmnpqrstuvwxyz";
           const digits = "23456789";
@@ -105,35 +128,50 @@ serve(async (req) => {
             Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join("");
           let password: string | null = `Alb${pick(alphabet, 5)}${pick(digits, 3)}`;
 
-          // Create (or reuse) the applicant's auth account.
+          // Create the student's own auth account on the school-issued login.
           let userId: string | null = null;
-          const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-            email: application.email,
-            password: password,
-            email_confirm: true,
-            user_metadata: {
-              full_name: `${application.first_name} ${application.last_name}`,
-              role: "student",
-            },
-          });
-
-          if (authError) {
-            // A previous partially-failed run may already have created the user.
-            console.warn("createUser failed, looking up existing account:", authError.message);
+          for (let attempt = 0; attempt < 5 && !userId; attempt++) {
+            const candidate =
+              attempt === 0 ? loginEmail : loginEmail.replace("@", `-${attempt + 1}@`);
+            const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
+              email: candidate,
+              password: password,
+              email_confirm: true,
+              user_metadata: {
+                full_name: `${application.first_name} ${application.last_name}`,
+                role: "student",
+              },
+            });
+            if (!authError) {
+              userId = authUser.user.id;
+              loginEmail = candidate;
+              break;
+            }
+            console.warn("createUser failed for", candidate, authError.message);
+            // Only a previous run of THIS application can legitimately own this
+            // login (it is derived from this applicant's admission number).
             const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
             const existing = list?.users?.find(
-              (u: any) => (u.email ?? "").toLowerCase() === String(application.email).toLowerCase()
+              (u: any) => (u.email ?? "").toLowerCase() === candidate.toLowerCase()
             );
+            if (existing && application.login_email) {
+              userId = existing.id;
+              loginEmail = candidate;
+              // Never reset a password the applicant may already have received.
+              password = null;
+              await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+              break;
+            }
             if (!existing) throw authError;
-            userId = existing.id;
-            // The account already exists (a concurrent/earlier verify run created
-            // it and emailed its password). Never reset it here — doing so would
-            // invalidate the temporary password the applicant already received.
-            password = null;
-            await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
-          } else {
-            userId = authUser.user.id;
+            // Someone else holds this login — try the next suffix.
           }
+          if (!userId) throw new Error("Could not allocate a student login ID");
+
+          // Remember the login on the application for admin/email re-sends.
+          await supabase
+            .from("admission_applications")
+            .update({ login_email: loginEmail })
+            .eq("id", payment.application_id);
 
           // Ensure the student role exists (trigger covers new users only).
           await supabase
