@@ -116,11 +116,18 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
 
   // Letterhead header (Al-Bari College official design)
   const letterhead = await getLetterheadDataUrl();
+  let letterheadDrawn = false;
   if (letterhead) {
-    // Native letterhead aspect ~1275x1650 (H/W ~1.29). Fit to full width, ~55mm tall.
-    doc.addImage(letterhead, 'PNG', 0, 0, pageWidth, 65, undefined, 'FAST');
-    yPos = 75;
-  } else {
+    try {
+      // Native letterhead aspect ~1275x1650 (H/W ~1.29). Fit to full width, ~55mm tall.
+      doc.addImage(letterhead, 'PNG', 0, 0, pageWidth, 65, undefined, 'FAST');
+      yPos = 75;
+      letterheadDrawn = true;
+    } catch (e) {
+      console.error("Failed to draw letterhead, using text header:", e);
+    }
+  }
+  if (!letterheadDrawn) {
     // Fallback header if fetch fails
     doc.setFillColor(21, 128, 61);
     doc.rect(0, 0, pageWidth, 30, 'F');
