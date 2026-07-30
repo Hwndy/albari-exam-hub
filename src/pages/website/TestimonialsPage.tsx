@@ -4,6 +4,8 @@ import { Star, Quote, MessageSquareQuote } from 'lucide-react';
 import { useTestimonials } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 import { EmptyState } from '@/components/website/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -30,18 +32,23 @@ export const TestimonialsPage: React.FC = () => {
         crumbs={[{ label: 'Testimonials' }]}
       />
 
-      <section className="py-8 border-b border-border">
-        <div className="container mx-auto px-4 flex flex-wrap gap-2 justify-center">
+      <section className="border-b border-border bg-muted/40 py-6">
+        <div className="container mx-auto flex flex-wrap justify-center gap-2 px-4">
           {ROLES.map((r) => (
-            <Button key={r} size="sm" variant={role === r ? 'default' : 'outline'} onClick={() => setRole(r)} className="capitalize">
+            <Button
+              key={r}
+              size="sm"
+              variant={role === r ? 'default' : 'outline'}
+              onClick={() => setRole(r)}
+              className="rounded-full px-5 capitalize"
+            >
               {r}
             </Button>
           ))}
         </div>
       </section>
 
-      <section className="py-16">
-        <div className="container mx-auto px-4">
+      <SectionBand>
           {isLoading ? (
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {[0, 1, 2, 3, 4, 5].map((i) => (
@@ -57,9 +64,10 @@ export const TestimonialsPage: React.FC = () => {
               actionHref="/website/about"
             />
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filtered.map((t) => (
-                <figure key={t.id} className="relative rounded-2xl bg-card border border-border p-8 shadow-sm hover:shadow-lg transition-shadow">
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((t, i) => (
+                <Reveal key={t.id} delay={(i % 3) * 80}>
+                <figure className="relative h-full rounded-2xl border border-border bg-card p-8 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
                   <Quote className="absolute top-6 right-6 h-8 w-8 text-gold/30" />
                   {t.rating ? (
                     <div className="flex gap-0.5 mb-4">
@@ -81,11 +89,11 @@ export const TestimonialsPage: React.FC = () => {
                     </div>
                   </figcaption>
                 </figure>
+                </Reveal>
               ))}
             </div>
           )}
-        </div>
-      </section>
+      </SectionBand>
     </div>
   );
 };
