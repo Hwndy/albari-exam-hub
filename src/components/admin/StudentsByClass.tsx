@@ -84,8 +84,10 @@ export const StudentsByClass: React.FC = () => {
   const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
   useEffect(() => {
-        // eslint-disable-next-line
-  }, []);
+    void fetchAll();
+    void fetchSchoolBranding();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const fetchSchoolBranding = async () => {
     try {
