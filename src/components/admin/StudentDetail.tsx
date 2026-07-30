@@ -54,6 +54,7 @@ export const StudentDetail: React.FC = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [newPassword, setNewPassword] = useState<string | null>(null);
+  const [application, setApplication] = useState<any>(null);
 
   const resetLoginPassword = async () => {
     if (!userId) return;
@@ -86,6 +87,15 @@ export const StudentDetail: React.FC = () => {
       ]);
       setProfile(prof);
       setStudent(stu);
+
+      if (stu?.id) {
+        const { data: app } = await supabase
+          .from('admission_applications')
+          .select('id, application_number, email, login_email')
+          .eq('student_id', stu.id)
+          .maybeSingle();
+        setApplication(app ?? null);
+      }
 
       if (assign?.class_id) {
         const { data: cls } = await supabase.from('classes').select('name').eq('id', assign.class_id).maybeSingle();
@@ -240,6 +250,20 @@ export const StudentDetail: React.FC = () => {
             <Row label="Section" value={student?.section} />
             <Row label="Admission Date" value={student?.admission_date} />
             <Row label="Registration #" value={student?.registration_number || student?.admission_number} />
+          </CardContent>
+        </Card>
+
+        {/* Login & contact */}
+        <Card>
+          <CardHeader><CardTitle className="flex items-center gap-2"><KeyRound className="h-4 w-4" />Login &amp; Contact</CardTitle></CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <Row label="Student Login ID" value={application?.login_email} />
+            <Row label="Contact email (parent)" value={application?.email} />
+            <Row label="Application #" value={application?.application_number} />
+            <p className="text-xs text-muted-foreground pt-2 border-t">
+              The login ID is issued by the school and is unique per student. The contact email may be
+              shared by siblings — all school mail goes there.
+            </p>
           </CardContent>
         </Card>
 

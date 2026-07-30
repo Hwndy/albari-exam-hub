@@ -174,12 +174,14 @@ export const PaymentCallbackPage = () => {
                     <Row label="Student" value={receipt?.student_name} />
                     <Row label="Application No." value={receipt?.application_number} />
                     <Row label="Admission No." value={receipt?.admission_number} strong />
-                    <Row label="Login Email" value={receipt?.login_email} />
+                    <Row label="Student Login ID" value={receipt?.login_email} strong />
+                    <Row label="Contact Email" value={(receipt as any)?.contact_email} />
                     {isEnrollment && (
                       <p className="text-xs text-muted-foreground pt-2 border-t mt-2">
-                        Your login details, including a temporary password, have been sent to this email
-                        address. Please change your password after your first sign in. This acceptance fee
-                        has been credited towards your school fees.
+                        Sign in with the Student Login ID above (it is issued by the school and is unique to
+                        this student — siblings can share one contact email). The temporary password has been
+                        emailed to the contact address, along with the parent portal login. Please change the
+                        password after the first sign in. This acceptance fee has been credited towards school fees.
                       </p>
                     )}
                   </div>
