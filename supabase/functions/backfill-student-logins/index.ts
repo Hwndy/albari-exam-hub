@@ -62,16 +62,33 @@ serve(async (req) => {
         row.student = `${app.first_name} ${app.last_name}`;
         row.admission_number = student.admission_number;
 
-        // 1. Move the student off the (possibly shared) family email.
-        let loginEmail = app.login_email as string | null;
-        if (!loginEmail) {
-          const local = String(student.admission_number ?? app.application_number)
+        // 1. Move the student off the (possibly shared) family email and onto a
+        //    firstname.lastname school login.
+        const slug = (value: string) =>
+          String(value ?? '')
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, '')
+            .trim();
+        const nameLocal = [slug(app.first_name), slug(app.last_name)].filter(Boolean).join('.');
+        const admissionTail =
+          (String(student.admission_number ?? '').match(/(\d+)\s*$/)?.[1] ?? '').toLowerCase();
+        const local =
+          nameLocal ||
+          String(student.admission_number ?? app.application_number)
             .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+        let loginEmail = app.login_email as string | null;
+        const needsRename = !loginEmail || (nameLocal && !loginEmail.startsWith(`${local}@`) && !loginEmail.startsWith(`${local}.`) && !loginEmail.startsWith(`${local}-`));
+        if (needsRename) {
           let candidate = `${local}@${loginDomain}`;
-          let suffix = 1;
+          let attempt = 0;
           while (byEmail(candidate) && byEmail(candidate)!.id !== student.user_id) {
-            suffix += 1;
-            candidate = `${local}-${suffix}@${loginDomain}`;
+            attempt += 1;
+            candidate = attempt === 1 && admissionTail
+              ? `${local}.${admissionTail}@${loginDomain}`
+              : `${local}-${attempt + 1}@${loginDomain}`;
           }
           const { error: updErr } = await supabase.auth.admin.updateUserById(student.user_id, {
             email: candidate,
