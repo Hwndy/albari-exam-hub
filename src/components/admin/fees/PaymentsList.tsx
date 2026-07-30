@@ -18,9 +18,20 @@ export const PaymentsList: React.FC = () => {
   useEffect(() => {
     (async () => {
       const { data } = await supabase.from('fee_payments')
-        .select('*, students(admission_number, profiles!students_user_id_fkey(full_name)), fee_structures(fee_type,academic_year)')
+        .select('*, students(id, user_id, admission_number), fee_structures(fee_type,academic_year)')
         .order('created_at', { ascending: false }).limit(500);
-      setPayments(data || []); setLoading(false);
+      const rows = (data || []) as any[];
+      const userIds = [...new Set(rows.map(r => r.students?.user_id).filter(Boolean))];
+      let nameMap = new Map<string, string>();
+      if (userIds.length) {
+        const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+        nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+      }
+      setPayments(rows.map(r => ({
+        ...r,
+        students: r.students ? { ...r.students, profiles: { full_name: nameMap.get(r.students.user_id) || 'Unknown' } } : null,
+      })));
+      setLoading(false);
     })();
   }, []);
 

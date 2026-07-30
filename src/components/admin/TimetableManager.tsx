@@ -376,7 +376,8 @@ export const TimetableManager: React.FC = () => {
                         </Badge>
                       )}
                     </td>
-                    {DAYS.map((_, dayIndex) => {
+                    {DAYS.map((_, i) => {
+                      const dayIndex = i + 1; // DB stores 1 = Monday ... 7 = Sunday
                       const entry = getEntryForSlot(dayIndex, period.id);
                       const isBreak = !period.is_teaching_period;
                       
