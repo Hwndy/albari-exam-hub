@@ -74,7 +74,7 @@ serve(async (req) => {
         if (application) {
           // Idempotency: if the webhook (or an earlier verify call) already
           // enrolled this applicant, just return the existing details.
-          if (application.student_id) {
+          if (application.student_id || application.status === "enrolled") {
             const { data: existingStudent } = await supabase
               .from("students")
               .select("admission_number")
@@ -224,6 +224,10 @@ serve(async (req) => {
           status: "completed",
           amount: paystackData.data.amount / 100,
           currency: paystackData.data.currency,
+          payment_type: "acceptance_fee",
+          reference,
+          payment_method: paystackData.data.channel,
+          paid_at: paystackData.data.paid_at ?? new Date().toISOString(),
           ...(enrollment ?? {}),
         }),
         {
