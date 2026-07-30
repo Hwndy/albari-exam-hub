@@ -11,7 +11,9 @@ const corsHeaders = {
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 const FRONTEND_URL = (Deno.env.get("FRONTEND_URL") || "https://www.albari.com.ng").replace(/\/+$/, "");
-const ASSET_BASE_URL = (Deno.env.get("ASSET_BASE_URL") || FRONTEND_URL).replace(/\/+$/, "");
+// NOTE: the custom domain serves index.html for /__l5e/* paths, so assets must be
+// loaded from the Lovable asset host (or an explicit ASSET_BASE_URL secret).
+const ASSET_BASE_URL = (Deno.env.get("ASSET_BASE_URL") || "https://id-preview--def176ba-5aaa-4bf2-a711-588b116fc44e.lovable.app").replace(/\/+$/, "");
 const LETTERHEAD_URL = `${ASSET_BASE_URL}/__l5e/assets-v1/5fe05427-7253-4d80-9bf2-ca75a2a096e5/albari-letterhead.png`;
 const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
@@ -90,6 +92,12 @@ async function getLetterheadDataUrl(): Promise<string | null> {
       return null;
     }
     const buf = new Uint8Array(await res.arrayBuffer());
+    // Guard: some hosts return an SPA index.html with a 200 status.
+    const PNG_SIG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+    if (buf.length < 8 || PNG_SIG.some((b, i) => buf[i] !== b)) {
+      console.error("Letterhead URL did not return a PNG:", res.headers.get("content-type"));
+      return null;
+    }
     let binary = "";
     for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
     cachedLetterhead = `data:image/png;base64,${btoa(binary)}`;
