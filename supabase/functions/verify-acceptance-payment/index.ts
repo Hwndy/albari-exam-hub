@@ -478,6 +478,12 @@ serve(async (req) => {
           }
         }
       }
+      } catch (enrollError: any) {
+        // The money is confirmed at this point — never fail the receipt because
+        // a post-payment step broke. Flag it so admin can complete enrolment.
+        console.error("Enrollment failed after successful payment:", enrollError);
+        enrollmentPending = true;
+      }
 
       return new Response(
         JSON.stringify({
@@ -489,6 +495,7 @@ serve(async (req) => {
           reference,
           payment_method: paystackData.data.channel,
           paid_at: paystackData.data.paid_at ?? new Date().toISOString(),
+          enrollment_pending: enrollmentPending,
           ...(enrollment ?? {}),
         }),
         {
