@@ -109,175 +109,157 @@ async function getLetterheadDataUrl(): Promise<string | null> {
   }
 }
 
-// Function to generate offer letter PDF
+// ---------------------------------------------------------------------------
+// Offer letter PDF — the letter is typeset INSIDE the official letterhead page.
+// The letterhead PNG is a full-page design (crest + address band at the top,
+// watermark in the middle, colour bars at the foot), so it is drawn as the page
+// background and all text is laid out inside a safe area between the two.
+// ---------------------------------------------------------------------------
+const PAGE_FORMAT = "letter";      // 215.9mm x 279.4mm — matches the artwork ratio
+const SAFE_TOP = 60;               // below the address band
+const SAFE_BOTTOM = 258;           // above the footer colour bars
+const SAFE_LEFT = 25;
+const SAFE_RIGHT = 25;
+
+function fmtDate(value: string | number | Date) {
+  return new Date(value).toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+}
+
 async function generateOfferLetterPDF(
   application: any,
   acceptanceDeadline: string,
   acceptanceFee: number,
   acceptanceFeeNote: string,
 ): Promise<Uint8Array> {
-  const doc = new jsPDF();
+  const doc = new jsPDF({ unit: "mm", format: PAGE_FORMAT });
   const pageWidth = doc.internal.pageSize.getWidth();
-  let yPos = 20;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const contentWidth = pageWidth - SAFE_LEFT - SAFE_RIGHT;
 
-  // Letterhead header (Al-Bari College official design)
   const letterhead = await getLetterheadDataUrl();
-  let letterheadDrawn = false;
-  if (letterhead) {
-    try {
-      // Native letterhead aspect ~1275x1650 (H/W ~1.29). Fit to full width, ~55mm tall.
-      doc.addImage(letterhead, 'PNG', 0, 0, pageWidth, 65, undefined, 'FAST');
-      yPos = 75;
-      letterheadDrawn = true;
-    } catch (e) {
-      console.error("Failed to draw letterhead, using text header:", e);
+
+  const paintBackground = () => {
+    if (letterhead) {
+      try {
+        doc.addImage(letterhead, "PNG", 0, 0, pageWidth, pageHeight, undefined, "FAST");
+        return true;
+      } catch (e) {
+        console.error("Failed to draw letterhead:", e);
+      }
     }
-  }
-  if (!letterheadDrawn) {
-    // Fallback header if fetch fails
+    // Fallback stationery if the artwork cannot be fetched.
     doc.setFillColor(21, 128, 61);
-    doc.rect(0, 0, pageWidth, 30, 'F');
+    doc.rect(0, 0, pageWidth, 26, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
-    doc.setFont('helvetica', 'bold');
-    doc.text('AL-BARI COLLEGE', pageWidth / 2, 18, { align: 'center' });
-    yPos = 45;
-  }
+    doc.setFontSize(18);
+    doc.setFont("helvetica", "bold");
+    doc.text("AL-BARI COLLEGE", pageWidth / 2, 16, { align: "center" });
+    doc.setTextColor(0, 0, 0);
+    doc.setFillColor(21, 128, 61);
+    doc.rect(0, pageHeight - 10, pageWidth, 10, "F");
+    return false;
+  };
 
-  // Title
-  doc.setTextColor(21, 128, 61);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text('ADMISSION OFFER LETTER', pageWidth / 2, yPos, { align: 'center' });
-  
-  yPos += 20;
+  paintBackground();
+  let y = SAFE_TOP;
 
-  // Date
-  doc.setTextColor(0, 0, 0);
+  const ensureSpace = (needed: number) => {
+    if (y + needed <= SAFE_BOTTOM) return;
+    doc.addPage(PAGE_FORMAT);
+    paintBackground();
+    y = SAFE_TOP;
+  };
+
+  const write = (
+    text: string,
+    opts: { size?: number; bold?: boolean; align?: "left" | "center" | "right"; gap?: number; colour?: [number, number, number] } = {},
+  ) => {
+    const size = opts.size ?? 10.5;
+    doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+    doc.setFontSize(size);
+    const [r, g, b] = opts.colour ?? [17, 24, 39];
+    doc.setTextColor(r, g, b);
+    const lines = doc.splitTextToSize(text, contentWidth);
+    const lineHeight = size * 0.5;
+    ensureSpace(lines.length * lineHeight);
+    const x = opts.align === "center" ? pageWidth / 2 : opts.align === "right" ? pageWidth - SAFE_RIGHT : SAFE_LEFT;
+    doc.text(lines, x, y, opts.align ? { align: opts.align } : undefined);
+    y += lines.length * lineHeight + (opts.gap ?? 4);
+  };
+
+  const detailRow = (label: string, value: string) => {
+    ensureSpace(6);
+    doc.setFontSize(10.5);
+    doc.setTextColor(17, 24, 39);
+    doc.setFont("helvetica", "normal");
+    doc.text(label, SAFE_LEFT, y);
+    doc.setFont("helvetica", "bold");
+    doc.text(value, SAFE_LEFT + 52, y);
+    y += 6;
+  };
+
+  const today = fmtDate(new Date());
+  const deadline = fmtDate(acceptanceDeadline);
+  const session = `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`;
+  const className = application.classes?.name || "the class applied for";
+  const candidate = `${application.first_name} ${application.last_name}`.replace(/\s+/g, " ").trim();
+
+  // Reference line and date
+  doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Date: ${new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
-  
-  yPos += 15;
+  doc.setTextColor(75, 85, 99);
+  doc.text(`Ref: ${application.application_number}`, SAFE_LEFT, y);
+  doc.text(today, pageWidth - SAFE_RIGHT, y, { align: "right" });
+  y += 12;
 
-  // Application Number
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Application Number: ${application.application_number}`, 20, yPos);
-  
-  yPos += 15;
+  write(candidate, { bold: true, gap: 0 });
+  if (application.email) write(application.email, { size: 10, colour: [75, 85, 99], gap: 8 });
 
-  // Greeting
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Dear ${application.first_name} ${application.last_name},`, 20, yPos);
-  
-  yPos += 15;
+  write("OFFER OF PROVISIONAL ADMISSION", { bold: true, size: 12, gap: 1 });
+  doc.setDrawColor(21, 128, 61);
+  doc.setLineWidth(0.4);
+  doc.line(SAFE_LEFT, y - 1, SAFE_LEFT + 78, y - 1);
+  y += 4;
 
-  // Body
-  const bodyText = `We are pleased to inform you that you have been offered admission to Al-Bari Group of Schools for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.`;
-  const splitBody = doc.splitTextToSize(bodyText, pageWidth - 40);
-  doc.text(splitBody, 20, yPos);
-  yPos += splitBody.length * 7 + 10;
+  write(`Dear ${application.first_name},`, { gap: 3 });
 
-  // Admission Details Box
-  doc.setDrawColor(37, 99, 235);
-  doc.setLineWidth(0.5);
-  doc.rect(15, yPos, pageWidth - 30, 40);
-  
-  yPos += 10;
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('ADMISSION DETAILS', 20, yPos);
-  
-  yPos += 10;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
-  
-  yPos += 7;
-  doc.text(`Acceptance Fee: NGN ${Number(acceptanceFee || 0).toLocaleString('en-NG')}`, 20, yPos);
+  write(
+    `Following the assessment of your application, I am pleased to confirm that you have been offered a place in ${className} at Al-Bari College for the ${session} academic session. The offer is provisional until the acceptance fee is paid and your original documents are sighted at the school office.`,
+    { gap: 5 },
+  );
 
-  yPos += 7;
-  doc.setTextColor(220, 38, 38);
-  doc.setFont('helvetica', 'bold');
-  doc.text(`Acceptance Deadline: ${new Date(acceptanceDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
-  
-  yPos += 20;
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
+  write("Particulars of the offer", { bold: true, size: 11, gap: 3 });
+  detailRow("Application number", String(application.application_number));
+  detailRow("Class offered", String(className));
+  detailRow("Academic session", session);
+  detailRow("Acceptance fee", `NGN ${Number(acceptanceFee || 0).toLocaleString("en-NG")}`);
+  detailRow("Payment deadline", deadline);
+  y += 2;
 
   if (acceptanceFeeNote) {
-    doc.setFontSize(10);
-    const splitNote = doc.splitTextToSize(acceptanceFeeNote, pageWidth - 40);
-    doc.text(splitNote, 20, yPos - 8);
-    yPos += (splitNote.length - 1) * 5;
+    write(acceptanceFeeNote, { size: 10, colour: [75, 85, 99], gap: 5 });
   }
 
-  // Next Steps
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(12);
-  doc.text('NEXT STEPS:', 20, yPos);
-  
-  yPos += 10;
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  const steps = [
-    '1. Accept this admission offer online or via email',
-    '2. Complete the enrollment process',
-    '3. Receive your student login credentials'
-  ];
-  
-  steps.forEach(step => {
-    doc.text(step, 20, yPos);
-    yPos += 7;
-  });
+  write(
+    `To take up the place, please accept the offer online using the link in the accompanying email and pay the acceptance fee on or before ${deadline}. Offers that are not accepted by that date are released to candidates on the waiting list.`,
+    { gap: 3 },
+  );
 
-  yPos += 10;
+  write(
+    "When payment is confirmed the school will issue an admission number and portal login details for the student, along with parent portal access for results, attendance and fees. Please bring the originals of your uploaded documents, two passport photographs and this letter on resumption day.",
+    { gap: 5 },
+  );
 
-  // Important Notice
-  doc.setFillColor(254, 243, 199);
-  doc.rect(15, yPos, pageWidth - 30, 20, 'F');
-  doc.setDrawColor(234, 179, 8);
-  doc.rect(15, yPos, pageWidth - 30, 20);
-  
-  yPos += 7;
-  doc.setTextColor(113, 63, 18);
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('IMPORTANT:', 20, yPos);
-  doc.setFont('helvetica', 'normal');
-  const importantText = `You must accept and pay the acceptance fee by ${new Date(acceptanceDeadline).toLocaleDateString('en-GB')} to secure your place.`;
-  const splitImportant = doc.splitTextToSize(importantText, pageWidth - 50);
-  doc.text(splitImportant, 55, yPos);
-  
-  yPos += 25;
-  doc.setTextColor(0, 0, 0);
+  ensureSpace(26);
+  write("Yours faithfully,", { gap: 12 });
+  write("Admissions Officer", { bold: true, gap: 1 });
+  write("For: Al-Bari College, Badagry, Lagos", { size: 10, colour: [75, 85, 99], gap: 0 });
 
-  // Closing
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Welcome to the Al-Bari Group of Schools family!', 20, yPos);
-  
-  yPos += 15;
-  doc.text('Sincerely,', 20, yPos);
-  
-  yPos += 15;
-  doc.setFont('helvetica', 'bold');
-  doc.text('Admissions Office', 20, yPos);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Al-Bari Group of Schools', 20, yPos + 5);
-
-  // Footer
-  const footerY = doc.internal.pageSize.getHeight() - 20;
-  doc.setFillColor(249, 250, 251);
-  doc.rect(0, footerY - 5, pageWidth, 25, 'F');
-  
-  doc.setFontSize(8);
-  doc.setTextColor(107, 114, 128);
-  doc.text('Al-Bari Group of Schools | Excellence in Education', pageWidth / 2, footerY, { align: 'center' });
-  doc.text('This is an official admission offer letter.', pageWidth / 2, footerY + 5, { align: 'center' });
-  doc.text(`Generated on ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, footerY + 10, { align: 'center' });
-
-  return doc.output('arraybuffer') as Uint8Array;
+  return doc.output("arraybuffer") as Uint8Array;
 }
 
 serve(async (req) => {
@@ -457,7 +439,8 @@ serve(async (req) => {
 
     const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;
     
-    const emailSubject = `🎉 Admission Offer - Al-Bari Group of Schools`;
+    const emailSubject = `Offer of provisional admission - ${application.application_number}`;
+    const prettyDeadline = new Date(acceptance_deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -465,97 +448,66 @@ serve(async (req) => {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Letterhead -->
-          <div style="text-align: center; background-color: #ffffff;">
-            <img src="${LETTERHEAD_URL}" alt="Al-Bari College Letterhead" style="display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto;" />
-          </div>
-          
-          <!-- Content -->
-          <div style="padding: 40px 30px;">
-            <h2 style="color: #2563eb; margin: 0 0 20px 0; font-size: 24px;">🎉 Congratulations!</h2>
-            
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              Dear ${application.first_name} ${application.last_name},
-            </p>
-            
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-              We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari Group of Schools</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.
-            </p>
-            
-            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #2563eb;">
-              <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 18px;">📋 Admission Details</h3>
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Application Number:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.application_number}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Class:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.classes?.name || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
-                  <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">&#8358;${acceptanceFee.toLocaleString('en-NG')}</td>
-                </tr>
-              </table>
-              <p style="margin: 12px 0 0 0; color: #1e40af; font-size: 13px;">${acceptanceFeeNote}</p>
-            </div>
+      <body style="margin:0;padding:24px 0;background-color:#eef0ee;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td align="center">
+            <!-- The letter sits on the school letterhead, not beneath it -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="620"
+                   style="width:620px;max-width:100%;background-color:#ffffff;background-image:url('${LETTERHEAD_URL}');background-repeat:no-repeat;background-position:top center;background-size:100% auto;font-family:Georgia,'Times New Roman',serif;color:#111827;">
+              <tr><td style="height:190px;line-height:190px;font-size:0;">&nbsp;</td></tr>
+              <tr><td style="padding:0 56px 8px 56px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">
+                Ref: ${application.application_number}
+                <span style="float:right;">${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}</span>
+              </td></tr>
+              <tr><td style="padding:16px 56px 0 56px;font-size:15px;line-height:1.65;">
+                <p style="margin:0 0 4px 0;font-weight:bold;">${application.first_name} ${application.last_name}</p>
+                <p style="margin:0 0 22px 0;font-size:13px;color:#6b7280;">${application.email}</p>
 
-            <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">
-              <p style="margin: 0; color: #713f12; font-size: 14px; line-height: 1.5;">
-                <strong>⚠️ Important:</strong> You must accept your offer by <strong>${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> to secure your place.
-              </p>
-            </div>
+                <p style="margin:0 0 6px 0;font-weight:bold;letter-spacing:0.4px;">OFFER OF PROVISIONAL ADMISSION</p>
+                <div style="height:2px;width:180px;background:#15803d;margin-bottom:20px;"></div>
 
-            <div style="margin: 30px 0;">
-              <h4 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">🎯 Next Steps:</h4>
-              <ol style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                <li>Click the button below to accept or decline your offer</li>
-                <li>Complete the enrollment process</li>
-                <li>Receive your student login credentials via email</li>
-              </ol>
-            </div>
+                <p style="margin:0 0 16px 0;">Dear ${application.first_name},</p>
 
-            <div style="text-align: center; margin: 35px 0;">
-              <a href="${acceptanceUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
-                Accept Offer →
-              </a>
-            </div>
+                <p style="margin:0 0 18px 0;">
+                  Following the assessment of your application, I am pleased to confirm that you have been offered a place in
+                  <strong>${application.classes?.name || "the class applied for"}</strong> at Al-Bari College for the
+                  ${new Date().getFullYear()}/${new Date().getFullYear() + 1} academic session. The offer is provisional
+                  until the acceptance fee is paid and your original documents are sighted at the school office.
+                </p>
 
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; text-align: center; margin: 25px 0;">
-              <p style="margin: 0; color: #1e40af; font-size: 13px;">
-                📎 Your official offer letter is attached to this email as a PDF document.
-              </p>
-            </div>
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
-              If you have any questions, please contact our admissions office at 
-              <a href="mailto:admissions@albari.com.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.com.ng</a>
-            </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;margin:0 0 18px 0;">
+                  <tr><td style="padding:10px 0;color:#6b7280;">Application number</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.application_number}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Class offered</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.classes?.name || "-"}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Acceptance fee</td><td style="padding:10px 0;font-weight:bold;text-align:right;">&#8358;${acceptanceFee.toLocaleString("en-NG")}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Payment deadline</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${prettyDeadline}</td></tr>
+                </table>
 
-            <p style="margin-top: 30px; color: #059669; font-weight: 600; font-size: 16px;">
-              Welcome to the Al-Bari Group of Schools family! 🎓
-            </p>
-          </div>
+                <p style="margin:0 0 18px 0;font-size:13px;color:#4b5563;">${acceptanceFeeNote}</p>
 
-          <!-- Footer -->
-          <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
-              Al-Bari Group of Schools | Excellence in Education
-            </p>
-            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-              This is an automated message from the admissions office. Please do not reply to this email.
-            </p>
-            <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
-              &copy; ${new Date().getFullYear()} Al-Bari Group of Schools. All rights reserved.
-            </p>
-          </div>
-        </div>
+                <p style="margin:0 0 18px 0;">
+                  To take up the place, accept the offer using the link below and pay the acceptance fee on or before
+                  <strong>${prettyDeadline}</strong>. Offers not accepted by that date are released to candidates on the waiting list.
+                </p>
+
+                <p style="margin:0 0 26px 0;">
+                  <a href="${acceptanceUrl}" style="display:inline-block;background:#15803d;color:#ffffff;padding:13px 30px;text-decoration:none;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;">Accept the offer</a>
+                </p>
+
+                <p style="margin:0 0 18px 0;">
+                  The signed offer letter is attached to this message as a PDF. Any question about the offer should be sent to
+                  <a href="mailto:admissions@albari.com.ng" style="color:#15803d;">admissions@albari.com.ng</a> or the numbers on the letterhead.
+                </p>
+
+                <p style="margin:0 0 40px 0;">Yours faithfully,<br><br>
+                  <strong>Admissions Officer</strong><br>
+                  <span style="font-size:13px;color:#6b7280;">For: Al-Bari College, Badagry, Lagos</span>
+                </p>
+              </td></tr>
+              <tr><td style="height:70px;line-height:70px;font-size:0;">&nbsp;</td></tr>
+            </table>
+          </td></tr>
+        </table>
       </body>
       </html>
     `;

@@ -482,11 +482,9 @@ Explanation: Multiple acceptable answers can be provided`;
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="paste" className="flex items-center">
-                <Clipboard className="h-4 w-4 mr-2" />
                 Paste Text
               </TabsTrigger>
               <TabsTrigger value="upload" className="flex items-center">
-                <Upload className="h-4 w-4 mr-2" />
                 Upload CSV
               </TabsTrigger>
             </TabsList>

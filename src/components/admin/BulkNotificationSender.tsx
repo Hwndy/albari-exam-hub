@@ -369,11 +369,9 @@ export const BulkNotificationSender: React.FC = () => {
       <Tabs defaultValue="templates">
         <TabsList>
           <TabsTrigger value="templates">
-            <FileText className="h-4 w-4 mr-2" />
             Templates
           </TabsTrigger>
           <TabsTrigger value="queue">
-            <Clock className="h-4 w-4 mr-2" />
             Queue & History
           </TabsTrigger>
         </TabsList>

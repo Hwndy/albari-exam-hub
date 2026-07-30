@@ -17,11 +17,11 @@ export const SettingsHub: React.FC = () => {
       <p className="text-sm text-muted-foreground">School profile, website branding and operational defaults.</p>
       <Tabs defaultValue="school" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="school"><School className="h-4 w-4 mr-1" /> School Info</TabsTrigger>
-          <TabsTrigger value="site"><Globe className="h-4 w-4 mr-1" /> Website</TabsTrigger>
-          <TabsTrigger value="staff-attendance"><Users className="h-4 w-4 mr-1" /> Staff Attendance</TabsTrigger>
-          <TabsTrigger value="grading"><GraduationCap className="h-4 w-4 mr-1" /> Grading Scale</TabsTrigger>
-          <TabsTrigger value="admissions"><Receipt className="h-4 w-4 mr-1" /> Admissions</TabsTrigger>
+          <TabsTrigger value="school">School Info</TabsTrigger>
+          <TabsTrigger value="site">Website</TabsTrigger>
+          <TabsTrigger value="staff-attendance">Staff Attendance</TabsTrigger>
+          <TabsTrigger value="grading">Grading Scale</TabsTrigger>
+          <TabsTrigger value="admissions">Admissions</TabsTrigger>
         </TabsList>
         <TabsContent value="school"><SchoolInfoEditor /></TabsContent>
         <TabsContent value="site"><SiteSettingsEditor /></TabsContent>

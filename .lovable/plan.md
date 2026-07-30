@@ -1,35 +1,50 @@
-## 1. Portal buttons go strictly to `/login`
+## 1. Fix the two broken screens (layout overlap)
 
-`src/pages/website/PortalsPage.tsx` currently rewrites every card link to `/login?portal=true&role=<role>`, and the parent card adds a second `/login?portal=true&role=parent&mode=register` link.
+Both screenshots show text stacking on top of other text:
 
-- Drop the `roleFor` / `loginLink` query-string builders — every "Enter Portal" button links to `/login`, no query params, regardless of what the CMS stores.
-- Replace the parent-only "Create parent account" link with a single line under the grid: "New parent? Create an account" pointing to `/login` as well (the login screen already has a Create-account toggle), so no card carries params.
-- Check other places that emit portal URLs with params (home page portal/CTA cards, footer, `HomePage`/`WebsiteLayout`) and normalize those to `/login` too.
-- `AuthPage.tsx` keeps working without params: it defaults to login mode. Leave its `?role=`/`?portal=` handling in place as harmless fallback for old emailed links.
+- **Dashboard header**: the sidebar's "AL-BARI / GROUP OF SCHOOLS" logo block renders over the sticky top bar and the KPI row. Fix by giving the sidebar brand block its own fixed-height row inside the sidebar container (so it can't paint over the main column), and giving the sticky header a solid background + correct z-index above page content.
+- **Admissions hub**: three problems at once —
+  - the same sidebar brand bleeding over the "Manage applications, sessions…" line,
+  - the 7 tab triggers wrapping into a second row that the `Card` wrapper doesn't grow for,
+  - a duplicate page title: the hub already renders a breadcrumb header, and `AdmissionManagement` renders its own `Admission Management` H2 + description underneath the tabs.
 
-## 2. Admin dashboard de-clutter
+  Fixes: convert the tab strip to a single horizontally-scrollable row on small screens (no wrapping/overlap), remove the redundant H2/description from `AdmissionManagement`, and move the "Fix student logins & parent links" button into the applications toolbar instead of floating next to the heading.
 
-The sidebar currently renders 19 flat top-level entries (Dashboard, Students, Analytics, Admissions, Academic, Results Management, Attendance Reports, Fee Management, Library, Notifications, Announcements, ID Cards, Scan Attendance, Users, Parents, Website, Settings, HR, Transport, Assets, System) with four groups expanded by default — that is the main source of the clutter.
+Verified across the other hubs (Settings, Academics, People) for the same duplicate-heading pattern and fixed where present.
 
-**Sidebar (`src/components/ui/admin-sidebar.tsx`)**
-- Regroup into 6 labelled sections using `SidebarGroup` headers instead of one long list:
-  - **Overview** — Dashboard, Analytics
-  - **Admissions** — Admissions hub (its 7 tabs already live inside `AdmissionsHub`, so collapse the sub-menu to a single entry)
-  - **Academics** — Students, Classes & Subjects, Exams, Questions, Timetable, Results & Report Cards (Results Management folded in as sub-items of one "Results" entry)
-  - **People** — Users, Parents, HR, Attendance (Reports + Scan Station as sub-items), ID Cards
-  - **Operations** — Fees, Library, Transport, Assets, Notifications & Announcements (merged into one "Communications" entry with sub-items)
-  - **Configuration** — Website CMS, Settings, System
-- Collapse all groups by default except the one matching the active tab; auto-open the active group on navigation.
-- Tighten spacing/typography: smaller group labels, consistent icon size, active state uses a left accent bar rather than a full `bg-accent` block.
+## 2. Offer letter: letter printed *inside* the letterhead
 
-**Shell (`src/pages/AdminDashboard.tsx`)**
-- Single sticky header row: sidebar trigger, logo, page title + breadcrumb (Section › Page), global search, user menu — instead of the current stacked header + duplicated titles.
-- Remove the duplicated page heading where a hub already renders its own `h2` (Admissions, Settings, Fees, Parents, Results) so each screen has exactly one title.
-- Replace the `getPageTitle` string ladder with one route map (`tab/subtab -> { section, title }`) used by both the breadcrumb and the sidebar's active state.
-- Overview tab: add a compact KPI row (students, teachers, classes, active exams, pending applications, outstanding fees) above Recent Exams, plus quick-action buttons; wire it to the existing `fetchDashboardData`, which is currently never called (the `useEffect` on line 96 has an empty body, so stats stay at zero).
-- Consistent page padding/max-width container across all tabs.
+Today `send-offer-letter` draws the letterhead PNG as a 65mm band at the top and starts the letter text below it — that's why it reads as "letterhead on top, letter underneath".
+
+Change to a true letterhead page:
+- Draw the letterhead image **full page** (0,0 → full width × full height) as the page background, once per page.
+- Define a content safe-area inside it (top margin below the crest/banner, bottom margin above the footer strip, left/right margins inside the side rule) and lay out all letter text within that box.
+- Add automatic page-break handling: when content passes the safe-area bottom, add a new page and re-draw the same letterhead background before continuing.
+- Keep the existing no-letterhead fallback (plain green header) for when the asset fetch fails.
+- Same treatment for the HTML email version: letterhead as a background image on the letter container rather than a stacked banner image.
+
+## 3. Remove the "AI-written" tone from the emails
+
+Rewrite copy in `send-offer-letter` and `send-admission-notification` (submitted, under review, interview, accepted, rejected, enrolled, exam result, resit) to read like school correspondence:
+
+- Drop emoji subjects (`🎉`, `🎓`) and exclamation-heavy openers ("Congratulations!", "We are delighted…").
+- Replace generic filler ("We received an overwhelming number of applications…", "We look forward to seeing you on campus!") with concrete, specific sentences.
+- Use plain formal structure: reference line, short body paragraph, a details block, clear next step with a deadline, signed off by the Admissions Office with the school address and phone.
+- Consistent British-Nigerian spelling, no bullet-list padding where a sentence works, no "Best regards,<br>…Team" on every single template.
+
+No behavioural/logic change — only the subject/HTML/PDF strings.
+
+## 4. Icon cleanup across the app
+
+Audit `lucide-react` usage and reduce decorative icon noise:
+
+- Remove icons from places where they add nothing: tab triggers that already have labels, card titles, section headings, table headers, inline status text.
+- Keep icons only where they carry meaning: buttons/actions (add, delete, export, print), status indicators, empty states, and sidebar navigation.
+- Standardise the survivors: single stroke width, one size scale (`h-4 w-4` inline, `h-5 w-5` for nav/action), `text-muted-foreground` unless conveying state, and consistent semantic choices (one icon per concept across the whole app — no three different "student" icons).
+- Public website: same pass on hero/feature/section icons, replacing scattered emoji-ish choices with a consistent, restrained set.
 
 ## Technical notes
-- Files: `src/pages/website/PortalsPage.tsx`, `src/pages/website/HomePage.tsx` (portal CTAs), `src/components/website/WebsiteLayout.tsx` (footer links), `src/components/ui/admin-sidebar.tsx`, `src/pages/AdminDashboard.tsx`.
-- All existing `?tab=&subtab=` URLs keep working; only grouping and labels change, no component is deleted.
-- No database or edge-function changes.
+
+- Files: `supabase/functions/send-offer-letter/index.ts`, `supabase/functions/send-admission-notification/index.ts`, `src/components/admin/admissions/AdmissionsHub.tsx`, `src/components/admin/AdmissionManagement.tsx`, `src/pages/AdminDashboard.tsx`, `src/components/ui/admin-sidebar.tsx`, plus icon edits across admin/website components.
+- Both edge functions get redeployed after the copy/PDF change.
+- I'll render a sample offer-letter PDF after the change to confirm the text sits inside the letterhead frame and doesn't collide with the footer.

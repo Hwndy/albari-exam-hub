@@ -160,31 +160,24 @@ export const TeacherDashboard = () => {
               <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">My Exams</TabsTrigger>
               <TabsTrigger value="results" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Student Results</TabsTrigger>
               <TabsTrigger value="timetable" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <Calendar className="h-4 w-4 mr-1 hidden sm:inline" />
                 Timetable
               </TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <ClipboardCheck className="h-4 w-4 mr-1 hidden sm:inline" />
                 Attendance
               </TabsTrigger>
               <TabsTrigger value="gradebook" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <Calculator className="h-4 w-4 mr-1 hidden sm:inline" />
                 Gradebook
               </TabsTrigger>
               <TabsTrigger value="results-mgmt" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
                 Results Management
               </TabsTrigger>
               <TabsTrigger value="assignments-mgr" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <ClipboardList className="h-4 w-4 mr-1 hidden sm:inline" />
                 Assignments
               </TabsTrigger>
               <TabsTrigger value="lesson-notes" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <NotebookPen className="h-4 w-4 mr-1 hidden sm:inline" />
                 Lesson Notes
               </TabsTrigger>
               <TabsTrigger value="leave" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <CalendarClock className="h-4 w-4 mr-1 hidden sm:inline" />
                 Leave
               </TabsTrigger>
               <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>

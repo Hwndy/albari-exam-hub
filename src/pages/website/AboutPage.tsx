@@ -2,19 +2,28 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles } from 'lucide-react';
+import { Award, Users, Target, Eye, BookOpen, ShieldCheck, GraduationCap, Landmark } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
 
-const ICONS: Record<string, React.ComponentType<any>> = { Award, Users, Heart, Target, Eye, BookOpen, Star, Shield, Sparkles };
+const ICONS: Record<string, React.ComponentType<any>> = {
+  Award,
+  Users,
+  Target,
+  Eye,
+  BookOpen,
+  ShieldCheck,
+  GraduationCap,
+  Landmark,
+};
 
 interface Leader { name: string; role: string; bio?: string; image?: string }
 interface Value { title: string; description: string; icon?: string }
 
 const DEFAULT_VALUES: Value[] = [
   { title: 'Excellence', description: 'We strive for the highest standards in all aspects of education, encouraging students to achieve their full potential.', icon: 'Award' },
-  { title: 'Integrity', description: 'We uphold honesty, transparency, and ethical conduct in all our interactions and decision-making processes.', icon: 'Heart' },
+  { title: 'Integrity', description: 'We uphold honesty, transparency, and ethical conduct in all our interactions and decision-making processes.', icon: 'ShieldCheck' },
   { title: 'Community', description: 'We foster a supportive and inclusive environment where every member feels valued and respected.', icon: 'Users' },
 ];
 

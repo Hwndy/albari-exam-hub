@@ -262,11 +262,9 @@ export const StudentPromotion = () => {
       <Tabs defaultValue="promote">
         <TabsList>
           <TabsTrigger value="promote" className="flex items-center gap-2">
-            <ArrowUp className="h-4 w-4" />
             Promote Students
           </TabsTrigger>
           <TabsTrigger value="history" className="flex items-center gap-2">
-            <History className="h-4 w-4" />
             Promotion History
           </TabsTrigger>
         </TabsList>
