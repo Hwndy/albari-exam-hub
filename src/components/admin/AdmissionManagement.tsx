@@ -282,7 +282,7 @@ export const AdmissionManagement = () => {
 
       {/* Status Filter */}
       <Tabs value={statusFilter} onValueChange={setStatusFilter}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="inline-flex w-full flex-wrap h-auto gap-1">
           <TabsTrigger value="all">All ({statusCounts.all})</TabsTrigger>
           <TabsTrigger value="submitted">New ({statusCounts.submitted})</TabsTrigger>
           <TabsTrigger value="under_review">Review ({statusCounts.under_review})</TabsTrigger>
