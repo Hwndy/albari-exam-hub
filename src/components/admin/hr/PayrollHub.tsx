@@ -208,7 +208,7 @@ export const PayrollHub: React.FC = () => {
                         <TableCell className="font-semibold">{NGN(Number(i.net_pay || 0))}</TableCell>
                         <TableCell className="space-x-1 whitespace-nowrap">
                           {!readOnly && <Button size="sm" onClick={() => saveItem(i)} disabled={savingId === i.id}>{savingId === i.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Save'}</Button>}
-                          <Button size="sm" variant="outline" onClick={() => printNode(`payslip-${i.id}`)}><Printer className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="outline" onClick={() => printNode(document.getElementById(`payslip-${i.id}`), { title: `Payslip ${i.full_name}` })}><Printer className="h-4 w-4" /></Button>
                           {!readOnly && <Button size="sm" variant="ghost" onClick={() => removeItem(i)}>Remove</Button>}
                         </TableCell>
                       </TableRow>
