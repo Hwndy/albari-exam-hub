@@ -17,6 +17,7 @@ import { format, addYears } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { StudentIDCard } from './StudentIDCard';
+import { fetchSchoolBranding } from '@/lib/school-branding';
 import { EditStudentDialog } from './EditStudentDialog';
 
 interface Student {
