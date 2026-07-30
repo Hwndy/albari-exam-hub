@@ -47,6 +47,10 @@ export const AboutPage = () => {
   ]);
   const historyImage = settingValue<string>(settings, 'about_history_image', '/albari_logo.jpg');
   const yearsBadge = settingValue<string>(settings, 'about_years_badge', '22+ Years');
+  // Keep the badge honest: derive from the founding year unless the CMS overrides it.
+  const foundingYear = Number(settingValue<string>(settings, 'about_founding_year', '2004')) || 2004;
+  const derivedYears = Math.max(1, new Date().getFullYear() - foundingYear);
+  const yearsLabel = yearsBadge && yearsBadge !== '22+ Years' ? yearsBadge : `${derivedYears}+ Years`;
   const vision = settingValue<string>(settings, 'about_vision',
     'To be the leading educational institution in Nigeria, recognized for academic excellence, character development, and the production of well-rounded individuals who contribute positively to society.');
   const mission = settingValue<string>(settings, 'about_mission',
