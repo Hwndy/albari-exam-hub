@@ -497,6 +497,38 @@ export function openReportCardPrintWindow(html: string) {
   w.document.write(html);
   w.document.close();
   w.focus();
-  setTimeout(() => w.print(), 500);
+  const doPrint = () => {
+    try {
+      w.focus();
+      w.print();
+    } catch {
+      /* ignore */
+    }
+  };
+  // Wait for the crest / passport images so nothing prints half-rendered.
+  const imgs = Array.from(w.document.images || []);
+  if (!imgs.length) {
+    setTimeout(doPrint, 300);
+  } else {
+    let pending = imgs.length;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setTimeout(doPrint, 250);
+    };
+    imgs.forEach(img => {
+      if (img.complete) {
+        if (--pending === 0) finish();
+        return;
+      }
+      const tick = () => {
+        if (--pending === 0) finish();
+      };
+      img.addEventListener('load', tick, { once: true });
+      img.addEventListener('error', tick, { once: true });
+    });
+    setTimeout(finish, 4000);
+  }
   return true;
 }
