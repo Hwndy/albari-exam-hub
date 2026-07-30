@@ -4770,6 +4770,7 @@ export type Database = {
       }
       get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
       get_grade_for_score: { Args: { _score: number }; Returns: Json }
+      get_offer_by_token: { Args: { p_token: string }; Returns: Json }
       get_or_create_scan_session: { Args: { p_date: string }; Returns: string }
       get_parent_children: {
         Args: never

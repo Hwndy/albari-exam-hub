@@ -44,51 +44,32 @@ export const AcceptOfferPage = () => {
 
   const loadOfferDetails = async () => {
     try {
-      const { data: offerData, error: offerError } = await supabase
-        .from('admission_offers')
-        .select('id, application_id, acceptance_deadline, status, accepted_at, declined_at')
-        .eq('acceptance_token', token)
-        .maybeSingle();
+      // Public link: offers are not readable by anonymous visitors under RLS,
+      // so resolve the token through a security-definer function instead.
+      const { data, error } = await supabase.rpc('get_offer_by_token', { p_token: token as string });
+      if (error) throw error;
 
-      if (offerError) throw offerError;
-
-      if (offerData) {
-        const { data: appData, error: appError } = await supabase
-          .from('admission_applications')
-          .select('id, application_number, first_name, last_name, email, admitted_to_class_id')
-          .eq('id', offerData.application_id)
-          .maybeSingle();
-        
-        if (appError) throw appError;
-
-        let className = 'N/A';
-        if (appData?.admitted_to_class_id) {
-          const { data: classData } = await supabase
-            .from('classes')
-            .select('name')
-            .eq('id', appData.admitted_to_class_id)
-            .maybeSingle();
-          if (classData) className = classData.name;
-        }
-
+      const result = data as any;
+      if (result) {
         setOffer({
-          id: offerData.id,
-          application_id: offerData.application_id,
-          acceptance_deadline: offerData.acceptance_deadline,
-          status: offerData.status,
-          accepted_at: offerData.accepted_at,
-          declined_at: offerData.declined_at,
+          id: result.id,
+          application_id: result.application_id,
+          acceptance_deadline: result.acceptance_deadline,
+          status: result.status,
+          accepted_at: result.accepted_at,
+          declined_at: result.declined_at,
         });
 
-        if (appData) {
+        const app = result.application;
+        if (app) {
           setApplication({
-            id: appData.id,
-            application_number: appData.application_number,
-            first_name: appData.first_name,
-            last_name: appData.last_name,
-            email: appData.email,
-            admitted_to_class_id: appData.admitted_to_class_id,
-            classes: { name: className },
+            id: app.id,
+            application_number: app.application_number,
+            first_name: app.first_name,
+            last_name: app.last_name,
+            email: app.email,
+            admitted_to_class_id: app.admitted_to_class_id,
+            classes: { name: app.class_name || 'N/A' },
           });
         }
       }
