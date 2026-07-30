@@ -310,8 +310,8 @@ serve(async (req) => {
     if (existingOffer) {
       console.log("Offer already exists, updating instead of creating new one");
       
-      // Use existing acceptance token
-      acceptanceToken = existingOffer.acceptance_token;
+      // Preserve a valid existing link when re-sending; repair older rows without one.
+      acceptanceToken = existingOffer.acceptance_token?.trim() || crypto.randomUUID();
       
       // Delete old PDF if exists
       if (existingOffer.offer_letter_url) {
@@ -349,6 +349,7 @@ serve(async (req) => {
         .from("admission_offers")
         .update({
           acceptance_deadline,
+          acceptance_token: acceptanceToken,
           offer_letter_url: offerLetterUrl,
           status: "sent",
           updated_at: new Date().toISOString()

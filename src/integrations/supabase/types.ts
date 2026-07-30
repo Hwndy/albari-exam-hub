@@ -4642,6 +4642,10 @@ export type Database = {
       }
     }
     Functions: {
+      accept_offer_by_token: {
+        Args: { p_acceptance_token: string; p_decision: string }
+        Returns: Json
+      }
       admin_link_parent_to_student: {
         Args: {
           p_parent_user_id: string
