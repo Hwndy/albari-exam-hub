@@ -1,11 +1,12 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Users, GraduationCap, UserCheck, Shield, ArrowRight, Briefcase, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand, SectionHeading } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Users, GraduationCap, UserCheck, Shield, Briefcase, BookOpen,
@@ -48,57 +49,63 @@ export const PortalsPage = () => {
         crumbs={[{ label: 'Portals' }]}
       />
 
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-            {portals.map((portal, idx) => {
-              const Icon = (portal.icon && ICONS[portal.icon]) || GraduationCap;
-              return (
-                <Card key={idx} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader>
-                    <div className="flex items-start gap-4">
-                      <div className="h-14 w-14 rounded-xl bg-primary/10 flex items-center justify-center">
-                        <Icon className="h-7 w-7 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-xl">{portal.title}</CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">{portal.description}</p>
-                      </div>
+      <SectionBand>
+        <SectionHeading
+          eyebrow="Sign in"
+          title="Four portals, one school"
+          intro="Each portal gives you exactly what you need — nothing you don't."
+        />
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 md:grid-cols-2">
+          {portals.map((portal, idx) => {
+            const Icon = (portal.icon && ICONS[portal.icon]) || GraduationCap;
+            return (
+              <Reveal key={idx} delay={(idx % 2) * 90}>
+                <article className="flex h-full flex-col rounded-2xl border border-border bg-card p-7 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <Icon className="h-6 w-6" />
+                    </span>
+                    <div>
+                      <h2 className="text-xl font-semibold text-foreground">{portal.title}</h2>
+                      <p className="mt-1 text-sm leading-relaxed text-muted-foreground">{portal.description}</p>
                     </div>
-                  </CardHeader>
-                  <CardContent>
-                    <ul className="space-y-2 mb-6 text-sm text-muted-foreground">
-                      {portal.features?.map((f) => (
-                        <li key={f} className="flex items-center gap-2"><span className="h-1.5 w-1.5 rounded-full bg-primary" />{f}</li>
-                      ))}
-                    </ul>
-                    <Button asChild className="w-full">
+                  </div>
+                  <ul className="mb-7 mt-6 grid grid-cols-1 gap-2 text-sm text-muted-foreground sm:grid-cols-2">
+                    {portal.features?.map((f) => (
+                      <li key={f} className="flex items-center gap-2">
+                        <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-auto">
+                    <Button asChild className="w-full rounded-full">
                       <Link to={LOGIN_PATH}>
-                        Enter Portal <ArrowRight className="ml-2 h-4 w-4" />
+                        Enter portal <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
                     {portal.title.toLowerCase().includes('parent') && (
                       <p className="mt-3 text-center text-sm text-muted-foreground">
                         New parent?{' '}
-                        <Link to="/login?mode=register&role=parent" className="text-primary font-medium hover:underline">
+                        <Link to="/login?mode=register&role=parent" className="font-medium text-primary hover:underline">
                           Create an account
                         </Link>
                       </p>
                     )}
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-          <p className="text-center text-sm text-muted-foreground mt-8">
-            New parent?{' '}
-            <Link to="/login?mode=register&role=parent" className="text-primary font-medium hover:underline">
-              Create an account
-            </Link>{' '}
-            to link your children.
-          </p>
+                  </div>
+                </article>
+              </Reveal>
+            );
+          })}
         </div>
-      </section>
+        <p className="mt-10 text-center text-sm text-muted-foreground">
+          New parent?{' '}
+          <Link to="/login?mode=register&role=parent" className="font-medium text-primary hover:underline">
+            Create an account
+          </Link>{' '}
+          to link your children.
+        </p>
+      </SectionBand>
     </div>
   );
 };

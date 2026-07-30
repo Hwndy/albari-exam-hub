@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, FileText, CreditCard, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand, SectionHeading } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 
 export const AdmissionsPage = () => {
@@ -48,9 +48,13 @@ export const AdmissionsPage = () => {
     "Letter of Good Conduct from Previous School"
   ];
 
-  const feeStructure = [
-    { class: "JSS 1-3", admission: "₦25,000", tuition: "₦45,000", uniform: "₦15,000" },
-    { class: "SSS 1-3", admission: "₦30,000", tuition: "₦50,000", uniform: "₦18,000" }
+  const highlights = [
+    { title: 'Strong exam results', description: 'Consistent performance in WAEC, NECO and JAMB examinations.', icon: CheckCircle },
+    { title: 'Small class sizes', description: 'Around 25 students per class, so every child is known and supported.', icon: Users },
+    { title: 'Modern curriculum', description: 'Technology, critical thinking and 21st-century skills woven throughout.', icon: FileText },
+    { title: 'Qualified teachers', description: 'Experienced, certified educators committed to academics and character.', icon: CheckCircle },
+    { title: 'Holistic development', description: 'A balance of academics, faith, sport and extracurricular life.', icon: Calendar },
+    { title: 'Affordable fees', description: 'Competitive rates with flexible payment options available.', icon: CreditCard },
   ];
 
   return (
@@ -78,217 +82,116 @@ export const AdmissionsPage = () => {
         </Button>
       </PageHero>
 
-      {/* Why Choose Al-Bari */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Why Choose Al-Bari Group of Schools?
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Discover the advantages that make us the preferred choice for quality education
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>98% Success Rate</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Outstanding performance in WAEC, NECO, and JAMB examinations with consistent excellent results.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <Users className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>Small Class Sizes</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Maximum of 25 students per class ensuring personalized attention and optimal learning outcomes.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <FileText className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>Modern Curriculum</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Updated curriculum incorporating technology, critical thinking, and 21st-century skills.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <CheckCircle className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>Qualified Teachers</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Experienced and certified educators committed to student success and character development.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <Calendar className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>Holistic Development</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Balanced focus on academics, character, sports, and extracurricular activities.
-                  </p>
-                </CardContent>
-              </Card>
-
-              <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                <CardHeader className="text-center">
-                  <CreditCard className="h-12 w-12 text-primary mx-auto mb-4" />
-                  <CardTitle>Affordable Fees</CardTitle>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <p className="text-muted-foreground">
-                    Quality education at competitive rates with flexible payment options available.
-                  </p>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
+      {/* Why choose us */}
+      <SectionBand>
+        <SectionHeading
+          eyebrow="Why Al-Bari"
+          title="Why families choose us"
+          intro="The advantages that make us a preferred choice for quality education."
+        />
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {highlights.map((h, i) => (
+            <Reveal key={h.title} delay={(i % 3) * 80}>
+              <article className="flex h-full items-start gap-4 rounded-2xl border border-border bg-card p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <h.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <h3 className="text-lg font-semibold text-foreground">{h.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{h.description}</p>
+                </div>
+              </article>
+            </Reveal>
+          ))}
         </div>
-      </section>
+      </SectionBand>
 
-      {/* Admission Process */}
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Admission Process
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Simple and transparent admission process designed for your convenience
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {admissionSteps.map((step, index) => (
-                <Card key={index} className="border-0 shadow-lg relative">
-                  <CardHeader className="text-center">
-                    <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="text-2xl font-bold text-primary-foreground">{step.step}</span>
-                    </div>
-                    <step.icon className="h-8 w-8 text-primary mx-auto mb-2" />
-                    <CardTitle className="text-lg">{step.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="text-center">
-                    <p className="text-muted-foreground text-sm">
-                      {step.description}
-                    </p>
-                  </CardContent>
-                  {index < admissionSteps.length - 1 && (
-                    <div className="hidden lg:block absolute -right-3 top-1/2 transform -translate-y-1/2">
-                      <ArrowRight className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                  )}
-                </Card>
-              ))}
-            </div>
-          </div>
+      {/* Admission process */}
+      <SectionBand tone="muted">
+        <SectionHeading
+          eyebrow="Process"
+          title="Four steps to admission"
+          intro="A simple, transparent process designed for your convenience."
+        />
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          {admissionSteps.map((step, index) => (
+            <Reveal key={step.step} delay={index * 90}>
+              <article className="relative h-full rounded-2xl border border-border bg-card p-7 text-center shadow-sm">
+                <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-xl font-bold text-primary-foreground">
+                  {step.step}
+                </span>
+                <step.icon className="mx-auto mt-5 h-6 w-6 text-primary" />
+                <h3 className="mt-3 text-lg font-semibold text-foreground">{step.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{step.description}</p>
+                {index < admissionSteps.length - 1 && (
+                  <ArrowRight className="absolute -right-4 top-1/2 hidden h-6 w-6 -translate-y-1/2 text-muted-foreground lg:block" />
+                )}
+              </article>
+            </Reveal>
+          ))}
         </div>
-      </section>
+      </SectionBand>
 
       {/* Requirements */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-12">
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-                Admission Requirements
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Documents needed to complete your application
-              </p>
-            </div>
+      <SectionBand>
+        <SectionHeading
+          eyebrow="Checklist"
+          title="What you need to apply"
+          intro="Have these documents ready before you start the online form."
+        />
+        <Reveal className="mx-auto max-w-4xl">
+          <ul className="grid grid-cols-1 gap-4 rounded-2xl border border-border bg-card p-8 shadow-sm md:grid-cols-2">
+            {requirements.map((requirement) => (
+              <li key={requirement} className="flex items-start gap-3">
+                <CheckCircle className="mt-0.5 h-5 w-5 shrink-0 text-primary" />
+                <span className="text-sm text-muted-foreground">{requirement}</span>
+              </li>
+            ))}
+          </ul>
+        </Reveal>
+      </SectionBand>
 
-            <Card className="border-0 shadow-lg">
-              <CardHeader>
-                <CardTitle className="text-xl text-center">Required Documents</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {requirements.map((requirement, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <CheckCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-                      <span className="text-muted-foreground">{requirement}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+      {/* Ready to apply */}
+      <SectionBand tone="accent">
+        <div className="mx-auto max-w-4xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground lg:text-4xl">Ready to apply?</h2>
+          <p className="mx-auto mt-4 max-w-2xl text-lg text-muted-foreground">
+            Take the first step towards joining our community of excellence. Our admissions team is ready to guide you
+            through the process.
+          </p>
+
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button size="lg" className="rounded-full px-7" asChild>
+              <Link to="/website/admissions/apply">
+                Apply online <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="rounded-full px-7" asChild>
+              <Link to="/website/track-application">Track application</Link>
+            </Button>
+            {brochureUrl ? (
+              <Button variant="outline" size="lg" className="rounded-full px-7" asChild>
+                <a href={brochureUrl} target="_blank" rel="noopener noreferrer">
+                  Download brochure
+                </a>
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
+            {[
+              { label: 'Admissions office', value: '+234 802 815 2097' },
+              { label: 'Email', value: 'admissions@albari.com.ng' },
+              { label: 'Office hours', value: 'Mon – Fri, 8AM – 4PM' },
+            ].map((c) => (
+              <div key={c.label} className="rounded-2xl border border-border bg-card/70 p-6 backdrop-blur-sm">
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{c.label}</p>
+                <p className="mt-2 font-medium text-foreground">{c.value}</p>
+              </div>
+            ))}
           </div>
         </div>
-      </section>
-
-      {/* Contact Information */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-6">
-              Ready to Apply?
-            </h2>
-            <p className="text-lg text-muted-foreground mb-8">
-              Take the first step towards joining our community of excellence. 
-              Our admissions team is ready to guide you through the process.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <Button size="lg" asChild>
-                <Link to="/website/admissions/apply">
-                  Apply Online <ArrowRight className="ml-2 h-5 w-5" />
-                </Link>
-              </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link to="/website/track-application">
-                  Track Application
-                </Link>
-              </Button>
-              {brochureUrl ? (
-                <Button variant="outline" size="lg" asChild>
-                  <a href={brochureUrl} target="_blank" rel="noopener noreferrer">
-                    Download Brochure
-                  </a>
-                </Button>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">Admissions Office</h3>
-                <p className="text-muted-foreground">+234 802 815 2097</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">Email</h3>
-                <p className="text-muted-foreground">admissions@albari.edu.ng</p>
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground mb-2">Office Hours</h3>
-                <p className="text-muted-foreground">Mon-Fri: 8AM - 4PM</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </SectionBand>
     </div>
   );
 };
