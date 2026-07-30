@@ -648,6 +648,7 @@ export const StaffManagement = () => {
 
       {/* View Staff Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
+        {null}
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Staff Details</DialogTitle>
