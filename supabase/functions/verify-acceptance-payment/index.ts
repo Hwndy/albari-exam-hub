@@ -316,11 +316,12 @@ serve(async (req) => {
             // Attach the credit to the student's mandatory fee structure for
             // their class so it reduces the outstanding tuition balance.
             let creditStructureId: string | null = null;
-            if (classId) {
+            const creditClassId = application.admitted_to_class_id ?? application.applying_for_class_id;
+            if (creditClassId) {
               const { data: structure } = await supabase
                 .from("fee_structures")
                 .select("id")
-                .eq("class_id", classId)
+                .eq("class_id", creditClassId)
                 .eq("is_mandatory", true)
                 .order("created_at", { ascending: false })
                 .limit(1)
