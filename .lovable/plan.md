@@ -1,50 +1,45 @@
-## 1. Fix the two broken screens (layout overlap)
+## Goal
 
-Both screenshots show text stacking on top of other text:
+Bring back the "Create parent account" entry points, and fix every non-functional button/link found in a sweep of the public website, admin, teacher, student and parent surfaces.
 
-- **Dashboard header**: the sidebar's "AL-BARI / GROUP OF SCHOOLS" logo block renders over the sticky top bar and the KPI row. Fix by giving the sidebar brand block its own fixed-height row inside the sidebar container (so it can't paint over the main column), and giving the sticky header a solid background + correct z-index above page content.
-- **Admissions hub**: three problems at once —
-  - the same sidebar brand bleeding over the "Manage applications, sessions…" line,
-  - the 7 tab triggers wrapping into a second row that the `Card` wrapper doesn't grow for,
-  - a duplicate page title: the hub already renders a breadcrumb header, and `AdmissionManagement` renders its own `Admission Management` H2 + description underneath the tabs.
+## 1. Restore parent account creation
 
-  Fixes: convert the tab strip to a single horizontally-scrollable row on small screens (no wrapping/overlap), remove the redundant H2/description from `AdmissionManagement`, and move the "Fix student logins & parent links" button into the applications toolbar instead of floating next to the heading.
+**Parent Portal card (`/website/portals`)**
+- Keep every "Enter Portal" button pointing at plain `/login` (as requested earlier).
+- On the Parent Portal card only, add a secondary link underneath: "New parent? Create an account" → `/login?mode=register&role=parent`.
+- Replace the current generic footer note with the same link so it actually lands on the registration form.
 
-Verified across the other hubs (Settings, Academics, People) for the same duplicate-heading pattern and fixed where present.
+**Sign-in page (`/login`)**
+- `AuthPage` already reads `?mode=register` and `?role=parent`; today nothing links to it, so the CTA never appears.
+- Show a permanent block under the sign-in form: "Are you a parent? Create a parent account" which switches the form to register mode with the Parent/Guardian role preselected — no longer gated behind `role=parent` in the URL.
+- Keep the existing generic "Don't have an account? Create one" link.
 
-## 2. Offer letter: letter printed *inside* the letterhead
+**Admin side** — the "Add Parent" button in Admin › People › Parents already exists and works (invites via the `create-parent-account` function). No change needed; I'll verify it in the browser during QA.
 
-Today `send-offer-letter` draws the letterhead PNG as a 65mm band at the top and starts the letter text below it — that's why it reads as "letterhead on top, letter underneath".
+## 2. Fixes from the site-wide audit
 
-Change to a true letterhead page:
-- Draw the letterhead image **full page** (0,0 → full width × full height) as the page background, once per page.
-- Define a content safe-area inside it (top margin below the crest/banner, bottom margin above the footer strip, left/right margins inside the side rule) and lay out all letter text within that box.
-- Add automatic page-break handling: when content passes the safe-area bottom, add a new page and re-draw the same letterhead background before continuing.
-- Keep the existing no-letterhead fallback (plain green header) for when the asset fetch fails.
-- Same treatment for the HTML email version: letterhead as a background image on the letter container rather than a stacked banner image.
+Findings from a full read of the website pages, `AdminDashboard`, teacher/student/parent dashboards, the sidebar navigation map and all router targets:
 
-## 3. Remove the "AI-written" tone from the emails
+| Issue | Location | Fix |
+|---|---|---|
+| "Try Again" after a failed payment navigates to `/apply`, which is not a route → 404 | payment callback page | point it at the real application route `/website/admissions/apply` |
+| "Download Brochure" button does nothing (no handler, no link) | Admissions page | wire it to the prospectus file if one is configured in site settings; otherwise hide the button rather than shipping a dead control |
+| "Investigate" button in the live exam monitor activity feed does nothing | admin live monitor | open the existing student/session detail view for the flagged row |
+| "Retake Exam (Coming Soon)" permanently disabled | student exam results | remove the stub button (an unusable control is worse than none); retakes stay an admin-scheduled action |
 
-Rewrite copy in `send-offer-letter` and `send-admission-notification` (submitted, under review, interview, accepted, rejected, enrolled, exam result, resit) to read like school correspondence:
+Verified as already working (no changes): all admin sidebar tabs resolve to real screens, every dashboard tab renders a real component, all website nav links resolve to registered routes, and every database table/view/function referenced by the frontend exists.
 
-- Drop emoji subjects (`🎉`, `🎓`) and exclamation-heavy openers ("Congratulations!", "We are delighted…").
-- Replace generic filler ("We received an overwhelming number of applications…", "We look forward to seeing you on campus!") with concrete, specific sentences.
-- Use plain formal structure: reference line, short body paragraph, a details block, clear next step with a deadline, signed off by the Admissions Office with the school address and phone.
-- Consistent British-Nigerian spelling, no bullet-list padding where a sentence works, no "Best regards,<br>…Team" on every single template.
+## 3. QA pass
 
-No behavioural/logic change — only the subject/HTML/PDF strings.
-
-## 4. Icon cleanup across the app
-
-Audit `lucide-react` usage and reduce decorative icon noise:
-
-- Remove icons from places where they add nothing: tab triggers that already have labels, card titles, section headings, table headers, inline status text.
-- Keep icons only where they carry meaning: buttons/actions (add, delete, export, print), status indicators, empty states, and sidebar navigation.
-- Standardise the survivors: single stroke width, one size scale (`h-4 w-4` inline, `h-5 w-5` for nav/action), `text-muted-foreground` unless conveying state, and consistent semantic choices (one icon per concept across the whole app — no three different "student" icons).
-- Public website: same pass on hero/feature/section icons, replacing scattered emoji-ish choices with a consistent, restrained set.
+Drive the running app in a headless browser and click through:
+- `/website/portals` → parent card link → registration form opens with Parent role preselected.
+- `/login` → parent CTA → register mode.
+- Admissions page brochure button, payment-callback failure retry.
+- Admin › People › Parents → Add Parent dialog opens and submits.
+- A tab-by-tab pass over admin, teacher, student and parent dashboards, capturing screenshots of any screen that renders empty or errors, and fixing what surfaces.
 
 ## Technical notes
 
-- Files: `supabase/functions/send-offer-letter/index.ts`, `supabase/functions/send-admission-notification/index.ts`, `src/components/admin/admissions/AdmissionsHub.tsx`, `src/components/admin/AdmissionManagement.tsx`, `src/pages/AdminDashboard.tsx`, `src/components/ui/admin-sidebar.tsx`, plus icon edits across admin/website components.
-- Both edge functions get redeployed after the copy/PDF change.
-- I'll render a sample offer-letter PDF after the change to confirm the text sits inside the letterhead frame and doesn't collide with the footer.
+- Files touched: `src/pages/website/PortalsPage.tsx`, `src/pages/AuthPage.tsx`, `src/components/auth/LoginForm.tsx` (CTA slot), `src/pages/website/PaymentCallbackPage.tsx`, `src/pages/website/AdmissionsPage.tsx`, `src/components/admin/EnhancedLiveMonitor.tsx`, `src/components/exam/ExamResults.tsx`.
+- No database migrations or edge function changes.
+- Parent self-registration continues to use the existing `RegisterForm` path (email + phone, role `parent`); admin-created parents continue to use the invite function.
