@@ -189,6 +189,18 @@ export const StudentTimetable: React.FC = () => {
   const nextClass = getNextClass();
   const currentDayName = DAYS[new Date().getDay() - 1];
 
+  if (timetableEntries.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No timetable has been published for {className} yet.</p>
+          <p className="text-sm">Please check back later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
