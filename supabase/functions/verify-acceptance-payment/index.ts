@@ -128,6 +128,14 @@ serve(async (req) => {
           // "deducted from school fees" promise on the offer holds true.
           const acceptanceAmount = Number(payment.amount ?? paystackData.data.amount / 100);
           if (Number.isFinite(acceptanceAmount) && acceptanceAmount > 0) {
+            const { data: existingCredit } = await supabase
+              .from("fee_payments")
+              .select("id")
+              .eq("transaction_id", reference)
+              .maybeSingle();
+            if (existingCredit) {
+              console.log("Acceptance fee already credited for", reference);
+            } else {
             const { error: creditError } = await supabase.from("fee_payments").insert({
               student_id: student.id,
               amount_paid: acceptanceAmount,
@@ -141,6 +149,7 @@ serve(async (req) => {
             });
             if (creditError) {
               console.error("Error crediting acceptance fee to school fees:", creditError);
+            }
             }
           }
 
