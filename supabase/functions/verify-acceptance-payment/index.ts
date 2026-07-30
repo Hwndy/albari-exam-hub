@@ -254,11 +254,11 @@ serve(async (req) => {
           // Send welcome email
           try {
             let className: string | null = null;
-            if (application.admitted_to_class_id) {
+            if (classId) {
               const { data: cls } = await supabase
                 .from("classes")
                 .select("name")
-                .eq("id", application.admitted_to_class_id)
+                .eq("id", classId)
                 .maybeSingle();
               className = cls?.name ?? null;
             }
