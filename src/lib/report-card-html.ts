@@ -56,6 +56,7 @@ export interface ReportCardSchoolInfo {
   email?: string;
   motto?: string;
   logo_url?: string;
+  principal_name?: string;
 }
 
 export interface ReportCardAutomation {
