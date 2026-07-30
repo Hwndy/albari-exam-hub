@@ -18,6 +18,7 @@ import { OfferLetterGenerator } from '@/components/admin/OfferLetterGenerator';
 import { RejectionNotifier } from '@/components/admin/RejectionNotifier';
 import { InterviewPanelManager } from '@/components/admin/InterviewPanelManager';
 import { InterviewFeedbackForm } from '@/components/admin/InterviewFeedbackForm';
+import { ApplicationExamResult } from '@/components/admin/admissions/ApplicationExamResult';
 
 type AdmissionStatus = 'submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected' | 'payment_pending' | 'enrolled' | 'withdrawn';
 
@@ -437,6 +438,9 @@ export const AdmissionManagement = () => {
                             <h4 className="font-semibold mb-3">Uploaded Documents</h4>
                             <AdmissionDocumentViewer applicationId={selectedApplication.id} />
                           </div>
+
+                          {/* Entrance exam result */}
+                          <ApplicationExamResult applicationId={selectedApplication.id} />
 
                           {/* Review Notes */}
                           <div className="space-y-2">
