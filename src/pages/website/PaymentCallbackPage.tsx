@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WebsiteLayout } from '@/components/website/WebsiteLayout';
 import { useSchoolInfo } from '@/hooks/useCms';
+import { printNode } from '@/lib/print-node';
 
 interface Receipt {
   reference?: string | null;
@@ -114,14 +115,6 @@ export const PaymentCallbackPage = () => {
 
   return (
     <WebsiteLayout>
-      <style>{`
-        @media print {
-          body * { visibility: hidden; }
-          #payment-receipt, #payment-receipt * { visibility: visible; }
-          #payment-receipt { position: absolute; inset: 0; margin: 0; width: 100%; border: none; box-shadow: none; }
-          .no-print { display: none !important; }
-        }
-      `}</style>
       <div className="min-h-screen py-12 flex items-center justify-center px-4">
         <Card className="max-w-lg w-full">
           <CardContent className="p-6 sm:p-8">
@@ -198,7 +191,16 @@ export const PaymentCallbackPage = () => {
                 </div>
 
                 <div className="space-y-3 mt-6 no-print">
-                  <Button onClick={() => window.print()} variant="secondary" className="w-full">
+                  <Button
+                    onClick={() =>
+                      printNode(document.getElementById('payment-receipt'), {
+                        title: 'Payment Receipt',
+                        pageSize: 'A4',
+                      })
+                    }
+                    variant="secondary"
+                    className="w-full"
+                  >
                     <Printer className="h-4 w-4 mr-2" /> Print / Download Receipt
                   </Button>
                   {isEnrollment && (

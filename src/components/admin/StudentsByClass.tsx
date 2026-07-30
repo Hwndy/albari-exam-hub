@@ -527,7 +527,15 @@ export const StudentsByClass: React.FC = () => {
                   }}>
                   <Download className="h-4 w-4 mr-2" /> Download PNG
                 </Button>
-                <Button onClick={() => window.print()}>
+                <Button
+                  onClick={() =>
+                    printNode(document.getElementById('student-id-card'), {
+                      title: `ID Card — ${idCardStudent.full_name}`,
+                      pageSize: '54mm 85.6mm',
+                      pageMargin: '0',
+                    })
+                  }
+                >
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>
               </div>
