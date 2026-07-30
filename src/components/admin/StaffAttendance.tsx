@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Calendar, Clock, Users, CheckCircle2, XCircle, AlertCircle, Save } from "lucide-react";
+import { Calendar, Clock, Users, CheckCircle2, XCircle, AlertCircle, Save, Download } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWeekend } from "date-fns";
 
 interface StaffMember {
@@ -201,6 +201,42 @@ export const StaffAttendance = () => {
   };
 
   const markAllPresent = () => {
+    const newRecords: Record<string, AttendanceRecord> = { ...attendanceRecords };
+    staffMembers.forEach((staff) => {
+      newRecords[staff.user_id] = {
+        ...newRecords[staff.user_id],
+        staff_id: staff.user_id,
+        status: "present",
+        check_in: newRecords[staff.user_id]?.check_in || "08:00",
+      };
+    });
+    setAttendanceRecords(newRecords);
+  };
+
+  const clearDay = () => setAttendanceRecords({});
+
+  const exportDay = () => {
+    const header = ["Employee ID", "Name", "Department", "Status", "Check In", "Check Out"];
+    const rows = staffMembers.map((s) => [
+      s.employee_id || "",
+      s.profile?.full_name || "",
+      s.department || "",
+      attendanceRecords[s.user_id]?.status || "not marked",
+      attendanceRecords[s.user_id]?.check_in || "",
+      attendanceRecords[s.user_id]?.check_out || "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `staff-attendance-${selectedDate}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const legacyMarkAllPresent = () => {
     const newRecords: Record<string, AttendanceRecord> = {};
     staffMembers.forEach((staff) => {
       newRecords[staff.user_id] = {
