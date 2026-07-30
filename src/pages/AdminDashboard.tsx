@@ -195,64 +195,12 @@ export const AdminDashboard = () => {
     }
   };
 
-  // Show loading state while school context is initializing
-  const getPageTitle = () => {
-    if (activeTab === 'overview') return 'Dashboard Overview';
-    if (activeTab === 'admissions') {
-      const titles: Record<string, string> = {
-        'applications': 'Admission Applications',
-        'sessions': 'Admission Sessions',
-        'payments': 'Payment Verification',
-        'entrance-exams': 'Entrance Exams',
-        'decisions': 'Decision Board',
-        'analytics': 'Admission Analytics',
-      };
-      return titles[activeSubTab || 'applications'] || 'Admissions';
-    }
-    if (activeTab === 'academic') {
-      const titles: Record<string, string> = {
-        'exams': 'Exam Management',
-        'results': 'Student Results',
-        'questions': 'Question Bank',
-        'classes': 'Class Management',
-        'students': 'Students',
-        'subjects': 'Subject Management',
-        'timetable': 'Timetable Management',
-        'report-cards': 'Report Cards',
-      };
-      return titles[activeSubTab || 'exams'] || 'Academic';
-    }
-    if (activeTab === 'fees') return 'Fee Management';
-    if (activeTab === 'library') return 'Library Management';
-    if (activeTab === 'notifications') return 'Bulk Notifications';
-    if (activeTab === 'id-cards') {
-      if (activeSubTab === 'staff') return 'Staff ID Cards';
-      return 'Student ID Cards';
-    }
-    if (activeTab === 'announcements') return 'Announcements';
-    if (activeTab === 'settings') return 'Settings';
-    if (activeTab === 'attendance-reports') return 'Attendance Reports';
-    if (activeTab === 'attendance-scan') return 'Scan Attendance';
-    if (activeTab === 'users') return 'User Management';
-    if (activeTab === 'website') {
-      const titles: Record<string, string> = {
-        'news': 'News & Articles',
-        'gallery': 'Gallery Manager',
-        'testimonials': 'Testimonials',
-        'school-info': 'School Information',
-        'site-settings': 'Site Settings',
-      };
-      return titles[activeSubTab || 'news'] || 'Website CMS';
-    }
-    if (activeTab === 'system') {
-      const titles: Record<string, string> = {
-        'email-logs': 'Email Logs',
-        'monitor-logs': 'Live Monitor',
-        'results-modal': 'All Results',
-      };
-      return titles[activeSubTab || 'email-logs'] || 'System';
-    }
-    return 'Admin Dashboard';
+  // Breadcrumb + page title derived from the single navigation map in the sidebar.
+  const navLocation = findNavLocation(activeTab, activeSubTab);
+  const breadcrumb = {
+    section: navLocation?.section ?? 'Admin',
+    group: navLocation?.leaf ? navLocation.item.title : undefined,
+    title: navLocation?.leaf?.title ?? navLocation?.item.title ?? 'Admin Dashboard',
   };
 
   const renderContent = () => {
