@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar } from "lucide-react";
+import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface StaffMember {
@@ -56,6 +56,7 @@ export const StaffManagement = () => {
   const [showViewDialog, setShowViewDialog] = useState(false);
   const [selectedStaff, setSelectedStaff] = useState<StaffDetails | null>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
+  const [syncing, setSyncing] = useState(false);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -68,7 +69,10 @@ export const StaffManagement = () => {
   });
 
   useEffect(() => {
-      }, []);
+    fetchStaffMembers();
+    fetchTeachers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchStaffMembers = async () => {
     setIsLoading(true);
@@ -145,6 +149,60 @@ export const StaffManagement = () => {
       }));
 
       setTeachers(availableTeachers || []);
+    }
+  };
+
+  /** Create staff_details rows for teacher/admin accounts that don't have one yet. */
+  const syncStaffFromAccounts = async () => {
+    setSyncing(true);
+    try {
+      const { data: roleRows, error: roleErr } = await supabase
+        .from("user_roles")
+        .select("user_id, role")
+        .in("role", ["teacher", "admin"]);
+      if (roleErr) throw roleErr;
+
+      const roleUserIds = [...new Set(((roleRows as any[]) || []).map((r) => r.user_id))];
+      if (!roleUserIds.length) {
+        toast.info("No teacher or admin accounts found");
+        return;
+      }
+
+      const { data: existing } = await supabase
+        .from("staff_details")
+        .select("user_id")
+        .in("user_id", roleUserIds);
+      const existingIds = new Set(((existing as any[]) || []).map((s) => s.user_id));
+
+      const missing = roleUserIds.filter((id) => !existingIds.has(id));
+      if (!missing.length) {
+        toast.success("All staff accounts already have staff records");
+        return;
+      }
+
+      const rows: any[] = [];
+      for (const userId of missing) {
+        const { data: empId } = await supabase.rpc("next_employee_id");
+        const role = ((roleRows as any[]) || []).find((r) => r.user_id === userId)?.role;
+        rows.push({
+          user_id: userId,
+          employee_id: empId || null,
+          designation: role === "admin" ? "Administrator" : "Teacher",
+          department: role === "admin" ? "Administration" : "Academics",
+          employment_type: "full-time",
+          status: "active",
+        });
+      }
+
+      const { error: insErr } = await supabase.from("staff_details").insert(rows);
+      if (insErr) throw insErr;
+      toast.success(`${rows.length} staff record(s) created`);
+      await fetchStaffMembers();
+      await fetchTeachers();
+    } catch (e: any) {
+      toast.error(e.message || "Sync failed");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -230,10 +288,16 @@ export const StaffManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Staff Management</h2>
-        <Button onClick={() => setShowAddDialog(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Staff
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={syncStaffFromAccounts} disabled={syncing}>
+            {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            Sync staff from accounts
+          </Button>
+          <Button onClick={() => setShowAddDialog(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Staff
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -353,10 +417,18 @@ export const StaffManagement = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStaff.length === 0 ? (
+              {isLoading ? (
                 <TableRow>
                   <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                    No staff members found
+                    <Loader2 className="h-5 w-5 animate-spin inline mr-2" /> Loading staff…
+                  </TableCell>
+                </TableRow>
+              ) : filteredStaff.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    {staffMembers.length === 0
+                      ? 'No staff records yet. Use "Sync staff from accounts" to create records for existing teacher and admin logins, or add staff manually.'
+                      : "No staff match your filters."}
                   </TableCell>
                 </TableRow>
               ) : (
