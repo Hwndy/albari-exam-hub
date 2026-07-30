@@ -261,22 +261,52 @@ export type Database = {
           application_id: string
           assigned_at: string
           assigned_by: string | null
+          comment: string | null
           exam_id: string
           id: string
+          max_score: number | null
+          percentage: number | null
+          recorded_by: string | null
+          resit_sent_at: string | null
+          result_sent_at: string | null
+          result_status: string
+          score: number | null
+          source: string
+          updated_at: string
         }
         Insert: {
           application_id: string
           assigned_at?: string
           assigned_by?: string | null
+          comment?: string | null
           exam_id: string
           id?: string
+          max_score?: number | null
+          percentage?: number | null
+          recorded_by?: string | null
+          resit_sent_at?: string | null
+          result_sent_at?: string | null
+          result_status?: string
+          score?: number | null
+          source?: string
+          updated_at?: string
         }
         Update: {
           application_id?: string
           assigned_at?: string
           assigned_by?: string | null
+          comment?: string | null
           exam_id?: string
           id?: string
+          max_score?: number | null
+          percentage?: number | null
+          recorded_by?: string | null
+          resit_sent_at?: string | null
+          result_sent_at?: string | null
+          result_status?: string
+          score?: number | null
+          source?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -4674,6 +4704,28 @@ export type Database = {
       }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_entrance_exam_results: {
+        Args: { p_exam_id: string }
+        Returns: {
+          application_id: string
+          application_number: string
+          assignment_id: string
+          comment: string
+          email: string
+          full_name: string
+          max_score: number
+          online_max_score: number
+          online_percentage: number
+          online_score: number
+          percentage: number
+          resit_sent_at: string
+          result_sent_at: string
+          result_status: string
+          score: number
+          source: string
+          status: string
+        }[]
+      }
       get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
       get_grade_for_score: { Args: { _score: number }; Returns: Json }
       get_or_create_scan_session: { Args: { p_date: string }; Returns: string }
@@ -4721,6 +4773,10 @@ export type Database = {
         }
         Returns: Json
       }
+      mark_entrance_result_sent: {
+        Args: { p_assignment_id: string; p_kind: string }
+        Returns: undefined
+      }
       record_scan_by_ref: {
         Args: { p_direction: string; p_ref: string }
         Returns: Json
@@ -4734,6 +4790,17 @@ export type Database = {
         Returns: Json
       }
       resolve_scan_token: { Args: { p_token: string }; Returns: Json }
+      save_entrance_exam_result: {
+        Args: {
+          p_assignment_id: string
+          p_comment: string
+          p_max_score: number
+          p_result_status: string
+          p_score: number
+          p_source?: string
+        }
+        Returns: undefined
+      }
       submit_admission_application: { Args: { payload: Json }; Returns: Json }
       transition_admission_status: {
         Args: {
