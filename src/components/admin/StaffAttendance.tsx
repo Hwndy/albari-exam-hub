@@ -283,6 +283,13 @@ export const StaffAttendance = () => {
           <Button variant="outline" onClick={markAllPresent}>
             Mark All Present
           </Button>
+          <Button variant="outline" onClick={clearDay}>
+            Clear
+          </Button>
+          <Button variant="outline" onClick={exportDay} disabled={staffMembers.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
           <Button onClick={saveAttendance} disabled={isSaving}>
             <Save className="h-4 w-4 mr-2" />
             Save Attendance
