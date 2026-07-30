@@ -1,20 +1,27 @@
-## Problem
+## Confirmed diagnosis
 
-The accept-offer button in offer emails points to `https://irrxmoqbgygyyzozifdl.lovable.app/website/accept-offer/<token>`. That host is the Supabase project ref, not a real app address, so the browser shows "No Lovable project found at this address" (404). The app route itself (`/website/accept-offer/:token`) is correct.
+- The newest offer exists, has a non-empty 36-character acceptance token, and the database lookup successfully returns its applicant details.
+- Anonymous users are permitted to call `get_offer_by_token`, so RLS is no longer blocking this lookup.
+- The newest offer is saved with status `sent`, while the acceptance page only treats status `pending` as actionable. The current state model is inconsistent.
+- The newest deadline is stored as a date-only value for today; the page parses it at midnight, which can incorrectly mark it expired during the same day.
 
-## Fix
+## Implementation plan
 
-1. Store a `FRONTEND_URL` secret set to `https://www.albari.com.ng` so email links use the school's real domain.
-2. In `supabase/functions/send-offer-letter/index.ts`, replace the bogus fallback host with `https://www.albari.com.ng` so links never regress if the secret is missing.
-3. The letterhead image URL is built from the same constant — point it at a stable asset URL so the PDF/HTML letterhead keeps loading regardless of domain.
-4. Add a top-level `/accept-offer/:token` route (aliasing the existing website route) so both old and new link shapes resolve instead of hitting NotFound.
-5. Redeploy `send-offer-letter` and verify a freshly generated link opens the offer page.
+1. **Unify offer state handling**
+   - Treat both `sent` and legacy `pending` offers as active and actionable.
+   - Reserve “already processed” for `accepted` and `declined` only.
+   - Make newly created and re-sent offers consistently use the canonical active state without invalidating their token.
 
-## Note
+2. **Harden public token lookup**
+   - Decode and trim the route token before lookup to prevent URL encoding or copied whitespace from causing false failures.
+   - Keep token validation server-side and return distinct states for invalid token, expired offer, and processed offer instead of collapsing all failures into “invalid or expired.”
 
-The link only works once `www.albari.com.ng` is connected as a custom domain for this project and the project is published; otherwise I can point `FRONTEND_URL` at the published Lovable URL instead.
+3. **Correct deadline behavior**
+   - Interpret a date-only acceptance deadline as valid through the end of that calendar day.
+   - Keep an actually expired offer visible with a clear expiry message rather than presenting it as an invalid link.
 
-## Technical detail
-
-- Files: `supabase/functions/send-offer-letter/index.ts`, `src/App.tsx`.
-- No database or RLS changes; `accept-offer` edge function and `accept_offer_by_token` RPC stay as-is.
+4. **Verify the complete flow**
+   - Test the latest stored token against the public RPC anonymously.
+   - Open the generated public URL and confirm the applicant, class, and deadline render.
+   - Exercise the accept/decline endpoint with controlled validation so a caller cannot alter another offer.
+   - Re-send an existing offer and confirm its emailed link still resolves after the update.
