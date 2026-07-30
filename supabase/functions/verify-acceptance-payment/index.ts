@@ -313,8 +313,23 @@ serve(async (req) => {
             if (existingCredit) {
               console.log("Acceptance fee already credited for", reference);
             } else {
+            // Attach the credit to the student's mandatory fee structure for
+            // their class so it reduces the outstanding tuition balance.
+            let creditStructureId: string | null = null;
+            if (classId) {
+              const { data: structure } = await supabase
+                .from("fee_structures")
+                .select("id")
+                .eq("class_id", classId)
+                .eq("is_mandatory", true)
+                .order("created_at", { ascending: false })
+                .limit(1)
+                .maybeSingle();
+              creditStructureId = structure?.id ?? null;
+            }
             const { error: creditError } = await supabase.from("fee_payments").insert({
               student_id: student.id,
+              fee_structure_id: creditStructureId,
               amount_paid: acceptanceAmount,
               payment_method: paystackData.data.channel || "paystack",
               transaction_id: reference,
