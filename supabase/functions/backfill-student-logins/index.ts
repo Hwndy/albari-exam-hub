@@ -38,6 +38,24 @@ serve(async (req) => {
 
     const { data: domainSetting } = await supabase
       .from('app_settings').select('setting_value').eq('setting_key', 'student_login_domain').maybeSingle();
+    const portalUrl = `${(Deno.env.get('FRONTEND_URL') ?? 'https://www.albari.com.ng').replace(/\/+$/, '')}/login?portal=true&role=parent`;
+
+    const notifyParent = async (applicationId: string, payload: Record<string, unknown>) => {
+      try {
+        await supabase.functions.invoke('send-admission-notification', {
+          body: {
+            application_id: applicationId,
+            notification_type: 'parent_welcome',
+            additional_data: { portal_url: portalUrl, ...payload },
+          },
+        });
+        return true;
+      } catch (e) {
+        console.error('parent welcome email failed', e);
+        return false;
+      }
+    };
+
     const raw = domainSetting?.setting_value as unknown;
     const loginDomain = (typeof raw === 'string' ? raw : String(raw ?? '')) || 'students.albari.com.ng';
 
@@ -126,6 +144,25 @@ serve(async (req) => {
             );
             row.changes.push('parent_account_created');
             row.parent_temporary_password = parentPassword;
+            if (await notifyParent(app.id, {
+              parent_email: parentEmail,
+              parent_password: parentPassword,
+              children: [`${app.first_name} ${app.last_name}`],
+            })) row.changes.push('parent_credentials_emailed');
+          } else if (!(parentUser as any).last_sign_in_at) {
+            // Account exists but was never used — send a set-password link instead
+            // of a password we cannot recover.
+            const { data: linkData } = await supabase.auth.admin.generateLink({
+              type: 'recovery',
+              email: parentEmail,
+              options: { redirectTo: `${(Deno.env.get('FRONTEND_URL') ?? 'https://www.albari.com.ng').replace(/\/+$/, '')}/reset-password` },
+            });
+            const actionLink = (linkData as any)?.properties?.action_link;
+            if (actionLink && await notifyParent(app.id, {
+              parent_email: parentEmail,
+              action_link: actionLink,
+              children: [`${app.first_name} ${app.last_name}`],
+            })) row.changes.push('parent_invite_emailed');
           }
           await supabase.from('user_roles')
             .insert({ user_id: parentUser!.id, role: 'parent', created_by: parentUser!.id })
