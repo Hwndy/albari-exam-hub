@@ -1,9 +1,12 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Link } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Users, Microscope, Calculator, Globe, Palette, Music, Trophy } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Microscope, Calculator, Globe, Palette, Trophy } from 'lucide-react';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand, SectionHeading } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 
 export const SchoolLifePage = () => {
   const academicPrograms = [
