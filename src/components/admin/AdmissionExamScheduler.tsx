@@ -7,8 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Users, Calendar } from "lucide-react";
+import { Plus, Users, Calendar, ClipboardCheck } from "lucide-react";
 import { ConsolidatedExamCreator } from "@/components/shared/ConsolidatedExamCreator";
+import { EntranceExamResults } from "@/components/admin/admissions/EntranceExamResults";
 
 interface EntranceExam {
   id: string;
@@ -26,6 +27,7 @@ export const AdmissionExamScheduler = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
+  const [resultsExam, setResultsExam] = useState<EntranceExam | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -282,10 +284,29 @@ export const AdmissionExamScheduler = () => {
               >
                 Assign Applicants
               </Button>
+              <Button
+                size="sm"
+                className="w-full"
+                onClick={() => setResultsExam(exam)}
+              >
+                <ClipboardCheck className="h-4 w-4 mr-2" />
+                Results & Emails
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      <Dialog open={!!resultsExam} onOpenChange={(open) => !open && setResultsExam(null)}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{resultsExam?.title} — Results</DialogTitle>
+          </DialogHeader>
+          {resultsExam && (
+            <EntranceExamResults examId={resultsExam.id} examTitle={resultsExam.title} />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

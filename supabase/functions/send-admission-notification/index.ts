@@ -74,7 +74,15 @@ const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
 interface NotificationRequest {
   application_id: string;
-  notification_type: "submitted" | "under_review" | "interview_scheduled" | "accepted" | "rejected" | "enrolled";
+  notification_type:
+    | "submitted"
+    | "under_review"
+    | "interview_scheduled"
+    | "accepted"
+    | "rejected"
+    | "enrolled"
+    | "exam_result"
+    | "exam_resit";
   additional_data?: any;
 }
 
