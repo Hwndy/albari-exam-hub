@@ -579,10 +579,23 @@ export const AdmissionManagement = () => {
                               </>
                             )}
                             {selectedApplication.status === 'accepted' && (
-                              <OfferLetterGenerator
-                                applicationId={selectedApplication.id}
-                                onSent={fetchApplications}
-                              />
+                              <>
+                                {pendingEnrolments[selectedApplication.id] && (
+                                  <Button
+                                    variant="secondary"
+                                    onClick={() => completeEnrolment(selectedApplication.id)}
+                                    disabled={completingId === selectedApplication.id}
+                                  >
+                                    {completingId === selectedApplication.id
+                                      ? 'Completing enrolment…'
+                                      : 'Complete enrolment (fee paid)'}
+                                  </Button>
+                                )}
+                                <OfferLetterGenerator
+                                  applicationId={selectedApplication.id}
+                                  onSent={fetchApplications}
+                                />
+                              </>
                             )}
                           </div>
                         </div>
