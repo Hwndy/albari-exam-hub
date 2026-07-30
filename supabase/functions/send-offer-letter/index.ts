@@ -116,7 +116,7 @@ async function getLetterheadDataUrl(): Promise<string | null> {
 // background and all text is laid out inside a safe area between the two.
 // ---------------------------------------------------------------------------
 const PAGE_FORMAT = "letter";      // 215.9mm x 279.4mm — matches the artwork ratio
-const SAFE_TOP = 62;               // below the address band
+const SAFE_TOP = 60;               // below the address band
 const SAFE_BOTTOM = 258;           // above the footer colour bars
 const SAFE_LEFT = 25;
 const SAFE_RIGHT = 25;
@@ -178,13 +178,13 @@ async function generateOfferLetterPDF(
     text: string,
     opts: { size?: number; bold?: boolean; align?: "left" | "center" | "right"; gap?: number; colour?: [number, number, number] } = {},
   ) => {
-    const size = opts.size ?? 11;
+    const size = opts.size ?? 10.5;
     doc.setFont("helvetica", opts.bold ? "bold" : "normal");
     doc.setFontSize(size);
     const [r, g, b] = opts.colour ?? [17, 24, 39];
     doc.setTextColor(r, g, b);
     const lines = doc.splitTextToSize(text, contentWidth);
-    const lineHeight = size * 0.52;
+    const lineHeight = size * 0.5;
     ensureSpace(lines.length * lineHeight);
     const x = opts.align === "center" ? pageWidth / 2 : opts.align === "right" ? pageWidth - SAFE_RIGHT : SAFE_LEFT;
     doc.text(lines, x, y, opts.align ? { align: opts.align } : undefined);
@@ -193,7 +193,7 @@ async function generateOfferLetterPDF(
 
   const detailRow = (label: string, value: string) => {
     ensureSpace(6);
-    doc.setFontSize(11);
+    doc.setFontSize(10.5);
     doc.setTextColor(17, 24, 39);
     doc.setFont("helvetica", "normal");
     doc.text(label, SAFE_LEFT, y);
@@ -254,8 +254,8 @@ async function generateOfferLetterPDF(
     { gap: 5 },
   );
 
-  ensureSpace(30);
-  write("Yours faithfully,", { gap: 14 });
+  ensureSpace(26);
+  write("Yours faithfully,", { gap: 12 });
   write("Admissions Officer", { bold: true, gap: 1 });
   write("For: Al-Bari College, Badagry, Lagos", { size: 10, colour: [75, 85, 99], gap: 0 });
 
