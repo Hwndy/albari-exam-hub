@@ -53,7 +53,7 @@ export const FinanceReports: React.FC = () => {
             <div className="space-y-1"><Label>From</Label><Input type="date" value={from} onChange={e => setFrom(e.target.value)} /></div>
             <div className="space-y-1"><Label>To</Label><Input type="date" value={to} onChange={e => setTo(e.target.value)} /></div>
           </div>
-          <Button variant="outline" onClick={() => ref.current && printNode(ref.current, 'Finance report')}>
+          <Button variant="outline" onClick={() => ref.current && printNode(ref.current, { title: 'Finance report' })}>
             <Printer className="h-4 w-4 mr-1" />Print
           </Button>
         </CardHeader>
