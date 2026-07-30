@@ -19,6 +19,10 @@ export const AuthPage = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const isPortalAccess = searchParams.get('portal') === 'true';
   const requestedRole = searchParams.get('role');
+  const registerRole =
+    requestedRole === 'parent' || requestedRole === 'teacher' || requestedRole === 'student'
+      ? (requestedRole as 'parent' | 'teacher' | 'student')
+      : undefined;
 
   useEffect(() => {
     // Fetch app settings to check if student registration is allowed
@@ -74,16 +78,33 @@ export const AuthPage = () => {
     switch (mode) {
       case 'login':
         return (
-          <LoginForm 
-            onToggleMode={() => setMode('register')}
-            onForgotPassword={() => setMode('forgot-password')}
-          />
+          <>
+            <LoginForm 
+              onToggleMode={() => setMode('register')}
+              onForgotPassword={() => setMode('forgot-password')}
+            />
+            {requestedRole === 'parent' && (
+              <div className="mt-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  New parent? Create a parent account to link your children and pay fees.
+                </p>
+                <button
+                  type="button"
+                  className="text-sm font-medium text-primary hover:underline mt-1"
+                  onClick={() => setMode('register')}
+                >
+                  Create a parent account
+                </button>
+              </div>
+            )}
+          </>
         );
       case 'register':
         return (
           <RegisterForm 
             onToggleMode={() => setMode('login')}
             allowStudentRegistration={allowStudentRegistration}
+            initialRole={registerRole}
           />
         );
       case 'forgot-password':

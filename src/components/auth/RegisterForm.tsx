@@ -18,6 +18,7 @@ interface RegisterFormProps {
   isAdminEdit?: boolean;
   adminData?: any;
   onSaveEdit?: (data: any) => void;
+  initialRole?: 'teacher' | 'student' | 'parent';
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
