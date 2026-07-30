@@ -10,8 +10,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import { ArrowLeft, Mail, Phone, Calendar, MapPin, User, GraduationCap, Receipt, Users as UsersIcon } from 'lucide-react';
-import { Pencil } from 'lucide-react';
+import { Pencil, KeyRound, Loader2 } from 'lucide-react';
 import { EditStudentDialog } from './EditStudentDialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
+const makeTempPassword = () => {
+  const letters = 'abcdefghjkmnpqrstuvwxyz';
+  const digits = '23456789';
+  const pick = (src: string, n: number) =>
+    Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join('');
+  return `Alb${pick(letters, 5)}${pick(digits, 3)}`;
+};
 
 const initials = (n?: string) =>
   (n || '?').split(' ').map(p => p[0]).filter(Boolean).slice(0, 2).join('').toUpperCase();
@@ -43,6 +52,27 @@ export const StudentDetail: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [parents, setParents] = useState<any[]>([]);
   const [editOpen, setEditOpen] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [newPassword, setNewPassword] = useState<string | null>(null);
+
+  const resetLoginPassword = async () => {
+    if (!userId) return;
+    setResetting(true);
+    const password = makeTempPassword();
+    const { data, error } = await supabase.functions.invoke('update-user-password', {
+      body: { userId, newPassword: password },
+    });
+    setResetting(false);
+    if (error || (data as any)?.error) {
+      toast({
+        title: 'Could not reset password',
+        description: (data as any)?.error || error?.message || 'Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    setNewPassword(password);
+  };
 
   useEffect(() => { if (userId) load(); }, [userId]); // eslint-disable-line
 
@@ -154,9 +184,38 @@ export const StudentDetail: React.FC = () => {
               )}
             </div>
           </div>
-          <Button onClick={() => setEditOpen(true)}>
-            <Pencil className="h-4 w-4 mr-2" /> Edit Student
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={resetLoginPassword} disabled={resetting}>
+              {resetting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <KeyRound className="h-4 w-4 mr-2" />}
+              Reset login password
+            </Button>
+            <Button onClick={() => setEditOpen(true)}>
+              <Pencil className="h-4 w-4 mr-2" /> Edit Student
+            </Button>
+          </div>
+
+          <Dialog open={!!newPassword} onOpenChange={(o) => !o && setNewPassword(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>New login password</DialogTitle>
+                <DialogDescription>
+                  Share this with {profile.full_name}. It replaces any temporary password sent earlier.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="rounded-md border bg-muted p-4 text-center font-mono text-lg tracking-wider break-all">
+                {newPassword}
+              </div>
+              <Button
+                variant="secondary"
+                onClick={() => {
+                  navigator.clipboard?.writeText(newPassword ?? '');
+                  toast({ title: 'Copied', description: 'Password copied to clipboard.' });
+                }}
+              >
+                Copy password
+              </Button>
+            </DialogContent>
+          </Dialog>
         </CardContent>
       </Card>
 
