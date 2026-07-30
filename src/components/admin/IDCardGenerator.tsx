@@ -237,9 +237,9 @@ export const IDCardGenerator: React.FC = () => {
     });
 
     const cardsPerPage = 4;
-    // Portrait ID card proportions matching StudentIDCard (340 x 540 px)
+    // Portrait ID card proportions matching StudentIDCard (360 x 605 px)
     const cardWidth = 54;   // mm
-    const cardHeight = 85.6; // mm
+    const cardHeight = 90.75; // mm
     const margin = 10;
     const spacing = 5;
 
