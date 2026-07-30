@@ -148,6 +148,9 @@ export const ParentFees: React.FC = () => {
   const totalBilled = structures.reduce((s, f) => s + Number(f.amount || 0), 0);
   const totalPaid = payments.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount_paid || 0), 0);
   const outstanding = Math.max(0, totalBilled - totalPaid);
+  // Apply any unallocated credit to the first mandatory fee (falls back to the first fee).
+  const creditTargetId =
+    (structures.find(s => s.is_mandatory) || structures[0])?.id ?? null;
   const nextDue = structures
     .filter(s => s.due_date && paidFor(s.id) < s.amount)
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
