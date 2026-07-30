@@ -136,7 +136,7 @@ serve(async (req) => {
             .maybeSingle();
 
           // Ensure a profile exists and force a password change on first login.
-          await supabase
+          const { error: profileError } = await supabase
             .from("profiles")
             .upsert(
               {
@@ -148,6 +148,10 @@ serve(async (req) => {
               },
               { onConflict: "user_id" }
             );
+          if (profileError) {
+            console.error("Error upserting student profile:", profileError);
+            throw profileError;
+          }
 
           // Reuse an existing student record if one was already created.
           const { data: priorStudent } = await supabase
@@ -215,18 +219,26 @@ serve(async (req) => {
             }
           }
 
-          // Assign to class
-          if (application.admitted_to_class_id) {
+          // Assign to class (class_assignments.student_id references profiles.user_id)
+          const classId = application.admitted_to_class_id ?? application.applying_for_class_id;
+          if (classId) {
             const { data: existingAssignment } = await supabase
               .from("class_assignments")
               .select("id")
-              .eq("student_id", student.id)
+              .eq("student_id", userId)
               .maybeSingle();
             if (!existingAssignment) {
-              await supabase.from("class_assignments").insert({
-                student_id: student.id,
-                class_id: application.admitted_to_class_id,
+              const { error: assignError } = await supabase.from("class_assignments").insert({
+                student_id: userId,
+                class_id: classId,
               });
+              if (assignError) console.error("Error assigning student to class:", assignError);
+            }
+            if (!application.admitted_to_class_id) {
+              await supabase
+                .from("admission_applications")
+                .update({ admitted_to_class_id: classId })
+                .eq("id", payment.application_id);
             }
           }
 
