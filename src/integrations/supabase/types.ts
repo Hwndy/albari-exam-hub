@@ -4827,6 +4827,7 @@ export type Database = {
         Args: { p_assignment_id: string; p_kind: string }
         Returns: undefined
       }
+      next_admission_number: { Args: never; Returns: string }
       record_scan_by_ref: {
         Args: { p_direction: string; p_ref: string }
         Returns: Json
