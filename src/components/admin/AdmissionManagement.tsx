@@ -50,6 +50,59 @@ export const AdmissionManagement = () => {
   const [siblingMap, setSiblingMap] = useState<Record<string, string[]>>({});
   const [backfilling, setBackfilling] = useState(false);
   const [backfillResults, setBackfillResults] = useState<any[] | null>(null);
+  // Applicants who paid the acceptance fee but whose student record was never
+  // created (a post-payment step failed). Maps application id -> payment ref.
+  const [pendingEnrolments, setPendingEnrolments] = useState<Record<string, string>>({});
+  const [completingId, setCompletingId] = useState<string | null>(null);
+
+  const fetchPendingEnrolments = async () => {
+    const { data: apps } = await supabase
+      .from('admission_applications')
+      .select('id')
+      .eq('status', 'accepted')
+      .is('student_id', null);
+    const ids = (apps ?? []).map((a: any) => a.id);
+    if (!ids.length) {
+      setPendingEnrolments({});
+      return;
+    }
+    const { data: pays } = await supabase
+      .from('admission_payments')
+      .select('application_id, transaction_id')
+      .in('application_id', ids)
+      .eq('payment_type', 'acceptance_fee')
+      .eq('status', 'completed');
+    const map: Record<string, string> = {};
+    (pays ?? []).forEach((p: any) => {
+      if (p.transaction_id) map[p.application_id] = p.transaction_id;
+    });
+    setPendingEnrolments(map);
+  };
+
+  const completeEnrolment = async (applicationId: string) => {
+    const reference = pendingEnrolments[applicationId];
+    if (!reference) return;
+    setCompletingId(applicationId);
+    const { data, error } = await supabase.functions.invoke('verify-acceptance-payment', {
+      body: { reference },
+    });
+    setCompletingId(null);
+    if (error || !(data as any)?.success || (data as any)?.enrollment_pending) {
+      toast({
+        title: 'Enrolment could not be completed',
+        description:
+          (data as any)?.error || error?.message || 'Please check the function logs and retry.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({
+      title: 'Enrolment completed',
+      description: `Admission number ${(data as any)?.admission_number ?? ''} issued and credentials emailed.`,
+    });
+    fetchApplications();
+    fetchPendingEnrolments();
+  };
 
   const runLoginBackfill = async () => {
     setBackfilling(true);
@@ -86,6 +139,7 @@ export const AdmissionManagement = () => {
 
   useEffect(() => {
     fetchApplications();
+    fetchPendingEnrolments();
   }, [statusFilter]);
 
   // Keep the list in sync when a payment enrolls an applicant in the background.
