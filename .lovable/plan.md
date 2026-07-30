@@ -1,58 +1,32 @@
-## The problem (confirmed)
+## 1. Student login IDs become firstname.lastname
 
-- 3 families already share one email across siblings: `rabiugaffarshola@gmail.com` (3 applications), `hasco4you35@gmail.com` (2), `youngyusuffali2@gmail.com` (2).
-- Enrollment (`verify-acceptance-payment`) creates the student's login account **using the application email**. For a second sibling it hits "user already exists", reuses the first child's account, then reuses that child's student record — so the second child would silently get **no account and no student record**, and the first child's data could be overwritten.
-- Only 2 applications are enrolled so far, so this is fixable before it spreads.
+Today enrollment mints `alb-2026-0364@students.albari.com.ng` from the admission number.
 
-**Parents do NOT need to create new emails.** Sharing an email is normal and the system should support it.
+Change to `firstname.lastname@students.albari.com.ng`:
+- Slugify first + last name (lowercase, strip accents/non a-z0-9, join with `.`).
+- On collision (same name already taken by a different applicant), append the numeric tail of the admission number, then `-2`, `-3` as final fallbacks — so siblings and namesakes never clash.
+- Applies in `verify-acceptance-payment` (new enrollments) and in `backfill-student-logins` (the "Fix student logins & parent links" admin button), so existing enrolled students can be migrated to the new format; their `login_email` on the application and the auth account email are both updated, and any regenerated temporary password is reported back to the admin.
+- Admin StudentDetail / payment receipt / welcome email already display "Student Login ID", so they pick up the new format automatically.
 
-## The fix: school-issued student login IDs
+Post-login access is already wired: student role + profile + class assignment are created at enrollment, `must_change_password` forces a password reset on first sign-in, then the student lands on their portal. I'll re-verify that path end to end after the change (sign in with a freshly minted ID, reset password, load dashboard/timetable).
 
-Students stop logging in with the family email. Each student gets a unique, school-issued login derived from their admission number, e.g.
+## 2. Parent account creation
 
-```text
-alb-2026-0007@students.albari.com.ng
-```
+Parents can already self-register (Login → Create account → Parent / Guardian), but nothing points them there.
+- On `/login`, when `?role=parent` is present, show a parent-specific hint and a "Create a parent account" button that opens the register form with Parent pre-selected.
+- Same for `?role=student|teacher`: the register form opens with that role preselected where self-registration is allowed.
+- Add a short "New parent? Create an account" line under the sign-in form.
+- Parent Portal card on the website gets a secondary "Create parent account" link (`/login?portal=true&role=parent&mode=register`).
 
-This is a login identifier only (auto-confirmed, never needs to receive mail). All correspondence — offer letter, credentials, receipts, results — still goes to the parent's real email, which can be shared by any number of children.
+Admin-created parents (Admin → Parents) and the automatic parent account created at enrollment stay unchanged.
 
-### 1. Enrollment changes (`verify-acceptance-payment`)
-- Build the login ID from the newly generated admission number; guarantee uniqueness with a numeric suffix if ever needed.
-- Create the auth user with that login ID + temp password; never reuse an account found by family email.
-- Reuse/idempotency keyed on `application.student_id` / application id, not email.
-- Store the login ID on the application (new `login_email` column) so admins and re-sent emails always show the right value.
+## 3. Portals page links
 
-### 2. Parent account + sibling linking (automatic)
-- On enrollment, look up (or create) a **parent** auth account for `application.email` with role `parent`.
-- Insert a `student_parent_relationships` row linking that parent to the new child.
-- Result: one parent login, all children visible in the parent portal — which is what these families actually need.
-- If a parent account is newly created, include its credentials in the welcome email; if it already exists, the email says "use your existing parent login".
-
-### 3. Emails
-- Welcome/credentials email clearly separates:
-  - **Student portal login:** the school-issued ID + temp password
-  - **Parent portal login:** parent email + password (or "existing password")
-- Sent to the parent email as today.
-
-### 4. Repair the existing data
-- Migration/backfill script: for each already-enrolled student, assign a login ID from their admission number, update their auth email, and create the parent link. Admin gets the new credentials to pass on.
-- Admin screen shows, per application, a "shared email — sibling applications" badge listing the other applicants on that address, so nothing is mistaken for a duplicate submission.
-
-### 5. Admin controls
-- `StudentDetail`: display **Login ID** (school-issued) and **Contact email** (parent) as separate fields; keep the existing "reset password" button.
-- Allow an admin to override a student's login ID if a student later has their own real email.
-
-### 6. Application form
-- Add a helper note under the email field: "You may use the same email for all your children — each child gets their own school login ID."
-- Remove any implicit assumption that email identifies one applicant.
+The portals cards read from CMS `website_settings.portals`, which can hold stale links from an older scheme; only the hardcoded defaults use `/login?portal=true&role=...`.
+- Normalize each portal link at render: if the stored link isn't already a `/login?...` URL, map its role to `/login?portal=true&role=<role>`.
+- Ensure the resulting links work both as in-app routes and as absolute URLs (`https://www.albari.com.ng/login?portal=true&role=parent`).
 
 ## Technical notes
 
-- New column: `admission_applications.login_email` (text, nullable, unique index where not null).
-- Login domain configurable in `app_settings` (default `students.albari.com.ng`) so it can change without a redeploy.
-- `guard_enrolled_status` trigger and existing idempotency logic stay intact.
-- No change to Paystack, offer-token, or report-card flows.
-
-## Answer to your immediate question
-
-No — do not ask parents to create new emails or edit their applications. The 7 affected applications will be handled automatically by the new login-ID scheme and the backfill.
+- Files: `supabase/functions/verify-acceptance-payment/index.ts`, `supabase/functions/backfill-student-logins/index.ts`, `src/pages/AuthPage.tsx`, `src/components/auth/LoginForm.tsx`, `src/components/auth/RegisterForm.tsx`, `src/pages/website/PortalsPage.tsx`.
+- No database migration required — `login_email` and `student_login_domain` already exist.

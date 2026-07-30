@@ -115,10 +115,20 @@ serve(async (req) => {
           const loginDomain =
             (typeof rawDomain === "string" ? rawDomain : rawDomain?.toString?.()) ||
             "students.albari.com.ng";
-          const localPart = admissionNumber
-            .toLowerCase()
-            .replace(/[^a-z0-9]+/g, "-")
-            .replace(/^-+|-+$/g, "");
+          const slug = (value: string) =>
+            String(value ?? "")
+              .normalize("NFD")
+              .replace(/[\u0300-\u036f]/g, "")
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "")
+              .trim();
+          const nameLocal = [slug(application.first_name), slug(application.last_name)]
+            .filter(Boolean)
+            .join(".");
+          const admissionTail = (admissionNumber.match(/(\d+)\s*$/)?.[1] ?? "").toLowerCase();
+          const localPart =
+            nameLocal ||
+            admissionNumber.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
           let loginEmail = application.login_email || `${localPart}@${loginDomain}`;
 
           // Generate an unambiguous temporary password (no 0/O/1/l/I).
@@ -130,9 +140,15 @@ serve(async (req) => {
 
           // Create the student's own auth account on the school-issued login.
           let userId: string | null = null;
-          for (let attempt = 0; attempt < 5 && !userId; attempt++) {
-            const candidate =
-              attempt === 0 ? loginEmail : loginEmail.replace("@", `-${attempt + 1}@`);
+          for (let attempt = 0; attempt < 6 && !userId; attempt++) {
+            // firstname.lastname → firstname.lastname.<admission tail> → -2, -3, ...
+            const suffix =
+              attempt === 0
+                ? ""
+                : attempt === 1 && admissionTail
+                  ? `.${admissionTail}`
+                  : `-${attempt + 1}`;
+            const candidate = suffix ? loginEmail.replace("@", `${suffix}@`) : loginEmail;
             const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
               email: candidate,
               password: password,

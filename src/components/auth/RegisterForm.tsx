@@ -18,6 +18,7 @@ interface RegisterFormProps {
   isAdminEdit?: boolean;
   adminData?: any;
   onSaveEdit?: (data: any) => void;
+  initialRole?: 'teacher' | 'student' | 'parent';
 }
 
 export const RegisterForm: React.FC<RegisterFormProps> = ({ 
@@ -26,14 +27,15 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({
   allowStudentRegistration = true,
   isAdminEdit = false,
   adminData,
-  onSaveEdit
+  onSaveEdit,
+  initialRole,
 }) => {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     password: '',
     confirmPassword: '',
-    role: 'student' as 'teacher' | 'student' | 'parent',
+    role: (initialRole ?? 'student') as 'teacher' | 'student' | 'parent',
     classId: '',
     classIds: [] as string[],
     subjectIds: [] as string[],
