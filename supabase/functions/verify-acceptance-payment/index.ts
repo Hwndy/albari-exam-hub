@@ -56,7 +56,9 @@ serve(async (req) => {
       }
 
       let enrollment: Record<string, unknown> | null = null;
+      let enrollmentPending = false;
 
+      try {
       const { data: payment } = await supabase
         .from("admission_payments")
         .select("application_id, amount")
@@ -90,14 +92,15 @@ serve(async (req) => {
               student_name: `${application.first_name} ${application.last_name}`,
             };
           } else {
-          // Generate admission number
-          const year = new Date().getFullYear();
-          const { count } = await supabase
-            .from("students")
-            .select("*", { count: "exact", head: true });
-          
-          const sequence = String((count || 0) + 1).padStart(4, "0");
-          const admissionNumber = `ALB/${year}/${sequence}`;
+          // Allocate a collision-free admission number from the database.
+          const { data: allocated, error: allocError } = await supabase.rpc(
+            "next_admission_number"
+          );
+          if (allocError || !allocated) {
+            console.error("Error allocating admission number:", allocError);
+            throw allocError ?? new Error("Could not allocate an admission number");
+          }
+          const admissionNumber = String(allocated);
 
           // ---------------------------------------------------------------
           // School-issued student login ID.
