@@ -38,7 +38,7 @@ export const PaymentCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { data: school } = useSchoolInfo();
+  const { info: school } = useSchoolInfo();
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [message, setMessage] = useState('Verifying your payment...');
   const [receipt, setReceipt] = useState<Receipt | null>(null);
