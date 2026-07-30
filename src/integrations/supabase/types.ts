@@ -3057,6 +3057,8 @@ export type Database = {
       payroll_items: {
         Row: {
           allowances: Json
+          bank_account: string | null
+          bank_name: string | null
           basic_salary: number
           created_at: string
           deductions: Json
@@ -3065,6 +3067,7 @@ export type Database = {
           net_pay: number
           notes: string | null
           paid_at: string | null
+          payment_reference: string | null
           period_id: string
           staff_id: string
           status: string
@@ -3072,6 +3075,8 @@ export type Database = {
         }
         Insert: {
           allowances?: Json
+          bank_account?: string | null
+          bank_name?: string | null
           basic_salary?: number
           created_at?: string
           deductions?: Json
@@ -3080,6 +3085,7 @@ export type Database = {
           net_pay?: number
           notes?: string | null
           paid_at?: string | null
+          payment_reference?: string | null
           period_id: string
           staff_id: string
           status?: string
@@ -3087,6 +3093,8 @@ export type Database = {
         }
         Update: {
           allowances?: Json
+          bank_account?: string | null
+          bank_name?: string | null
           basic_salary?: number
           created_at?: string
           deductions?: Json
@@ -3095,6 +3103,7 @@ export type Database = {
           net_pay?: number
           notes?: string | null
           paid_at?: string | null
+          payment_reference?: string | null
           period_id?: string
           staff_id?: string
           status?: string
@@ -3114,11 +3123,14 @@ export type Database = {
         Row: {
           approved_at: string | null
           approved_by: string | null
+          closed_at: string | null
           created_at: string
           created_by: string | null
           expense_id: string | null
           id: string
           notes: string | null
+          paid_at: string | null
+          pay_date: string | null
           period_month: string
           status: string
           updated_at: string
@@ -3126,11 +3138,14 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           approved_by?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           expense_id?: string | null
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          pay_date?: string | null
           period_month: string
           status?: string
           updated_at?: string
@@ -3138,11 +3153,14 @@ export type Database = {
         Update: {
           approved_at?: string | null
           approved_by?: string | null
+          closed_at?: string | null
           created_at?: string
           created_by?: string | null
           expense_id?: string | null
           id?: string
           notes?: string | null
+          paid_at?: string | null
+          pay_date?: string | null
           period_month?: string
           status?: string
           updated_at?: string
@@ -3983,8 +4001,11 @@ export type Database = {
       }
       staff_details: {
         Row: {
+          address: string | null
           bank_details: Json | null
+          blood_group: string | null
           created_at: string | null
+          date_of_birth: string | null
           department: string | null
           designation: string | null
           documents: Json | null
@@ -3993,6 +4014,9 @@ export type Database = {
           employment_type: string | null
           id: string
           join_date: string | null
+          next_of_kin: Json
+          phone: string | null
+          photo_url: string | null
           qualifications: Json | null
           salary: number | null
           signature_url: string | null
@@ -4001,8 +4025,11 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
           bank_details?: Json | null
+          blood_group?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           designation?: string | null
           documents?: Json | null
@@ -4011,6 +4038,9 @@ export type Database = {
           employment_type?: string | null
           id?: string
           join_date?: string | null
+          next_of_kin?: Json
+          phone?: string | null
+          photo_url?: string | null
           qualifications?: Json | null
           salary?: number | null
           signature_url?: string | null
@@ -4019,8 +4049,11 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
           bank_details?: Json | null
+          blood_group?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
           designation?: string | null
           documents?: Json | null
@@ -4029,6 +4062,9 @@ export type Database = {
           employment_type?: string | null
           id?: string
           join_date?: string | null
+          next_of_kin?: Json
+          phone?: string | null
+          photo_url?: string | null
           qualifications?: Json | null
           salary?: number | null
           signature_url?: string | null
@@ -5057,6 +5093,7 @@ export type Database = {
         Returns: undefined
       }
       next_admission_number: { Args: never; Returns: string }
+      next_employee_id: { Args: never; Returns: string }
       record_scan_by_ref: {
         Args: { p_direction: string; p_ref: string }
         Returns: Json

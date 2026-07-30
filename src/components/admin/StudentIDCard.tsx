@@ -233,18 +233,13 @@ export const StudentIDCard: React.FC<Props> = ({ student, school }) => {
           <span style={{ color: '#3f463f' }}>ID: </span>
           <span className="font-bold">{student.admission_number || '—'}</span>
         </p>
-        {student.class_name && (
-          <p className="font-semibold uppercase" style={{ fontSize: 10, color: GREEN, marginTop: 3, letterSpacing: 1.2 }}>
-            {student.class_name}{student.session ? ` • ${student.session}` : ''}
-          </p>
-        )}
       </div>
 
       {/* ---------- QR ---------- */}
-      <div className="relative flex flex-col items-center" style={{ marginTop: 14 }}>
+      <div className="relative flex flex-col items-center" style={{ marginTop: 20 }}>
         <div className="bg-white" style={{ padding: 4 }}>
           {qrSrc && (
-            <img src={qrSrc} alt="Student QR code" style={{ width: 118, height: 118, display: 'block' }} />
+            <img src={qrSrc} alt="Student QR code" style={{ width: 132, height: 132, display: 'block' }} />
           )}
         </div>
       </div>
