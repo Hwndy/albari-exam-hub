@@ -384,6 +384,12 @@ export const AdmissionManagement = () => {
 
                           {/* Actions */}
                           <div className="flex gap-3 justify-end">
+                            {selectedApplication.status === 'enrolled' && (
+                              <p className="text-sm text-muted-foreground mr-auto">
+                                This applicant is enrolled. The student account and welcome email have been
+                                issued, so the status can no longer be changed.
+                              </p>
+                            )}
                             {selectedApplication.status === 'submitted' && (
                               <>
                                 <Button
