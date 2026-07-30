@@ -30,6 +30,25 @@ export const PortalsPage = () => {
   const { settings } = useWebsiteSettings();
   const portals = settingValue<Portal[]>(settings, 'portals', DEFAULTS).filter((p) => p.enabled !== false);
 
+  const roleFor = (portal: Portal) => {
+    const source = `${portal.link ?? ''} ${portal.title ?? ''}`.toLowerCase();
+    if (source.includes('parent')) return 'parent';
+    if (source.includes('teacher') || source.includes('staff')) return 'teacher';
+    if (source.includes('admin')) return 'admin';
+    return 'student';
+  };
+
+  const loginLink = (portal: Portal) => {
+    const role = roleFor(portal);
+    const link = (portal.link ?? '').trim();
+    // Only trust links that already point at the login route; anything else
+    // (legacy CMS values like /portal/parent) is rewritten.
+    if (/^\/login(\?|$)/.test(link) || /^https?:\/\/[^/]+\/login(\?|$)/.test(link)) {
+      return link.startsWith('http') ? new URL(link).pathname + new URL(link).search : link;
+    }
+    return `/login?portal=true&role=${role}`;
+  };
+
   return (
     <div className="space-y-0">
       <SEO
@@ -53,6 +72,8 @@ export const PortalsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {portals.map((portal, idx) => {
               const Icon = (portal.icon && ICONS[portal.icon]) || GraduationCap;
+              const href = loginLink(portal);
+              const role = roleFor(portal);
               return (
                 <Card key={idx} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardHeader>
@@ -73,10 +94,15 @@ export const PortalsPage = () => {
                       ))}
                     </ul>
                     <Button asChild className="w-full">
-                      <Link to={portal.link}>
+                      <Link to={href}>
                         Enter Portal <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
+                    {role === 'parent' && (
+                      <Button asChild variant="link" className="w-full mt-2">
+                        <Link to="/login?portal=true&role=parent&mode=register">Create parent account</Link>
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               );
