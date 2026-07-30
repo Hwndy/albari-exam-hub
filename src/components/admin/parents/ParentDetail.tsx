@@ -47,11 +47,14 @@ export const ParentDetail: React.FC<Props> = ({ parentUserId, onBack }) => {
           .select('id,relationship_type,verified,can_view_grades,can_view_attendance,can_view_fees,student_id')
           .eq('parent_id', par.id);
         const sids = (rels || []).map(r => r.student_id);
-        const [{ data: students }, { data: cas }] = await Promise.all([
-          sids.length ? supabase.from('students').select('id,user_id,admission_number').in('id', sids) : Promise.resolve({ data: [] as any }),
-          sids.length ? supabase.from('class_assignments').select('student_id,class_id').in('student_id', sids) : Promise.resolve({ data: [] as any }),
-        ]);
+        const { data: students } = sids.length
+          ? await supabase.from('students').select('id,user_id,admission_number').in('id', sids)
+          : { data: [] as any };
         const uids = (students || []).map((s: any) => s.user_id).filter(Boolean);
+        // class_assignments.student_id stores the student's auth user_id, not students.id
+        const { data: cas } = uids.length
+          ? await supabase.from('class_assignments').select('student_id,class_id').in('student_id', uids)
+          : { data: [] as any };
         const cids = (cas || []).map((c: any) => c.class_id).filter(Boolean);
         const [{ data: sprof }, { data: classes }] = await Promise.all([
           uids.length ? supabase.from('profiles').select('user_id,full_name').in('user_id', uids) : Promise.resolve({ data: [] as any }),
@@ -59,7 +62,7 @@ export const ParentDetail: React.FC<Props> = ({ parentUserId, onBack }) => {
         ]);
         const built: Child[] = (rels || []).map((r: any) => {
           const s = students?.find((x: any) => x.id === r.student_id);
-          const ca = cas?.find((x: any) => x.student_id === r.student_id);
+          const ca = cas?.find((x: any) => x.student_id === s?.user_id);
           const cls = classes?.find((c: any) => c.id === ca?.class_id);
           return {
             relationship_id: r.id, student_id: r.student_id,
