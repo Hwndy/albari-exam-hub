@@ -16,13 +16,16 @@ export const ResetPasswordPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
-  const { setMustChangePassword } = useAuth();
+  const { setMustChangePassword, mustChangePassword } = useAuth();
+  const [isRecovery, setIsRecovery] = useState(false);
 
   useEffect(() => {
     // Supabase parses the recovery token from the URL hash automatically via onAuthStateChange
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'PASSWORD_RECOVERY' || event === 'SIGNED_IN') setReady(true);
+      if (event === 'PASSWORD_RECOVERY') setIsRecovery(true);
     });
+    if (window.location.hash.includes('type=recovery')) setIsRecovery(true);
     supabase.auth.getSession().then(({ data }) => { if (data.session) setReady(true); });
     return () => { sub.subscription.unsubscribe(); };
   }, []);
@@ -39,21 +42,36 @@ export const ResetPasswordPage: React.FC = () => {
     // Clear the forced-change flag; surface a failure instead of looping silently.
     const { data: u } = await supabase.auth.getUser();
     if (u.user) {
-      const { error: flagError } = await supabase
+      const { data: updated, error: flagError } = await supabase
         .from('profiles')
         .update({ must_change_password: false })
-        .eq('user_id', u.user.id);
-      if (flagError) {
+        .eq('user_id', u.user.id)
+        .select('user_id, must_change_password');
+      // An update that matches zero rows is not an error, but it would send the
+      // student straight back into this screen — treat it as a failure.
+      if (flagError || !updated?.length || updated[0].must_change_password !== false) {
         setSaving(false);
-        toast.error('Password changed, but we could not clear the first-login flag. Please contact the school administrator.');
+        toast.error(
+          flagError?.message ||
+            'Password changed, but the first-login flag could not be cleared. Please contact the school administrator.'
+        );
         return;
       }
     }
     setMustChangePassword(false);
     setSaving(false);
-    toast.success('Password updated. Please sign in again.');
-    await supabase.auth.signOut();
-    navigate('/login', { replace: true });
+
+    if (isRecovery && !mustChangePassword) {
+      // Email recovery link: end the temporary recovery session.
+      toast.success('Password updated. Please sign in again.');
+      await supabase.auth.signOut();
+      navigate('/login', { replace: true });
+      return;
+    }
+
+    // First-login change: keep the session and go straight to the portal.
+    toast.success('Password updated.');
+    navigate('/', { replace: true });
   };
 
   return (
@@ -67,7 +85,7 @@ export const ResetPasswordPage: React.FC = () => {
             <form onSubmit={submit} className="space-y-4">
               <div><Label>New password</Label>
                 <Input type="password" value={pwd} onChange={(e) => setPwd(e.target.value)} required autoComplete="new-password" />
-                <p className="text-xs text-muted-foreground mt-1">Min 10 characters, upper + lower + number.</p>
+                <p className="text-xs text-muted-foreground mt-1">Min 10 characters, with an uppercase letter, a lowercase letter and a number.</p>
               </div>
               <div><Label>Confirm new password</Label>
                 <Input type="password" value={pwd2} onChange={(e) => setPwd2(e.target.value)} required autoComplete="new-password" />
