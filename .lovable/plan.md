@@ -1,41 +1,49 @@
 ## Goal
 
-Give admissions staff a way to record each applicant's entrance exam outcome (score, percentage, comment) and email it to the applicant — plus a one-click "Resit entrance exam" email.
+Support entrance exams written physically at the school: no CBT questions, per-subject marks entered by hand, totals and percentage computed, then result/resit emails sent to applicants.
 
-## What gets built
+## What exists today (verified)
 
-### 1. Store results on the exam assignment
+- `admission_exam_assignments` already has `score`, `max_score`, `percentage`, `result_status`, `comment`, `source`, `result_sent_at`, `resit_sent_at`.
+- `exams` has `exam_category = 'entrance'` but is built for CBT (`total_questions`, `duration_minutes`, questions required).
+- `EntranceExamResults.tsx` shows one score box per applicant and sends result/resit emails.
 
-Extend `admission_exam_assignments` with result fields:
-- `score`, `max_score`, `percentage` (numeric)
-- `result_status` — pass / fail / resit / pending
-- `comment` (admin remark shown to applicant)
-- `source` — `online` or `manual`
-- `result_sent_at`, `resit_sent_at`, `recorded_by`, `updated_at`
+## Plan
 
-Access rules unchanged in spirit: admins and teachers can read/write; applicants never read this table directly.
+### 1. Database
 
-### 2. New "Results" area in Admissions → Entrance Exams
+- Add `exam_mode text not null default 'cbt'` to `exams` (values `cbt` | `paper`). Paper exams skip question setup.
+- Add `subject_scores jsonb default '[]'` to `admission_exam_assignments` — array of `{ subject, score, max }`.
+- Update `save_entrance_exam_result` to accept `p_subject_scores jsonb`, and compute `score`/`max_score`/`percentage` from the breakdown when it is supplied (manual total still allowed if no breakdown).
+- Extend `get_entrance_exam_results` to return `subject_scores`.
+- Add `get_application_exam_result(p_application_id uuid)` so the application review modal can read/write the same record; if no assignment exists for a paper sitting, allow creating one.
 
-Under each entrance exam card, a "Results" view listing every assigned applicant with:
-- Auto-pulled score if the applicant sat the exam online (from their exam session), shown read-only with an "override" toggle
-- Manual score entry (score / max / auto-computed percentage) when the exam was written physically
-- Pass/Fail/Resit selector and a free-text comment box
-- Save button; results persist per applicant
+### 2. Create a paper exam sitting
 
-Bulk helpers: "Pull online scores" to refresh all auto scores, and a summary row (average, pass rate).
+New "Record Paper Exam" action in Admissions → Entrance Exams: title, exam date, subject list (e.g. English, Mathematics, General Paper) with a max mark each. Creates an `exams` row with `exam_mode='paper'`, `exam_category='entrance'`, `total_questions=0`, no question builder. Paper exams show a "Paper" badge on the card and hide CBT-only fields.
 
-### 3. Two new emails
+### 3. Score sheet (batch entry)
 
-Add templates to the existing `send-admission-notification` edge function:
-- `exam_result` — greets the applicant, states score / total / percentage, outcome, and the admin's comment
-- `exam_resit` — informs the applicant they must resit, includes resit date/venue text and the comment (email only, no auto reassignment)
+Rework `EntranceExamResults.tsx` into a table for paper mode:
 
-Each row gets a **Send Result** and a **Send Resit Email** button; both log to `email_logs` and stamp `result_sent_at` / `resit_sent_at` so staff can see what has already gone out. A "Send to all recorded" bulk action is included.
+```text
+Applicant        | English/40 | Maths/40 | General/20 | Total | %   | Outcome | Comment | Actions
+Ada Obi (APP-01) |     32     |    28    |     15     |  75   | 75% | Pass    | ...     | Save · Result · Resit
+```
+
+- Subject columns come from the exam's subject list; total and percentage update live.
+- Keyboard-friendly entry (tab across the row), "Save all" for the whole sheet plus per-row save.
+- Existing CSV export includes the per-subject columns. Existing "Pull online scores" stays, but only for CBT exams.
+
+### 4. Quick entry on the application
+
+In the application review modal (Admissions → Applications), add an "Entrance exam result" section: pick the paper sitting, enter subject marks, outcome and comment, save, and send the result or resit email — same RPC and same email path as the score sheet.
+
+### 5. Emails
+
+Update the `exam_result` template in `send-admission-notification` to render a subject breakdown table when `subject_scores` is present, falling back to the single total otherwise. `exam_resit` is unchanged. for the resit email, i should be able to input the date and time for the resit
 
 ## Technical notes
 
-- Migration adds columns + grants/policy updates only; no new tables.
-- Online score lookup joins `exam_sessions` for the entrance exam via the enrolled applicant's user, falling back to manual when no session exists.
-- Email sending reuses `supabase.functions.invoke('send-admission-notification', { application_id, notification_type, additional_data })`, passing score/percentage/comment through `additional_data`.
-- New component `src/components/admin/admissions/EntranceExamResults.tsx`, wired into `AdmissionExamScheduler.tsx`.
+- Files: migration; `src/components/admin/admissions/EntranceExamResults.tsx` (rewrite to table + subjects), new `PaperExamCreator.tsx`, `AdmissionExamScheduler.tsx`, `AdmissionManagement.tsx`, `supabase/functions/send-admission-notification/index.ts`.
+- Existing CBT entrance exams and already-saved single-score results keep working — `subject_scores` empty means the old single-total UI.
