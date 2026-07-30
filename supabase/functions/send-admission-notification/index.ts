@@ -179,6 +179,9 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
           { label: "Download the school calendar", url: s.calendar_url || "" },
         ];
     const password = data.temporary_password;
+    const studentLogin = data.login_email || data.email;
+    const parentEmail = data.parent_email || data.contact_email || data.email;
+    const parentPassword = data.parent_temporary_password;
     return {
       subject: `🎓 Welcome to Al-Bari Group of Schools - Login Credentials`,
       html: `
@@ -188,12 +191,22 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
       <div style="border:1px solid #d4d4d4;border-radius:8px;padding:16px;margin:16px 0;background:#f7faf3;">
         <p style="margin:0 0 8px;"><strong>Student Portal Login</strong></p>
         <p style="margin:4px 0;"><strong>Portal:</strong> <a href="${portal}">${portal}</a></p>
-        <p style="margin:4px 0;"><strong>Username (email):</strong> ${data.email}</p>
+        <p style="margin:4px 0;"><strong>Student Login ID:</strong> ${studentLogin}</p>
         <p style="margin:4px 0;"><strong>Admission Number:</strong> ${data.admission_number || "-"}</p>
         ${password
           ? `<p style="margin:4px 0;"><strong>Temporary Password:</strong> <code style="font-size:16px;letter-spacing:1px;">${password}</code></p>
              <p style="margin:8px 0 0;color:#8a5300;">For your security you will be asked to change this password the first time you sign in.</p>`
           : `<p style="margin:4px 0;"><strong>Temporary Password:</strong> Sent separately by the admissions office.</p>`}
+        <p style="margin:10px 0 0;color:#555;font-size:13px;">This login ID is issued by the school. It is used to sign in only — it does not receive email. All school emails continue to come to ${parentEmail}.</p>
+      </div>
+      <div style="border:1px solid #d4d4d4;border-radius:8px;padding:16px;margin:16px 0;background:#f4f7fb;">
+        <p style="margin:0 0 8px;"><strong>Parent Portal Login</strong></p>
+        <p style="margin:4px 0;"><strong>Portal:</strong> <a href="${portal}">${portal}</a></p>
+        <p style="margin:4px 0;"><strong>Email:</strong> ${parentEmail}</p>
+        ${parentPassword
+          ? `<p style="margin:4px 0;"><strong>Temporary Password:</strong> <code style="font-size:16px;letter-spacing:1px;">${parentPassword}</code></p>`
+          : `<p style="margin:4px 0;">Use your existing parent portal password.</p>`}
+        <p style="margin:10px 0 0;color:#555;font-size:13px;">If you have more than one child at Al-Bari, all of them appear under this single parent login — you do not need a separate email for each child.</p>
       </div>
       <p><strong>Important Information:</strong></p>
       <ul>
