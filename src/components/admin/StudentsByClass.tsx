@@ -39,6 +39,7 @@ import { StudentIDCard } from './StudentIDCard';
 import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
 import html2canvas from 'html2canvas';
 import { printNode } from '@/lib/print-node';
+import { fetchSchoolBranding as loadSchoolBranding } from '@/lib/school-branding';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
