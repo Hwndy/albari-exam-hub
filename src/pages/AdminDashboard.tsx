@@ -44,6 +44,8 @@ import { SettingsHub } from '@/components/admin/SettingsHub';
 import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
 import { LeaveManagement } from '@/components/admin/hr/LeaveManagement';
 import { PayrollHub } from '@/components/admin/hr/PayrollHub';
+import { StaffManagement } from '@/components/admin/StaffManagement';
+import { StaffAttendance } from '@/components/admin/StaffAttendance';
 import { CareersManager } from '@/components/admin/hr/CareersManager';
 import { TransportHub } from '@/components/admin/transport/TransportHub';
 import { AssetsHub } from '@/components/admin/assets/AssetsHub';
@@ -333,6 +335,8 @@ export const AdminDashboard = () => {
     if (activeTab === 'assets') return <AssetsHub />;
     if (activeTab === 'hr') {
       switch (activeSubTab) {
+        case 'staff': return <StaffManagement />;
+        case 'staff-attendance': return <StaffAttendance />;
         case 'payroll': return <PayrollHub />;
         case 'careers': return <CareersManager />;
         default: return <LeaveManagement />;

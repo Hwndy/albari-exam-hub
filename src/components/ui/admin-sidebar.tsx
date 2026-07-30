@@ -131,6 +131,8 @@ export const NAV_SECTIONS: NavSection[] = [
         icon: Briefcase,
         tab: "hr",
         children: [
+          { title: "Staff Directory", tab: "hr", subtab: "staff" },
+          { title: "Staff Attendance", tab: "hr", subtab: "staff-attendance" },
           { title: "Leave Requests", tab: "hr", subtab: "leave" },
           { title: "Payroll", tab: "hr", subtab: "payroll" },
           { title: "Careers", tab: "hr", subtab: "careers" },
