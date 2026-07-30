@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { Plus, Users, Calendar, ClipboardCheck } from "lucide-react";
 import { ConsolidatedExamCreator } from "@/components/shared/ConsolidatedExamCreator";
 import { EntranceExamResults } from "@/components/admin/admissions/EntranceExamResults";
+import { PaperExamCreator } from "@/components/admin/admissions/PaperExamCreator";
+import { Badge } from "@/components/ui/badge";
 
 interface EntranceExam {
   id: string;
@@ -18,6 +20,8 @@ interface EntranceExam {
   duration_minutes: number;
   status: string;
   total_questions: number;
+  exam_mode?: string | null;
+  paper_subjects?: { subject: string; max: number }[] | null;
 }
 
 export const AdmissionExamScheduler = () => {
@@ -44,7 +48,7 @@ export const AdmissionExamScheduler = () => {
         .order("start_date", { ascending: false });
 
       if (error) throw error;
-      setExams(data || []);
+      setExams((data || []) as unknown as EntranceExam[]);
     } catch (error: any) {
       toast.error("Failed to load exams: " + error.message);
     } finally {
@@ -240,10 +244,11 @@ export const AdmissionExamScheduler = () => {
             trigger={
               <Button>
                 <Plus className="h-4 w-4 mr-2" />
-                Create Entrance Exam
+                Create CBT Exam
               </Button>
             }
           />
+          <PaperExamCreator onCreated={fetchEntranceExams} />
         </div>
       </div>
 
@@ -260,19 +265,32 @@ export const AdmissionExamScheduler = () => {
         {exams.map((exam) => (
           <Card key={exam.id}>
             <CardHeader>
-              <CardTitle className="text-lg">{exam.title}</CardTitle>
+              <CardTitle className="text-lg flex items-start justify-between gap-2">
+                <span>{exam.title}</span>
+                <Badge variant={exam.exam_mode === "paper" ? "secondary" : "outline"}>
+                  {exam.exam_mode === "paper" ? "Paper" : "CBT"}
+                </Badge>
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
-                <span>{new Date(exam.start_date).toLocaleString()}</span>
+                <span>{exam.start_date ? new Date(exam.start_date).toLocaleString() : "Date not set"}</span>
               </div>
-              <div className="text-sm text-muted-foreground">
-                Duration: {exam.duration_minutes} minutes
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Questions: {exam.total_questions}
-              </div>
+              {exam.exam_mode === "paper" ? (
+                <div className="text-sm text-muted-foreground">
+                  Subjects: {(exam.paper_subjects || []).map((s) => s.subject).join(", ") || "None"}
+                </div>
+              ) : (
+                <>
+                  <div className="text-sm text-muted-foreground">
+                    Duration: {exam.duration_minutes} minutes
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Questions: {exam.total_questions}
+                  </div>
+                </>
+              )}
               <Button
                 size="sm"
                 className="w-full mt-4"
@@ -303,7 +321,12 @@ export const AdmissionExamScheduler = () => {
             <DialogTitle>{resultsExam?.title} — Results</DialogTitle>
           </DialogHeader>
           {resultsExam && (
-            <EntranceExamResults examId={resultsExam.id} examTitle={resultsExam.title} />
+            <EntranceExamResults
+              examId={resultsExam.id}
+              examTitle={resultsExam.title}
+              examMode={resultsExam.exam_mode}
+              paperSubjects={resultsExam.paper_subjects}
+            />
           )}
         </DialogContent>
       </Dialog>
