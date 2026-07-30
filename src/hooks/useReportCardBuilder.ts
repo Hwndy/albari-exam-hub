@@ -9,6 +9,7 @@ import {
   getReportCardGrade,
   openReportCardPrintWindow,
 } from '@/lib/report-card-html';
+import { fetchSchoolBranding } from '@/lib/school-branding';
 
 const TERM_VALUES: Record<string, 'first' | 'second' | 'third'> = {
   'First Term': 'first',
@@ -32,10 +33,10 @@ export function useReportCardBuilder() {
   const buildHtml = useCallback(async ({ studentId, classId, sessionId, term }: Args): Promise<{ html: string; filename: string; studentName: string; admissionNumber: string; }> => {
     // Fetch context in parallel
     const termValue = TERM_VALUES[term] || 'first';
-    const [sessionRes, classRes, schoolRes] = await Promise.all([
+    const [sessionRes, classRes, branding] = await Promise.all([
       supabase.from('admission_sessions').select('id, session_name, academic_year').eq('id', sessionId).maybeSingle(),
       supabase.from('classes').select('id, name').eq('id', classId).maybeSingle(),
-      supabase.from('school_info').select('*').limit(1).maybeSingle(),
+      fetchSchoolBranding(),
     ]);
 
     const academicYear = sessionRes.data?.academic_year || '';
@@ -207,14 +208,7 @@ export function useReportCardBuilder() {
       lowest_average: Math.round(lowestAverage * 10) / 10,
     };
 
-    const school: ReportCardSchoolInfo = {
-      name: (schoolRes.data as any)?.name || 'Al-Bari Model Schools',
-      address: (schoolRes.data as any)?.address || '',
-      phone: (schoolRes.data as any)?.phone || '',
-      email: (schoolRes.data as any)?.email || '',
-      motto: (schoolRes.data as any)?.motto || '',
-      logo_url: (schoolRes.data as any)?.logo_url || '',
-    };
+    const school: ReportCardSchoolInfo = { ...branding };
     const automation: ReportCardAutomation = DEFAULT_REPORT_CARD_AUTOMATION;
 
     const html = generateReportCardHTML(card, school, automation);
