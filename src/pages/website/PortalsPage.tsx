@@ -80,6 +80,14 @@ export const PortalsPage = () => {
                         Enter Portal <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
+                    {portal.title.toLowerCase().includes('parent') && (
+                      <p className="mt-3 text-center text-sm text-muted-foreground">
+                        New parent?{' '}
+                        <Link to="/login?mode=register&role=parent" className="text-primary font-medium hover:underline">
+                          Create an account
+                        </Link>
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               );
@@ -87,10 +95,10 @@ export const PortalsPage = () => {
           </div>
           <p className="text-center text-sm text-muted-foreground mt-8">
             New parent?{' '}
-            <Link to={LOGIN_PATH} className="text-primary font-medium hover:underline">
+            <Link to="/login?mode=register&role=parent" className="text-primary font-medium hover:underline">
               Create an account
             </Link>{' '}
-            from the sign-in page.
+            to link your children.
           </p>
         </div>
       </section>

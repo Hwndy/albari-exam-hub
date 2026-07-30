@@ -275,9 +275,13 @@ export const AdmissionsPage = () => {
                   Track Application
                 </Link>
               </Button>
-              <Button variant="outline" size="lg">
-                Download Brochure
-              </Button>
+              {brochureUrl ? (
+                <Button variant="outline" size="lg" asChild>
+                  <a href={brochureUrl} target="_blank" rel="noopener noreferrer">
+                    Download Brochure
+                  </a>
+                </Button>
+              ) : null}
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">

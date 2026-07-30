@@ -12,6 +12,7 @@ type AuthMode = 'login' | 'register' | 'forgot-password';
 export const AuthPage = () => {
   const initialMode = new URLSearchParams(window.location.search).get('mode') === 'register' ? 'register' : 'login';
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [preselectedRole, setPreselectedRole] = useState<'parent' | 'teacher' | 'student' | undefined>();
   const [allowStudentRegistration, setAllowStudentRegistration] = useState(true);
   const { isAuthenticated, user, isLoading, logout } = useAuth();
   
@@ -19,10 +20,11 @@ export const AuthPage = () => {
   const searchParams = new URLSearchParams(window.location.search);
   const isPortalAccess = searchParams.get('portal') === 'true';
   const requestedRole = searchParams.get('role');
-  const registerRole =
+  const urlRole =
     requestedRole === 'parent' || requestedRole === 'teacher' || requestedRole === 'student'
       ? (requestedRole as 'parent' | 'teacher' | 'student')
       : undefined;
+  const registerRole = preselectedRole ?? urlRole;
 
   useEffect(() => {
     // Fetch app settings to check if student registration is allowed
@@ -83,26 +85,30 @@ export const AuthPage = () => {
               onToggleMode={() => setMode('register')}
               onForgotPassword={() => setMode('forgot-password')}
             />
-            {requestedRole === 'parent' && (
-              <div className="mt-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  New parent? Create a parent account to link your children and pay fees.
-                </p>
-                <button
-                  type="button"
-                  className="text-sm font-medium text-primary hover:underline mt-1"
-                  onClick={() => setMode('register')}
-                >
-                  Create a parent account
-                </button>
-              </div>
-            )}
+            <div className="mt-4 rounded-lg border bg-card/50 p-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                Are you a parent? Create an account to follow your children's progress and pay fees.
+              </p>
+              <button
+                type="button"
+                className="mt-1 text-sm font-medium text-primary hover:underline"
+                onClick={() => {
+                  setPreselectedRole('parent');
+                  setMode('register');
+                }}
+              >
+                Create a parent account
+              </button>
+            </div>
           </>
         );
       case 'register':
         return (
           <RegisterForm 
-            onToggleMode={() => setMode('login')}
+            onToggleMode={() => {
+              setPreselectedRole(undefined);
+              setMode('login');
+            }}
             allowStudentRegistration={allowStudentRegistration}
             initialRole={registerRole}
           />
