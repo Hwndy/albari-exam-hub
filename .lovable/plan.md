@@ -1,49 +1,20 @@
-## Goal
+## Problem
 
-Support entrance exams written physically at the school: no CBT questions, per-subject marks entered by hand, totals and percentage computed, then result/resit emails sent to applicants.
+The accept-offer button in offer emails points to `https://irrxmoqbgygyyzozifdl.lovable.app/website/accept-offer/<token>`. That host is the Supabase project ref, not a real app address, so the browser shows "No Lovable project found at this address" (404). The app route itself (`/website/accept-offer/:token`) is correct.
 
-## What exists today (verified)
+## Fix
 
-- `admission_exam_assignments` already has `score`, `max_score`, `percentage`, `result_status`, `comment`, `source`, `result_sent_at`, `resit_sent_at`.
-- `exams` has `exam_category = 'entrance'` but is built for CBT (`total_questions`, `duration_minutes`, questions required).
-- `EntranceExamResults.tsx` shows one score box per applicant and sends result/resit emails.
+1. Store a `FRONTEND_URL` secret set to `https://www.albari.com.ng` so email links use the school's real domain.
+2. In `supabase/functions/send-offer-letter/index.ts`, replace the bogus fallback host with `https://www.albari.com.ng` so links never regress if the secret is missing.
+3. The letterhead image URL is built from the same constant — point it at a stable asset URL so the PDF/HTML letterhead keeps loading regardless of domain.
+4. Add a top-level `/accept-offer/:token` route (aliasing the existing website route) so both old and new link shapes resolve instead of hitting NotFound.
+5. Redeploy `send-offer-letter` and verify a freshly generated link opens the offer page.
 
-## Plan
+## Note
 
-### 1. Database
+The link only works once `www.albari.com.ng` is connected as a custom domain for this project and the project is published; otherwise I can point `FRONTEND_URL` at the published Lovable URL instead.
 
-- Add `exam_mode text not null default 'cbt'` to `exams` (values `cbt` | `paper`). Paper exams skip question setup.
-- Add `subject_scores jsonb default '[]'` to `admission_exam_assignments` — array of `{ subject, score, max }`.
-- Update `save_entrance_exam_result` to accept `p_subject_scores jsonb`, and compute `score`/`max_score`/`percentage` from the breakdown when it is supplied (manual total still allowed if no breakdown).
-- Extend `get_entrance_exam_results` to return `subject_scores`.
-- Add `get_application_exam_result(p_application_id uuid)` so the application review modal can read/write the same record; if no assignment exists for a paper sitting, allow creating one.
+## Technical detail
 
-### 2. Create a paper exam sitting
-
-New "Record Paper Exam" action in Admissions → Entrance Exams: title, exam date, subject list (e.g. English, Mathematics, General Paper) with a max mark each. Creates an `exams` row with `exam_mode='paper'`, `exam_category='entrance'`, `total_questions=0`, no question builder. Paper exams show a "Paper" badge on the card and hide CBT-only fields.
-
-### 3. Score sheet (batch entry)
-
-Rework `EntranceExamResults.tsx` into a table for paper mode:
-
-```text
-Applicant        | English/40 | Maths/40 | General/20 | Total | %   | Outcome | Comment | Actions
-Ada Obi (APP-01) |     32     |    28    |     15     |  75   | 75% | Pass    | ...     | Save · Result · Resit
-```
-
-- Subject columns come from the exam's subject list; total and percentage update live.
-- Keyboard-friendly entry (tab across the row), "Save all" for the whole sheet plus per-row save.
-- Existing CSV export includes the per-subject columns. Existing "Pull online scores" stays, but only for CBT exams.
-
-### 4. Quick entry on the application
-
-In the application review modal (Admissions → Applications), add an "Entrance exam result" section: pick the paper sitting, enter subject marks, outcome and comment, save, and send the result or resit email — same RPC and same email path as the score sheet.
-
-### 5. Emails
-
-Update the `exam_result` template in `send-admission-notification` to render a subject breakdown table when `subject_scores` is present, falling back to the single total otherwise. `exam_resit` is unchanged. for the resit email, i should be able to input the date and time for the resit
-
-## Technical notes
-
-- Files: migration; `src/components/admin/admissions/EntranceExamResults.tsx` (rewrite to table + subjects), new `PaperExamCreator.tsx`, `AdmissionExamScheduler.tsx`, `AdmissionManagement.tsx`, `supabase/functions/send-admission-notification/index.ts`.
-- Existing CBT entrance exams and already-saved single-score results keep working — `subject_scores` empty means the old single-total UI.
+- Files: `supabase/functions/send-offer-letter/index.ts`, `src/App.tsx`.
+- No database or RLS changes; `accept-offer` edge function and `accept_offer_by_token` RPC stay as-is.

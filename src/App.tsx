@@ -20,6 +20,7 @@ import { ExamResultsPage } from '@/pages/ExamResultsPage';
 import NotFound from '@/pages/NotFound';
 import { WebsiteRouter } from '@/pages/website/WebsiteRouter';
 import { TrackApplicationPage } from '@/pages/website/TrackApplicationPage';
+import { AcceptOfferPage } from '@/pages/website/AcceptOfferPage';
 import { InstallPage } from '@/pages/InstallPage';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
@@ -184,6 +185,7 @@ const App = () => (
                   {/* Website routes - publicly accessible */}
                   <Route path="/website/*" element={<WebsiteRouter />} />
                   <Route path="/track-application" element={<TrackApplicationPage />} />
+                  <Route path="/accept-offer/:token" element={<AcceptOfferPage />} />
                   
                   {/* Redirect old super-admin route to dashboard */}
                   <Route path="/super-admin" element={<Navigate to="/dashboard" replace />} />
