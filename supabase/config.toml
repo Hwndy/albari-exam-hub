@@ -80,3 +80,6 @@ verify_jwt = true
 
 [functions.notify-absentees]
 verify_jwt = false
+
+[functions.register-staff]
+verify_jwt = false
