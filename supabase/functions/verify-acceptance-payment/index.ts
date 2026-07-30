@@ -135,6 +135,20 @@ serve(async (req) => {
             .select()
             .maybeSingle();
 
+          // Ensure a profile exists and force a password change on first login.
+          await supabase
+            .from("profiles")
+            .upsert(
+              {
+                user_id: userId,
+                full_name: `${application.first_name} ${application.middle_name ?? ""} ${application.last_name}`
+                  .replace(/\s+/g, " ")
+                  .trim(),
+                must_change_password: true,
+              },
+              { onConflict: "user_id" }
+            );
+
           // Reuse an existing student record if one was already created.
           const { data: priorStudent } = await supabase
             .from("students")
@@ -227,6 +241,15 @@ serve(async (req) => {
 
           // Send welcome email
           try {
+            let className: string | null = null;
+            if (application.admitted_to_class_id) {
+              const { data: cls } = await supabase
+                .from("classes")
+                .select("name")
+                .eq("id", application.admitted_to_class_id)
+                .maybeSingle();
+              className = cls?.name ?? null;
+            }
             await supabase.functions.invoke("send-admission-notification", {
               body: {
                 application_id: payment.application_id,
@@ -235,6 +258,7 @@ serve(async (req) => {
                   admission_number: finalAdmissionNumber,
                   login_email: application.email,
                   temporary_password: password,
+                  ...(className ? { class_name: className } : {}),
                 },
               },
             });

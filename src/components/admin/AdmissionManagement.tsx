@@ -52,6 +52,22 @@ export const AdmissionManagement = () => {
     fetchApplications();
   }, [statusFilter]);
 
+  // Keep the list in sync when a payment enrolls an applicant in the background.
+  useEffect(() => {
+    const channel = supabase
+      .channel('admission-applications-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'admission_applications' },
+        () => fetchApplications()
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusFilter]);
+
   const fetchApplications = async () => {
     try {
       let query = supabase
@@ -129,94 +145,6 @@ export const AdmissionManagement = () => {
       toast({
         title: 'Error',
         description: 'Failed to update application status',
-        variant: 'destructive',
-      });
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const enrollStudent = async (application: Application) => {
-    setActionLoading(true);
-    try {
-      // Create user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: application.email,
-        password: Math.random().toString(36).slice(-12),
-        email_confirm: true,
-        user_metadata: {
-          full_name: `${application.first_name} ${application.last_name}`,
-          role: 'student'
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Create profile
-      await supabase.from('profiles').insert({
-        user_id: authData.user.id,
-        full_name: `${application.first_name} ${application.middle_name || ''} ${application.last_name}`.trim(),
-      });
-
-      // Add role
-      await supabase.from('user_roles').insert({
-        user_id: authData.user.id,
-        role: 'student'
-      });
-
-      // Create student record
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .insert({
-          user_id: authData.user.id,
-          admission_number: application.application_number,
-          date_of_birth: application.date_of_birth,
-          gender: application.gender,
-          address: application.address,
-                    status: 'active'
-        })
-        .select()
-        .single();
-
-      if (studentError) throw studentError;
-
-      // Update application
-      await supabase
-        .from('admission_applications')
-        .update({
-          status: 'enrolled',
-          student_id: studentData.id,
-          admission_date: new Date().toISOString()
-        })
-        .eq('id', application.id);
-
-      // Send enrollment notification
-      try {
-        await supabase.functions.invoke('send-admission-notification', {
-          body: {
-            application_id: application.id,
-            notification_type: 'enrolled',
-            additional_data: {
-              admission_number: application.application_number,
-            },
-          },
-        });
-      } catch (notifError) {
-        console.error('Error sending enrollment notification:', notifError);
-      }
-
-      toast({
-        title: 'Student Enrolled',
-        description: 'Student account created and welcome email sent successfully',
-      });
-
-      fetchApplications();
-      setSelectedApplication(null);
-    } catch (error: any) {
-      console.error('Error enrolling student:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to enroll student',
         variant: 'destructive',
       });
     } finally {
@@ -456,6 +384,12 @@ export const AdmissionManagement = () => {
 
                           {/* Actions */}
                           <div className="flex gap-3 justify-end">
+                            {selectedApplication.status === 'enrolled' && (
+                              <p className="text-sm text-muted-foreground mr-auto">
+                                This applicant is enrolled. The student account and welcome email have been
+                                issued, so the status can no longer be changed.
+                              </p>
+                            )}
                             {selectedApplication.status === 'submitted' && (
                               <>
                                 <Button
