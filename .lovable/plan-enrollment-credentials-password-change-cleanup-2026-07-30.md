@@ -17,7 +17,7 @@ Remove parent handling from acceptance-payment enrollment entirely:
 
 The email will contain only: portal address, student login ID, admission number, temporary password, class, orientation/first day, and the required actions checklist.
 
-A short closing line will tell the family that a parent can create their own account at the portal and link the child using the admission number and date of birth (the existing self-link flow already supports this).
+A short closing line will tell the family that a parent can create their own account at the portal and link the child using the admission number and date of birth (the existing self-link flow already supports this). 
 
 ## 3. Student password change
 
