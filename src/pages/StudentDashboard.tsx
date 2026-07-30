@@ -9,6 +9,7 @@ import { LibraryCatalog } from '@/components/student/LibraryCatalog';
 import { StudentReportCards } from '@/components/student/StudentReportCards';
 import { StudentAssignments } from '@/components/student/StudentAssignments';
 import { StudentLessonNotes } from '@/components/student/StudentLessonNotes';
+import { ProfileCompletionPrompt } from '@/components/student/ProfileCompletionPrompt';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -113,6 +114,8 @@ export const StudentDashboard = () => {
   return (
     <DashboardLayout title="Student Dashboard">
       <div className="space-y-8">
+        <ProfileCompletionPrompt />
+
         {/* Stats Overview */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
           <Card>
