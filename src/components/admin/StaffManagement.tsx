@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2 } from "lucide-react";
+import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 
 interface StaffMember {
@@ -359,6 +359,10 @@ export const StaffManagement = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Staff Management</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={exportDirectory} disabled={filteredStaff.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={syncStaffFromAccounts} disabled={syncing}>
             {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sync staff from accounts
@@ -535,7 +539,7 @@ export const StaffManagement = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(staff)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -579,11 +583,11 @@ export const StaffManagement = () => {
               )}
             </div>
             <div>
-              <label className="text-sm font-medium">Employee ID *</label>
+              <label className="text-sm font-medium">Employee ID</label>
               <Input
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                placeholder="e.g., EMP001"
+                placeholder="Leave blank to auto-generate (ALB/STF/0001)"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
