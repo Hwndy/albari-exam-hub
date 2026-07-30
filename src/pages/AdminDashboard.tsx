@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
+import { findNavLocation } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
@@ -94,10 +95,10 @@ export const AdminDashboard = () => {
   const activeSubTab = searchParams.get('subtab');
 
   useEffect(() => {
-    // Wait for undefined to be loaded before fetching data
-    // undefined will be null for super admins (intentional - they see all)
-    // undefined will be set for school admins (they see only their school)
-  }, [false]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (activeTab === 'overview') {
+      fetchDashboardData();
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
