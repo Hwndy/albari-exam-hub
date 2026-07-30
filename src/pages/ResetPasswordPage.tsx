@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { checkPassword } from '@/lib/password-policy';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const ResetPasswordPage: React.FC = () => {
   const [pwd, setPwd] = useState('');
@@ -15,6 +16,7 @@ export const ResetPasswordPage: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [ready, setReady] = useState(false);
   const navigate = useNavigate();
+  const { setMustChangePassword } = useAuth();
 
   useEffect(() => {
     // Supabase parses the recovery token from the URL hash automatically via onAuthStateChange
@@ -32,15 +34,23 @@ export const ResetPasswordPage: React.FC = () => {
     if (pwd !== pwd2) { toast.error('Passwords do not match'); return; }
     setSaving(true);
     const { error } = await supabase.auth.updateUser({ password: pwd });
-    if (!error) {
-      // clear must_change_password flag if set
-      const { data: u } = await supabase.auth.getUser();
-      if (u.user) {
-        await supabase.from('profiles').update({ must_change_password: false }).eq('user_id', u.user.id);
+    if (error) { setSaving(false); toast.error(error.message); return; }
+
+    // Clear the forced-change flag; surface a failure instead of looping silently.
+    const { data: u } = await supabase.auth.getUser();
+    if (u.user) {
+      const { error: flagError } = await supabase
+        .from('profiles')
+        .update({ must_change_password: false })
+        .eq('user_id', u.user.id);
+      if (flagError) {
+        setSaving(false);
+        toast.error('Password changed, but we could not clear the first-login flag. Please contact the school administrator.');
+        return;
       }
     }
+    setMustChangePassword(false);
     setSaving(false);
-    if (error) { toast.error(error.message); return; }
     toast.success('Password updated. Please sign in again.');
     await supabase.auth.signOut();
     navigate('/login', { replace: true });

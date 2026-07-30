@@ -43,7 +43,13 @@ export const PaymentCallbackPage = () => {
   const [message, setMessage] = useState('Verifying your payment...');
   const [receipt, setReceipt] = useState<Receipt | null>(null);
 
+  const startedRef = React.useRef(false);
+
   useEffect(() => {
+    // Guard against React StrictMode double-invoke: verifying twice can
+    // re-issue a second temporary password and invalidate the emailed one.
+    if (startedRef.current) return;
+    startedRef.current = true;
     verifyPayment();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
