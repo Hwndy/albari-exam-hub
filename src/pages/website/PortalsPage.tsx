@@ -20,35 +20,19 @@ interface Portal {
 }
 
 const DEFAULTS: Portal[] = [
-  { title: 'Student Portal', description: 'Access exam schedules, results, assignments, and academic resources', icon: 'GraduationCap', link: '/login?portal=true&role=student', features: ['View Exam Results', 'Class Schedules', 'Assignments', 'Academic Calendar'], enabled: true },
-  { title: 'Parent Portal', description: "Monitor your child's academic progress, attendance, and school activities", icon: 'Users', link: '/login?portal=true&role=parent', features: ["Child's Progress", 'Fee Payment', 'Communication', 'Events Updates'], enabled: true },
-  { title: 'Teacher Portal', description: 'Manage classes, create exams, track student performance and communicate with parents', icon: 'UserCheck', link: '/login?portal=true&role=teacher', features: ['Class Management', 'Exam Creation', 'Grade Reports', 'Student Records'], enabled: true },
-  { title: 'Admin Portal', description: 'Comprehensive school management system for administrators and staff', icon: 'Shield', link: '/login?portal=true&role=admin', features: ['User Management', 'System Settings', 'Reports', 'School Analytics'], enabled: true },
+  { title: 'Student Portal', description: 'Access exam schedules, results, assignments, and academic resources', icon: 'GraduationCap', link: '/login', features: ['View Exam Results', 'Class Schedules', 'Assignments', 'Academic Calendar'], enabled: true },
+  { title: 'Parent Portal', description: "Monitor your child's academic progress, attendance, and school activities", icon: 'Users', link: '/login', features: ["Child's Progress", 'Fee Payment', 'Communication', 'Events Updates'], enabled: true },
+  { title: 'Teacher Portal', description: 'Manage classes, create exams, track student performance and communicate with parents', icon: 'UserCheck', link: '/login', features: ['Class Management', 'Exam Creation', 'Grade Reports', 'Student Records'], enabled: true },
+  { title: 'Admin Portal', description: 'Comprehensive school management system for administrators and staff', icon: 'Shield', link: '/login', features: ['User Management', 'System Settings', 'Reports', 'School Analytics'], enabled: true },
 ];
 
 export const PortalsPage = () => {
   const { settings } = useWebsiteSettings();
   const portals = settingValue<Portal[]>(settings, 'portals', DEFAULTS).filter((p) => p.enabled !== false);
 
-  const roleFor = (portal: Portal) => {
-    const source = `${portal.link ?? ''} ${portal.title ?? ''}`.toLowerCase();
-    if (source.includes('parent')) return 'parent';
-    if (source.includes('teacher') || source.includes('staff')) return 'teacher';
-    if (source.includes('admin')) return 'admin';
-    return 'student';
-  };
-
-  const loginLink = (portal: Portal) => {
-    const role = roleFor(portal);
-    const link = (portal.link ?? '').trim();
-    // Only trust links that already point at the login route; anything else
-    // (legacy CMS values like /portal/parent) is rewritten.
-    if (/^\/login(\?|$)/.test(link) || /^https?:\/\/[^/]+\/login(\?|$)/.test(link)) {
-      return link.startsWith('http') ? new URL(link).pathname + new URL(link).search : link;
-    }
-    return `/login?portal=true&role=${role}`;
-  };
-
+  // Every portal card points at the plain sign-in route — no query parameters,
+  // whatever the CMS has stored for the card link.
+  const LOGIN_PATH = '/login';
   return (
     <div className="space-y-0">
       <SEO
@@ -72,8 +56,6 @@ export const PortalsPage = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {portals.map((portal, idx) => {
               const Icon = (portal.icon && ICONS[portal.icon]) || GraduationCap;
-              const href = loginLink(portal);
-              const role = roleFor(portal);
               return (
                 <Card key={idx} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
                   <CardHeader>
@@ -94,20 +76,22 @@ export const PortalsPage = () => {
                       ))}
                     </ul>
                     <Button asChild className="w-full">
-                      <Link to={href}>
+                      <Link to={LOGIN_PATH}>
                         Enter Portal <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
-                    {role === 'parent' && (
-                      <Button asChild variant="link" className="w-full mt-2">
-                        <Link to="/login?portal=true&role=parent&mode=register">Create parent account</Link>
-                      </Button>
-                    )}
                   </CardContent>
                 </Card>
               );
             })}
           </div>
+          <p className="text-center text-sm text-muted-foreground mt-8">
+            New parent?{' '}
+            <Link to={LOGIN_PATH} className="text-primary font-medium hover:underline">
+              Create an account
+            </Link>{' '}
+            from the sign-in page.
+          </p>
         </div>
       </section>
     </div>
