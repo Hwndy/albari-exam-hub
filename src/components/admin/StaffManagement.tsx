@@ -646,9 +646,85 @@ export const StaffManagement = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Edit Staff Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(o) => { setShowEditDialog(o); if (!o) setEditForm(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Staff Record</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Employee ID</label>
+                <Input
+                  value={editForm.employee_id}
+                  onChange={(e) => setEditForm({ ...editForm, employee_id: e.target.value })}
+                  placeholder="Leave blank to auto-generate"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Department</label>
+                  <Input
+                    value={editForm.department}
+                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Designation</label>
+                  <Input
+                    value={editForm.designation}
+                    onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Join Date</label>
+                  <Input
+                    type="date"
+                    value={editForm.join_date}
+                    onChange={(e) => setEditForm({ ...editForm, join_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Employment Type</label>
+                  <Select
+                    value={editForm.employment_type}
+                    onValueChange={(v) => setEditForm({ ...editForm, employment_type: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full Time</SelectItem>
+                      <SelectItem value="part-time">Part Time</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Status</label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on-leave">On Leave</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={saveEdit} disabled={isLoading}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Staff Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        {null}
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Staff Details</DialogTitle>
