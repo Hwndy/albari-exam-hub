@@ -1,32 +1,35 @@
-## 1. Student login IDs become firstname.lastname
+## 1. Portal buttons go strictly to `/login`
 
-Today enrollment mints `alb-2026-0364@students.albari.com.ng` from the admission number.
+`src/pages/website/PortalsPage.tsx` currently rewrites every card link to `/login?portal=true&role=<role>`, and the parent card adds a second `/login?portal=true&role=parent&mode=register` link.
 
-Change to `firstname.lastname@students.albari.com.ng`:
-- Slugify first + last name (lowercase, strip accents/non a-z0-9, join with `.`).
-- On collision (same name already taken by a different applicant), append the numeric tail of the admission number, then `-2`, `-3` as final fallbacks — so siblings and namesakes never clash.
-- Applies in `verify-acceptance-payment` (new enrollments) and in `backfill-student-logins` (the "Fix student logins & parent links" admin button), so existing enrolled students can be migrated to the new format; their `login_email` on the application and the auth account email are both updated, and any regenerated temporary password is reported back to the admin.
-- Admin StudentDetail / payment receipt / welcome email already display "Student Login ID", so they pick up the new format automatically.
+- Drop the `roleFor` / `loginLink` query-string builders — every "Enter Portal" button links to `/login`, no query params, regardless of what the CMS stores.
+- Replace the parent-only "Create parent account" link with a single line under the grid: "New parent? Create an account" pointing to `/login` as well (the login screen already has a Create-account toggle), so no card carries params.
+- Check other places that emit portal URLs with params (home page portal/CTA cards, footer, `HomePage`/`WebsiteLayout`) and normalize those to `/login` too.
+- `AuthPage.tsx` keeps working without params: it defaults to login mode. Leave its `?role=`/`?portal=` handling in place as harmless fallback for old emailed links.
 
-Post-login access is already wired: student role + profile + class assignment are created at enrollment, `must_change_password` forces a password reset on first sign-in, then the student lands on their portal. I'll re-verify that path end to end after the change (sign in with a freshly minted ID, reset password, load dashboard/timetable).
+## 2. Admin dashboard de-clutter
 
-## 2. Parent account creation
+The sidebar currently renders 19 flat top-level entries (Dashboard, Students, Analytics, Admissions, Academic, Results Management, Attendance Reports, Fee Management, Library, Notifications, Announcements, ID Cards, Scan Attendance, Users, Parents, Website, Settings, HR, Transport, Assets, System) with four groups expanded by default — that is the main source of the clutter.
 
-Parents can already self-register (Login → Create account → Parent / Guardian), but nothing points them there.
-- On `/login`, when `?role=parent` is present, show a parent-specific hint and a "Create a parent account" button that opens the register form with Parent pre-selected.
-- Same for `?role=student|teacher`: the register form opens with that role preselected where self-registration is allowed.
-- Add a short "New parent? Create an account" line under the sign-in form.
-- Parent Portal card on the website gets a secondary "Create parent account" link (`/login?portal=true&role=parent&mode=register`).
+**Sidebar (`src/components/ui/admin-sidebar.tsx`)**
+- Regroup into 6 labelled sections using `SidebarGroup` headers instead of one long list:
+  - **Overview** — Dashboard, Analytics
+  - **Admissions** — Admissions hub (its 7 tabs already live inside `AdmissionsHub`, so collapse the sub-menu to a single entry)
+  - **Academics** — Students, Classes & Subjects, Exams, Questions, Timetable, Results & Report Cards (Results Management folded in as sub-items of one "Results" entry)
+  - **People** — Users, Parents, HR, Attendance (Reports + Scan Station as sub-items), ID Cards
+  - **Operations** — Fees, Library, Transport, Assets, Notifications & Announcements (merged into one "Communications" entry with sub-items)
+  - **Configuration** — Website CMS, Settings, System
+- Collapse all groups by default except the one matching the active tab; auto-open the active group on navigation.
+- Tighten spacing/typography: smaller group labels, consistent icon size, active state uses a left accent bar rather than a full `bg-accent` block.
 
-Admin-created parents (Admin → Parents) and the automatic parent account created at enrollment stay unchanged.
-
-## 3. Portals page links
-
-The portals cards read from CMS `website_settings.portals`, which can hold stale links from an older scheme; only the hardcoded defaults use `/login?portal=true&role=...`.
-- Normalize each portal link at render: if the stored link isn't already a `/login?...` URL, map its role to `/login?portal=true&role=<role>`.
-- Ensure the resulting links work both as in-app routes and as absolute URLs (`https://www.albari.com.ng/login?portal=true&role=parent`).
+**Shell (`src/pages/AdminDashboard.tsx`)**
+- Single sticky header row: sidebar trigger, logo, page title + breadcrumb (Section › Page), global search, user menu — instead of the current stacked header + duplicated titles.
+- Remove the duplicated page heading where a hub already renders its own `h2` (Admissions, Settings, Fees, Parents, Results) so each screen has exactly one title.
+- Replace the `getPageTitle` string ladder with one route map (`tab/subtab -> { section, title }`) used by both the breadcrumb and the sidebar's active state.
+- Overview tab: add a compact KPI row (students, teachers, classes, active exams, pending applications, outstanding fees) above Recent Exams, plus quick-action buttons; wire it to the existing `fetchDashboardData`, which is currently never called (the `useEffect` on line 96 has an empty body, so stats stay at zero).
+- Consistent page padding/max-width container across all tabs.
 
 ## Technical notes
-
-- Files: `supabase/functions/verify-acceptance-payment/index.ts`, `supabase/functions/backfill-student-logins/index.ts`, `src/pages/AuthPage.tsx`, `src/components/auth/LoginForm.tsx`, `src/components/auth/RegisterForm.tsx`, `src/pages/website/PortalsPage.tsx`.
-- No database migration required — `login_email` and `student_login_domain` already exist.
+- Files: `src/pages/website/PortalsPage.tsx`, `src/pages/website/HomePage.tsx` (portal CTAs), `src/components/website/WebsiteLayout.tsx` (footer links), `src/components/ui/admin-sidebar.tsx`, `src/pages/AdminDashboard.tsx`.
+- All existing `?tab=&subtab=` URLs keep working; only grouping and labels change, no component is deleted.
+- No database or edge-function changes.
