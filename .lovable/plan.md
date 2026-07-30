@@ -1,30 +1,26 @@
-## Goal
+## What's wrong
 
-Right now the acceptance fee is hardcoded at ₦50,000 in three places (the accept-offer page, the offer-letter edge function, and the admin offer dialog). Make it editable by an admin, and add a clear note that the acceptance fee is deducted from the child's school fees.
+Confirmed by reading the routers and the acceptance-payment flow:
 
-## What changes
+1. `AcceptOfferPage` (mounted at the top level `/accept-offer/:token`) sends Paystack a callback of `${origin}/payment-callback`. That route only exists **inside** `WebsiteRouter`, which is mounted at `/website/*` — so the real path is `/website/payment-callback`. Paystack returns the applicant to `/payment-callback`, which hits the catch-all `NotFound` route → the 404 page.
+2. Even on the correct page, the success screen only says "Payment verified successfully!" — it never shows the admission number, login email, or next steps, and `verify-acceptance-payment` doesn't return them.
+3. `verify-acceptance-payment` enrolls unconditionally: if the Paystack webhook already enrolled the applicant (or the page is refreshed), it tries to create a second auth user + student record for the same application.
 
-**1. A configurable default fee (Admin > Settings)**
-- Store the amount as an `app_settings` row (`acceptance_fee_amount`, default 50000), plus an editable note text (`acceptance_fee_note`, default: "This acceptance fee is deducted from your child's school fees.").
-- Add an "Admissions" card in the Settings hub with a naira amount field and the note field, saved by admins only.
+## The fix
 
-**2. Per-offer override (Admin > Admissions > Send Offer)**
-- The Send Offer dialog gains an "Acceptance Fee (₦)" input, pre-filled with the configured default, so a specific applicant can be given a different amount.
-- The amount is passed to the offer-letter function and saved on the offer record (the `admission_offers.acceptance_fee` column already exists) instead of the hardcoded 50000.
+**Routing**
+- Add a top-level `/payment-callback` route in `App.tsx` pointing at `PaymentCallbackPage` (keeping the existing `/website/payment-callback` one so old links still work).
 
-**3. Offer letter email/PDF**
-- Show the actual fee amount from the offer, and add the deduction note under the payment instructions.
+**Return enrollment details**
+- In `verify-acceptance-payment`, before enrolling, check whether the application already has a `student_id` / `status = 'enrolled'`. If so, skip creation and just read the existing admission number.
+- Include `admission_number`, `login_email`, `application_number`, and `student_name` in the JSON response (never the temporary password — that stays in the welcome email only).
 
-**4. Accept Offer page (public link)**
-- Replace the hardcoded ₦50,000 in the "Admission Details" box and the "Next Steps" list with the fee stored on the offer (returned by the existing `get_offer_by_token` function, so it works for logged-out applicants).
-- Add the note line: "This acceptance fee will be deducted from your child's school fees."
-- Send the real amount to the payment initialisation instead of a fixed 50000.
-
-**5. Fees ledger credit (so the note is true)**
-- When an acceptance payment is confirmed and the student record is created, record the paid acceptance fee as a credit/payment against the student's fee account so their outstanding balance drops by that amount. Otherwise parents would be charged twice.
+**Confirmation screen**
+- Update `PaymentCallbackPage` so the acceptance-fee success state shows a proper "Enrollment complete" card: student name, application number, **admission number**, login email, and a note that login credentials were emailed.
+- Buttons: "Go to Student Login" (`/login`) and "Track Application".
+- Keep the generic success message for application-fee payments (unchanged behaviour).
 
 ## Technical notes
-
-- Migration: insert the two `app_settings` keys; extend `get_offer_by_token` to return `acceptance_fee` and the note so anonymous visitors can read them (app_settings itself is authenticated-only, so the value must travel via the offer record / function output).
-- Files touched: `src/components/admin/SettingsHub.tsx`, `src/components/admin/OfferLetterGenerator.tsx`, `src/pages/website/AcceptOfferPage.tsx`, `supabase/functions/send-offer-letter/index.ts`, `supabase/functions/initialize-acceptance-payment/index.ts` (validate amount against the offer rather than trusting the client), `supabase/functions/verify-acceptance-payment/index.ts` (credit the fee ledger).
-- Amount validation server-side: the payment function will use the offer's stored `acceptance_fee`, not the value posted from the browser.
+- Files touched: `src/App.tsx`, `src/pages/website/PaymentCallbackPage.tsx`, `supabase/functions/verify-acceptance-payment/index.ts`.
+- `PaymentCallbackPage` wraps content in `WebsiteLayout`, which renders fine at the top level too.
+- No database migration needed; the idempotency guard is a read on `admission_applications` before the enrollment block.
