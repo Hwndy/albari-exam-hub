@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import DOMPurify from 'dompurify';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { Calendar, Clock, ArrowLeft, Search, Share2, Facebook, Twitter, MessageC
 import { useNews, useNewsArticle, type NewsItem } from '@/hooks/useCms';
 import { SEO, SITE_URL } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { Reveal } from '@/components/website/Reveal';
 import { EmptyState } from '@/components/website/EmptyState';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
@@ -97,7 +98,7 @@ const NewsList: React.FC = () => {
         crumbs={[{ label: 'News & Events' }]}
       />
 
-      <section className="py-8 border-b border-border">
+      <section className="bg-muted/40 py-8">
         <div className="container mx-auto px-4">
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="w-full">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -112,9 +113,9 @@ const NewsList: React.FC = () => {
             </div>
 
             <TabsContent value="news" className="mt-6">
-              <div className="flex flex-wrap gap-2 mb-6">
+              <div className="mb-6 flex flex-wrap gap-2">
                 {CATEGORIES.map((c) => (
-                  <Button key={c} size="sm" variant={cat === c ? 'default' : 'outline'} onClick={() => setCat(c)} className="capitalize">
+                  <Button key={c} size="sm" variant={cat === c ? 'default' : 'outline'} onClick={() => setCat(c)} className="rounded-full px-5 capitalize">
                     {c}
                   </Button>
                 ))}
@@ -132,34 +133,42 @@ const NewsList: React.FC = () => {
                   description="Nothing matches this filter yet. Try another category or clear your search."
                 />
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {filtered.map((item) => (
-                    <Link key={item.id} to={`/website/news/${item.slug}`}>
-                      <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 h-full overflow-hidden">
-                        <div className="aspect-video bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
-                          {item.featured_image ? (
-                            <img src={item.featured_image} alt={item.title} loading="lazy" width={800} height={450}
-                                 className="h-full w-full object-cover hover:scale-105 transition-transform duration-500" />
-                          ) : (
-                            <Calendar className="h-12 w-12 text-primary" />
-                          )}
-                        </div>
-                        <CardHeader>
-                          <div className="flex items-center justify-between mb-2">
-                            <Badge variant="default" className="capitalize">{item.category}</Badge>
-                            <span className="text-sm text-muted-foreground">{formatDate(item.event_date || item.published_at)}</span>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filtered.map((item, i) => (
+                    <Reveal key={item.id} delay={(i % 3) * 80}>
+                      <Link to={`/website/news/${item.slug}`} className="group block h-full">
+                        <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-xl">
+                          <div className="relative flex aspect-video items-center justify-center overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10">
+                            {item.featured_image ? (
+                              <img
+                                src={item.featured_image}
+                                alt={item.title}
+                                loading="lazy"
+                                width={800}
+                                height={450}
+                                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                              />
+                            ) : (
+                              <Calendar className="h-12 w-12 text-primary" />
+                            )}
+                            <Badge className="absolute left-4 top-4 capitalize shadow-sm">{item.category}</Badge>
                           </div>
-                          <CardTitle className="text-lg line-clamp-2">{item.title}</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-muted-foreground mb-4 line-clamp-3">{item.excerpt}</p>
-                          <div className="flex items-center text-sm text-muted-foreground">
-                            <Clock className="h-4 w-4 mr-1" />
-                            <span>{formatDate(item.created_at)}</span>
+                          <div className="flex flex-1 flex-col p-6">
+                            <span className="text-xs text-muted-foreground">
+                              {formatDate(item.event_date || item.published_at)}
+                            </span>
+                            <h3 className="mt-2 line-clamp-2 text-lg font-semibold text-foreground transition-colors group-hover:text-primary">
+                              {item.title}
+                            </h3>
+                            <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted-foreground">{item.excerpt}</p>
+                            <div className="mt-auto flex items-center pt-5 text-xs text-muted-foreground">
+                              <Clock className="mr-1.5 h-3.5 w-3.5" />
+                              <span>{formatDate(item.created_at)}</span>
+                            </div>
                           </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        </article>
+                      </Link>
+                    </Reveal>
                   ))}
                 </div>
               )}
