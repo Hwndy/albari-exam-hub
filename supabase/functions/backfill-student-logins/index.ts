@@ -56,8 +56,6 @@ serve(async (req) => {
       }
     };
 
-    const { data: _unusedDomainSetting } = await supabase
-      .from('app_settings').select('setting_value').eq('setting_key', 'student_login_domain').maybeSingle();
     const raw = domainSetting?.setting_value as unknown;
     const loginDomain = (typeof raw === 'string' ? raw : String(raw ?? '')) || 'students.albari.com.ng';
 
