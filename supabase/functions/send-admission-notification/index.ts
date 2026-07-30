@@ -167,35 +167,52 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
       <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
     `,
   }),
-  enrolled: (data: any) => ({
-    subject: `🎓 Welcome to Al-Bari Group of Schools - Login Credentials`,
-    html: `
+  enrolled: (data: any) => {
+    const s = data.enrollment_settings || {};
+    const portal = String(s.portal_url || "https://www.albari.com.ng/auth").replace(/\/$/, "");
+    const actions: Array<{ label: string; url?: string }> = Array.isArray(s.required_actions) && s.required_actions.length
+      ? s.required_actions
+      : [
+          { label: "Sign in and change your temporary password", url: portal },
+          { label: "Complete your student profile", url: `${portal}` },
+          { label: "Review the fee structure and payment schedule", url: `${portal}` },
+          { label: "Download the school calendar", url: s.calendar_url || "" },
+        ];
+    const password = data.temporary_password;
+    return {
+      subject: `🎓 Welcome to Al-Bari Group of Schools - Login Credentials`,
+      html: `
       <h1>Welcome to Al-Bari Group of Schools!</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Your enrollment is now complete! Here are your login credentials for the student portal:</p>
-      <p><strong>Student Portal Login:</strong></p>
-      <ul>
-        <li><strong>Username:</strong> ${data.email}</li>
-        <li><strong>Admission Number:</strong> ${data.admission_number}</li>
-        <li><strong>Temporary Password:</strong> Will be sent separately</li>
-      </ul>
+      <p>${s.intro || "Your enrollment is now complete! Here are your login credentials for the student portal."}</p>
+      <div style="border:1px solid #d4d4d4;border-radius:8px;padding:16px;margin:16px 0;background:#f7faf3;">
+        <p style="margin:0 0 8px;"><strong>Student Portal Login</strong></p>
+        <p style="margin:4px 0;"><strong>Portal:</strong> <a href="${portal}">${portal}</a></p>
+        <p style="margin:4px 0;"><strong>Username (email):</strong> ${data.email}</p>
+        <p style="margin:4px 0;"><strong>Admission Number:</strong> ${data.admission_number || "-"}</p>
+        ${password
+          ? `<p style="margin:4px 0;"><strong>Temporary Password:</strong> <code style="font-size:16px;letter-spacing:1px;">${password}</code></p>
+             <p style="margin:8px 0 0;color:#8a5300;">For your security you will be asked to change this password the first time you sign in.</p>`
+          : `<p style="margin:4px 0;"><strong>Temporary Password:</strong> Sent separately by the admissions office.</p>`}
+      </div>
       <p><strong>Important Information:</strong></p>
       <ul>
-        <li>Orientation Date: ${data.orientation_date || 'To be announced'}</li>
-        <li>First Day of School: ${data.first_day || 'To be announced'}</li>
-        <li>Class: ${data.class_name || 'As assigned'}</li>
+        <li>Orientation Date: ${s.orientation_date || data.orientation_date || "To be announced"}</li>
+        <li>First Day of School: ${s.first_day || data.first_day || "To be announced"}</li>
+        <li>Class: ${data.class_name || "As assigned"}</li>
       </ul>
       <p><strong>Required Actions:</strong></p>
       <ol>
-        <li>Change your password on first login</li>
-        <li>Complete your student profile</li>
-        <li>Review the fee structure and payment schedule</li>
-        <li>Download the school calendar</li>
+        ${actions
+          .map((a) => `<li>${a.url ? `<a href="${a.url}">${a.label}</a>` : a.label}</li>`)
+          .join("")}
       </ol>
+      ${s.support_line ? `<p>${s.support_line}</p>` : ""}
       <p>We look forward to seeing you on campus!</p>
       <p>Best regards,<br>Al-Bari Group of Schools Administration</p>
     `,
-  }),
+    };
+  },
 };
 
 const outcomeLabel: Record<string, string> = {
@@ -287,10 +304,23 @@ serve(async (req) => {
       throw new Error("Application not found");
     }
 
+    // Admin-editable enrollment email content
+    let enrollmentSettings: Record<string, unknown> = {};
+    if (notification_type === "enrolled") {
+      const { data: rows } = await supabase
+        .from("app_settings")
+        .select("setting_key, setting_value")
+        .like("setting_key", "enrollment_email_%");
+      rows?.forEach((r: any) => {
+        enrollmentSettings[String(r.setting_key).replace("enrollment_email_", "")] = r.setting_value;
+      });
+    }
+
     // Prepare email data
     const emailData = {
       ...application,
       class_name: application.classes?.name,
+      enrollment_settings: enrollmentSettings,
       ...additional_data,
     };
 
