@@ -267,11 +267,14 @@ export type Database = {
           max_score: number | null
           percentage: number | null
           recorded_by: string | null
+          resit_date: string | null
           resit_sent_at: string | null
+          resit_venue: string | null
           result_sent_at: string | null
           result_status: string
           score: number | null
           source: string
+          subject_scores: Json
           updated_at: string
         }
         Insert: {
@@ -284,11 +287,14 @@ export type Database = {
           max_score?: number | null
           percentage?: number | null
           recorded_by?: string | null
+          resit_date?: string | null
           resit_sent_at?: string | null
+          resit_venue?: string | null
           result_sent_at?: string | null
           result_status?: string
           score?: number | null
           source?: string
+          subject_scores?: Json
           updated_at?: string
         }
         Update: {
@@ -301,11 +307,14 @@ export type Database = {
           max_score?: number | null
           percentage?: number | null
           recorded_by?: string | null
+          resit_date?: string | null
           resit_sent_at?: string | null
+          resit_venue?: string | null
           result_sent_at?: string | null
           result_status?: string
           score?: number | null
           source?: string
+          subject_scores?: Json
           updated_at?: string
         }
         Relationships: [
@@ -1592,8 +1601,10 @@ export type Database = {
           duration_minutes: number
           end_date: string | null
           exam_category: string | null
+          exam_mode: string
           id: string
           instructions: string | null
+          paper_subjects: Json
           pass_mark: number
           question_pool_size: number | null
           questions_per_student: number | null
@@ -1621,8 +1632,10 @@ export type Database = {
           duration_minutes?: number
           end_date?: string | null
           exam_category?: string | null
+          exam_mode?: string
           id?: string
           instructions?: string | null
+          paper_subjects?: Json
           pass_mark?: number
           question_pool_size?: number | null
           questions_per_student?: number | null
@@ -1650,8 +1663,10 @@ export type Database = {
           duration_minutes?: number
           end_date?: string | null
           exam_category?: string | null
+          exam_mode?: string
           id?: string
           instructions?: string | null
+          paper_subjects?: Json
           pass_mark?: number
           question_pool_size?: number | null
           questions_per_student?: number | null
@@ -4639,6 +4654,10 @@ export type Database = {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      attach_application_to_exam: {
+        Args: { p_application_id: string; p_exam_id: string }
+        Returns: string
+      }
       calculate_exam_score: {
         Args: { session_id_param: string }
         Returns: Json
@@ -4694,6 +4713,26 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_application_exam_results: {
+        Args: { p_application_id: string }
+        Returns: {
+          assignment_id: string
+          comment: string
+          exam_id: string
+          exam_mode: string
+          exam_title: string
+          max_score: number
+          paper_subjects: Json
+          percentage: number
+          resit_date: string
+          resit_sent_at: string
+          resit_venue: string
+          result_sent_at: string
+          result_status: string
+          score: number
+          subject_scores: Json
+        }[]
+      }
       get_application_tracking: {
         Args: { p_app_no: string; p_email: string }
         Returns: Json
@@ -4718,12 +4757,15 @@ export type Database = {
           online_percentage: number
           online_score: number
           percentage: number
+          resit_date: string
           resit_sent_at: string
+          resit_venue: string
           result_sent_at: string
           result_status: string
           score: number
           source: string
           status: string
+          subject_scores: Json
         }[]
       }
       get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
@@ -4790,14 +4832,35 @@ export type Database = {
         Returns: Json
       }
       resolve_scan_token: { Args: { p_token: string }; Returns: Json }
-      save_entrance_exam_result: {
+      save_entrance_exam_result:
+        | {
+            Args: {
+              p_assignment_id: string
+              p_comment: string
+              p_max_score: number
+              p_result_status: string
+              p_score: number
+              p_source?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_assignment_id: string
+              p_comment: string
+              p_max_score: number
+              p_result_status: string
+              p_score: number
+              p_source?: string
+              p_subject_scores?: Json
+            }
+            Returns: undefined
+          }
+      set_entrance_resit_details: {
         Args: {
           p_assignment_id: string
-          p_comment: string
-          p_max_score: number
-          p_result_status: string
-          p_score: number
-          p_source?: string
+          p_resit_date: string
+          p_resit_venue?: string
         }
         Returns: undefined
       }
