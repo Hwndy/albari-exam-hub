@@ -20,6 +20,7 @@ interface Receipt {
   contact_email?: string | null;
   application_number?: string | null;
   student_name?: string | null;
+  enrollment_pending?: boolean | null;
 }
 
 const formatMoney = (amount?: number | null, currency?: string | null) => {
@@ -101,6 +102,7 @@ export const PaymentCallbackPage = () => {
   };
 
   const isEnrollment = Boolean(receipt?.admission_number);
+  const enrollmentPending = Boolean(receipt?.enrollment_pending);
 
   const Row = ({ label, value, strong }: { label: string; value?: string | null; strong?: boolean }) =>
     value ? (
@@ -177,6 +179,13 @@ export const PaymentCallbackPage = () => {
                     <Row label="Admission No." value={receipt?.admission_number} strong />
                     <Row label="Student Login ID" value={receipt?.login_email} strong />
                     <Row label="Contact Email" value={(receipt as any)?.contact_email} />
+                    {enrollmentPending && (
+                      <p className="text-xs text-muted-foreground pt-2 border-t mt-2">
+                        Your payment has been received and recorded. The school is finalising your
+                        student record; your admission number and login details will be emailed to
+                        the contact address shortly. Please keep this receipt for your records.
+                      </p>
+                    )}
                     {isEnrollment && (
                       <p className="text-xs text-muted-foreground pt-2 border-t mt-2">
                         Sign in with the Student Login ID above (it is issued by the school and is unique to

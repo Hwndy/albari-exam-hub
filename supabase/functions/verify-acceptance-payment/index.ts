@@ -56,7 +56,9 @@ serve(async (req) => {
       }
 
       let enrollment: Record<string, unknown> | null = null;
+      let enrollmentPending = false;
 
+      try {
       const { data: payment } = await supabase
         .from("admission_payments")
         .select("application_id, amount")
@@ -90,14 +92,15 @@ serve(async (req) => {
               student_name: `${application.first_name} ${application.last_name}`,
             };
           } else {
-          // Generate admission number
-          const year = new Date().getFullYear();
-          const { count } = await supabase
-            .from("students")
-            .select("*", { count: "exact", head: true });
-          
-          const sequence = String((count || 0) + 1).padStart(4, "0");
-          const admissionNumber = `ALB/${year}/${sequence}`;
+          // Allocate a collision-free admission number from the database.
+          const { data: allocated, error: allocError } = await supabase.rpc(
+            "next_admission_number"
+          );
+          if (allocError || !allocated) {
+            console.error("Error allocating admission number:", allocError);
+            throw allocError ?? new Error("Could not allocate an admission number");
+          }
+          const admissionNumber = String(allocated);
 
           // ---------------------------------------------------------------
           // School-issued student login ID.
@@ -170,7 +173,20 @@ serve(async (req) => {
             const existing = list?.users?.find(
               (u: any) => (u.email ?? "").toLowerCase() === candidate.toLowerCase()
             );
-            if (existing && application.login_email) {
+            // A login derived from this applicant's own name/admission number
+            // may already exist from a previous failed attempt. Reuse it unless
+            // another application has claimed it.
+            let ownedByOther = false;
+            if (existing && !application.login_email) {
+              const { data: otherApp } = await supabase
+                .from("admission_applications")
+                .select("id")
+                .ilike("login_email", candidate)
+                .neq("id", payment.application_id)
+                .maybeSingle();
+              ownedByOther = Boolean(otherApp);
+            }
+            if (existing && !ownedByOther) {
               userId = existing.id;
               loginEmail = candidate;
               // Never reset a password the applicant may already have received.
@@ -221,35 +237,48 @@ serve(async (req) => {
             .eq("user_id", userId)
             .maybeSingle();
 
-          // Create student record
-          const { data: newStudent, error: studentError } = priorStudent
-            ? { data: priorStudent, error: null }
-            : await supabase
-            .from("students")
-            .insert({
-              user_id: userId,
-              admission_number: admissionNumber,
-              date_of_birth: application.date_of_birth,
-              gender: application.gender,
-              blood_group: application.blood_group,
-              address: application.address,
-              emergency_contact: application.parent_guardian_info,
-              medical_info: {
-                conditions: application.medical_conditions,
-                allergies: application.allergies,
-              },
-              admission_date: new Date().toISOString().split("T")[0],
-              status: "active",
-            })
-            .select()
-            .single();
-
-          if (studentError) {
-            console.error("Error creating student:", studentError);
-            throw studentError;
+          // Create the student record, retrying if another enrolment grabbed
+          // the same admission number in the meantime.
+          let newStudent: { id: string; admission_number: string } | null =
+            (priorStudent as any) ?? null;
+          let currentNumber = admissionNumber;
+          for (let attempt = 0; attempt < 5 && !newStudent; attempt++) {
+            const { data: inserted, error: studentError } = await supabase
+              .from("students")
+              .insert({
+                user_id: userId,
+                admission_number: currentNumber,
+                date_of_birth: application.date_of_birth,
+                gender: application.gender,
+                blood_group: application.blood_group,
+                address: application.address,
+                emergency_contact: application.parent_guardian_info,
+                medical_info: {
+                  conditions: application.medical_conditions,
+                  allergies: application.allergies,
+                },
+                admission_date: new Date().toISOString().split("T")[0],
+                status: "active",
+              })
+              .select()
+              .single();
+            if (!studentError) {
+              newStudent = inserted as any;
+              break;
+            }
+            if (studentError.code !== "23505") {
+              console.error("Error creating student:", studentError);
+              throw studentError;
+            }
+            console.warn("Admission number collision on", currentNumber, "- retrying");
+            const { data: retryNumber } = await supabase.rpc("next_admission_number");
+            if (!retryNumber) throw studentError;
+            currentNumber = String(retryNumber);
           }
+          if (!newStudent) throw new Error("Could not create the student record");
           const student = newStudent as { id: string; admission_number: string };
-          const finalAdmissionNumber = student.admission_number ?? admissionNumber;
+          const admissionNumberUsed = student.admission_number ?? currentNumber;
+          const finalAdmissionNumber = admissionNumberUsed;
 
           // Credit the acceptance fee against the student's school fees so the
           // "deducted from school fees" promise on the offer holds true.
@@ -449,6 +478,12 @@ serve(async (req) => {
           }
         }
       }
+      } catch (enrollError: any) {
+        // The money is confirmed at this point — never fail the receipt because
+        // a post-payment step broke. Flag it so admin can complete enrolment.
+        console.error("Enrollment failed after successful payment:", enrollError);
+        enrollmentPending = true;
+      }
 
       return new Response(
         JSON.stringify({
@@ -460,6 +495,7 @@ serve(async (req) => {
           reference,
           payment_method: paystackData.data.channel,
           paid_at: paystackData.data.paid_at ?? new Date().toISOString(),
+          enrollment_pending: enrollmentPending,
           ...(enrollment ?? {}),
         }),
         {
