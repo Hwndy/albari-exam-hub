@@ -57,7 +57,6 @@ export const NAV_SECTIONS: NavSection[] = [
     label: "Overview",
     items: [
       { id: "overview", title: "Dashboard", icon: LayoutDashboard, tab: "overview" },
-      { id: "analytics", title: "Analytics", icon: BarChart3, tab: "analytics" },
     ],
   },
   {
@@ -162,7 +161,19 @@ export const NAV_SECTIONS: NavSection[] = [
   {
     label: "Operations",
     items: [
-      { id: "fees", title: "Fees", icon: CreditCard, tab: "fees" },
+      {
+        id: "finance",
+        title: "Finance",
+        icon: CreditCard,
+        tab: "fees",
+        children: [
+          { title: "Fees & Income", tab: "fees", subtab: "fees" },
+          { title: "Expenses", tab: "fees", subtab: "expenses" },
+          { title: "Other Revenue", tab: "fees", subtab: "revenue" },
+          { title: "Payroll", tab: "fees", subtab: "payroll" },
+          { title: "Reports", tab: "fees", subtab: "reports" },
+        ],
+      },
       { id: "library", title: "Library", icon: Library, tab: "library" },
       { id: "transport", title: "Transport", icon: Bus, tab: "transport" },
       { id: "assets", title: "Assets", icon: Package, tab: "assets" },
