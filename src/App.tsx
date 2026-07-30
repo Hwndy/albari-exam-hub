@@ -21,6 +21,7 @@ import NotFound from '@/pages/NotFound';
 import { WebsiteRouter } from '@/pages/website/WebsiteRouter';
 import { TrackApplicationPage } from '@/pages/website/TrackApplicationPage';
 import { AcceptOfferPage } from '@/pages/website/AcceptOfferPage';
+import { PaymentCallbackPage } from '@/pages/website/PaymentCallbackPage';
 import { InstallPage } from '@/pages/InstallPage';
 import { InstallPrompt } from '@/components/pwa/InstallPrompt';
 import { OfflineIndicator } from '@/components/pwa/OfflineIndicator';
