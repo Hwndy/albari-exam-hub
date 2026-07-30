@@ -85,7 +85,7 @@ export const HomePage = () => {
       </Helmet>
 
       {/* Hero Section with Slideshow Background */}
-      <section className="relative min-h-[500px] flex items-center py-24 overflow-hidden">
+      <section className="relative min-h-[600px] lg:min-h-[680px] flex items-center py-20 lg:py-28 overflow-hidden">
         
         {/* Background Slideshow Layer */}
         <div className="absolute inset-0 z-0">
@@ -100,46 +100,78 @@ export const HomePage = () => {
             />
           ))}
           
-          {/* Constant dark scrim layer overlay + backdrop blur */}
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          {/* Directional scrim: dark on the left for text contrast, lighter on the right */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/25" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/30" />
         </div>
 
         {/* Content Layer */}
         <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-3xl space-y-6">
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+          <div className="lg:col-span-7 space-y-6">
             <Badge className="w-fit bg-primary text-primary-foreground border-none px-3 py-1 text-sm shadow-md">
               {heroBadge}
             </Badge>
             
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight tracking-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-[1.08] tracking-tight max-w-[15ch]">
               {heroTitle}
-              <span className="text-primary block mt-1 drop-shadow-sm text-white leading-tight tracking-tight">{heroTitleHighlight}</span>
+              <span className="block mt-1 text-primary drop-shadow-sm">{heroTitleHighlight}</span>
             </h1>
             
-            <p className="text-lg sm:text-xl text-slate-200 font-medium max-w-2xl leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-200/90 max-w-xl leading-relaxed">
               {heroSubtitle}
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <Button size="lg" className="shadow-lg text-base" asChild>
-                <Link to="/website/admissions">
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button size="lg" className="rounded-full px-7 shadow-lg text-base" asChild>
+                <Link to="/website/admissions/apply">
                   {heroCtaPrimary} <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button 
                 variant="outline" 
                 size="lg" 
-                className="bg-white/10 hover:bg-white/20 text-white border-white/30 backdrop-blur-sm shadow-lg text-base" 
+                className="rounded-full px-7 bg-white/10 hover:bg-white/20 hover:text-white text-white border-white/30 backdrop-blur-sm text-base"
                 asChild
               >
                 <Link to="/website/about">{heroCtaSecondary}</Link>
               </Button>
             </div>
           </div>
+
+            {/* Highlight card balances the composition on desktop */}
+            <div className="lg:col-span-5">
+              <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-6 sm:p-7 shadow-2xl">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
+                  <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
+                  Admissions open
+                </div>
+                <p className="mt-3 text-white/90 text-sm leading-relaxed">
+                  Applications for the new session are now being accepted across Nursery, Primary and Secondary.
+                </p>
+                <div className="mt-6 grid grid-cols-2 gap-4">
+                  {[
+                    { value: info.stat_students, label: 'Students' },
+                    { value: info.stat_teachers, label: 'Teachers' },
+                    { value: info.stat_success_rate, label: 'Success rate' },
+                    { value: info.stat_years, label: 'Years of excellence' },
+                  ].map((s) => (
+                    <div key={s.label} className="rounded-xl bg-white/10 border border-white/10 px-4 py-3">
+                      <div className="text-2xl font-bold text-white leading-none">{s.value}</div>
+                      <div className="mt-1 text-[11px] uppercase tracking-wide text-white/70">{s.label}</div>
+                    </div>
+                  ))}
+                </div>
+                <Button variant="secondary" className="mt-6 w-full rounded-full" asChild>
+                  <Link to="/website/track-application">Track your application</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Interactive Slide Navigation Dots Indicator */}
-        <div className="absolute bottom-6 right-6 z-20 flex space-x-2 bg-black/30 backdrop-blur-sm py-2 px-3 rounded-full border border-white/10">
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-2 bg-black/30 backdrop-blur-sm py-2 px-3 rounded-full border border-white/10">
           {heroImages.map((_, index) => (
             <button
               key={index}
