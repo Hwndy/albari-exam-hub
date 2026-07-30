@@ -173,7 +173,20 @@ serve(async (req) => {
             const existing = list?.users?.find(
               (u: any) => (u.email ?? "").toLowerCase() === candidate.toLowerCase()
             );
-            if (existing && application.login_email) {
+            // A login derived from this applicant's own name/admission number
+            // may already exist from a previous failed attempt. Reuse it unless
+            // another application has claimed it.
+            let ownedByOther = false;
+            if (existing && !application.login_email) {
+              const { data: otherApp } = await supabase
+                .from("admission_applications")
+                .select("id")
+                .ilike("login_email", candidate)
+                .neq("id", payment.application_id)
+                .maybeSingle();
+              ownedByOther = Boolean(otherApp);
+            }
+            if (existing && !ownedByOther) {
               userId = existing.id;
               loginEmail = candidate;
               // Never reset a password the applicant may already have received.
