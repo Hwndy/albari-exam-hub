@@ -258,11 +258,23 @@ export const FeeReceiptGenerator = () => {
           {selectedPayment && (
             <div ref={receiptRef} className="p-6 border rounded-lg bg-white">
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold">{schoolInfo?.name || "School Name"}</h2>
-                <p className="text-sm text-muted-foreground">{schoolInfo?.address || "School Address"}</p>
-                <p className="text-sm text-muted-foreground">
-                  Tel: {schoolInfo?.phone || ""} | Email: {schoolInfo?.email || ""}
-                </p>
+                {schoolInfo.logo_url && (
+                  <img
+                    src={schoolInfo.logo_url}
+                    alt={`${schoolInfo.name} logo`}
+                    className="h-16 mx-auto mb-2 object-contain"
+                  />
+                )}
+                <h2 className="text-xl font-bold uppercase">{schoolInfo.name}</h2>
+                {schoolInfo.address && <p className="text-sm text-muted-foreground">{schoolInfo.address}</p>}
+                {(schoolInfo.phone || schoolInfo.email) && (
+                  <p className="text-sm text-muted-foreground">
+                    {[schoolInfo.phone && `Tel: ${schoolInfo.phone}`, schoolInfo.email && `Email: ${schoolInfo.email}`]
+                      .filter(Boolean)
+                      .join("  |  ")}
+                  </p>
+                )}
+                {schoolInfo.motto && <p className="text-xs italic text-muted-foreground">“{schoolInfo.motto}”</p>}
               </div>
 
               <h3 className="text-lg font-bold text-center mb-4 border-y py-2">FEE RECEIPT</h3>
