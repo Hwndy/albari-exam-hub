@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserCheck } from 'lucide-react';
+import { PhotoUpload } from '@/components/shared/PhotoUpload';
 
 /**
  * Shown to newly enrolled students until the essential profile fields are filled.
@@ -109,10 +110,16 @@ export const ProfileCompletionPrompt: React.FC = () => {
             <Label htmlFor="sp-city">City</Label>
             <Input id="sp-city" value={city} onChange={(e) => setCity(e.target.value)} />
           </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="sp-photo">Passport Photo URL</Label>
-            <Input id="sp-photo" value={photoUrl} onChange={(e) => setPhotoUrl(e.target.value)} placeholder="https://…" />
-          </div>
+          {user && (
+            <div className="space-y-1.5 sm:col-span-2">
+              <PhotoUpload
+                id="sp-photo"
+                value={photoUrl}
+                onChange={setPhotoUrl}
+                folder={`students/${user.id}`}
+              />
+            </div>
+          )}
         </div>
         <Button onClick={save} disabled={saving}>
           {saving ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving…</> : 'Save profile'}
