@@ -200,7 +200,7 @@ export const PayrollHub: React.FC = () => {
           allowances,
           deductions,
           net_pay: gross - sum(deductions),
-          status: 'pending',
+          status: 'draft',
           bank_name: d.bank_details?.bank_name || null,
           bank_account: d.bank_details?.account_number || null,
         };
