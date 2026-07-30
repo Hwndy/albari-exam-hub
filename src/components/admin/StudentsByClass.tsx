@@ -38,6 +38,7 @@ import { UserEditModal } from './UserEditModal';
 import { StudentIDCard } from './StudentIDCard';
 import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
 import html2canvas from 'html2canvas';
+import { printNode } from '@/lib/print-node';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -531,7 +532,7 @@ export const StudentsByClass: React.FC = () => {
                   onClick={() =>
                     printNode(document.getElementById('student-id-card'), {
                       title: `ID Card — ${idCardStudent.full_name}`,
-                      pageSize: '54mm 85.6mm',
+                      pageSize: '95.3mm 160mm',
                       pageMargin: '0',
                     })
                   }
