@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -115,11 +115,11 @@ export const TimetableManager: React.FC = () => {
       const teacherUserIds = new Set(teacherRoles?.map(r => r.user_id) || []);
       const teacherProfiles = (profilesRes.data || []).filter(p => teacherUserIds.has(p.user_id));
 
-      setClasses(classesRes.data || []);
-      setSubjects(subjectsRes.data || []);
-      setPeriods(periodsRes.data || []);
-      setRooms(roomsRes.data || []);
-      setTeachers(teacherProfiles);
+      setClasses((classesRes.data || []).filter((c: any) => !!c.id));
+      setSubjects((subjectsRes.data || []).filter((s: any) => !!s.id));
+      setPeriods((periodsRes.data || []).filter((p: any) => !!p.id));
+      setRooms((roomsRes.data || []).filter((r: any) => !!r.id));
+      setTeachers(teacherProfiles.filter((t: any) => !!t.user_id));
 
       if (classesRes.data && classesRes.data.length > 0) {
         setSelectedClass(classesRes.data[0].id);
@@ -279,7 +279,18 @@ export const TimetableManager: React.FC = () => {
 
   const openEntryDialog = (dayIndex: number, periodId: string) => {
     const existing = getEntryForSlot(dayIndex, periodId);
-    setEditingEntry(existing || { day_of_week: dayIndex, period_id: periodId });
+    setEditingEntry(
+      existing
+        ? { ...existing }
+        : {
+            day_of_week: dayIndex,
+            period_id: periodId,
+            class_id: selectedClass,
+            subject_id: undefined,
+            teacher_id: undefined,
+            room_id: null,
+          } as any
+    );
     setIsDialogOpen(true);
   };
 
@@ -439,12 +450,13 @@ export const TimetableManager: React.FC = () => {
       )}
 
       {/* Entry Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) setEditingEntry(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {editingEntry?.id ? 'Edit Timetable Entry' : 'Add Timetable Entry'}
             </DialogTitle>
+            <DialogDescription>Choose the subject, teacher and room for this slot.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">

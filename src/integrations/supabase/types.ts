@@ -1717,6 +1717,98 @@ export type Database = {
           },
         ]
       }
+      expense_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expenses: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          category_id: string | null
+          created_at: string
+          description: string | null
+          expense_date: string
+          id: string
+          payee: string | null
+          payment_method: string
+          receipt_url: string | null
+          recorded_by: string | null
+          reference: string | null
+          source: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          payee?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          expense_date?: string
+          id?: string
+          payee?: string | null
+          payment_method?: string
+          receipt_url?: string | null
+          recorded_by?: string | null
+          reference?: string | null
+          source?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_installment_plans: {
         Row: {
           created_at: string | null
@@ -2798,6 +2890,56 @@ export type Database = {
         }
         Relationships: []
       }
+      other_revenue: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          payment_method: string
+          recorded_by: string | null
+          reference: string | null
+          revenue_date: string
+          source: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference?: string | null
+          revenue_date?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          payment_method?: string
+          recorded_by?: string | null
+          reference?: string | null
+          revenue_date?: string
+          source?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "other_revenue_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "revenue_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parent_messages: {
         Row: {
           body: string
@@ -2915,6 +3057,7 @@ export type Database = {
       payroll_items: {
         Row: {
           allowances: Json
+          basic_salary: number
           created_at: string
           deductions: Json
           gross_salary: number
@@ -2929,6 +3072,7 @@ export type Database = {
         }
         Insert: {
           allowances?: Json
+          basic_salary?: number
           created_at?: string
           deductions?: Json
           gross_salary?: number
@@ -2943,6 +3087,7 @@ export type Database = {
         }
         Update: {
           allowances?: Json
+          basic_salary?: number
           created_at?: string
           deductions?: Json
           gross_salary?: number
@@ -2967,8 +3112,11 @@ export type Database = {
       }
       payroll_periods: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           created_by: string | null
+          expense_id: string | null
           id: string
           notes: string | null
           period_month: string
@@ -2976,8 +3124,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          expense_id?: string | null
           id?: string
           notes?: string | null
           period_month: string
@@ -2985,15 +3136,26 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           created_by?: string | null
+          expense_id?: string | null
           id?: string
           notes?: string | null
           period_month?: string
           status?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payroll_periods_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       paystack_webhooks: {
         Row: {
@@ -3642,6 +3804,33 @@ export type Database = {
         }
         Relationships: []
       }
+      revenue_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       rooms: {
         Row: {
           capacity: number | null
@@ -3675,6 +3864,42 @@ export type Database = {
           room_number?: string
           room_type?: string | null
           updated_at?: string | null
+        }
+        Relationships: []
+      }
+      salary_components: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          is_active: boolean
+          is_percentage: boolean
+          kind: string
+          name: string
+          staff_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          kind?: string
+          name: string
+          staff_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_percentage?: boolean
+          kind?: string
+          name?: string
+          staff_id?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -4776,6 +5001,10 @@ export type Database = {
         }[]
       }
       get_fees_dashboard: { Args: { p_class_id?: string }; Returns: Json }
+      get_finance_summary: {
+        Args: { p_end: string; p_start: string }
+        Returns: Json
+      }
       get_grade_for_score: { Args: { _score: number }; Returns: Json }
       get_offer_by_token: { Args: { p_token: string }; Returns: Json }
       get_or_create_scan_session: { Args: { p_date: string }; Returns: string }

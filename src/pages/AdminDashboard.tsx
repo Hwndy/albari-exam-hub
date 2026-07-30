@@ -27,7 +27,7 @@ import { SchoolInfoEditor } from '@/components/admin/CMS/SchoolInfoEditor';
 import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { FeesHub } from '@/components/admin/fees/FeesHub';
+import { FinanceHub } from '@/components/admin/finance/FinanceHub';
 import { TimetableManager } from '@/components/admin/TimetableManager';
 import { ReportCardGenerator } from '@/components/admin/ReportCardGenerator';
 import { ResultsManagement } from '@/components/admin/results/ResultsManagement';
@@ -42,7 +42,6 @@ import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
 import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
 import { SettingsHub } from '@/components/admin/SettingsHub';
 import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
-import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { LeaveManagement } from '@/components/admin/hr/LeaveManagement';
 import { PayrollHub } from '@/components/admin/hr/PayrollHub';
 import { CareersManager } from '@/components/admin/hr/CareersManager';
@@ -295,7 +294,7 @@ export const AdminDashboard = () => {
     }
 
     if (activeTab === 'fees') {
-      return <FeesHub />;
+      return <FinanceHub subtab={activeSubTab} />;
     }
 
     if (activeTab === 'library') {
@@ -330,7 +329,6 @@ export const AdminDashboard = () => {
       return <AttendanceReports />;
     }
 
-    if (activeTab === 'analytics') return <AnalyticsDashboard />;
     if (activeTab === 'transport') return <TransportHub />;
     if (activeTab === 'assets') return <AssetsHub />;
     if (activeTab === 'hr') {
