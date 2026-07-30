@@ -25,6 +25,7 @@ interface ExistingOffer {
   status: string;
   accepted_at: string | null;
   declined_at: string | null;
+  acceptance_fee: number | null;
 }
 
 export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
@@ -38,16 +39,34 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
   const [loading, setLoading] = useState(false);
   const [existingOffer, setExistingOffer] = useState<ExistingOffer | null>(null);
   const [checkingOffer, setCheckingOffer] = useState(true);
+  const [fee, setFee] = useState<string>('50000');
+  const [feeNote, setFeeNote] = useState<string>('');
 
   useEffect(() => {
     checkExistingOffer();
+    loadDefaults();
   }, [applicationId]);
+
+  const loadDefaults = async () => {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('setting_key, setting_value')
+      .in('setting_key', ['acceptance_fee_amount', 'acceptance_fee_note']);
+
+    data?.forEach((row) => {
+      if (row.setting_key === 'acceptance_fee_amount' && row.setting_value != null) {
+        setFee(String(row.setting_value));
+      } else if (row.setting_key === 'acceptance_fee_note' && row.setting_value != null) {
+        setFeeNote(String(row.setting_value));
+      }
+    });
+  };
 
   const checkExistingOffer = async () => {
     try {
       const { data, error } = await supabase
         .from('admission_offers')
-        .select('id, offer_letter_url, acceptance_deadline, status, accepted_at, declined_at')
+        .select('id, offer_letter_url, acceptance_deadline, status, accepted_at, declined_at, acceptance_fee')
         .eq('application_id', applicationId)
         .order('created_at', { ascending: false })
         .limit(1)
@@ -55,6 +74,7 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
 
       if (!error && data) {
         setExistingOffer(data);
+        if (data.acceptance_fee != null) setFee(String(data.acceptance_fee));
       }
     } catch (error) {
       console.error('Error checking existing offer:', error);
@@ -68,6 +88,16 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
       toast({
         title: 'Missing Information',
         description: 'Please select an acceptance deadline',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    const feeAmount = Number(fee);
+    if (!Number.isFinite(feeAmount) || feeAmount <= 0) {
+      toast({
+        title: 'Invalid Fee',
+        description: 'Enter an acceptance fee greater than zero',
         variant: 'destructive',
       });
       return;
@@ -92,6 +122,7 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
         body: {
           application_id: applicationId,
           acceptance_deadline: deadline.toISOString(),
+          acceptance_fee: feeAmount,
         },
       });
 
@@ -207,6 +238,18 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
 
         <div className="space-y-4">
           <div className="space-y-2">
+            <Label>Acceptance Fee (₦)</Label>
+            <Input
+              type="number"
+              min={0}
+              step={500}
+              value={fee}
+              onChange={(e) => setFee(e.target.value)}
+            />
+            {feeNote && <p className="text-xs text-muted-foreground">{feeNote}</p>}
+          </div>
+
+          <div className="space-y-2">
             <Label>Acceptance Deadline</Label>
             <Popover>
               <PopoverTrigger asChild>
@@ -238,7 +281,7 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
             <ul className="list-disc list-inside space-y-1 text-muted-foreground">
               <li>Congratulations message</li>
               <li>Admission details (class, session)</li>
-              <li>Acceptance fee amount (₦50,000)</li>
+              <li>Acceptance fee amount (₦{Number(fee || 0).toLocaleString()})</li>
               <li>Accept/Decline buttons</li>
               <li>Payment instructions</li>
               <li><strong>PDF offer letter attachment</strong></li>

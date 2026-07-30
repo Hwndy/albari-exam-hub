@@ -47,6 +47,7 @@ function getReplyToEmail(envName: string, fallback: string): string {
 interface OfferLetterRequest {
   application_id: string;
   acceptance_deadline: string;
+  acceptance_fee?: number;
 }
 
 // Helper function to send email with retry logic
@@ -109,7 +110,12 @@ async function getLetterheadDataUrl(): Promise<string | null> {
 }
 
 // Function to generate offer letter PDF
-async function generateOfferLetterPDF(application: any, acceptanceDeadline: string): Promise<Uint8Array> {
+async function generateOfferLetterPDF(
+  application: any,
+  acceptanceDeadline: string,
+  acceptanceFee: number,
+  acceptanceFeeNote: string,
+): Promise<Uint8Array> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 20;
@@ -188,6 +194,9 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
   
   yPos += 7;
+  doc.text(`Acceptance Fee: NGN ${Number(acceptanceFee || 0).toLocaleString('en-NG')}`, 20, yPos);
+
+  yPos += 7;
   doc.setTextColor(220, 38, 38);
   doc.setFont('helvetica', 'bold');
   doc.text(`Acceptance Deadline: ${new Date(acceptanceDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
@@ -195,6 +204,13 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   yPos += 20;
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
+
+  if (acceptanceFeeNote) {
+    doc.setFontSize(10);
+    const splitNote = doc.splitTextToSize(acceptanceFeeNote, pageWidth - 40);
+    doc.text(splitNote, 20, yPos - 8);
+    yPos += (splitNote.length - 1) * 5;
+  }
 
   // Next Steps
   doc.setFont('helvetica', 'bold');
@@ -275,7 +291,28 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { application_id, acceptance_deadline }: OfferLetterRequest = await req.json();
+    const { application_id, acceptance_deadline, acceptance_fee }: OfferLetterRequest = await req.json();
+
+    // Resolve fee + note: explicit request value wins, otherwise fall back to admin settings.
+    const { data: settingsRows } = await supabase
+      .from("app_settings")
+      .select("setting_key, setting_value")
+      .in("setting_key", ["acceptance_fee_amount", "acceptance_fee_note"]);
+
+    const settings = Object.fromEntries(
+      (settingsRows ?? []).map((r: any) => [r.setting_key, r.setting_value])
+    );
+    const acceptanceFee = Number(
+      acceptance_fee ?? settings.acceptance_fee_amount ?? 50000
+    );
+    const acceptanceFeeNote = String(
+      settings.acceptance_fee_note ??
+        "This acceptance fee will be deducted from your child's school fees."
+    );
+
+    if (!Number.isFinite(acceptanceFee) || acceptanceFee <= 0) {
+      throw new Error("Invalid acceptance fee amount");
+    }
 
     console.log("Sending offer letter for:", application_id);
 
@@ -305,7 +342,12 @@ serve(async (req) => {
 
     // Generate PDF
     console.log("Generating offer letter PDF...");
-    const pdfBuffer = await generateOfferLetterPDF(application, acceptance_deadline);
+    const pdfBuffer = await generateOfferLetterPDF(
+      application,
+      acceptance_deadline,
+      acceptanceFee,
+      acceptanceFeeNote,
+    );
     
     if (existingOffer) {
       console.log("Offer already exists, updating instead of creating new one");
@@ -350,6 +392,7 @@ serve(async (req) => {
         .update({
           acceptance_deadline,
           acceptance_token: acceptanceToken,
+          acceptance_fee: acceptanceFee,
           offer_letter_url: offerLetterUrl,
           status: "sent",
           updated_at: new Date().toISOString()
@@ -399,7 +442,7 @@ serve(async (req) => {
           application_id,
           acceptance_deadline,
           acceptance_token: acceptanceToken,
-          acceptance_fee: 50000,
+          acceptance_fee: acceptanceFee,
           status: "sent",
           offer_letter_url: offerLetterUrl,
         });
@@ -456,7 +499,12 @@ serve(async (req) => {
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
                   <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">&#8358;${acceptanceFee.toLocaleString('en-NG')}</td>
+                </tr>
               </table>
+              <p style="margin: 12px 0 0 0; color: #1e40af; font-size: 13px;">${acceptanceFeeNote}</p>
             </div>
 
             <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">

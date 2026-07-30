@@ -4,7 +4,8 @@ import { SchoolInfoEditor } from '@/components/admin/CMS/SchoolInfoEditor';
 import { SiteSettingsEditor } from '@/components/admin/CMS/SiteSettingsEditor';
 import { StaffAttendance } from '@/components/admin/StaffAttendance';
 import { GradingScaleEditor } from '@/components/admin/GradingScaleEditor';
-import { School, Globe, Users, GraduationCap } from 'lucide-react';
+import { AdmissionSettingsEditor } from '@/components/admin/AdmissionSettingsEditor';
+import { School, Globe, Users, GraduationCap, Receipt } from 'lucide-react';
 
 /**
  * Admin Settings hub — brings school profile, website settings and staff HR-facing
@@ -23,11 +24,13 @@ export const SettingsHub: React.FC = () => {
           <TabsTrigger value="site"><Globe className="h-4 w-4 mr-1" /> Website</TabsTrigger>
           <TabsTrigger value="staff-attendance"><Users className="h-4 w-4 mr-1" /> Staff Attendance</TabsTrigger>
           <TabsTrigger value="grading"><GraduationCap className="h-4 w-4 mr-1" /> Grading Scale</TabsTrigger>
+          <TabsTrigger value="admissions"><Receipt className="h-4 w-4 mr-1" /> Admissions</TabsTrigger>
         </TabsList>
         <TabsContent value="school"><SchoolInfoEditor /></TabsContent>
         <TabsContent value="site"><SiteSettingsEditor /></TabsContent>
         <TabsContent value="staff-attendance"><StaffAttendance /></TabsContent>
         <TabsContent value="grading"><GradingScaleEditor /></TabsContent>
+        <TabsContent value="admissions"><AdmissionSettingsEditor /></TabsContent>
       </Tabs>
     </div>
   );

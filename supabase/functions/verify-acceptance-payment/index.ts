@@ -57,7 +57,7 @@ serve(async (req) => {
 
       const { data: payment } = await supabase
         .from("admission_payments")
-        .select("application_id")
+        .select("application_id, amount")
         .eq("transaction_id", reference)
         .single();
 
@@ -122,6 +122,35 @@ serve(async (req) => {
           if (studentError) {
             console.error("Error creating student:", studentError);
             throw studentError;
+          }
+
+          // Credit the acceptance fee against the student's school fees so the
+          // "deducted from school fees" promise on the offer holds true.
+          const acceptanceAmount = Number(payment.amount ?? paystackData.data.amount / 100);
+          if (Number.isFinite(acceptanceAmount) && acceptanceAmount > 0) {
+            const { data: existingCredit } = await supabase
+              .from("fee_payments")
+              .select("id")
+              .eq("transaction_id", reference)
+              .maybeSingle();
+            if (existingCredit) {
+              console.log("Acceptance fee already credited for", reference);
+            } else {
+            const { error: creditError } = await supabase.from("fee_payments").insert({
+              student_id: student.id,
+              amount_paid: acceptanceAmount,
+              payment_method: paystackData.data.channel || "paystack",
+              transaction_id: reference,
+              payment_reference: reference,
+              status: "completed",
+              paid_at: new Date().toISOString(),
+              notes: "Acceptance fee credited towards school fees",
+              metadata: { source: "acceptance_fee", application_id: payment.application_id },
+            });
+            if (creditError) {
+              console.error("Error crediting acceptance fee to school fees:", creditError);
+            }
+            }
           }
 
           // Assign to class

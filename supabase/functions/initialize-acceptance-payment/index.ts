@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface PaymentRequest {
   application_id: string;
-  amount: number;
+  amount?: number;
   email: string;
   callback_url: string;
 }
@@ -25,7 +25,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { application_id, amount, email, callback_url }: PaymentRequest = await req.json();
+    const { application_id, email, callback_url }: PaymentRequest = await req.json();
 
     console.log("Initializing acceptance fee payment for:", application_id);
 
@@ -36,6 +36,30 @@ serve(async (req) => {
       .single();
 
     if (appError) throw new Error("Application not found");
+
+    // Never trust a client-supplied amount: use the fee stored on the offer,
+    // falling back to the configured admin default.
+    const { data: offer } = await supabase
+      .from("admission_offers")
+      .select("acceptance_fee")
+      .eq("application_id", application_id)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let amount = Number(offer?.acceptance_fee ?? 0);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      const { data: setting } = await supabase
+        .from("app_settings")
+        .select("setting_value")
+        .eq("setting_key", "acceptance_fee_amount")
+        .maybeSingle();
+      amount = Number(setting?.setting_value ?? 50000);
+    }
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Acceptance fee is not configured");
+    }
 
     const paystackResponse = await fetch("https://api.paystack.co/transaction/initialize", {
       method: "POST",
