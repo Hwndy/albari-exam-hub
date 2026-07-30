@@ -499,7 +499,12 @@ serve(async (req) => {
                   <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
                   <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
                 </tr>
+                <tr>
+                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
+                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">&#8358;${acceptanceFee.toLocaleString('en-NG')}</td>
+                </tr>
               </table>
+              <p style="margin: 12px 0 0 0; color: #1e40af; font-size: 13px;">${acceptanceFeeNote}</p>
             </div>
 
             <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">
