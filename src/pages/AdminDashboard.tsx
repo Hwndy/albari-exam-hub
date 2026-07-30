@@ -427,106 +427,28 @@ export const AdminDashboard = () => {
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto p-4 lg:p-6 space-y-6">
-              {/* Stats Grid - Only on Overview */}
+              {/* Compact KPI row — only on Overview */}
               {activeTab === 'overview' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Users className="h-6 w-6 text-primary" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                  {[
+                    { label: 'Students', value: stats.totalStudents, icon: Users },
+                    { label: 'Teachers', value: stats.totalTeachers, icon: Shield },
+                    { label: 'Classes', value: stats.totalClasses, icon: School },
+                    { label: 'Subjects', value: stats.totalSubjects, icon: BookOpen },
+                    { label: 'Active Exams', value: `${stats.activeExams}/${stats.totalExams}`, icon: FileText },
+                    { label: 'Questions', value: stats.totalQuestions, icon: TrendingUp },
+                    { label: 'Live Sessions', value: stats.activeSessions, icon: Clock },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <Card key={label} className="shadow-sm">
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="text-[11px] uppercase tracking-wide truncate">{label}</span>
                         </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalStudents}</p>
-                          <p className="text-sm text-muted-foreground">Students</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
-                          <Shield className="h-6 w-6 text-secondary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalTeachers}</p>
-                          <p className="text-sm text-muted-foreground">Teachers</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-accent/10 rounded-lg">
-                          <School className="h-6 w-6 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalClasses}</p>
-                          <p className="text-sm text-muted-foreground">Classes</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <BookOpen className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalSubjects}</p>
-                          <p className="text-sm text-muted-foreground">Subjects</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
-                          <FileText className="h-6 w-6 text-secondary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : `${stats.activeExams}/${stats.totalExams}`}</p>
-                          <p className="text-sm text-muted-foreground">Active Exams</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-accent/10 rounded-lg">
-                          <TrendingUp className="h-6 w-6 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalQuestions}</p>
-                          <p className="text-sm text-muted-foreground">Questions</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Clock className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.activeSessions}</p>
-                          <p className="text-sm text-muted-foreground">Live Sessions</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <p className="text-xl font-bold mt-1">{isLoading ? '—' : value}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
 
