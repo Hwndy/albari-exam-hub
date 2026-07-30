@@ -86,85 +86,62 @@ interface NotificationRequest {
   additional_data?: any;
 }
 
+const SCHOOL_SIGNOFF = `
+      <p style="margin-top:24px;">Yours faithfully,<br><br>
+        <strong>Admissions Officer</strong><br>
+        <span style="color:#6b7280;font-size:13px;">Al-Bari College, 1 Al-Bari Close, Behind UBA, Badagry Market Road, Badagry, Lagos &middot; 08028152097</span>
+      </p>`;
+
 const emailTemplates: Record<string, (data: any) => { subject: string; html: string }> = {
   submitted: (data: any) => ({
-    subject: `Application Received - ${data.application_number}`,
+    subject: `Application received - ${data.application_number}`,
     html: `
-      <h1>Application Received!</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Thank you for applying to Al-Bari Group of Schools. We have successfully received your application.</p>
-      <p><strong>Application Number:</strong> ${data.application_number}</p>
-      <p>You will receive updates on your application status via email.</p>
-      <p>Next Steps:</p>
-      <ul>
-        <li>Your application will be reviewed by our admissions team</li>
-        <li>You may be contacted for an interview</li>
-        <li>Track your application status online using your application number</li>
-      </ul>
-      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+      <p>Your application to Al-Bari College has been received and entered into our records. Please quote the reference below in any correspondence.</p>
+      <p><strong>Application number:</strong> ${data.application_number}</p>
+      <p>The admissions team will review the application and contact you about the entrance assessment and interview. You can also check progress at any time using the application number on our website.</p>
+      ${SCHOOL_SIGNOFF}
     `,
   }),
   under_review: (data: any) => ({
-    subject: `Application Under Review - ${data.application_number}`,
+    subject: `Application under review - ${data.application_number}`,
     html: `
-      <h1>Application Under Review</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Your application (${data.application_number}) is currently under review by our admissions team.</p>
-      <p>We will contact you soon with the next steps.</p>
-      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+      <p>Application ${data.application_number} is now with the admissions committee for review. No further action is required from you at this stage; we will write again once a date has been set for the next step.</p>
+      ${SCHOOL_SIGNOFF}
     `,
   }),
   interview_scheduled: (data: any) => ({
-    subject: `Interview Scheduled - ${data.application_number}`,
+    subject: `Interview appointment - ${data.application_number}`,
     html: `
-      <h1>Interview Scheduled</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Congratulations! Your application has progressed to the interview stage.</p>
-      <p><strong>Interview Details:</strong></p>
-      <ul>
-        <li>Date: ${data.interview_date || 'To be confirmed'}</li>
-        <li>Time: ${data.interview_time || 'To be confirmed'}</li>
-        <li>Location: ${data.interview_location || 'Al-Bari Group of Schools Campus'}</li>
-      </ul>
-      <p>Please arrive 15 minutes early and bring the following:</p>
-      <ul>
-        <li>Valid ID</li>
-        <li>Original academic certificates</li>
-        <li>Birth certificate</li>
-      </ul>
-      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+      <p>Your application has progressed to the interview stage. Details of the appointment are set out below.</p>
+      <p>
+        <strong>Date:</strong> ${data.interview_date || 'To be confirmed'}<br>
+        <strong>Time:</strong> ${data.interview_time || 'To be confirmed'}<br>
+        <strong>Venue:</strong> ${data.interview_location || 'Al-Bari College, Badagry, Lagos'}
+      </p>
+      <p>Please arrive fifteen minutes early with a valid means of identification, the original academic records and the birth certificate submitted with the application.</p>
+      ${SCHOOL_SIGNOFF}
     `,
   }),
   accepted: (data: any) => ({
-    subject: `🎉 Admission Offer - ${data.application_number}`,
+    subject: `Offer of provisional admission - ${data.application_number}`,
     html: `
-      <h1>Congratulations! Admission Offer</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>We are delighted to offer you admission to Al-Bari Group of Schools for the academic year ${new Date().getFullYear()}/${new Date().getFullYear() + 1}.</p>
-      <p><strong>Application Number:</strong> ${data.application_number}</p>
-      <p><strong>Class:</strong> ${data.class_name || 'As applied'}</p>
-      <p><strong>Next Steps:</strong></p>
-      <ol>
-        <li>Accept your admission offer by paying the acceptance fee</li>
-        <li>Complete the enrollment process</li>
-        <li>Attend orientation on the specified date</li>
-      </ol>
-      <p>Payment Instructions:</p>
-      <p>Please proceed to complete your acceptance fee payment to secure your spot.</p>
-      <p>Welcome to the Al-Bari Group of Schools family!</p>
-      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+      <p>Following the assessment of your application, a place has been offered to you in ${data.class_name || 'the class applied for'} at Al-Bari College for the ${new Date().getFullYear()}/${new Date().getFullYear() + 1} academic session.</p>
+      <p><strong>Application number:</strong> ${data.application_number}</p>
+      <p>The offer is provisional until the acceptance fee is paid and your original documents are sighted at the school office. The formal offer letter, with the fee and the payment deadline, follows in a separate message.</p>
+      ${SCHOOL_SIGNOFF}
     `,
   }),
   rejected: (data: any) => ({
-    subject: `Application Status Update - ${data.application_number}`,
+    subject: `Outcome of your application - ${data.application_number}`,
     html: `
-      <h1>Application Status Update</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>Thank you for your interest in Al-Bari Group of Schools.</p>
-      <p>After careful consideration, we regret to inform you that we are unable to offer you admission at this time.</p>
-      <p>We received an overwhelming number of applications this year, and our decision was difficult given the high caliber of all applicants.</p>
-      <p>We encourage you to reapply in the future and wish you the very best in your educational journey.</p>
-      <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+      <p>Thank you for applying to Al-Bari College. After reviewing application ${data.application_number}, the admissions committee is unable to offer you a place for this session.</p>
+      <p>The decision reflects the number of places available in the class applied for and does not prevent you from applying again in a future admission cycle. We wish you every success.</p>
+      ${SCHOOL_SIGNOFF}
     `,
   }),
   enrolled: (data: any) => {
@@ -173,56 +150,50 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
     const actions: Array<{ label: string; url?: string }> = Array.isArray(s.required_actions) && s.required_actions.length
       ? s.required_actions
       : [
-          { label: "Sign in and change your temporary password", url: portal },
-          { label: "Complete your student profile", url: `${portal}` },
-          { label: "Review the fee structure and payment schedule", url: `${portal}` },
-          { label: "Download the school calendar", url: s.calendar_url || "" },
+          { label: "Sign in and change the temporary password", url: portal },
+          { label: "Complete the student profile", url: portal },
+          { label: "Review the fee structure and payment schedule", url: portal },
         ];
     const password = data.temporary_password;
     const studentLogin = data.login_email || data.email;
     const parentEmail = data.parent_email || data.contact_email || data.email;
     const parentPassword = data.parent_temporary_password;
     return {
-      subject: `🎓 Welcome to Al-Bari Group of Schools - Login Credentials`,
+      subject: `Enrolment confirmed - portal access for ${data.first_name} ${data.last_name}`,
       html: `
-      <h1>Welcome to Al-Bari Group of Schools!</h1>
       <p>Dear ${data.first_name} ${data.last_name},</p>
-      <p>${s.intro || "Your enrollment is now complete! Here are your login credentials for the student portal."}</p>
-      <div style="border:1px solid #d4d4d4;border-radius:8px;padding:16px;margin:16px 0;background:#f7faf3;">
-        <p style="margin:0 0 8px;"><strong>Student Portal Login</strong></p>
-        <p style="margin:4px 0;"><strong>Portal:</strong> <a href="${portal}">${portal}</a></p>
-        <p style="margin:4px 0;"><strong>Student Login ID:</strong> ${studentLogin}</p>
-        <p style="margin:4px 0;"><strong>Admission Number:</strong> ${data.admission_number || "-"}</p>
+      <p>${s.intro || "Enrolment is now complete. The portal details below give access to results, attendance, timetable and school fees."}</p>
+      <div style="border:1px solid #d4d4d4;border-radius:6px;padding:16px;margin:16px 0;background:#f7faf3;">
+        <p style="margin:0 0 8px;"><strong>Student portal</strong></p>
+        <p style="margin:4px 0;">Address: <a href="${portal}">${portal}</a></p>
+        <p style="margin:4px 0;">Login ID: ${studentLogin}</p>
+        <p style="margin:4px 0;">Admission number: ${data.admission_number || "-"}</p>
         ${password
-          ? `<p style="margin:4px 0;"><strong>Temporary Password:</strong> <code style="font-size:16px;letter-spacing:1px;">${password}</code></p>
-             <p style="margin:8px 0 0;color:#8a5300;">For your security you will be asked to change this password the first time you sign in.</p>`
-          : `<p style="margin:4px 0;"><strong>Temporary Password:</strong> Sent separately by the admissions office.</p>`}
-        <p style="margin:10px 0 0;color:#555;font-size:13px;">This login ID is issued by the school. It is used to sign in only — it does not receive email. All school emails continue to come to ${parentEmail}.</p>
+          ? `<p style="margin:4px 0;">Temporary password: <code style="font-size:15px;letter-spacing:1px;">${password}</code></p>
+             <p style="margin:8px 0 0;color:#8a5300;">You will be asked to set a new password at first sign-in.</p>`
+          : `<p style="margin:4px 0;">The temporary password is issued separately by the admissions office.</p>`}
+        <p style="margin:10px 0 0;color:#555;font-size:13px;">The login ID is issued by the school for sign-in only; it does not receive email. School correspondence continues to go to ${parentEmail}.</p>
       </div>
-      <div style="border:1px solid #d4d4d4;border-radius:8px;padding:16px;margin:16px 0;background:#f4f7fb;">
-        <p style="margin:0 0 8px;"><strong>Parent Portal Login</strong></p>
-        <p style="margin:4px 0;"><strong>Portal:</strong> <a href="${portal}">${portal}</a></p>
-        <p style="margin:4px 0;"><strong>Email:</strong> ${parentEmail}</p>
+      <div style="border:1px solid #d4d4d4;border-radius:6px;padding:16px;margin:16px 0;background:#f4f7fb;">
+        <p style="margin:0 0 8px;"><strong>Parent portal</strong></p>
+        <p style="margin:4px 0;">Address: <a href="${portal}">${portal}</a></p>
+        <p style="margin:4px 0;">Email: ${parentEmail}</p>
         ${parentPassword
-          ? `<p style="margin:4px 0;"><strong>Temporary Password:</strong> <code style="font-size:16px;letter-spacing:1px;">${parentPassword}</code></p>`
+          ? `<p style="margin:4px 0;">Temporary password: <code style="font-size:15px;letter-spacing:1px;">${parentPassword}</code></p>`
           : `<p style="margin:4px 0;">Use your existing parent portal password.</p>`}
-        <p style="margin:10px 0 0;color:#555;font-size:13px;">If you have more than one child at Al-Bari, all of them appear under this single parent login — you do not need a separate email for each child.</p>
+        <p style="margin:10px 0 0;color:#555;font-size:13px;">All children enrolled at Al-Bari appear under this one parent login.</p>
       </div>
-      <p><strong>Important Information:</strong></p>
-      <ul>
-        <li>Orientation Date: ${s.orientation_date || data.orientation_date || "To be announced"}</li>
-        <li>First Day of School: ${s.first_day || data.first_day || "To be announced"}</li>
-        <li>Class: ${data.class_name || "As assigned"}</li>
-      </ul>
-      <p><strong>Required Actions:</strong></p>
+      <p>
+        <strong>Orientation:</strong> ${s.orientation_date || data.orientation_date || "To be announced"}<br>
+        <strong>First day of school:</strong> ${s.first_day || data.first_day || "To be announced"}<br>
+        <strong>Class:</strong> ${data.class_name || "As assigned"}
+      </p>
+      <p><strong>Before resumption, please:</strong></p>
       <ol>
-        ${actions
-          .map((a) => `<li>${a.url ? `<a href="${a.url}">${a.label}</a>` : a.label}</li>`)
-          .join("")}
+        ${actions.map((a) => `<li>${a.url ? `<a href="${a.url}">${a.label}</a>` : a.label}</li>`).join("")}
       </ol>
       ${s.support_line ? `<p>${s.support_line}</p>` : ""}
-      <p>We look forward to seeing you on campus!</p>
-      <p>Best regards,<br>Al-Bari Group of Schools Administration</p>
+      ${SCHOOL_SIGNOFF}
     `,
     };
   },
