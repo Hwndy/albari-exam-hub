@@ -98,8 +98,12 @@ serve(async (req) => {
           const sequence = String((count || 0) + 1).padStart(4, "0");
           const admissionNumber = `ALB/${year}/${sequence}`;
 
-          // Generate random password
-          const password = `Alb${Math.random().toString(36).slice(-8)}!`;
+          // Generate an unambiguous temporary password (no 0/O/1/l/I).
+          const alphabet = "abcdefghjkmnpqrstuvwxyz";
+          const digits = "23456789";
+          const pick = (src: string, n: number) =>
+            Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join("");
+          let password: string | null = `Alb${pick(alphabet, 5)}${pick(digits, 3)}`;
 
           // Create (or reuse) the applicant's auth account.
           let userId: string | null = null;
@@ -122,8 +126,11 @@ serve(async (req) => {
             );
             if (!existing) throw authError;
             userId = existing.id;
-            // Reset password so the welcome email credentials work.
-            await supabase.auth.admin.updateUserById(userId, { password, email_confirm: true });
+            // The account already exists (a concurrent/earlier verify run created
+            // it and emailed its password). Never reset it here — doing so would
+            // invalidate the temporary password the applicant already received.
+            password = null;
+            await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
           } else {
             userId = authUser.user.id;
           }
