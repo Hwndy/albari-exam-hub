@@ -189,9 +189,30 @@ serve(async (req) => {
             if (existing && !ownedByOther) {
               userId = existing.id;
               loginEmail = candidate;
-              // Never reset a password the applicant may already have received.
-              password = null;
-              await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+              // The login already exists from an earlier (failed) enrolment run.
+              // If the student has never signed in and set their own password,
+              // issue a fresh temporary one so the welcome email always carries
+              // working credentials. Otherwise leave their password alone.
+              const { data: existingProfile } = await supabase
+                .from("profiles")
+                .select("must_change_password")
+                .eq("user_id", userId)
+                .maybeSingle();
+              const neverSignedIn =
+                !existingProfile || existingProfile.must_change_password !== false;
+              if (neverSignedIn) {
+                const { error: pwError } = await supabase.auth.admin.updateUserById(userId, {
+                  password: password as string,
+                  email_confirm: true,
+                });
+                if (pwError) {
+                  console.error("Could not reset temporary password:", pwError.message);
+                  password = null;
+                }
+              } else {
+                password = null;
+                await supabase.auth.admin.updateUserById(userId, { email_confirm: true });
+              }
               break;
             }
             if (!existing) throw authError;
@@ -341,98 +362,10 @@ serve(async (req) => {
             })
             .eq("id", payment.application_id);
 
-          // ---------------------------------------------------------------
-          // Parent account: one login per family email, linked to every child.
-          // ---------------------------------------------------------------
-          const parentEmail = String(application.email ?? "").trim().toLowerCase();
-          let parentPassword: string | null = null;
-          let parentIsNew = false;
-          try {
-            if (parentEmail) {
-              const { data: parentList } = await supabase.auth.admin.listUsers({
-                page: 1,
-                perPage: 1000,
-              });
-              let parentUserId =
-                parentList?.users?.find(
-                  (u: any) => (u.email ?? "").toLowerCase() === parentEmail
-                )?.id ?? null;
-
-              if (!parentUserId) {
-                parentPassword = `Alb${pick(alphabet, 5)}${pick(digits, 3)}`;
-                const guardian = (application.parent_guardian_info ?? {}) as any;
-                const parentName =
-                  guardian?.father?.name ||
-                  guardian?.mother?.name ||
-                  guardian?.guardian?.name ||
-                  `${application.last_name} Family`;
-                const { data: created, error: parentErr } =
-                  await supabase.auth.admin.createUser({
-                    email: parentEmail,
-                    password: parentPassword,
-                    email_confirm: true,
-                    user_metadata: { full_name: parentName, role: "parent" },
-                  });
-                if (parentErr) throw parentErr;
-                parentUserId = created.user.id;
-                parentIsNew = true;
-                await supabase
-                  .from("user_roles")
-                  .insert({ user_id: parentUserId, role: "parent", created_by: parentUserId })
-                  .select()
-                  .maybeSingle();
-                await supabase
-                  .from("profiles")
-                  .upsert(
-                    { user_id: parentUserId, full_name: parentName, must_change_password: true },
-                    { onConflict: "user_id" }
-                  );
-              } else {
-                await supabase
-                  .from("user_roles")
-                  .insert({ user_id: parentUserId, role: "parent", created_by: parentUserId })
-                  .select()
-                  .maybeSingle();
-              }
-
-              // Ensure a parents row, then link this child to it.
-              let { data: parentRow } = await supabase
-                .from("parents")
-                .select("id")
-                .eq("user_id", parentUserId)
-                .maybeSingle();
-              if (!parentRow) {
-                const { data: insertedParent } = await supabase
-                  .from("parents")
-                  .insert({ user_id: parentUserId })
-                  .select("id")
-                  .single();
-                parentRow = insertedParent;
-              }
-              if (parentRow) {
-                const { data: existingLink } = await supabase
-                  .from("student_parent_relationships")
-                  .select("id")
-                  .eq("parent_id", parentRow.id)
-                  .eq("student_id", student.id)
-                  .maybeSingle();
-                if (!existingLink) {
-                  await supabase.from("student_parent_relationships").insert({
-                    student_id: student.id,
-                    parent_id: parentRow.id,
-                    relationship_type: "parent",
-                    is_primary_contact: true,
-                    can_view_grades: true,
-                    can_view_attendance: true,
-                    can_view_fees: true,
-                    verified: true,
-                  });
-                }
-              }
-            }
-          } catch (parentError) {
-            console.error("Error setting up parent account/link:", parentError);
-          }
+          // No parent account is created here. Parents register themselves on
+          // the portal and link the child with the admission number + date of
+          // birth. The enrolment email carries student credentials only.
+          const contactEmail = String(application.email ?? "").trim().toLowerCase();
 
           // Send welcome email
           try {
@@ -452,10 +385,7 @@ serve(async (req) => {
                 additional_data: {
                   admission_number: finalAdmissionNumber,
                   login_email: loginEmail,
-                  contact_email: parentEmail,
-                  parent_email: parentEmail,
-                  ...(parentPassword ? { parent_temporary_password: parentPassword } : {}),
-                  parent_account_is_new: parentIsNew,
+                  contact_email: contactEmail,
                   ...(password ? { temporary_password: password } : {}),
                   ...(className ? { class_name: className } : {}),
                 },
@@ -470,8 +400,7 @@ serve(async (req) => {
             already_enrolled: false,
             admission_number: finalAdmissionNumber,
             login_email: loginEmail,
-            contact_email: parentEmail,
-            parent_email: parentEmail,
+            contact_email: contactEmail,
             application_number: application.application_number,
             student_name: `${application.first_name} ${application.last_name}`,
           };

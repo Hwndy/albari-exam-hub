@@ -156,8 +156,7 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
         ];
     const password = data.temporary_password;
     const studentLogin = data.login_email || data.email;
-    const parentEmail = data.parent_email || data.contact_email || data.email;
-    const parentPassword = data.parent_temporary_password;
+    const contactEmail = data.contact_email || data.email;
     return {
       subject: `Enrolment confirmed - portal access for ${data.first_name} ${data.last_name}`,
       html: `
@@ -171,17 +170,8 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
         ${password
           ? `<p style="margin:4px 0;">Temporary password: <code style="font-size:15px;letter-spacing:1px;">${password}</code></p>
              <p style="margin:8px 0 0;color:#8a5300;">You will be asked to set a new password at first sign-in.</p>`
-          : `<p style="margin:4px 0;">The temporary password is issued separately by the admissions office.</p>`}
-        <p style="margin:10px 0 0;color:#555;font-size:13px;">The login ID is issued by the school for sign-in only; it does not receive email. School correspondence continues to go to ${parentEmail}.</p>
-      </div>
-      <div style="border:1px solid #d4d4d4;border-radius:6px;padding:16px;margin:16px 0;background:#f4f7fb;">
-        <p style="margin:0 0 8px;"><strong>Parent portal</strong></p>
-        <p style="margin:4px 0;">Address: <a href="${portal}">${portal}</a></p>
-        <p style="margin:4px 0;">Email: ${parentEmail}</p>
-        ${parentPassword
-          ? `<p style="margin:4px 0;">Temporary password: <code style="font-size:15px;letter-spacing:1px;">${parentPassword}</code></p>`
-          : `<p style="margin:4px 0;">Use your existing parent portal password.</p>`}
-        <p style="margin:10px 0 0;color:#555;font-size:13px;">All children enrolled at Al-Bari appear under this one parent login.</p>
+          : `<p style="margin:4px 0;">A password has already been set on this account. Use "Forgot password" at <a href="${portal}">${portal}</a> if it is needed again.</p>`}
+        <p style="margin:10px 0 0;color:#555;font-size:13px;">The login ID is issued by the school for sign-in only; it does not receive email. School correspondence continues to go to ${contactEmail}.</p>
       </div>
       <p>
         <strong>Orientation:</strong> ${s.orientation_date || data.orientation_date || "To be announced"}<br>
@@ -193,6 +183,7 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
         ${actions.map((a) => `<li>${a.url ? `<a href="${a.url}">${a.label}</a>` : a.label}</li>`).join("")}
       </ol>
       ${s.support_line ? `<p>${s.support_line}</p>` : ""}
+      <p style="color:#555;font-size:13px;">Parents/guardians who wish to follow results, attendance and school fees can create their own parent account at <a href="${portal}">${portal}</a> and link the child using the admission number and date of birth.</p>
       ${SCHOOL_SIGNOFF}
     `,
     };
