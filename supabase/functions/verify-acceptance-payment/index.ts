@@ -276,7 +276,7 @@ serve(async (req) => {
                 additional_data: {
                   admission_number: finalAdmissionNumber,
                   login_email: application.email,
-                  temporary_password: password,
+                  ...(password ? { temporary_password: password } : {}),
                   ...(className ? { class_name: className } : {}),
                 },
               },
