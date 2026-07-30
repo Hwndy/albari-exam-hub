@@ -249,11 +249,6 @@ const subjectTable = (data: any) => {
     </table>`;
 };
 
-emailTemplates.exam_result = (data: any) => ({
-  subject: `Entrance Exam Result - ${data.application_number}`,
-  html: "",
-});
-
 emailTemplates.parent_welcome = (data: any) => ({
   subject: "Your Al-Bari Parent Portal account",
   html: `
