@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Download, Printer, Search } from "lucide-react";
 import { format } from "date-fns";
-import jsPDF from "jspdf";
+import { buildBrandedReceipt } from "@/lib/receipt-pdf";
+import { fetchSchoolBranding, DEFAULT_SCHOOL_BRANDING, SchoolBranding } from "@/lib/school-branding";
 
 interface Payment {
   id: string;
@@ -35,8 +36,12 @@ export const FeeReceiptGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  const [schoolInfo, setSchoolInfo] = useState<any>(null);
+  const [schoolInfo, setSchoolInfo] = useState<SchoolBranding>(DEFAULT_SCHOOL_BRANDING);
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchSchoolBranding().then(setSchoolInfo).catch(() => {});
+  }, []);
 
   const searchPayments = async () => {
     if (!searchQuery.trim()) {
@@ -45,8 +50,6 @@ export const FeeReceiptGenerator = () => {
     }
 
     setIsLoading(true);
-
-    setSchoolInfo({ name: 'Al-Bari Model Schools' } as any);
 
     // Search by receipt number
     let { data, error } = await supabase
