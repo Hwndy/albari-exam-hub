@@ -5,8 +5,11 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, FileText, CreditCard, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/website/SEO';
+import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 
 export const AdmissionsPage = () => {
+  const { settings } = useWebsiteSettings();
+  const brochureUrl = settingValue<string>(settings, 'prospectus_url', '');
   const admissionSteps = [
     {
       step: 1,
