@@ -16,6 +16,7 @@ import { TeacherResultsManagement } from '@/components/teacher/TeacherResultsMan
 import { AssignmentsManager } from '@/components/teacher/AssignmentsManager';
 import { LessonNotesManager } from '@/components/teacher/LessonNotesManager';
 import { LeaveRequestForm } from '@/components/teacher/LeaveRequestForm';
+import { StaffProfileSettings } from '@/components/teacher/StaffProfileSettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -178,6 +179,7 @@ export const TeacherDashboard = () => {
               <TabsTrigger value="leave" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 Leave
               </TabsTrigger>
+              <TabsTrigger value="profile" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">My Profile</TabsTrigger>
               <TabsTrigger value="students" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Create Student</TabsTrigger>
               <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Class Assignments</TabsTrigger>
             </TabsList>
@@ -236,6 +238,10 @@ export const TeacherDashboard = () => {
 
           <TabsContent value="leave" className="space-y-4">
             <LeaveRequestForm />
+          </TabsContent>
+
+          <TabsContent value="profile" className="space-y-4">
+            <StaffProfileSettings />
           </TabsContent>
 
           <TabsContent value="students" className="space-y-4">
