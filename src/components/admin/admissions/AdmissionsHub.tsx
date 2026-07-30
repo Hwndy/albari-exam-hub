@@ -50,13 +50,9 @@ const TABS: Array<{ value: AdmissionTab; label: string; icon: React.ComponentTyp
 export const AdmissionsHub: React.FC<AdmissionsHubProps> = ({ initialTab = 'applications' }) => {
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold tracking-tight">Admissions</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage applications, sessions, exams, interviews, payments, and decisions in one place.
-        </p>
-      </div>
-
+      <p className="text-sm text-muted-foreground">
+        Manage applications, sessions, exams, interviews, payments, and decisions in one place.
+      </p>
       <Tabs defaultValue={initialTab} className="space-y-4">
         <Card className="p-1">
           <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 w-full bg-transparent">
