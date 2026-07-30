@@ -142,7 +142,7 @@ export const HomePage = () => {
             {/* Highlight card balances the composition on desktop */}
             <div className="lg:col-span-5">
               <div className="rounded-2xl border border-white/20 bg-white/10 backdrop-blur-md p-6 sm:p-7 shadow-2xl">
-                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary-foreground/90">
+                <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/90">
                   <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                   Admissions open
                 </div>
