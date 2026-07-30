@@ -143,7 +143,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
 
             <div className="flex items-center gap-2 shrink-0">
               <Button asChild size="sm" className="hidden sm:inline-flex rounded-full px-5">
-                <Link to="/website/apply">Apply Now</Link>
+                <Link to="/website/admissions/apply">Apply Now</Link>
               </Button>
 
               {/* Mobile menu */}
@@ -174,7 +174,7 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
                   </nav>
                   <div className="border-t border-border p-4 space-y-3">
                     <Button asChild className="w-full rounded-full">
-                      <Link to="/website/apply" onClick={() => setIsMobileMenuOpen(false)}>Apply Now</Link>
+                      <Link to="/website/admissions/apply" onClick={() => setIsMobileMenuOpen(false)}>Apply Now</Link>
                     </Button>
                     <div className="space-y-1 text-xs text-muted-foreground">
                       {info.contact_phone && (
