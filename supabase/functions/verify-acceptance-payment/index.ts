@@ -55,6 +55,8 @@ serve(async (req) => {
         console.error("Error updating payment:", paymentError);
       }
 
+      let enrollment: Record<string, unknown> | null = null;
+
       const { data: payment } = await supabase
         .from("admission_payments")
         .select("application_id, amount")
@@ -70,6 +72,23 @@ serve(async (req) => {
           .single();
 
         if (application) {
+          // Idempotency: if the webhook (or an earlier verify call) already
+          // enrolled this applicant, just return the existing details.
+          if (application.student_id) {
+            const { data: existingStudent } = await supabase
+              .from("students")
+              .select("admission_number")
+              .eq("id", application.student_id)
+              .maybeSingle();
+            console.log("Application already enrolled, skipping creation");
+            enrollment = {
+              already_enrolled: true,
+              admission_number: existingStudent?.admission_number ?? null,
+              login_email: application.email,
+              application_number: application.application_number,
+              student_name: `${application.first_name} ${application.last_name}`,
+            };
+          } else {
           // Generate admission number
           const year = new Date().getFullYear();
           const { count } = await supabase
@@ -188,6 +207,14 @@ serve(async (req) => {
           }
 
           console.log("Student enrolled successfully:", admissionNumber);
+          enrollment = {
+            already_enrolled: false,
+            admission_number: admissionNumber,
+            login_email: application.email,
+            application_number: application.application_number,
+            student_name: `${application.first_name} ${application.last_name}`,
+          };
+          }
         }
       }
 
@@ -197,6 +224,7 @@ serve(async (req) => {
           status: "completed",
           amount: paystackData.data.amount / 100,
           currency: paystackData.data.currency,
+          ...(enrollment ?? {}),
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
