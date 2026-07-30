@@ -101,7 +101,8 @@ serve(async (req) => {
           // Generate random password
           const password = `Alb${Math.random().toString(36).slice(-8)}!`;
 
-          // Create user account
+          // Create (or reuse) the applicant's auth account.
+          let userId: string | null = null;
           const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
             email: application.email,
             password: password,
@@ -113,15 +114,41 @@ serve(async (req) => {
           });
 
           if (authError) {
-            console.error("Error creating user:", authError);
-            throw authError;
+            // A previous partially-failed run may already have created the user.
+            console.warn("createUser failed, looking up existing account:", authError.message);
+            const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+            const existing = list?.users?.find(
+              (u: any) => (u.email ?? "").toLowerCase() === String(application.email).toLowerCase()
+            );
+            if (!existing) throw authError;
+            userId = existing.id;
+            // Reset password so the welcome email credentials work.
+            await supabase.auth.admin.updateUserById(userId, { password, email_confirm: true });
+          } else {
+            userId = authUser.user.id;
           }
 
+          // Ensure the student role exists (trigger covers new users only).
+          await supabase
+            .from("user_roles")
+            .insert({ user_id: userId, role: "student", created_by: userId })
+            .select()
+            .maybeSingle();
+
+          // Reuse an existing student record if one was already created.
+          const { data: priorStudent } = await supabase
+            .from("students")
+            .select("id, admission_number")
+            .eq("user_id", userId)
+            .maybeSingle();
+
           // Create student record
-          const { data: student, error: studentError } = await supabase
+          const { data: newStudent, error: studentError } = priorStudent
+            ? { data: priorStudent, error: null }
+            : await supabase
             .from("students")
             .insert({
-              user_id: authUser.user.id,
+              user_id: userId,
               admission_number: admissionNumber,
               date_of_birth: application.date_of_birth,
               gender: application.gender,
@@ -142,6 +169,8 @@ serve(async (req) => {
             console.error("Error creating student:", studentError);
             throw studentError;
           }
+          const student = newStudent as { id: string; admission_number: string };
+          const finalAdmissionNumber = student.admission_number ?? admissionNumber;
 
           // Credit the acceptance fee against the student's school fees so the
           // "deducted from school fees" promise on the offer holds true.
