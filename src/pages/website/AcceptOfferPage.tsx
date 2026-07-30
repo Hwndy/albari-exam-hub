@@ -29,6 +29,7 @@ interface ApplicationData {
 
 export const AcceptOfferPage = () => {
   const { token } = useParams<{ token: string }>();
+  const acceptanceToken = token ? decodeURIComponent(token).trim() : '';
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -37,16 +38,18 @@ export const AcceptOfferPage = () => {
   const [application, setApplication] = useState<ApplicationData | null>(null);
 
   useEffect(() => {
-    if (token) {
+    if (acceptanceToken) {
       loadOfferDetails();
+    } else {
+      setLoading(false);
     }
-  }, [token]);
+  }, [acceptanceToken]);
 
   const loadOfferDetails = async () => {
     try {
       // Public link: offers are not readable by anonymous visitors under RLS,
       // so resolve the token through a security-definer function instead.
-      const { data, error } = await supabase.rpc('get_offer_by_token', { p_token: token as string });
+      const { data, error } = await supabase.rpc('get_offer_by_token', { p_token: acceptanceToken });
       if (error) throw error;
 
       const result = data as any;
@@ -77,7 +80,7 @@ export const AcceptOfferPage = () => {
       console.error('Error loading offer:', error);
       toast({
         title: 'Error',
-        description: 'Invalid or expired offer link',
+        description: error instanceof Error ? error.message : 'Invalid offer link',
         variant: 'destructive',
       });
     } finally {
@@ -86,14 +89,14 @@ export const AcceptOfferPage = () => {
   };
 
   const handleAccept = async () => {
-    if (!token || !application) return;
+    if (!acceptanceToken || !application) return;
 
     setProcessing(true);
     try {
       // Use secure edge function to accept offer
       const { data: acceptData, error: acceptError } = await supabase.functions.invoke('accept-offer', {
         body: {
-          acceptance_token: token,
+          acceptance_token: acceptanceToken,
           decision: 'accepted',
         },
       });
@@ -129,14 +132,14 @@ export const AcceptOfferPage = () => {
   };
 
   const handleDecline = async () => {
-    if (!token) return;
+    if (!acceptanceToken) return;
 
     setProcessing(true);
     try {
       // Use secure edge function to decline offer
       const { data, error } = await supabase.functions.invoke('accept-offer', {
         body: {
-          acceptance_token: token,
+          acceptance_token: acceptanceToken,
           decision: 'declined',
         },
       });
@@ -200,7 +203,9 @@ export const AcceptOfferPage = () => {
     );
   }
 
-  if (offer.status !== 'pending') {
+  const isProcessed = offer.status === 'accepted' || offer.status === 'declined';
+
+  if (isProcessed) {
     return (
       <WebsiteLayout>
         <div className="min-h-screen flex items-center justify-center p-4">
@@ -222,7 +227,8 @@ export const AcceptOfferPage = () => {
     );
   }
 
-  const isExpired = new Date(offer.acceptance_deadline) < new Date();
+  const deadline = new Date(`${offer.acceptance_deadline}T23:59:59.999`);
+  const isExpired = deadline < new Date();
 
   return (
     <WebsiteLayout>
