@@ -110,7 +110,12 @@ async function getLetterheadDataUrl(): Promise<string | null> {
 }
 
 // Function to generate offer letter PDF
-async function generateOfferLetterPDF(application: any, acceptanceDeadline: string): Promise<Uint8Array> {
+async function generateOfferLetterPDF(
+  application: any,
+  acceptanceDeadline: string,
+  acceptanceFee: number,
+  acceptanceFeeNote: string,
+): Promise<Uint8Array> {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   let yPos = 20;
@@ -189,6 +194,9 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   doc.text(`Class: ${application.classes?.name || 'N/A'}`, 20, yPos);
   
   yPos += 7;
+  doc.text(`Acceptance Fee: NGN ${Number(acceptanceFee || 0).toLocaleString('en-NG')}`, 20, yPos);
+
+  yPos += 7;
   doc.setTextColor(220, 38, 38);
   doc.setFont('helvetica', 'bold');
   doc.text(`Acceptance Deadline: ${new Date(acceptanceDeadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'long', year: 'numeric' })}`, 20, yPos);
@@ -196,6 +204,13 @@ async function generateOfferLetterPDF(application: any, acceptanceDeadline: stri
   yPos += 20;
   doc.setTextColor(0, 0, 0);
   doc.setFont('helvetica', 'normal');
+
+  if (acceptanceFeeNote) {
+    doc.setFontSize(10);
+    const splitNote = doc.splitTextToSize(acceptanceFeeNote, pageWidth - 40);
+    doc.text(splitNote, 20, yPos - 8);
+    yPos += (splitNote.length - 1) * 5;
+  }
 
   // Next Steps
   doc.setFont('helvetica', 'bold');
