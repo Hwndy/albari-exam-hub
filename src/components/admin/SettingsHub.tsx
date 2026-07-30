@@ -14,10 +14,7 @@ import { School, Globe, Users, GraduationCap, Receipt } from 'lucide-react';
 export const SettingsHub: React.FC = () => {
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-2xl font-bold">Settings</h2>
-        <p className="text-muted-foreground">School profile, website branding and operational defaults.</p>
-      </div>
+      <p className="text-sm text-muted-foreground">School profile, website branding and operational defaults.</p>
       <Tabs defaultValue="school" className="space-y-4">
         <TabsList>
           <TabsTrigger value="school"><School className="h-4 w-4 mr-1" /> School Info</TabsTrigger>

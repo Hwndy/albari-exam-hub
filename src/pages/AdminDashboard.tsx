@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AdminSidebar } from '@/components/ui/admin-sidebar';
+import { findNavLocation } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
@@ -94,10 +95,10 @@ export const AdminDashboard = () => {
   const activeSubTab = searchParams.get('subtab');
 
   useEffect(() => {
-    // Wait for undefined to be loaded before fetching data
-    // undefined will be null for super admins (intentional - they see all)
-    // undefined will be set for school admins (they see only their school)
-  }, [false]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (activeTab === 'overview') {
+      fetchDashboardData();
+    }
+  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
@@ -194,64 +195,12 @@ export const AdminDashboard = () => {
     }
   };
 
-  // Show loading state while school context is initializing
-  const getPageTitle = () => {
-    if (activeTab === 'overview') return 'Dashboard Overview';
-    if (activeTab === 'admissions') {
-      const titles: Record<string, string> = {
-        'applications': 'Admission Applications',
-        'sessions': 'Admission Sessions',
-        'payments': 'Payment Verification',
-        'entrance-exams': 'Entrance Exams',
-        'decisions': 'Decision Board',
-        'analytics': 'Admission Analytics',
-      };
-      return titles[activeSubTab || 'applications'] || 'Admissions';
-    }
-    if (activeTab === 'academic') {
-      const titles: Record<string, string> = {
-        'exams': 'Exam Management',
-        'results': 'Student Results',
-        'questions': 'Question Bank',
-        'classes': 'Class Management',
-        'students': 'Students',
-        'subjects': 'Subject Management',
-        'timetable': 'Timetable Management',
-        'report-cards': 'Report Cards',
-      };
-      return titles[activeSubTab || 'exams'] || 'Academic';
-    }
-    if (activeTab === 'fees') return 'Fee Management';
-    if (activeTab === 'library') return 'Library Management';
-    if (activeTab === 'notifications') return 'Bulk Notifications';
-    if (activeTab === 'id-cards') {
-      if (activeSubTab === 'staff') return 'Staff ID Cards';
-      return 'Student ID Cards';
-    }
-    if (activeTab === 'announcements') return 'Announcements';
-    if (activeTab === 'settings') return 'Settings';
-    if (activeTab === 'attendance-reports') return 'Attendance Reports';
-    if (activeTab === 'attendance-scan') return 'Scan Attendance';
-    if (activeTab === 'users') return 'User Management';
-    if (activeTab === 'website') {
-      const titles: Record<string, string> = {
-        'news': 'News & Articles',
-        'gallery': 'Gallery Manager',
-        'testimonials': 'Testimonials',
-        'school-info': 'School Information',
-        'site-settings': 'Site Settings',
-      };
-      return titles[activeSubTab || 'news'] || 'Website CMS';
-    }
-    if (activeTab === 'system') {
-      const titles: Record<string, string> = {
-        'email-logs': 'Email Logs',
-        'monitor-logs': 'Live Monitor',
-        'results-modal': 'All Results',
-      };
-      return titles[activeSubTab || 'email-logs'] || 'System';
-    }
-    return 'Admin Dashboard';
+  // Breadcrumb + page title derived from the single navigation map in the sidebar.
+  const navLocation = findNavLocation(activeTab, activeSubTab);
+  const breadcrumb = {
+    section: navLocation?.section ?? 'Admin',
+    group: navLocation?.leaf ? navLocation.item.title : undefined,
+    title: navLocation?.leaf?.title ?? navLocation?.item.title ?? 'Admin Dashboard',
   };
 
   const renderContent = () => {
@@ -451,15 +400,23 @@ export const AdminDashboard = () => {
         
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <header className="sticky top-0 z-10 border-b bg-card">
-            <div className="flex items-center justify-between px-4 lg:px-6 py-3">
-              <div className="flex items-center gap-4">
+          <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
+              <div className="flex items-center gap-3 min-w-0">
                 <SidebarTrigger />
-                <Logo className="h-8" />
-                <h1 className="hidden sm:block text-lg font-semibold">{getPageTitle()}</h1>
+                <Logo className="h-7 hidden sm:block" />
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">
+                    {breadcrumb.section}
+                    {breadcrumb.group ? ` › ${breadcrumb.group}` : ''}
+                  </p>
+                  <h1 className="text-base font-semibold leading-tight truncate">{breadcrumb.title}</h1>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="hidden sm:inline text-sm text-muted-foreground">{user?.email}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="hidden md:inline text-sm text-muted-foreground truncate max-w-[200px]">
+                  {user?.email}
+                </span>
                 <Button variant="outline" size="sm" onClick={logout}>
                   Logout
                 </Button>
@@ -470,106 +427,28 @@ export const AdminDashboard = () => {
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto p-4 lg:p-6 space-y-6">
-              {/* Stats Grid - Only on Overview */}
+              {/* Compact KPI row — only on Overview */}
               {activeTab === 'overview' && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Users className="h-6 w-6 text-primary" />
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+                  {[
+                    { label: 'Students', value: stats.totalStudents, icon: Users },
+                    { label: 'Teachers', value: stats.totalTeachers, icon: Shield },
+                    { label: 'Classes', value: stats.totalClasses, icon: School },
+                    { label: 'Subjects', value: stats.totalSubjects, icon: BookOpen },
+                    { label: 'Active Exams', value: `${stats.activeExams}/${stats.totalExams}`, icon: FileText },
+                    { label: 'Questions', value: stats.totalQuestions, icon: TrendingUp },
+                    { label: 'Live Sessions', value: stats.activeSessions, icon: Clock },
+                  ].map(({ label, value, icon: Icon }) => (
+                    <Card key={label} className="shadow-sm">
+                      <CardContent className="p-3">
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Icon className="h-3.5 w-3.5" />
+                          <span className="text-[11px] uppercase tracking-wide truncate">{label}</span>
                         </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalStudents}</p>
-                          <p className="text-sm text-muted-foreground">Students</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
-                          <Shield className="h-6 w-6 text-secondary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalTeachers}</p>
-                          <p className="text-sm text-muted-foreground">Teachers</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-accent/10 rounded-lg">
-                          <School className="h-6 w-6 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalClasses}</p>
-                          <p className="text-sm text-muted-foreground">Classes</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <BookOpen className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalSubjects}</p>
-                          <p className="text-sm text-muted-foreground">Subjects</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-secondary/10 rounded-lg">
-                          <FileText className="h-6 w-6 text-secondary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : `${stats.activeExams}/${stats.totalExams}`}</p>
-                          <p className="text-sm text-muted-foreground">Active Exams</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-accent/10 rounded-lg">
-                          <TrendingUp className="h-6 w-6 text-accent-foreground" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.totalQuestions}</p>
-                          <p className="text-sm text-muted-foreground">Questions</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardContent className="p-6">
-                      <div className="flex items-center space-x-4">
-                        <div className="p-2 bg-primary/10 rounded-lg">
-                          <Clock className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="text-2xl font-bold">{isLoading ? '...' : stats.activeSessions}</p>
-                          <p className="text-sm text-muted-foreground">Live Sessions</p>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                        <p className="text-xl font-bold mt-1">{isLoading ? '—' : value}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
               )}
 
