@@ -47,6 +47,7 @@ function getReplyToEmail(envName: string, fallback: string): string {
 interface OfferLetterRequest {
   application_id: string;
   acceptance_deadline: string;
+  acceptance_fee?: number;
 }
 
 // Helper function to send email with retry logic
