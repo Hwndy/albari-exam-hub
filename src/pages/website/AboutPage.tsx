@@ -1,12 +1,12 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Award, Users, Target, Eye, BookOpen, ShieldCheck, GraduationCap, Landmark } from 'lucide-react';
+import { Award, Users, Target, Eye, ShieldCheck, GraduationCap, Landmark, BookOpen, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand, SectionHeading } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Award,
