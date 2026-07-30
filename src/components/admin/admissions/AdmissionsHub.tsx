@@ -1,15 +1,6 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
-import {
-  LayoutDashboard,
-  ClipboardList,
-  CalendarRange,
-  GraduationCap,
-  Users,
-  CreditCard,
-  BarChart3,
-} from 'lucide-react';
 import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
 import { AdmissionDecisionBoard } from '@/components/admin/AdmissionDecisionBoard';
 import { AdmissionSessionManager } from '@/components/admin/AdmissionSessionManager';
@@ -32,14 +23,14 @@ export type AdmissionTab =
   | 'payments'
   | 'analytics';
 
-const TABS: Array<{ value: AdmissionTab; label: string; icon: React.ComponentType<{ className?: string }> }> = [
-  { value: 'applications', label: 'Applications', icon: ClipboardList },
-  { value: 'pipeline',     label: 'Pipeline',     icon: LayoutDashboard },
-  { value: 'sessions',     label: 'Sessions',     icon: CalendarRange },
-  { value: 'exams',        label: 'Entrance Exams', icon: GraduationCap },
-  { value: 'interviews',   label: 'Interviews',   icon: Users },
-  { value: 'payments',     label: 'Payments',     icon: CreditCard },
-  { value: 'analytics',    label: 'Analytics',    icon: BarChart3 },
+const TABS: Array<{ value: AdmissionTab; label: string }> = [
+  { value: 'applications', label: 'Applications' },
+  { value: 'pipeline',     label: 'Pipeline' },
+  { value: 'sessions',     label: 'Sessions' },
+  { value: 'exams',        label: 'Entrance Exams' },
+  { value: 'interviews',   label: 'Interviews' },
+  { value: 'payments',     label: 'Payments' },
+  { value: 'analytics',    label: 'Analytics' },
 ];
 
 /**
@@ -54,19 +45,20 @@ export const AdmissionsHub: React.FC<AdmissionsHubProps> = ({ initialTab = 'appl
         Manage applications, sessions, exams, interviews, payments, and decisions in one place.
       </p>
       <Tabs defaultValue={initialTab} className="space-y-4">
-        <Card className="p-1">
-          <TabsList className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-1 w-full bg-transparent">
-            {TABS.map(({ value, label, icon: Icon }) => (
-              <TabsTrigger
-                key={value}
-                value={value}
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-              >
-                <Icon className="h-4 w-4 mr-1.5" />
-                <span className="hidden sm:inline">{label}</span>
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        <Card className="p-1 overflow-hidden">
+          <div className="overflow-x-auto">
+            <TabsList className="inline-flex h-auto w-max gap-1 bg-transparent p-0">
+              {TABS.map(({ value, label }) => (
+                <TabsTrigger
+                  key={value}
+                  value={value}
+                  className="whitespace-nowrap px-3 py-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  {label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+          </div>
         </Card>
 
         <TabsContent value="applications" className="mt-0">

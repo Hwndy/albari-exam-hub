@@ -239,15 +239,8 @@ export const AdmissionManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Admission Management</h2>
-          <p className="text-muted-foreground">
-            Review and manage student admission applications
-          </p>
-        </div>
-        <Button variant="outline" onClick={runLoginBackfill} disabled={backfilling}>
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" onClick={runLoginBackfill} disabled={backfilling}>
           {backfilling ? 'Fixing logins…' : 'Fix student logins & parent links'}
         </Button>
       </div>

@@ -404,7 +404,7 @@ export const AdminDashboard = () => {
             <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
               <div className="flex items-center gap-3 min-w-0">
                 <SidebarTrigger />
-                <Logo className="h-7 hidden sm:block" />
+                <Logo size="sm" showText={false} className="hidden sm:flex shrink-0" />
                 <div className="min-w-0">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">
                     {breadcrumb.section}
