@@ -17,6 +17,7 @@ import { format, addYears } from 'date-fns';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { StudentIDCard } from './StudentIDCard';
+import { fetchSchoolBranding } from '@/lib/school-branding';
 import { EditStudentDialog } from './EditStudentDialog';
 
 interface Student {
@@ -75,12 +76,13 @@ export const IDCardGenerator: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      const branding = await fetchSchoolBranding();
       setSchool({
         id: 'al-bari',
-        name: 'Al-Bari Model Schools',
-        address: '',
-        logo_url: '',
-        motto: '',
+        name: branding.name,
+        address: branding.address || '',
+        logo_url: branding.logo_url || '',
+        motto: branding.motto || '',
       } as any);
 
       // Fetch classes

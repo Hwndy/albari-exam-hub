@@ -56,6 +56,7 @@ export interface ReportCardSchoolInfo {
   email?: string;
   motto?: string;
   logo_url?: string;
+  principal_name?: string;
 }
 
 export interface ReportCardAutomation {
@@ -98,7 +99,187 @@ export function getReportCardGrade(percentage: number) {
   );
 }
 
-export function generateReportCardHTML(
+const BRAND = {
+  green: '#0a5c36',
+  greenDark: '#064225',
+  gold: '#c9a227',
+  ink: '#1c1c1c',
+  soft: '#f4f7f5',
+  line: '#c8d5cd',
+};
+
+function esc(v: unknown): string {
+  return String(v ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function absoluteUrl(url?: string | null): string {
+  if (!url) return '';
+  if (/^(https?:|data:|blob:)/i.test(url)) return url;
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${url.startsWith('/') ? '' : '/'}${url}`;
+  }
+  return url;
+}
+
+function initials(name: string): string {
+  return (name || '?')
+    .split(' ')
+    .filter(Boolean)
+    .map(n => n[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
+}
+
+/** Print stylesheet shared by single and bulk report card documents. */
+export function reportCardStyles(): string {
+  return `
+    @page { size: A4 portrait; margin: 10mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: ${BRAND.ink};
+      font-size: 11px;
+      background: #fff;
+    }
+    .rc-sheet {
+      position: relative;
+      width: 190mm;
+      margin: 0 auto 0;
+      padding: 0 0 6mm;
+      overflow: hidden;
+    }
+    .rc-sheet + .rc-sheet { page-break-before: always; }
+    .rc-watermark {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0.05; z-index: 0; pointer-events: none;
+    }
+    .rc-watermark img { width: 120mm; height: auto; }
+    .rc-content { position: relative; z-index: 1; }
+
+    .rc-head {
+      display: flex; align-items: center; gap: 14px;
+      border-bottom: 3px solid ${BRAND.green};
+      padding-bottom: 10px;
+    }
+    .rc-head .crest { width: 74px; height: 74px; object-fit: contain; flex: 0 0 auto; }
+    .rc-head .crest-fallback {
+      width: 74px; height: 74px; border-radius: 50%;
+      background: ${BRAND.green}; color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; font-weight: 700; letter-spacing: 1px;
+    }
+    .rc-head .titles { flex: 1; text-align: center; }
+    .rc-school-name {
+      font-size: 24px; font-weight: 800; letter-spacing: 0.5px;
+      color: ${BRAND.green}; text-transform: uppercase; line-height: 1.1;
+    }
+    .rc-school-meta { font-size: 10.5px; color: #47554d; margin-top: 3px; }
+    .rc-motto { font-size: 10.5px; font-style: italic; color: ${BRAND.gold}; margin-top: 3px; letter-spacing: .3px; }
+
+    .rc-ribbon {
+      margin-top: 10px;
+      background: ${BRAND.green};
+      color: #fff;
+      text-align: center;
+      padding: 7px 10px;
+      font-size: 12.5px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      border-radius: 2px;
+    }
+    .rc-ribbon span { color: ${BRAND.gold}; font-weight: 700; letter-spacing: 1px; }
+
+    .rc-identity {
+      display: grid; grid-template-columns: 96px 1fr; gap: 14px;
+      border: 1px solid ${BRAND.line}; border-top: none;
+      background: ${BRAND.soft};
+      padding: 10px 12px; margin-bottom: 10px;
+    }
+    .rc-photo, .rc-photo-fallback {
+      width: 90px; height: 100px; object-fit: cover;
+      border: 2px solid ${BRAND.green}; background: #fff;
+    }
+    .rc-photo-fallback {
+      display: flex; align-items: center; justify-content: center;
+      font-size: 26px; font-weight: 700; color: ${BRAND.green};
+    }
+    .rc-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 18px; align-content: center; }
+    .rc-field { display: flex; gap: 6px; border-bottom: 1px dotted ${BRAND.line}; padding-bottom: 3px; }
+    .rc-field .k { font-weight: 700; color: ${BRAND.greenDark}; min-width: 78px; text-transform: uppercase; font-size: 9.5px; letter-spacing: .4px; padding-top: 1px; }
+    .rc-field .v { font-size: 11.5px; }
+
+    .rc-section-title {
+      font-size: 10px; font-weight: 800; letter-spacing: 1.4px; text-transform: uppercase;
+      color: ${BRAND.greenDark}; margin: 12px 0 5px;
+      border-left: 3px solid ${BRAND.gold}; padding-left: 7px;
+    }
+
+    table.rc-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    table.rc-table th {
+      background: ${BRAND.green}; color: #fff; font-weight: 700;
+      padding: 7px 4px; border: 1px solid ${BRAND.greenDark};
+      text-align: center; font-size: 9.5px; letter-spacing: .3px;
+    }
+    table.rc-table th.left, table.rc-table td.left { text-align: left; }
+    table.rc-table td { border: 1px solid ${BRAND.line}; padding: 5px 5px; text-align: center; }
+    table.rc-table tbody tr:nth-child(even) td { background: #fbfdfc; }
+    table.rc-table tr.rc-total td {
+      background: ${BRAND.soft}; font-weight: 800; color: ${BRAND.greenDark};
+      border-top: 2px solid ${BRAND.green};
+    }
+    .rc-grade-pill { font-weight: 800; color: ${BRAND.greenDark}; }
+
+    .rc-summary { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 10px; }
+    .rc-stat { border: 1px solid ${BRAND.line}; border-top: 3px solid ${BRAND.gold}; padding: 8px 6px; text-align: center; background: #fff; }
+    .rc-stat .val { font-size: 17px; font-weight: 800; color: ${BRAND.green}; line-height: 1.1; }
+    .rc-stat .lbl { font-size: 8.5px; letter-spacing: .8px; text-transform: uppercase; color: #6b7a72; margin-top: 3px; }
+
+    .rc-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .rc-panel { border: 1px solid ${BRAND.line}; padding: 8px 10px; background: #fff; }
+    .rc-panel .rc-inline { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px dotted ${BRAND.line}; }
+    .rc-panel .rc-inline:last-child { border-bottom: none; }
+    .rc-panel .rc-inline b { color: ${BRAND.greenDark}; }
+
+    .rc-remark { border: 1px solid ${BRAND.line}; margin-bottom: 7px; }
+    .rc-remark .rc-remark-h {
+      background: ${BRAND.soft}; color: ${BRAND.greenDark};
+      font-size: 9px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+      padding: 5px 9px; border-bottom: 1px solid ${BRAND.line};
+    }
+    .rc-remark .rc-remark-b { padding: 8px 9px; min-height: 30px; font-size: 11px; }
+
+    .rc-scale { margin-top: 10px; border: 1px dashed ${BRAND.line}; background: ${BRAND.soft}; padding: 7px 9px; font-size: 9.5px; }
+    .rc-scale b { color: ${BRAND.greenDark}; }
+    .rc-scale span { margin-right: 12px; white-space: nowrap; }
+
+    .rc-signs { display: grid; gap: 26px; margin-top: 26px; }
+    .rc-sign { text-align: center; font-size: 10px; }
+    .rc-sign .line { border-top: 1px solid ${BRAND.ink}; margin-top: 30px; padding-top: 4px; font-weight: 700; letter-spacing: .4px; }
+    .rc-sign .who { font-size: 9px; color: #6b7a72; }
+
+    .rc-foot {
+      margin-top: 14px; border-top: 2px solid ${BRAND.green}; padding-top: 6px;
+      font-size: 8.5px; color: #6b7a72; display: flex; justify-content: space-between;
+    }
+
+    @media print {
+      body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      .rc-sheet { page-break-inside: avoid; }
+      table.rc-table { page-break-inside: auto; }
+      tr { page-break-inside: avoid; }
+    }
+  `;
+}
+
+/** Branded body markup for a single report card (no <html> wrapper). */
+export function renderReportCardBody(
   card: ReportCardData,
   schoolInfo: ReportCardSchoolInfo,
   automation: ReportCardAutomation = DEFAULT_REPORT_CARD_AUTOMATION,
@@ -114,155 +295,200 @@ export function generateReportCardHTML(
       ? card.comments.principal_comment
       : autoRemark(card.average);
 
-  const gradeRows = card.grades
-    .map(
-      g => `
-      <tr>
-        <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.subject_name}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.test1_score}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.test2_score}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.exam_score}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">${g.total}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center; font-weight: bold;">${g.grade}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.subject_position}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.class_average}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.highest_in_class}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: center;">${g.lowest_in_class}</td>
-        <td style="border: 1px solid #000; padding: 6px; text-align: left;">${g.remark}</td>
-      </tr>`,
-    )
-    .join('');
+  const logo = absoluteUrl(schoolInfo.logo_url);
+  const photo = absoluteUrl(card.photo_url);
+  const schoolName = esc(schoolInfo.name || 'Al-Bari Group of Schools');
+
+  const contactLine = [
+    schoolInfo.address ? esc(schoolInfo.address) : '',
+    schoolInfo.phone ? `Tel: ${esc(schoolInfo.phone)}` : '',
+    schoolInfo.email ? `Email: ${esc(schoolInfo.email)}` : '',
+  ]
+    .filter(Boolean)
+    .join('&nbsp; &bull; &nbsp;');
+
+  const gradeRows = card.grades.length
+    ? card.grades
+        .map(
+          g => `
+        <tr>
+          <td class="left">${esc(g.subject_name)}</td>
+          <td>${g.test1_score}</td>
+          <td>${g.test2_score}</td>
+          <td>${g.exam_score}</td>
+          <td><strong>${g.total}</strong></td>
+          <td class="rc-grade-pill">${esc(g.grade)}</td>
+          <td>${g.subject_position}</td>
+          <td>${g.class_average}</td>
+          <td>${g.highest_in_class}</td>
+          <td>${g.lowest_in_class}</td>
+          <td class="left">${esc(g.remark)}</td>
+        </tr>`,
+        )
+        .join('')
+    : `<tr><td class="left" colspan="11" style="padding:14px;color:#6b7a72;">No subject scores have been recorded for this term.</td></tr>`;
 
   const gradingScaleHTML = REPORT_CARD_GRADING_SCALE.map(
-    s => `<span style="margin-right: 15px;"><strong>${s.grade}</strong> (${s.min}-${s.max}%): ${s.remark}</span>`,
+    s => `<span><b>${s.grade}</b> ${s.min}&ndash;${s.max}% &middot; ${s.remark}</span>`,
   ).join('');
 
+  const attendanceRate =
+    card.attendance.days_school_opened > 0
+      ? Math.round((card.attendance.days_present / card.attendance.days_school_opened) * 1000) / 10
+      : 0;
+
+  const signColumns = automation.show_parent_signature ? 3 : 2;
+
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <title>Report Card - ${card.student_name}</title>
-      <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Times New Roman', serif; max-width: 900px; margin: 0 auto; padding: 20px; font-size: 12px; }
-        .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 15px; }
-        .school-logo { width: 80px; height: 80px; margin: 0 auto 10px; }
-        .school-name { font-size: 22px; font-weight: bold; color: #1a365d; text-transform: uppercase; }
-        .school-address { font-size: 11px; color: #333; margin: 5px 0; }
-        .school-motto { font-style: italic; color: #666; margin: 5px 0; }
-        .report-title { font-size: 16px; font-weight: bold; margin-top: 10px; text-decoration: underline; }
-        .info-row { display: flex; gap: 5px; }
-        .info-label { font-weight: bold; min-width: 120px; }
-        .grades-table { width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 11px; }
-        .grades-table th { background: #1a365d; color: white; padding: 8px 4px; text-align: center; border: 1px solid #000; }
-        .grades-table th.subject { text-align: left; }
-        .summary-section { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; }
-        .summary-box { border: 1px solid #000; padding: 10px; text-align: center; }
-        .summary-value { font-size: 18px; font-weight: bold; color: #1a365d; }
-        .summary-label { font-size: 10px; color: #666; }
-        .attendance-row { display: flex; gap: 30px; }
-        .attendance-item { display: flex; gap: 5px; }
-        .comment-box { border: 1px solid #000; padding: 10px; margin: 10px 0; min-height: 50px; }
-        .comment-label { font-weight: bold; margin-bottom: 5px; background: #f0f0f0; padding: 5px; }
-        .grading-scale { margin-top: 15px; padding: 10px; background: #f9f9f9; border: 1px solid #ddd; font-size: 10px; }
-        .signatures { display: grid; grid-template-columns: repeat(${automation.show_parent_signature ? 3 : 2}, 1fr); gap: 30px; margin-top: 40px; }
-        .signature-box { text-align: center; }
-        .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; }
-        @media print { body { print-color-adjust: exact; -webkit-print-color-adjust: exact; } .grades-table th { background: #1a365d !important; color: white !important; } }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        ${schoolInfo.logo_url ? `<img src="${schoolInfo.logo_url}" class="school-logo" alt="School Logo" />` : ''}
-        <div class="school-name">${schoolInfo.name || 'School Name'}</div>
-        ${schoolInfo.address ? `<div class="school-address">${schoolInfo.address}</div>` : ''}
-        ${(schoolInfo.phone || schoolInfo.email) ? `<div class="school-address">${schoolInfo.phone ? 'Tel: ' + schoolInfo.phone : ''}${schoolInfo.phone && schoolInfo.email ? ' | ' : ''}${schoolInfo.email ? 'Email: ' + schoolInfo.email : ''}</div>` : ''}
-        ${schoolInfo.motto ? `<div class="school-motto">"${schoolInfo.motto}"</div>` : ''}
-        <div class="report-title">STUDENT TERMINAL REPORT</div>
-      </div>
-
-      <div style="display:grid;grid-template-columns:110px 1fr 1fr;gap:8px;margin:15px 0;padding:10px;border:1px solid #000;">
-        <div style="grid-row: span 5; display:flex; align-items:center; justify-content:center;">
-          ${card.photo_url
-            ? `<img src="${card.photo_url}" alt="Student" style="width:100px;height:100px;border-radius:50%;object-fit:cover;border:2px solid #1a365d;" />`
-            : `<div style="width:100px;height:100px;border-radius:50%;background:#1a365d;color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:bold;">${(card.student_name || '?').split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase()}</div>`
-          }
+  <div class="rc-sheet">
+    ${logo ? `<div class="rc-watermark"><img src="${esc(logo)}" alt="" /></div>` : ''}
+    <div class="rc-content">
+      <div class="rc-head">
+        ${logo
+          ? `<img class="crest" src="${esc(logo)}" alt="${schoolName} crest" />`
+          : `<div class="crest-fallback">${esc(initials(schoolInfo.name || 'AB'))}</div>`}
+        <div class="titles">
+          <div class="rc-school-name">${schoolName}</div>
+          ${contactLine ? `<div class="rc-school-meta">${contactLine}</div>` : ''}
+          ${schoolInfo.motto ? `<div class="rc-motto">&ldquo;${esc(schoolInfo.motto)}&rdquo;</div>` : ''}
         </div>
-        <div class="info-row"><span class="info-label">Name:</span> ${card.student_name}</div>
-        <div class="info-row"><span class="info-label">Session:</span> ${card.academic_year}</div>
-        <div class="info-row"><span class="info-label">Reg. No:</span> ${card.registration_number}</div>
-        <div class="info-row"><span class="info-label">Term:</span> ${card.term}</div>
-        <div class="info-row"><span class="info-label">Class:</span> ${card.class_name}${card.section ? ' (' + card.section + ')' : ''}</div>
-        <div class="info-row"><span class="info-label">Age:</span> ${card.age || 'N/A'} years</div>
-        <div class="info-row"><span class="info-label">Gender:</span> ${card.gender}</div>
-        <div class="info-row"><span class="info-label">Weight:</span> ${card.weight ? card.weight + ' kg' : 'N/A'}</div>
-        <div class="info-row"><span class="info-label">Position:</span> ${card.position} out of ${card.total_students}</div>
-        <div class="info-row"><span class="info-label">Height:</span> ${card.height ? card.height + ' cm' : 'N/A'}</div>
+        ${logo
+          ? `<img class="crest" src="${esc(logo)}" alt="" />`
+          : `<div class="crest-fallback">${esc(initials(schoolInfo.name || 'AB'))}</div>`}
       </div>
 
-      <table class="grades-table">
+      <div class="rc-ribbon">
+        Student Terminal Report &nbsp;&mdash;&nbsp; <span>${esc(card.term)} &bull; ${esc(card.academic_year || '')}</span>
+      </div>
+
+      <div class="rc-identity">
+        ${photo
+          ? `<img class="rc-photo" src="${esc(photo)}" alt="${esc(card.student_name)}" />`
+          : `<div class="rc-photo-fallback">${esc(initials(card.student_name))}</div>`}
+        <div class="rc-fields">
+          <div class="rc-field"><span class="k">Name</span><span class="v"><strong>${esc(card.student_name)}</strong></span></div>
+          <div class="rc-field"><span class="k">Adm. No</span><span class="v">${esc(card.registration_number)}</span></div>
+          <div class="rc-field"><span class="k">Class</span><span class="v">${esc(card.class_name)}${card.section ? ` (${esc(card.section)})` : ''}</span></div>
+          <div class="rc-field"><span class="k">Session</span><span class="v">${esc(card.academic_year || '—')}</span></div>
+          <div class="rc-field"><span class="k">Term</span><span class="v">${esc(card.term)}</span></div>
+          <div class="rc-field"><span class="k">Position</span><span class="v">${card.position} of ${card.total_students}</span></div>
+          <div class="rc-field"><span class="k">Age</span><span class="v">${card.age ? `${card.age} yrs` : '—'}</span></div>
+          <div class="rc-field"><span class="k">Gender</span><span class="v">${esc(card.gender || '—')}</span></div>
+          <div class="rc-field"><span class="k">Weight</span><span class="v">${card.weight ? `${card.weight} kg` : '—'}</span></div>
+          <div class="rc-field"><span class="k">Height</span><span class="v">${card.height ? `${card.height} cm` : '—'}</span></div>
+        </div>
+      </div>
+
+      <div class="rc-section-title">Academic Performance</div>
+      <table class="rc-table">
         <thead>
           <tr>
-            <th class="subject">SUBJECT</th>
-            <th>TEST 1<br/>(20)</th>
-            <th>TEST 2<br/>(20)</th>
-            <th>EXAM<br/>(60)</th>
-            <th>TOTAL<br/>(100)</th>
-            <th>GRADE</th>
-            <th>POS.</th>
-            <th>CLASS<br/>AVG</th>
-            <th>HIGH</th>
-            <th>LOW</th>
-            <th>REMARK</th>
+            <th class="left">Subject</th>
+            <th>Test 1<br/>(20)</th>
+            <th>Test 2<br/>(20)</th>
+            <th>Exam<br/>(60)</th>
+            <th>Total<br/>(100)</th>
+            <th>Grade</th>
+            <th>Pos.</th>
+            <th>Class<br/>Avg</th>
+            <th>High</th>
+            <th>Low</th>
+            <th class="left">Remark</th>
           </tr>
         </thead>
         <tbody>
           ${gradeRows}
-          <tr style="font-weight: bold; background: #f0f0f0;">
-            <td style="border: 1px solid #000; padding: 6px;">TOTAL / AVERAGE</td>
-            <td colspan="3" style="border: 1px solid #000; padding: 6px; text-align: center;">-</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.total_obtained}</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.overall_grade}</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.position}</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.class_average}%</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.highest_average}%</td>
-            <td style="border: 1px solid #000; padding: 6px; text-align: center;">${card.lowest_average}%</td>
-            <td style="border: 1px solid #000; padding: 6px;">Average: ${card.average}%</td>
+          <tr class="rc-total">
+            <td class="left">Total / Average</td>
+            <td colspan="3">&mdash;</td>
+            <td>${card.total_obtained}</td>
+            <td>${esc(card.overall_grade)}</td>
+            <td>${card.position}</td>
+            <td>${card.class_average}%</td>
+            <td>${card.highest_average}%</td>
+            <td>${card.lowest_average}%</td>
+            <td class="left">Average: ${card.average}%</td>
           </tr>
         </tbody>
       </table>
 
-      <div class="summary-section">
-        <div class="summary-box"><div class="summary-value">${card.total_obtained}/${card.total_max}</div><div class="summary-label">TOTAL SCORE</div></div>
-        <div class="summary-box"><div class="summary-value">${card.average}%</div><div class="summary-label">AVERAGE PERCENTAGE</div></div>
-        <div class="summary-box"><div class="summary-value">${card.position}/${card.total_students}</div><div class="summary-label">POSITION IN CLASS</div></div>
+      <div class="rc-summary">
+        <div class="rc-stat"><div class="val">${card.total_obtained}/${card.total_max}</div><div class="lbl">Total Score</div></div>
+        <div class="rc-stat"><div class="val">${card.average}%</div><div class="lbl">Average</div></div>
+        <div class="rc-stat"><div class="val">${card.position}/${card.total_students}</div><div class="lbl">Class Position</div></div>
+        <div class="rc-stat"><div class="val">${esc(card.overall_grade)}</div><div class="lbl">Overall Grade</div></div>
       </div>
 
-      <div style="margin:15px 0;">
-        <strong>ATTENDANCE RECORD:</strong>
-        <div class="attendance-row" style="margin-top: 5px;">
-          <div class="attendance-item"><span class="info-label">Days School Opened:</span> ${card.attendance.days_school_opened}</div>
-          <div class="attendance-item"><span class="info-label">Days Present:</span> ${card.attendance.days_present}</div>
-          <div class="attendance-item"><span class="info-label">Days Absent:</span> ${card.attendance.days_absent}</div>
+      <div class="rc-section-title">Attendance &amp; Class Statistics</div>
+      <div class="rc-two">
+        <div class="rc-panel">
+          <div class="rc-inline"><span>Days School Opened</span><b>${card.attendance.days_school_opened}</b></div>
+          <div class="rc-inline"><span>Days Present</span><b>${card.attendance.days_present}</b></div>
+          <div class="rc-inline"><span>Days Absent</span><b>${card.attendance.days_absent}</b></div>
+          <div class="rc-inline"><span>Attendance Rate</span><b>${attendanceRate}%</b></div>
+        </div>
+        <div class="rc-panel">
+          <div class="rc-inline"><span>Class Average</span><b>${card.class_average}%</b></div>
+          <div class="rc-inline"><span>Highest Average in Class</span><b>${card.highest_average}%</b></div>
+          <div class="rc-inline"><span>Lowest Average in Class</span><b>${card.lowest_average}%</b></div>
+          <div class="rc-inline"><span>Subjects Offered</span><b>${card.grades.length}</b></div>
         </div>
       </div>
 
-      <div style="margin:15px 0;">
-        <div class="comment-box"><div class="comment-label">CLASS TEACHER'S REMARKS:</div><div>${card.comments.class_teacher_comment || 'No comment'}</div></div>
-        <div class="comment-box"><div class="comment-label">HEAD TEACHER'S REMARKS:</div><div>${card.comments.head_teacher_comment || 'No comment'}</div></div>
-        <div class="comment-box"><div class="comment-label">PRINCIPAL'S REMARKS:</div><div>${principalText}</div></div>
+      <div class="rc-section-title">Remarks</div>
+      <div class="rc-remark">
+        <div class="rc-remark-h">Class Teacher&rsquo;s Remark</div>
+        <div class="rc-remark-b">${esc(card.comments.class_teacher_comment) || '&mdash;'}</div>
+      </div>
+      <div class="rc-remark">
+        <div class="rc-remark-h">Head Teacher&rsquo;s Remark</div>
+        <div class="rc-remark-b">${esc(card.comments.head_teacher_comment) || '&mdash;'}</div>
+      </div>
+      <div class="rc-remark">
+        <div class="rc-remark-h">Principal&rsquo;s Remark</div>
+        <div class="rc-remark-b">${esc(principalText)}</div>
       </div>
 
-      <div class="grading-scale"><strong>GRADING SCALE:</strong> ${gradingScaleHTML}</div>
+      <div class="rc-scale"><b>Grading Scale:</b> ${gradingScaleHTML}</div>
 
-      <div class="signatures">
-        <div class="signature-box"><div class="signature-line">Class Teacher's Signature</div></div>
-        <div class="signature-box"><div class="signature-line">Principal's Signature</div></div>
-        ${automation.show_parent_signature ? `<div class="signature-box"><div class="signature-line">Parent/Guardian's Signature</div></div>` : ''}
+      <div class="rc-signs" style="grid-template-columns: repeat(${signColumns}, 1fr);">
+        <div class="rc-sign"><div class="line">Class Teacher</div><div class="who">Signature &amp; Date</div></div>
+        <div class="rc-sign"><div class="line">${esc(schoolInfo.principal_name || 'Principal')}</div><div class="who">Principal&rsquo;s Signature &amp; School Stamp</div></div>
+        ${automation.show_parent_signature
+          ? `<div class="rc-sign"><div class="line">Parent / Guardian</div><div class="who">Signature &amp; Date</div></div>`
+          : ''}
       </div>
-    </body>
-    </html>
-  `;
+
+      <div class="rc-foot">
+        <span>${schoolName} &bull; ${esc(card.term)} ${esc(card.academic_year || '')}</span>
+        <span>${esc(card.student_name)} &bull; ${esc(card.registration_number)}</span>
+      </div>
+    </div>
+  </div>`;
+}
+
+export function generateReportCardHTML(
+  card: ReportCardData,
+  schoolInfo: ReportCardSchoolInfo,
+  automation: ReportCardAutomation = DEFAULT_REPORT_CARD_AUTOMATION,
+): string {
+  return wrapReportCardDocument(
+    renderReportCardBody(card, schoolInfo, automation),
+    `Report Card - ${card.student_name}`,
+  );
+}
+
+/** Wraps one or more rendered report card bodies into a printable document. */
+export function wrapReportCardDocument(bodyHtml: string, title = 'Report Cards'): string {
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${esc(title)}</title>
+  <style>${reportCardStyles()}</style>
+</head>
+<body>${bodyHtml}</body>
+</html>`;
 }
 
 export function openReportCardPrintWindow(html: string) {
@@ -271,6 +497,38 @@ export function openReportCardPrintWindow(html: string) {
   w.document.write(html);
   w.document.close();
   w.focus();
-  setTimeout(() => w.print(), 500);
+  const doPrint = () => {
+    try {
+      w.focus();
+      w.print();
+    } catch {
+      /* ignore */
+    }
+  };
+  // Wait for the crest / passport images so nothing prints half-rendered.
+  const imgs = Array.from(w.document.images || []);
+  if (!imgs.length) {
+    setTimeout(doPrint, 300);
+  } else {
+    let pending = imgs.length;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      setTimeout(doPrint, 250);
+    };
+    imgs.forEach(img => {
+      if (img.complete) {
+        if (--pending === 0) finish();
+        return;
+      }
+      const tick = () => {
+        if (--pending === 0) finish();
+      };
+      img.addEventListener('load', tick, { once: true });
+      img.addEventListener('error', tick, { once: true });
+    });
+    setTimeout(finish, 4000);
+  }
   return true;
 }
