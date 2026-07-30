@@ -15,6 +15,8 @@ interface OfferData {
   status: string;
   accepted_at?: string;
   declined_at?: string;
+  acceptance_fee?: number;
+  acceptance_fee_note?: string;
 }
 
 interface ApplicationData {
@@ -61,6 +63,8 @@ export const AcceptOfferPage = () => {
           status: result.status,
           accepted_at: result.accepted_at,
           declined_at: result.declined_at,
+          acceptance_fee: result.acceptance_fee != null ? Number(result.acceptance_fee) : undefined,
+          acceptance_fee_note: result.acceptance_fee_note,
         });
 
         const app = result.application;
@@ -111,7 +115,6 @@ export const AcceptOfferPage = () => {
       const { data, error } = await supabase.functions.invoke('initialize-acceptance-payment', {
         body: {
           application_id: acceptData.application_id,
-          amount: 50000,
           email: application.email,
           callback_url: `${window.location.origin}/payment-callback`,
         },
@@ -229,6 +232,9 @@ export const AcceptOfferPage = () => {
 
   const deadline = new Date(`${offer.acceptance_deadline}T23:59:59.999`);
   const isExpired = deadline < new Date();
+  const feeAmount = offer.acceptance_fee ?? 0;
+  const feeLabel = `₦${feeAmount.toLocaleString()}`;
+  const feeNote = offer.acceptance_fee_note || "This acceptance fee will be deducted from your child's school fees.";
 
   return (
     <WebsiteLayout>
@@ -262,9 +268,10 @@ export const AcceptOfferPage = () => {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Acceptance Fee</p>
-                    <p className="font-medium">₦50,000</p>
+                    <p className="font-medium">{feeLabel}</p>
                   </div>
                 </div>
+                <p className="text-sm text-muted-foreground pt-1">{feeNote}</p>
               </div>
 
               {isExpired && (
@@ -282,10 +289,11 @@ export const AcceptOfferPage = () => {
                     <h4 className="font-medium">Next Steps:</h4>
                     <ol className="list-decimal list-inside space-y-1 text-sm text-muted-foreground">
                       <li>Accept this admission offer</li>
-                      <li>Pay the acceptance fee (₦50,000)</li>
+                      <li>Pay the acceptance fee ({feeLabel})</li>
                       <li>Complete enrollment process</li>
                       <li>Receive your student credentials</li>
                     </ol>
+                    <p className="text-sm text-muted-foreground">{feeNote}</p>
                   </div>
 
                   <Alert>
