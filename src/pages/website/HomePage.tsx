@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, Users, GraduationCap, Trophy, BookOpen } from 'lucide-react';
+import { ArrowRight, Pause, Play } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { PrincipalWelcome } from '@/components/website/home/PrincipalWelcome';
 import { Accreditations } from '@/components/website/home/Accreditations';
@@ -13,6 +12,12 @@ import { HowToApply } from '@/components/website/home/HowToApply';
 import { Newsletter } from '@/components/website/home/Newsletter';
 import { WhatsAppFloat } from '@/components/website/home/WhatsAppFloat';
 import { GalleryHighlights } from '@/components/website/home/GalleryHighlights';
+import { Programmes } from '@/components/website/home/Programmes';
+import { AdmissionsGlance } from '@/components/website/home/AdmissionsGlance';
+import { Achievements } from '@/components/website/home/Achievements';
+import { VisitUs } from '@/components/website/home/VisitUs';
+import { WhyChooseUs } from '@/components/website/home/WhyChooseUs';
+import { usePrefersReducedMotion } from '@/components/website/Reveal';
 import { useWebsiteSettings, useSchoolInfo, settingValue } from '@/hooks/useCms';
 
 // Fallback hero image slideshow when nothing is configured in the CMS.
@@ -25,8 +30,10 @@ const DEFAULT_HERO_IMAGES = [
 
 export const HomePage = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [paused, setPaused] = useState(false);
   const { settings } = useWebsiteSettings();
   const { info } = useSchoolInfo();
+  const reducedMotion = usePrefersReducedMotion();
 
   const heroImages = useMemo(() => {
     const raw = settingValue<string[]>(settings, 'hero_images', DEFAULT_HERO_IMAGES);
@@ -34,21 +41,21 @@ export const HomePage = () => {
   }, [settings]);
 
   const heroBadge = settingValue<string>(settings, 'hero_badge', 'Excellence in Education Since 2004');
-  const heroTitle = settingValue<string>(settings, 'hero_title', "Building Tomorrow's");
-  const heroTitleHighlight = settingValue<string>(settings, 'hero_title_highlight', 'Leaders Today');
+  const heroTitle = settingValue<string>(settings, 'hero_title', 'Rigorous academics.');
+  const heroTitleHighlight = settingValue<string>(settings, 'hero_title_highlight', 'Rooted character.');
   const heroSubtitle = settingValue<string>(settings, 'hero_subtitle',
-    'At Al-Bari Group of Schools, we are committed to nurturing young minds and developing future leaders through innovative education, character building, and academic excellence.');
+    'Nursery through senior secondary in one campus \u2014 small classes, qualified teachers, and a Qur\u2019anic and moral foundation that runs through every school day.');
   const heroCtaPrimary = settingValue<string>(settings, 'hero_cta_primary_label', 'Apply Now');
   const heroCtaSecondary = settingValue<string>(settings, 'hero_cta_secondary_label', 'Learn More');
 
-  // 2. Setup interval timer to advance the background automatically
+  // Advance the background automatically unless paused or motion is reduced.
   useEffect(() => {
+    if (paused || reducedMotion || heroImages.length < 2) return;
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % heroImages.length);
-    }, 5000); // Transitions slide every 5000ms (5 seconds)
-
+    }, 5000);
     return () => clearInterval(timer);
-  }, [heroImages.length]);
+  }, [heroImages.length, paused, reducedMotion]);
 
   return (
     <div className="space-y-0">
@@ -170,102 +177,50 @@ export const HomePage = () => {
           </div>
         </div>
 
-        {/* Interactive Slide Navigation Dots Indicator */}
-        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex space-x-2 bg-black/30 backdrop-blur-sm py-2 px-3 rounded-full border border-white/10">
-          {heroImages.map((_, index) => (
+        {/* Slide controls */}
+        {heroImages.length > 1 && (
+          <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 items-center gap-3 rounded-full border border-white/10 bg-black/30 px-3 py-2 backdrop-blur-sm">
+            <div className="flex space-x-2">
+              {heroImages.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentSlide(index)}
+                  className={`h-2 rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                    index === currentSlide ? 'w-6 bg-primary' : 'w-2 bg-white/50 hover:bg-white'
+                  }`}
+                  aria-label={`Go to slide ${index + 1}`}
+                  aria-current={index === currentSlide}
+                />
+              ))}
+            </div>
             <button
-              key={index}
-              onClick={() => setCurrentSlide(index)}
-              className={`h-2 rounded-full transition-all duration-300 ${
-                index === currentSlide ? 'w-6 bg-primary' : 'w-2 bg-white/50 hover:bg-white'
-              }`}
-              aria-label={`Go to slide ${index + 1}`}
-            />
-          ))}
-        </div>
+              onClick={() => setPaused((p) => !p)}
+              className="text-white/80 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              aria-label={paused ? 'Play slideshow' : 'Pause slideshow'}
+            >
+              {paused ? <Play className="h-3.5 w-3.5" /> : <Pause className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Accreditations strip */}
       <Accreditations />
 
-      {/* Statistics Section */}
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_students}</div>
-              <div className="text-muted-foreground">Students</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_teachers}</div>
-              <div className="text-muted-foreground">Teachers</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_success_rate}</div>
-              <div className="text-muted-foreground">Success Rate</div>
-            </div>
-            <div className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-primary mb-2">{info.stat_years}</div>
-              <div className="text-muted-foreground">Years Excellence</div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* Academic programmes */}
+      <Programmes />
+
+      {/* Admissions key dates */}
+      <AdmissionsGlance />
 
       {/* Principal's Welcome */}
       <PrincipalWelcome />
 
-      {/* Why Choose Us Section */}
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">
-              Why Choose Al-Bari Group of Schools?
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Discover what makes us the preferred choice for parents and students seeking quality education.
-            </p>
-          </div>
+      {/* Why families choose us — photo led */}
+      <WhyChooseUs />
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="text-center">
-                <Trophy className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle>Academic Excellence</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Consistent outstanding results in national examinations with personalized learning approaches.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="text-center">
-                <Users className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle>Expert Faculty</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  Qualified and experienced teachers dedicated to nurturing every student's potential.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-              <CardHeader className="text-center">
-                <BookOpen className="h-12 w-12 text-primary mx-auto mb-4" />
-                <CardTitle>Modern Facilities</CardTitle>
-              </CardHeader>
-              <CardContent className="text-center">
-                <p className="text-muted-foreground">
-                  State-of-the-art laboratories, libraries, and technology-enabled classrooms.
-                </p>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </section>
+      {/* Results and achievements */}
+      <Achievements />
 
       {/* Latest News from CMS */}
       <LatestNews />
@@ -278,6 +233,9 @@ export const HomePage = () => {
 
       {/* How to Apply */}
       <HowToApply />
+
+      {/* Visit us / location */}
+      <VisitUs />
 
       {/* Newsletter */}
       <Newsletter />
