@@ -115,11 +115,11 @@ export const TimetableManager: React.FC = () => {
       const teacherUserIds = new Set(teacherRoles?.map(r => r.user_id) || []);
       const teacherProfiles = (profilesRes.data || []).filter(p => teacherUserIds.has(p.user_id));
 
-      setClasses(classesRes.data || []);
-      setSubjects(subjectsRes.data || []);
-      setPeriods(periodsRes.data || []);
-      setRooms(roomsRes.data || []);
-      setTeachers(teacherProfiles);
+      setClasses((classesRes.data || []).filter((c: any) => !!c.id));
+      setSubjects((subjectsRes.data || []).filter((s: any) => !!s.id));
+      setPeriods((periodsRes.data || []).filter((p: any) => !!p.id));
+      setRooms((roomsRes.data || []).filter((r: any) => !!r.id));
+      setTeachers(teacherProfiles.filter((t: any) => !!t.user_id));
 
       if (classesRes.data && classesRes.data.length > 0) {
         setSelectedClass(classesRes.data[0].id);
