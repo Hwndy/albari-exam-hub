@@ -9,7 +9,7 @@ import { CreditCard, Receipt, Loader2, AlertCircle, Download } from 'lucide-reac
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import jsPDF from 'jspdf';
+import { buildBrandedReceipt } from '@/lib/receipt-pdf';
 
 interface FeeStructure {
   id: string;
@@ -155,24 +155,23 @@ export const ParentFees: React.FC = () => {
     .filter(s => s.due_date && paidFor(s.id) < s.amount)
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
 
-  const downloadReceipt = (p: FeePayment) => {
-    const doc = new jsPDF();
-    const w = doc.internal.pageSize.getWidth();
-    doc.setFontSize(18); doc.setFont('helvetica', 'bold');
-    doc.text('Al-Bari Model Schools', w / 2, 20, { align: 'center' });
-    doc.setFontSize(12); doc.setFont('helvetica', 'normal');
-    doc.text('Fee Payment Receipt', w / 2, 30, { align: 'center' });
-    doc.setLineWidth(0.3); doc.line(15, 34, w - 15, 34);
-    let y = 46; const l = 20; const r = w / 2 + 5;
-    const line = (label: string, val: string, col = l) => { doc.setFont('helvetica','normal'); doc.text(label, col, y); doc.setFont('helvetica','bold'); doc.text(val, col + 40, y); };
-    line('Receipt #:', p.receipt_number || '—'); line('Date:', p.payment_date ? format(new Date(p.payment_date), 'PP') : '—', r); y += 10;
-    line('Student:', selectedChild?.full_name || ''); line('Admission:', selectedChild?.admission_number || '', r); y += 10;
-    line('Reference:', p.payment_reference || '—'); y += 10;
-    doc.setFillColor(240,240,240); doc.rect(l - 3, y - 5, w - 2 * l + 6, 14, 'F');
-    doc.setFontSize(14); doc.text('Amount Paid:', l, y + 4);
-    doc.setFont('helvetica','bold'); doc.text(NGN(Number(p.amount_paid)), w - l - 5, y + 4, { align: 'right' });
-    doc.setFontSize(9); doc.setFont('helvetica','normal');
-    doc.text('Computer-generated receipt. Thank you for your payment.', w / 2, 280, { align: 'center' });
+  const downloadReceipt = async (p: FeePayment) => {
+    const structure = structures.find(s => s.id === p.fee_structure_id);
+    const doc = await buildBrandedReceipt({
+      title: 'FEE PAYMENT RECEIPT',
+      receiptNumber: p.receipt_number,
+      date: p.paid_at || p.payment_date ? format(new Date(p.paid_at || p.payment_date), 'PP') : null,
+      fields: [
+        { label: 'Student', value: selectedChild?.full_name },
+        { label: 'Admission No.', value: selectedChild?.admission_number },
+        { label: 'Class', value: selectedChild?.class_name },
+        { label: 'Fee', value: structure?.fee_type },
+        { label: 'Academic Year', value: structure?.academic_year },
+        { label: 'Payment Reference', value: p.payment_reference },
+        { label: 'Status', value: p.status },
+      ],
+      amount: Number(p.amount_paid),
+    });
     doc.save(`receipt-${p.receipt_number || p.id}.pdf`);
   };
 
