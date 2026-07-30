@@ -42,11 +42,23 @@ import {
 } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const menuItems = [
+const menuItems: Array<{
+  title: string;
+  icon: any;
+  value: string;
+  subValue?: string;
+  sub?: { title: string; value: string }[];
+}> = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
     value: "overview",
+  },
+  {
+    title: "Students",
+    icon: Users,
+    value: "academic",
+    subValue: "students",
   },
   {
     title: "Analytics",
@@ -75,7 +87,7 @@ const menuItems = [
       { title: "Results", value: "results" },
       { title: "Questions", value: "questions" },
       { title: "Classes", value: "classes" },
-      { title: "Students", value: "students" },
+      { title: "Students (by class)", value: "students" },
       { title: "Subjects", value: "subjects" },
       { title: "Timetable", value: "timetable" },
       { title: "Report Cards", value: "report-cards" },
@@ -300,12 +312,12 @@ export function AdminSidebar() {
                       </SidebarMenuItem>
                     </Collapsible>
                   ) : (
-                    <SidebarMenuItem key={item.value}>
+                     <SidebarMenuItem key={`${item.value}-${item.subValue ?? ''}`}>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <SidebarMenuButton
-                            onClick={() => handleNavigation(item.value)}
-                            className={isActive(item.value) ? "bg-accent font-medium" : ""}
+                            onClick={() => handleNavigation(item.value, item.subValue)}
+                            className={isActive(item.value, item.subValue) ? "bg-accent font-medium" : ""}
                           >
                             <item.icon className="h-4 w-4" />
                             {!collapsed && <span>{item.title}</span>}
