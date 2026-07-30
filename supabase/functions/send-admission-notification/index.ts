@@ -86,7 +86,7 @@ interface NotificationRequest {
   additional_data?: any;
 }
 
-const emailTemplates = {
+const emailTemplates: Record<string, (data: any) => { subject: string; html: string }> = {
   submitted: (data: any) => ({
     subject: `Application Received - ${data.application_number}`,
     html: `
