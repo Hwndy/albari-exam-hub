@@ -70,101 +70,158 @@ export const AboutPage = () => {
         crumbs={[{ label: 'About Us' }]}
       />
 
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-6">Our Rich History</h2>
-              <div className="space-y-6 text-muted-foreground">
-                {historyParagraphs.map((p, i) => (
-                  <p key={i} className={i === 0 ? 'text-lg' : ''}>{p}</p>
-                ))}
-              </div>
-              <Button className="mt-6" asChild><Link to="/website/admissions">Join Our Legacy</Link></Button>
+      {/* History — asymmetric image + text */}
+      <SectionBand>
+        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+          <Reveal className="lg:col-span-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Our story</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-tight text-foreground lg:text-4xl">Our rich history</h2>
+            <div className="mt-6 space-y-5 text-muted-foreground">
+              {historyParagraphs.map((p, i) => (
+                <p key={i} className={i === 0 ? 'text-lg leading-relaxed' : 'leading-relaxed'}>{p}</p>
+              ))}
             </div>
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-primary/30 to-accent/30 rounded-2xl blur opacity-75 transition duration-1000 group-hover:opacity-100" />
-              <div className="relative aspect-square w-full overflow-hidden rounded-2xl border bg-background shadow-2xl flex items-center justify-center p-6 text-center">
-                <img src={historyImage} alt="Campus Detail View" className="absolute inset-0 h-full w-full object-cover object-center transition duration-500 hover:scale-105" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent pointer-events-none" />
-                <div className="relative z-10 space-y-4">
-                  <div className="flex items-center justify-center h-20 w-20 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 mx-auto shadow-inner">
-                    <BookOpen className="h-10 w-10 text-white" />
+            <Button className="mt-8 rounded-full px-6" asChild>
+              <Link to="/website/admissions">
+                Join our legacy <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </Reveal>
+
+          <Reveal className="lg:col-span-5" delay={120}>
+            <div className="relative">
+              <div className="relative aspect-[4/5] w-full overflow-hidden rounded-2xl border border-border shadow-xl">
+                <img
+                  src={historyImage}
+                  alt="Al-Bari Group of Schools campus"
+                  loading="lazy"
+                  className="h-full w-full object-cover object-center"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+              </div>
+              <div className="absolute -bottom-6 left-6 right-6 rounded-2xl border border-border bg-card p-5 shadow-lg">
+                <div className="flex items-center gap-4">
+                  <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <BookOpen className="h-6 w-6" />
+                  </span>
+                  <div>
+                    <div className="text-2xl font-bold leading-none text-foreground">{yearsLabel}</div>
+                    <div className="mt-1 text-sm text-muted-foreground">of educational excellence</div>
                   </div>
-                  <div className="text-3xl font-bold text-white tracking-tight drop-shadow-md">{yearsBadge}</div>
-                  <div className="text-xl text-slate-100 font-medium leading-tight">Of Educational Excellence</div>
                 </div>
               </div>
             </div>
-          </div>
+          </Reveal>
         </div>
-      </section>
+      </SectionBand>
 
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Our Vision & Mission</h2>
-            <p className="text-lg text-muted-foreground">Guiding principles that drive our commitment to educational excellence</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="text-center"><Eye className="h-12 w-12 text-primary mx-auto mb-4" /><CardTitle className="text-2xl">Our Vision</CardTitle></CardHeader>
-              <CardContent className="text-center"><p className="text-muted-foreground text-lg leading-relaxed">{vision}</p></CardContent>
-            </Card>
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="text-center"><Target className="h-12 w-12 text-primary mx-auto mb-4" /><CardTitle className="text-2xl">Our Mission</CardTitle></CardHeader>
-              <CardContent className="text-center"><p className="text-muted-foreground text-lg leading-relaxed">{mission}</p></CardContent>
-            </Card>
-          </div>
+      {/* Vision & Mission — contrasting panels */}
+      <SectionBand tone="muted" className="pt-24">
+        <SectionHeading
+          eyebrow="Direction"
+          title="Our vision & mission"
+          intro="Guiding principles that drive our commitment to educational excellence."
+        />
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-2">
+          <Reveal>
+            <article className="h-full rounded-2xl border border-primary/20 bg-primary/5 p-8">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15 text-primary">
+                <Eye className="h-6 w-6" />
+              </span>
+              <h3 className="mt-6 text-2xl font-bold text-foreground">Our vision</h3>
+              <p className="mt-3 leading-relaxed text-muted-foreground">{vision}</p>
+            </article>
+          </Reveal>
+          <Reveal delay={100}>
+            <article className="h-full rounded-2xl border border-border bg-foreground p-8">
+              <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-background/15 text-background">
+                <Target className="h-6 w-6" />
+              </span>
+              <h3 className="mt-6 text-2xl font-bold text-background">Our mission</h3>
+              <p className="mt-3 leading-relaxed text-background/75">{mission}</p>
+            </article>
+          </Reveal>
         </div>
-      </section>
+      </SectionBand>
 
-      <section className="py-16">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Our Core Values</h2>
-            <p className="text-lg text-muted-foreground">The fundamental principles that shape our educational philosophy</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {values.map((v, i) => {
-              const Icon = (v.icon && ICONS[v.icon]) || Award;
-              return (
-                <Card key={i} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                  <CardHeader className="text-center"><Icon className="h-12 w-12 text-primary mx-auto mb-4" /><CardTitle>{v.title}</CardTitle></CardHeader>
-                  <CardContent className="text-center"><p className="text-muted-foreground">{v.description}</p></CardContent>
-                </Card>
-              );
-            })}
-          </div>
+      {/* Core values */}
+      <SectionBand>
+        <SectionHeading
+          eyebrow="What we stand for"
+          title="Our core values"
+          intro="The fundamental principles that shape our educational philosophy."
+        />
+        <div className="mx-auto grid max-w-6xl grid-cols-1 gap-6 md:grid-cols-3">
+          {values.map((v, i) => {
+            const Icon = (v.icon && ICONS[v.icon]) || Award;
+            return (
+              <Reveal key={v.title} delay={i * 90}>
+                <article className="h-full rounded-2xl border border-border bg-card p-7 shadow-sm transition-shadow duration-300 hover:shadow-lg">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <Icon className="h-5 w-5" />
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold text-foreground">{v.title}</h3>
+                  <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{v.description}</p>
+                </article>
+              </Reveal>
+            );
+          })}
         </div>
-      </section>
+      </SectionBand>
 
-      <section className="py-16 bg-card/30">
-        <div className="container mx-auto px-4 max-w-6xl">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl lg:text-4xl font-bold text-foreground mb-4">Our Leadership Team</h2>
-            <p className="text-lg text-muted-foreground">Experienced educators leading Al-Bari Group of Schools towards excellence</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {leaders.map((l, i) => (
-              <Card key={i} className="border-0 shadow-lg">
-                <CardContent className="pt-6 text-center">
-                  <div className="w-24 h-24 rounded-full mx-auto mb-4 overflow-hidden shadow-md border-2 border-primary/20 flex items-center justify-center bg-muted">
-                    {l.image ? (
-                      <img src={l.image} alt={l.name} className="w-full h-full object-cover object-center" />
-                    ) : (
-                      <Users className="h-10 w-10 text-primary" />
-                    )}
-                  </div>
-                  <h3 className="text-xl font-semibold text-foreground mb-2">{l.name}</h3>
-                  <p className="text-primary font-medium mb-2">{l.role}</p>
-                  {l.bio && <p className="text-muted-foreground text-sm">{l.bio}</p>}
-                </CardContent>
-              </Card>
-            ))}
+      {/* Leadership */}
+      <SectionBand tone="muted">
+        <SectionHeading
+          eyebrow="Leadership"
+          title="The people behind the school"
+          intro="Experienced educators leading Al-Bari Group of Schools towards excellence."
+        />
+        <div className="mx-auto grid max-w-5xl grid-cols-1 gap-6 sm:grid-cols-2">
+          {leaders.map((l, i) => (
+            <Reveal key={l.name} delay={i * 100}>
+              <article className="group h-full overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+                <div className="aspect-[4/3] w-full overflow-hidden bg-muted">
+                  {l.image ? (
+                    <img
+                      src={l.image}
+                      alt={l.name}
+                      loading="lazy"
+                      className="h-full w-full object-cover object-top transition-transform duration-700 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                      <Users className="h-12 w-12 text-primary" />
+                    </div>
+                  )}
+                </div>
+                <div className="p-6">
+                  <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">{l.role}</p>
+                  <h3 className="mt-2 text-xl font-semibold text-foreground">{l.name}</h3>
+                  {l.bio && <p className="mt-2 text-sm leading-relaxed text-muted-foreground">{l.bio}</p>}
+                </div>
+              </article>
+            </Reveal>
+          ))}
+        </div>
+      </SectionBand>
+
+      {/* Closing CTA */}
+      <SectionBand tone="accent" size="sm">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Come and see the school for yourself</h2>
+          <p className="mt-4 text-lg text-muted-foreground">
+            Book a campus tour or start an application — we would love to meet your family.
+          </p>
+          <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+            <Button size="lg" className="rounded-full px-7" asChild>
+              <Link to="/website/admissions/apply">Apply now</Link>
+            </Button>
+            <Button size="lg" variant="outline" className="rounded-full px-7" asChild>
+              <Link to="/website/facilities">Explore the campus</Link>
+            </Button>
           </div>
         </div>
-      </section>
+      </SectionBand>
     </div>
   );
 };
