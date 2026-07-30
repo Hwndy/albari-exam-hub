@@ -6,6 +6,8 @@ import { User, AuthState, LoginCredentials } from '@/types/auth';
 interface AuthContextType extends AuthState {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
+  mustChangePassword: boolean;
+  setMustChangePassword: (v: boolean) => void;
   register: (userData: { 
     email: string; 
     password: string; 
@@ -25,6 +27,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   // Sprint E: idle timeout — auto sign-out after 30 min of inactivity.
   useEffect(() => {
@@ -49,6 +52,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   useEffect(() => {
     let mounted = true;
 
+    // Safety net: never leave the app stuck on a full-screen spinner.
+    const failsafe = window.setTimeout(() => {
+      if (mounted) setIsLoading(false);
+    }, 8000);
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -71,7 +79,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .from('profiles')
                 .select('*')
                 .eq('user_id', session.user.id)
-                .single();
+                .maybeSingle();
               
               if (!mounted) return;
               
@@ -81,12 +89,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 console.log('✅ Profile fetched:', profile);
               }
               
-              // Fetch role from user_roles table
-              const { data: roleData, error: roleError } = await supabase
+              // Fetch role from user_roles table (tolerate duplicates)
+              const { data: roleRows, error: roleError } = await supabase
                 .from('user_roles')
                 .select('role')
                 .eq('user_id', session.user.id)
-                .single();
+                .limit(5);
+              const roleData = roleRows?.[0] ?? null;
               
               if (!mounted) return;
               
@@ -99,13 +108,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                if (roleError || !roleData?.role) {
                  console.error('Account setup is incomplete: no role is assigned');
                  setUser(null);
-                 setIsLoading(false);
                  return;
                }
 
                const userRole = roleData.role;
               console.log('📝 Final role assigned:', userRole);
               
+              setMustChangePassword(Boolean((profile as any)?.must_change_password));
+
               // Create user object
               const userObject = {
                 id: session.user.id,
@@ -120,17 +130,14 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
               
             } catch (error) {
               console.error('❌ Auth state change error:', error);
-              if (!mounted) return;
-              
-              setUser(null);
-            }
-            
-            if (mounted) {
-              setIsLoading(false);
+              if (mounted) setUser(null);
+            } finally {
+              if (mounted) setIsLoading(false);
             }
           }, 0);
         } else {
           setUser(null);
+          setMustChangePassword(false);
           setIsLoading(false);
         }
       }
@@ -148,6 +155,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     return () => {
       mounted = false;
+      window.clearTimeout(failsafe);
       subscription.unsubscribe();
     };
   }, []);
@@ -167,12 +175,12 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       throw new Error(error.message);
     }
 
-    const { data: role, error: roleError } = await supabase
+    const { data: roles, error: roleError } = await supabase
       .from('user_roles')
       .select('role')
       .eq('user_id', data.user.id)
-      .maybeSingle();
-    if (roleError || !role?.role) {
+      .limit(5);
+    if (roleError || !roles?.[0]?.role) {
       await supabase.auth.signOut();
       setIsLoading(false);
       throw new Error('Your account setup is incomplete. Please contact the school administrator.');
@@ -184,13 +192,10 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .select('must_change_password')
       .eq('user_id', data.user.id)
       .maybeSingle();
-    if (prof?.must_change_password) {
-      window.location.replace('/reset-password');
-      return;
-    }
+    setMustChangePassword(Boolean(prof?.must_change_password));
 
     console.log('Login successful, waiting for auth state change...');
-    // Don't set loading to false here - let the auth state change handle it
+    setIsLoading(false);
   };
 
   const register = async (userData: {
@@ -327,6 +332,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Always clear state after logout attempt
       setUser(null);
       setSession(null);
+      setMustChangePassword(false);
       
       console.log('Logout successful, state cleared');
     } catch (error: any) {
@@ -334,6 +340,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       // Always clear state on error to prevent stuck state
       setUser(null);
       setSession(null);
+      setMustChangePassword(false);
     }
   };
 
@@ -356,6 +363,8 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     logout,
     register,
     resetPassword,
+    mustChangePassword,
+    setMustChangePassword,
   };
 
   return (
