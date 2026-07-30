@@ -117,7 +117,7 @@ async function getLetterheadDataUrl(): Promise<string | null> {
 // ---------------------------------------------------------------------------
 const PAGE_FORMAT = "letter";      // 215.9mm x 279.4mm — matches the artwork ratio
 const SAFE_TOP = 62;               // below the address band
-const SAFE_BOTTOM = 248;           // above the footer colour bars
+const SAFE_BOTTOM = 258;           // above the footer colour bars
 const SAFE_LEFT = 25;
 const SAFE_RIGHT = 25;
 
@@ -259,6 +259,7 @@ async function generateOfferLetterPDF(
     { gap: 6 },
   );
 
+  ensureSpace(30);
   write("Yours faithfully,", { gap: 14 });
   write("Admissions Officer", { bold: true, gap: 1 });
   write("For: Al-Bari College, Badagry, Lagos", { size: 10, colour: [75, 85, 99], gap: 0 });
