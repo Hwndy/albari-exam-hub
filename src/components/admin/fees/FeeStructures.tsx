@@ -18,7 +18,7 @@ const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', c
 interface Structure { id: string; fee_type: string; academic_year: string; term: string | null; amount: number; due_date: string | null; class_id: string | null; is_mandatory: boolean | null; }
 interface Klass { id: string; name: string; }
 
-const emptyForm = { fee_type: '', academic_year: new Date().getFullYear().toString(), term: '', amount: '', due_date: '', class_id: 'ALL', is_mandatory: true };
+const emptyForm = { fee_type: '', academic_year: new Date().getFullYear().toString(), term: '', amount: '', due_date: '', scope: 'ALL' as 'ALL' | 'SELECTED', class_ids: [] as string[], is_mandatory: true };
 
 export const FeeStructures: React.FC = () => {
   const { toast } = useToast();
@@ -42,27 +42,42 @@ export const FeeStructures: React.FC = () => {
   };
   useEffect(() => { load(); }, []);
 
-  const openNew = () => { setEditing(null); setForm(emptyForm); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [] }); setOpen(true); };
   const openEdit = (s: Structure) => {
     setEditing(s);
-    setForm({ fee_type: s.fee_type, academic_year: s.academic_year, term: s.term || '', amount: String(s.amount), due_date: s.due_date || '', class_id: s.class_id || 'ALL', is_mandatory: !!s.is_mandatory });
+    setForm({ fee_type: s.fee_type, academic_year: s.academic_year, term: s.term || '', amount: String(s.amount), due_date: s.due_date || '', scope: s.class_id ? 'SELECTED' : 'ALL', class_ids: s.class_id ? [s.class_id] : [], is_mandatory: !!s.is_mandatory });
     setOpen(true);
   };
 
+  const toggleClass = (id: string) => setForm((f: any) => ({
+    ...f,
+    class_ids: f.class_ids.includes(id) ? f.class_ids.filter((x: string) => x !== id) : [...f.class_ids, id],
+  }));
+
   const save = async () => {
     if (!form.fee_type || !form.amount || !form.academic_year) { toast({ title: 'Missing fields', variant: 'destructive' }); return; }
+    if (form.scope === 'SELECTED' && form.class_ids.length === 0) { toast({ title: 'Select at least one class', variant: 'destructive' }); return; }
     setSaving(true);
-    const payload: any = {
+    const base: any = {
       fee_type: form.fee_type, academic_year: form.academic_year, term: form.term || null,
       amount: Number(form.amount), due_date: form.due_date || null,
-      class_id: form.class_id === 'ALL' ? null : form.class_id, is_mandatory: form.is_mandatory,
+      is_mandatory: form.is_mandatory,
     };
-    const { error } = editing
-      ? await supabase.from('fee_structures').update(payload).eq('id', editing.id)
-      : await supabase.from('fee_structures').insert(payload);
+    const targets: (string | null)[] = form.scope === 'ALL' ? [null] : form.class_ids;
+    let error: any = null;
+    if (editing) {
+      // Update the edited row to the first target, then create rows for any extra classes
+      const [first, ...rest] = targets;
+      ({ error } = await supabase.from('fee_structures').update({ ...base, class_id: first }).eq('id', editing.id));
+      if (!error && rest.length) {
+        ({ error } = await supabase.from('fee_structures').insert(rest.map(cid => ({ ...base, class_id: cid }))) as any);
+      }
+    } else {
+      ({ error } = await supabase.from('fee_structures').insert(targets.map(cid => ({ ...base, class_id: cid }))) as any);
+    }
     setSaving(false);
     if (error) { toast({ title: 'Save failed', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: editing ? 'Updated' : 'Created' });
+    toast({ title: editing ? 'Updated' : `Created for ${targets.length} ${targets[0] === null ? 'scope' : 'class(es)'}` });
     setOpen(false); load();
   };
 
@@ -131,14 +146,33 @@ export const FeeStructures: React.FC = () => {
               <div><Label>Amount (₦) *</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></div>
               <div><Label>Due Date</Label><Input type="date" value={form.due_date} onChange={e => setForm({ ...form, due_date: e.target.value })}/></div>
             </div>
-            <div><Label>Class</Label>
-              <Select value={form.class_id} onValueChange={v => setForm({ ...form, class_id: v })}>
+            <div className="space-y-2">
+              <Label>Applies to</Label>
+              <Select value={form.scope} onValueChange={v => setForm({ ...form, scope: v })}>
                 <SelectTrigger><SelectValue/></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="ALL">All classes</SelectItem>
-                  {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  <SelectItem value="SELECTED">Selected classes</SelectItem>
                 </SelectContent>
               </Select>
+              {form.scope === 'SELECTED' && (
+                <div className="rounded-md border p-3 max-h-48 overflow-y-auto space-y-2">
+                  <div className="flex items-center justify-between pb-1">
+                    <span className="text-xs text-muted-foreground">{form.class_ids.length} selected</span>
+                    <Button type="button" size="sm" variant="ghost"
+                      onClick={() => setForm((f: any) => ({ ...f, class_ids: f.class_ids.length === classes.length ? [] : classes.map(c => c.id) }))}>
+                      {form.class_ids.length === classes.length ? 'Clear all' : 'Select all'}
+                    </Button>
+                  </div>
+                  {classes.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox checked={form.class_ids.includes(c.id)} onCheckedChange={() => toggleClass(c.id)}/> {c.name}
+                    </label>
+                  ))}
+                  {classes.length === 0 && <p className="text-sm text-muted-foreground">No classes found</p>}
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">A separate fee record is created per selected class, so it shows in each child's parent portal.</p>
             </div>
             <label className="flex items-center gap-2"><Checkbox checked={form.is_mandatory} onCheckedChange={v => setForm({ ...form, is_mandatory: !!v })}/> Mandatory</label>
           </div>
