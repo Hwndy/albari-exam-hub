@@ -74,6 +74,7 @@ export const EnhancedLiveMonitor: React.FC = () => {
   const [exams, setExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [investigating, setInvestigating] = useState<SuspiciousActivity | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -502,7 +503,7 @@ export const EnhancedLiveMonitor: React.FC = () => {
                             <Badge variant={getSeverityColor(activity.severity)}>
                               {activity.severity}
                             </Badge>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => setInvestigating(activity)}>
                               Investigate
                             </Button>
                           </div>
