@@ -43,10 +43,15 @@ export const FeeOverview: React.FC = () => {
       const ids = defaulters.map(d => d.id);
       let named: any[] = [];
       if (ids.length) {
-        const { data: sts } = await supabase.from('students').select('id, admission_number, user_id, profiles!students_user_id_fkey(full_name)').in('id', ids);
+        const { data: sts } = await supabase.from('students').select('id, admission_number, user_id').in('id', ids);
+        const userIds = (sts || []).map((s: any) => s.user_id).filter(Boolean);
+        const { data: profs } = userIds.length
+          ? await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds)
+          : { data: [] as any[] };
+        const nameByUser = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
         named = defaulters.map(d => {
           const s: any = (sts || []).find((x: any) => x.id === d.id);
-          return { ...d, name: s?.profiles?.full_name || 'Unknown', admission: s?.admission_number };
+          return { ...d, name: nameByUser.get(s?.user_id) || 'Unknown', admission: s?.admission_number };
         });
       }
       setStats({ billed, collected, outstanding: Math.max(0, billed - collected), thisMonth, overdue: overdue || 0, defaulters: named });
