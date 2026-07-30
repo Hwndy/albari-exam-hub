@@ -11,8 +11,10 @@ interface VerifyRequest {
   reference: string;
 }
 
+// Statuses that must never be downgraded back to under_review
+const LATER_STAGES = ["accepted", "payment_pending", "enrolled", "rejected", "withdrawn"];
+
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -27,7 +29,26 @@ serve(async (req) => {
 
     console.log("Verifying payment:", reference);
 
-    // Verify payment with Paystack
+    // Server-side truth: what kind of payment is this really?
+    const { data: existingPayment } = await supabase
+      .from("admission_payments")
+      .select("application_id, payment_type")
+      .eq("transaction_id", reference)
+      .maybeSingle();
+
+    // Acceptance fees must go through the enrollment flow, never through here.
+    if (existingPayment?.payment_type === "acceptance_fee" || reference?.startsWith("ACC-")) {
+      console.log("Delegating acceptance fee verification:", reference);
+      const { data, error } = await supabase.functions.invoke("verify-acceptance-payment", {
+        body: { reference },
+      });
+      if (error) throw error;
+      return new Response(JSON.stringify(data), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const paystackResponse = await fetch(
       `https://api.paystack.co/transaction/verify/${reference}`,
       {
@@ -44,13 +65,14 @@ serve(async (req) => {
     const paystackData = await paystackResponse.json();
 
     if (paystackData.status && paystackData.data.status === "success") {
-      // Update payment record
+      const paidAt = new Date().toISOString();
+
       const { error: paymentError } = await supabase
         .from("admission_payments")
         .update({
           status: "completed",
           payment_method: paystackData.data.channel,
-          paid_at: new Date().toISOString(),
+          paid_at: paidAt,
         })
         .eq("transaction_id", reference);
 
@@ -58,19 +80,32 @@ serve(async (req) => {
         console.error("Error updating payment:", paymentError);
       }
 
-      // Get application ID from payment
-      const { data: payment } = await supabase
-        .from("admission_payments")
-        .select("application_id")
-        .eq("transaction_id", reference)
-        .single();
+      let applicationInfo: Record<string, unknown> = {};
 
-      if (payment) {
-        // Update application status to payment_pending -> under_review
-        await supabase
+      if (existingPayment?.application_id) {
+        const { data: application } = await supabase
           .from("admission_applications")
-          .update({ status: "under_review" })
-          .eq("id", payment.application_id);
+          .select("id, status, application_number, first_name, last_name, email")
+          .eq("id", existingPayment.application_id)
+          .maybeSingle();
+
+        if (application) {
+          applicationInfo = {
+            application_number: application.application_number,
+            student_name: `${application.first_name} ${application.last_name}`,
+            login_email: application.email,
+          };
+
+          // Only advance the application; never downgrade a later stage.
+          if (!LATER_STAGES.includes(application.status)) {
+            await supabase
+              .from("admission_applications")
+              .update({ status: "under_review" })
+              .eq("id", application.id);
+          } else {
+            console.log("Skipping status change; already at", application.status);
+          }
+        }
       }
 
       console.log("Payment verified and updated successfully");
@@ -79,27 +114,32 @@ serve(async (req) => {
         JSON.stringify({
           success: true,
           status: "completed",
+          payment_type: "application_fee",
+          reference,
           amount: paystackData.data.amount / 100,
           currency: paystackData.data.currency,
+          payment_method: paystackData.data.channel,
+          paid_at: paystackData.data.paid_at ?? paidAt,
+          ...applicationInfo,
         }),
         {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
           status: 200,
         }
       );
-    } else {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          status: paystackData.data.status,
-          message: "Payment verification failed",
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400,
-        }
-      );
     }
+
+    return new Response(
+      JSON.stringify({
+        success: false,
+        status: paystackData.data?.status,
+        message: "Payment verification failed",
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      }
+    );
   } catch (error: any) {
     console.error("Error in verify-admission-payment:", error);
     return new Response(

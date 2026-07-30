@@ -74,7 +74,7 @@ serve(async (req) => {
         if (application) {
           // Idempotency: if the webhook (or an earlier verify call) already
           // enrolled this applicant, just return the existing details.
-          if (application.student_id) {
+          if (application.student_id || application.status === "enrolled") {
             const { data: existingStudent } = await supabase
               .from("students")
               .select("admission_number")
@@ -101,7 +101,8 @@ serve(async (req) => {
           // Generate random password
           const password = `Alb${Math.random().toString(36).slice(-8)}!`;
 
-          // Create user account
+          // Create (or reuse) the applicant's auth account.
+          let userId: string | null = null;
           const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
             email: application.email,
             password: password,
@@ -113,15 +114,41 @@ serve(async (req) => {
           });
 
           if (authError) {
-            console.error("Error creating user:", authError);
-            throw authError;
+            // A previous partially-failed run may already have created the user.
+            console.warn("createUser failed, looking up existing account:", authError.message);
+            const { data: list } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+            const existing = list?.users?.find(
+              (u: any) => (u.email ?? "").toLowerCase() === String(application.email).toLowerCase()
+            );
+            if (!existing) throw authError;
+            userId = existing.id;
+            // Reset password so the welcome email credentials work.
+            await supabase.auth.admin.updateUserById(userId, { password, email_confirm: true });
+          } else {
+            userId = authUser.user.id;
           }
 
+          // Ensure the student role exists (trigger covers new users only).
+          await supabase
+            .from("user_roles")
+            .insert({ user_id: userId, role: "student", created_by: userId })
+            .select()
+            .maybeSingle();
+
+          // Reuse an existing student record if one was already created.
+          const { data: priorStudent } = await supabase
+            .from("students")
+            .select("id, admission_number")
+            .eq("user_id", userId)
+            .maybeSingle();
+
           // Create student record
-          const { data: student, error: studentError } = await supabase
+          const { data: newStudent, error: studentError } = priorStudent
+            ? { data: priorStudent, error: null }
+            : await supabase
             .from("students")
             .insert({
-              user_id: authUser.user.id,
+              user_id: userId,
               admission_number: admissionNumber,
               date_of_birth: application.date_of_birth,
               gender: application.gender,
@@ -142,6 +169,8 @@ serve(async (req) => {
             console.error("Error creating student:", studentError);
             throw studentError;
           }
+          const student = newStudent as { id: string; admission_number: string };
+          const finalAdmissionNumber = student.admission_number ?? admissionNumber;
 
           // Credit the acceptance fee against the student's school fees so the
           // "deducted from school fees" promise on the offer holds true.
@@ -174,10 +203,17 @@ serve(async (req) => {
 
           // Assign to class
           if (application.admitted_to_class_id) {
-            await supabase.from("class_assignments").insert({
-              student_id: student.id,
-              class_id: application.admitted_to_class_id,
-            });
+            const { data: existingAssignment } = await supabase
+              .from("class_assignments")
+              .select("id")
+              .eq("student_id", student.id)
+              .maybeSingle();
+            if (!existingAssignment) {
+              await supabase.from("class_assignments").insert({
+                student_id: student.id,
+                class_id: application.admitted_to_class_id,
+              });
+            }
           }
 
           // Update application with student ID and status
@@ -196,7 +232,7 @@ serve(async (req) => {
                 application_id: payment.application_id,
                 notification_type: "enrolled",
                 additional_data: {
-                  admission_number: admissionNumber,
+                  admission_number: finalAdmissionNumber,
                   login_email: application.email,
                   temporary_password: password,
                 },
@@ -206,10 +242,10 @@ serve(async (req) => {
             console.error("Error sending welcome email:", emailError);
           }
 
-          console.log("Student enrolled successfully:", admissionNumber);
+          console.log("Student enrolled successfully:", finalAdmissionNumber);
           enrollment = {
             already_enrolled: false,
-            admission_number: admissionNumber,
+            admission_number: finalAdmissionNumber,
             login_email: application.email,
             application_number: application.application_number,
             student_name: `${application.first_name} ${application.last_name}`,
@@ -224,6 +260,10 @@ serve(async (req) => {
           status: "completed",
           amount: paystackData.data.amount / 100,
           currency: paystackData.data.currency,
+          payment_type: "acceptance_fee",
+          reference,
+          payment_method: paystackData.data.channel,
+          paid_at: paystackData.data.paid_at ?? new Date().toISOString(),
           ...(enrollment ?? {}),
         }),
         {

@@ -2,31 +2,55 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { CheckCircle, XCircle, Loader2, Printer } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { WebsiteLayout } from '@/components/website/WebsiteLayout';
+import { useSchoolInfo } from '@/hooks/useCms';
+
+interface Receipt {
+  reference?: string | null;
+  amount?: number | null;
+  currency?: string | null;
+  payment_method?: string | null;
+  paid_at?: string | null;
+  payment_type?: string | null;
+  admission_number?: string | null;
+  login_email?: string | null;
+  application_number?: string | null;
+  student_name?: string | null;
+}
+
+const formatMoney = (amount?: number | null, currency?: string | null) => {
+  if (amount == null) return '—';
+  try {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: currency || 'NGN',
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return `${currency || 'NGN'} ${amount.toLocaleString()}`;
+  }
+};
 
 export const PaymentCallbackPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { info: school } = useSchoolInfo();
   const [status, setStatus] = useState<'verifying' | 'success' | 'failed'>('verifying');
   const [message, setMessage] = useState('Verifying your payment...');
-  const [enrollment, setEnrollment] = useState<{
-    admission_number?: string | null;
-    login_email?: string | null;
-    application_number?: string | null;
-    student_name?: string | null;
-  } | null>(null);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
 
   useEffect(() => {
     verifyPayment();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const verifyPayment = async () => {
-    const reference = searchParams.get('reference');
-    
+    const reference = searchParams.get('reference') || searchParams.get('trxref');
+
     if (!reference) {
       setStatus('failed');
       setMessage('No payment reference found');
@@ -34,18 +58,11 @@ export const PaymentCallbackPage = () => {
     }
 
     try {
-      // Determine which verification function to call based on payment type
-      // Check the payment record first
-      const { data: payment } = await supabase
-        .from('admission_payments')
-        .select('payment_type')
-        .eq('transaction_id', reference)
-        .single();
-
-      let functionName = 'verify-admission-payment';
-      if (payment?.payment_type === 'acceptance_fee') {
-        functionName = 'verify-acceptance-payment';
-      }
+      // Route by reference prefix: applicants are anonymous and cannot read
+      // admission_payments, so we must not depend on a DB lookup here.
+      const functionName = reference.toUpperCase().startsWith('ACC-')
+        ? 'verify-acceptance-payment'
+        : 'verify-admission-payment';
 
       const { data, error } = await supabase.functions.invoke(functionName, {
         body: { reference },
@@ -55,15 +72,7 @@ export const PaymentCallbackPage = () => {
 
       if (data?.success) {
         setStatus('success');
-        setMessage('Payment verified successfully!');
-        if (functionName === 'verify-acceptance-payment' && data.admission_number) {
-          setEnrollment({
-            admission_number: data.admission_number,
-            login_email: data.login_email,
-            application_number: data.application_number,
-            student_name: data.student_name,
-          });
-        }
+        setReceipt({ reference, ...data });
         toast({
           title: 'Payment Successful',
           description: 'Your payment has been confirmed.',
@@ -84,71 +93,104 @@ export const PaymentCallbackPage = () => {
     }
   };
 
+  const isEnrollment = Boolean(receipt?.admission_number);
+
+  const Row = ({ label, value, strong }: { label: string; value?: string | null; strong?: boolean }) =>
+    value ? (
+      <div className="flex justify-between gap-4 py-1">
+        <span className="text-muted-foreground">{label}</span>
+        <span className={strong ? 'font-bold text-primary break-all' : 'font-medium break-all'}>{value}</span>
+      </div>
+    ) : null;
+
   return (
     <WebsiteLayout>
-      <div className="min-h-screen py-12 flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="p-8 text-center">
+      <style>{`
+        @media print {
+          body * { visibility: hidden; }
+          #payment-receipt, #payment-receipt * { visibility: visible; }
+          #payment-receipt { position: absolute; inset: 0; margin: 0; width: 100%; border: none; box-shadow: none; }
+          .no-print { display: none !important; }
+        }
+      `}</style>
+      <div className="min-h-screen py-12 flex items-center justify-center px-4">
+        <Card className="max-w-lg w-full">
+          <CardContent className="p-6 sm:p-8">
             {status === 'verifying' && (
-              <>
+              <div className="text-center">
                 <Loader2 className="h-16 w-16 text-primary mx-auto mb-4 animate-spin" />
-                <h2 className="text-2xl font-bold mb-2">Processing Payment</h2>
+                <h1 className="text-2xl font-bold mb-2">Processing Payment</h1>
                 <p className="text-muted-foreground">{message}</p>
-              </>
+              </div>
             )}
 
             {status === 'success' && (
               <>
-                <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-green-600 mb-2">
-                  {enrollment ? 'Enrollment Complete!' : 'Payment Successful!'}
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  {enrollment
-                    ? 'Your acceptance fee has been received and your place is confirmed.'
-                    : message}
-                </p>
-
-                {enrollment && (
-                  <div className="bg-muted rounded-lg p-4 mb-6 text-left space-y-2 text-sm">
-                    {enrollment.student_name && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">Student</span>
-                        <span className="font-medium">{enrollment.student_name}</span>
-                      </div>
+                <div id="payment-receipt">
+                  <div className="text-center mb-6">
+                    {school?.logo_url && (
+                      <img
+                        src={school.logo_url}
+                        alt={`${school?.name || 'School'} logo`}
+                        className="h-14 mx-auto mb-3 object-contain"
+                      />
                     )}
-                    {enrollment.application_number && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">Application No.</span>
-                        <span className="font-medium">{enrollment.application_number}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between gap-4">
-                      <span className="text-muted-foreground">Admission No.</span>
-                      <span className="font-bold text-primary">{enrollment.admission_number}</span>
-                    </div>
-                    {enrollment.login_email && (
-                      <div className="flex justify-between gap-4">
-                        <span className="text-muted-foreground">Login Email</span>
-                        <span className="font-medium break-all">{enrollment.login_email}</span>
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground pt-2 border-t">
-                      Your login details, including a temporary password, have been sent to this
-                      email address. Please change your password after your first sign in.
+                    <p className="font-semibold">{school?.name || 'Al-Bari Schools'}</p>
+                    <CheckCircle className="h-14 w-14 text-green-600 mx-auto my-3" />
+                    <h1 className="text-2xl font-bold text-green-600">Payment Successful</h1>
+                    <p className="text-muted-foreground text-sm mt-1">
+                      {isEnrollment
+                        ? 'Your acceptance fee has been received and your place is confirmed.'
+                        : 'Your payment has been received and confirmed.'}
                     </p>
                   </div>
-                )}
 
-                <div className="space-y-3">
-                  {enrollment && (
+                  <div className="rounded-lg border p-4 text-sm space-y-1">
+                    <h2 className="font-semibold mb-2">Payment Receipt</h2>
+                    <Row label="Amount Paid" value={formatMoney(receipt?.amount, receipt?.currency)} strong />
+                    <Row label="Reference" value={receipt?.reference} />
+                    <Row
+                      label="Payment Method"
+                      value={receipt?.payment_method ? String(receipt.payment_method).toUpperCase() : null}
+                    />
+                    <Row
+                      label="Date"
+                      value={receipt?.paid_at ? new Date(receipt.paid_at).toLocaleString() : new Date().toLocaleString()}
+                    />
+                    <Row
+                      label="Payment Type"
+                      value={receipt?.payment_type === 'acceptance_fee' ? 'Acceptance Fee' : 'Application Fee'}
+                    />
+                  </div>
+
+                  <div className="rounded-lg border p-4 text-sm space-y-1 mt-4">
+                    <h2 className="font-semibold mb-2">Applicant Details</h2>
+                    <Row label="Student" value={receipt?.student_name} />
+                    <Row label="Application No." value={receipt?.application_number} />
+                    <Row label="Admission No." value={receipt?.admission_number} strong />
+                    <Row label="Login Email" value={receipt?.login_email} />
+                    {isEnrollment && (
+                      <p className="text-xs text-muted-foreground pt-2 border-t mt-2">
+                        Your login details, including a temporary password, have been sent to this email
+                        address. Please change your password after your first sign in. This acceptance fee
+                        has been credited towards your school fees.
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3 mt-6 no-print">
+                  <Button onClick={() => window.print()} variant="secondary" className="w-full">
+                    <Printer className="h-4 w-4 mr-2" /> Print / Download Receipt
+                  </Button>
+                  {isEnrollment && (
                     <Button onClick={() => navigate('/login')} className="w-full">
                       Go to Student Login
                     </Button>
                   )}
                   <Button
                     onClick={() => navigate('/track-application')}
-                    variant={enrollment ? 'outline' : 'default'}
+                    variant={isEnrollment ? 'outline' : 'default'}
                     className="w-full"
                   >
                     Track Application
@@ -161,9 +203,9 @@ export const PaymentCallbackPage = () => {
             )}
 
             {status === 'failed' && (
-              <>
+              <div className="text-center">
                 <XCircle className="h-16 w-16 text-destructive mx-auto mb-4" />
-                <h2 className="text-2xl font-bold text-destructive mb-2">Payment Failed</h2>
+                <h1 className="text-2xl font-bold text-destructive mb-2">Payment Failed</h1>
                 <p className="text-muted-foreground mb-6">{message}</p>
                 <div className="space-y-3">
                   <Button onClick={() => navigate('/apply')} className="w-full">
@@ -173,7 +215,7 @@ export const PaymentCallbackPage = () => {
                     Return Home
                   </Button>
                 </div>
-              </>
+              </div>
             )}
           </CardContent>
         </Card>

@@ -1,26 +1,30 @@
-## What's wrong
+## What's actually wrong
 
-Confirmed by reading the routers and the acceptance-payment flow:
+Confirmed from the database: the latest acceptance payment (`ACC-APP2026-000021-...`) is `completed`, but its application is still `under_review` with no `student_id`.
 
-1. `AcceptOfferPage` (mounted at the top level `/accept-offer/:token`) sends Paystack a callback of `${origin}/payment-callback`. That route only exists **inside** `WebsiteRouter`, which is mounted at `/website/*` — so the real path is `/website/payment-callback`. Paystack returns the applicant to `/payment-callback`, which hits the catch-all `NotFound` route → the 404 page.
-2. Even on the correct page, the success screen only says "Payment verified successfully!" — it never shows the admission number, login email, or next steps, and `verify-acceptance-payment` doesn't return them.
-3. `verify-acceptance-payment` enrolls unconditionally: if the Paystack webhook already enrolled the applicant (or the page is refreshed), it tries to create a second auth user + student record for the same application.
+Cause: after Paystack returns, `PaymentCallbackPage` queries `admission_payments` to read `payment_type` so it can choose which verify function to call. The applicant is anonymous, and the RLS policies on `admission_payments` only allow reads by admins or by a signed-in user whose email matches the application. So the lookup returns nothing, the page falls back to `verify-admission-payment`, and that function unconditionally sets the application status to `under_review` — overwriting the accepted/payment_pending state and skipping enrollment entirely.
 
 ## The fix
 
-**Routing**
-- Add a top-level `/payment-callback` route in `App.tsx` pointing at `PaymentCallbackPage` (keeping the existing `/website/payment-callback` one so old links still work).
+**1. Stop guessing the payment type on the client**
+- Route on the Paystack reference prefix instead of a blocked DB read: references are generated as `ACC-...` for acceptance fees and `ADM-...` for application fees. `PaymentCallbackPage` picks `verify-acceptance-payment` for `ACC-`, `verify-admission-payment` otherwise.
 
-**Return enrollment details**
-- In `verify-acceptance-payment`, before enrolling, check whether the application already has a `student_id` / `status = 'enrolled'`. If so, skip creation and just read the existing admission number.
-- Include `admission_number`, `login_email`, `application_number`, and `student_name` in the JSON response (never the temporary password — that stays in the welcome email only).
+**2. Make the verify functions self-guarding (server-side truth)**
+- `verify-admission-payment`: look up the payment's `payment_type` with the service role. If it is `acceptance_fee`, do not touch the status — hand the work to the acceptance logic and return the enrollment payload. Only set `under_review` for genuine `application_fee` payments, and only when the current status is an earlier stage (never downgrade `accepted`, `payment_pending`, or `enrolled`).
+- `verify-acceptance-payment`: keep the existing idempotency guard; additionally treat an application already at `enrolled` as complete.
 
-**Confirmation screen**
-- Update `PaymentCallbackPage` so the acceptance-fee success state shows a proper "Enrollment complete" card: student name, application number, **admission number**, login email, and a note that login credentials were emailed.
-- Buttons: "Go to Student Login" (`/login`) and "Track Application".
-- Keep the generic success message for application-fee payments (unchanged behaviour).
+**3. Repair the stuck applicant**
+- Re-run acceptance verification for the already-paid reference so that applicant gets their student record, admission number, class assignment, fee credit and welcome email — no manual data editing.
+
+**4. Success page: "Payment Successful" + details + print**
+- Rework `PaymentCallbackPage` into a receipt-style confirmation:
+  - Header: "Payment Successful" with amount paid, payment reference, date, and method.
+  - Details block: student name, application number, **admission number**, login email, class (when available), plus the note that login credentials were emailed and the acceptance fee has been credited towards school fees.
+  - Buttons: **Print / Download Receipt** (browser print of a clean receipt layout with school name and logo), **Go to Student Login**, **Track Application**.
+  - Application-fee payments get the same receipt layout minus the enrollment block.
+- Verify functions return `amount`, `reference`, `paid_at`, and `payment_method` so the receipt shows real values.
 
 ## Technical notes
-- Files touched: `src/App.tsx`, `src/pages/website/PaymentCallbackPage.tsx`, `supabase/functions/verify-acceptance-payment/index.ts`.
-- `PaymentCallbackPage` wraps content in `WebsiteLayout`, which renders fine at the top level too.
-- No database migration needed; the idempotency guard is a read on `admission_applications` before the enrollment block.
+- Files: `src/pages/website/PaymentCallbackPage.tsx`, `supabase/functions/verify-admission-payment/index.ts`, `supabase/functions/verify-acceptance-payment/index.ts`. Both functions redeploy.
+- No schema migration needed; the RLS read that fails is simply removed from the flow.
+- Print uses a print-only CSS section (same approach as existing fee receipts) rather than a new PDF dependency.
