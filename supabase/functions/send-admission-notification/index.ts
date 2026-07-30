@@ -169,7 +169,7 @@ const emailTemplates: Record<string, (data: any) => { subject: string; html: str
   }),
   enrolled: (data: any) => {
     const s = data.enrollment_settings || {};
-    const portal = String(s.portal_url || "https://www.albari.com.ng/auth").replace(/\/$/, "");
+    const portal = String(s.portal_url || "https://www.albari.com.ng/login").replace(/\/$/, "");
     const actions: Array<{ label: string; url?: string }> = Array.isArray(s.required_actions) && s.required_actions.length
       ? s.required_actions
       : [
