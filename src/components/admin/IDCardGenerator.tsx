@@ -75,12 +75,13 @@ export const IDCardGenerator: React.FC = () => {
   const fetchData = async () => {
     setIsLoading(true);
     try {
+      const branding = await fetchSchoolBranding();
       setSchool({
         id: 'al-bari',
-        name: 'Al-Bari Model Schools',
-        address: '',
-        logo_url: '',
-        motto: '',
+        name: branding.name,
+        address: branding.address || '',
+        logo_url: branding.logo_url || '',
+        motto: branding.motto || '',
       } as any);
 
       // Fetch classes
