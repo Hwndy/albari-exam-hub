@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -15,10 +15,8 @@ import {
   ClipboardList,
   Heart,
   ScanLine,
-  Megaphone,
-  UserSquare2,
 } from "lucide-react";
-import { BarChart3, Bus, Package, Briefcase, CalendarClock, Wallet } from "lucide-react";
+import { BarChart3, Bus, Package, Briefcase, ServerCog } from "lucide-react";
 
 import {
   Sidebar,
@@ -42,173 +40,200 @@ import {
 } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
-const menuItems: Array<{
+export type NavLeaf = { title: string; tab: string; subtab?: string };
+export type NavItem = {
+  id: string;
   title: string;
   icon: any;
-  value: string;
-  subValue?: string;
-  sub?: { title: string; value: string }[];
-}> = [
+  tab: string;
+  subtab?: string;
+  children?: NavLeaf[];
+};
+export type NavSection = { label: string; items: NavItem[] };
+
+/** Grouped admin navigation. Every entry keeps its original ?tab=&subtab= URL. */
+export const NAV_SECTIONS: NavSection[] = [
   {
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    value: "overview",
-  },
-  {
-    title: "Students",
-    icon: Users,
-    value: "academic",
-    subValue: "students",
-  },
-  {
-    title: "Analytics",
-    icon: BarChart3,
-    value: "analytics",
-  },
-  {
-    title: "Admissions",
-    icon: GraduationCap,
-    value: "admissions",
-    sub: [
-      { title: "Applications", value: "applications" },
-      { title: "Sessions", value: "sessions" },
-      { title: "Payments", value: "payments" },
-      { title: "Entrance Exams", value: "entrance-exams" },
-      { title: "Decisions", value: "decisions" },
-      { title: "Analytics", value: "analytics" },
+    label: "Overview",
+    items: [
+      { id: "overview", title: "Dashboard", icon: LayoutDashboard, tab: "overview" },
+      { id: "analytics", title: "Analytics", icon: BarChart3, tab: "analytics" },
     ],
   },
   {
-    title: "Academic",
-    icon: BookOpen,
-    value: "academic",
-    sub: [
-      { title: "Exams", value: "exams" },
-      { title: "Results", value: "results" },
-      { title: "Questions", value: "questions" },
-      { title: "Classes", value: "classes" },
-      { title: "Students (by class)", value: "students" },
-      { title: "Subjects", value: "subjects" },
-      { title: "Timetable", value: "timetable" },
-      { title: "Report Cards", value: "report-cards" },
+    label: "Admissions",
+    items: [
+      { id: "admissions", title: "Admissions", icon: GraduationCap, tab: "admissions", subtab: "applications" },
     ],
   },
   {
-    title: "Results Management",
-    icon: ClipboardList,
-    value: "results-mgmt",
-    sub: [
-      { title: "Enter Scores", value: "enter-scores" },
-      { title: "Broadsheet", value: "broadsheet" },
-      { title: "Bulk Report Cards", value: "bulk-reports" },
-      { title: "Promotion", value: "promotion" },
-      { title: "Past Students", value: "past-students" },
-      { title: "Automation", value: "automation" },
+    label: "Academics",
+    items: [
+      { id: "students", title: "Students", icon: Users, tab: "academic", subtab: "students" },
+      {
+        id: "curriculum",
+        title: "Classes & Subjects",
+        icon: BookOpen,
+        tab: "academic",
+        children: [
+          { title: "Classes", tab: "academic", subtab: "classes" },
+          { title: "Subjects", tab: "academic", subtab: "subjects" },
+          { title: "Timetable", tab: "academic", subtab: "timetable" },
+        ],
+      },
+      {
+        id: "exams",
+        title: "Exams",
+        icon: ClipboardList,
+        tab: "academic",
+        children: [
+          { title: "Exam Management", tab: "academic", subtab: "exams" },
+          { title: "Question Bank", tab: "academic", subtab: "questions" },
+          { title: "Live Monitor", tab: "system", subtab: "monitor-logs" },
+        ],
+      },
+      {
+        id: "results",
+        title: "Results & Reports",
+        icon: BarChart3,
+        tab: "results-mgmt",
+        children: [
+          { title: "Student Results", tab: "academic", subtab: "results" },
+          { title: "Enter Scores", tab: "results-mgmt", subtab: "enter-scores" },
+          { title: "Broadsheet", tab: "results-mgmt", subtab: "broadsheet" },
+          { title: "Report Cards", tab: "academic", subtab: "report-cards" },
+          { title: "Bulk Report Cards", tab: "results-mgmt", subtab: "bulk-reports" },
+          { title: "Promotion", tab: "results-mgmt", subtab: "promotion" },
+          { title: "Past Students", tab: "results-mgmt", subtab: "past-students" },
+          { title: "Automation", tab: "results-mgmt", subtab: "automation" },
+        ],
+      },
     ],
   },
   {
-    title: "Attendance Reports",
-    icon: ClipboardList,
-    value: "attendance-reports",
-  },
-  {
-    title: "Fee Management",
-    icon: CreditCard,
-    value: "fees",
-  },
-  {
-    title: "Library",
-    icon: Library,
-    value: "library",
-  },
-  {
-    title: "Notifications",
-    icon: Bell,
-    value: "notifications",
-  },
-  {
-    title: "Announcements",
-    icon: Megaphone,
-    value: "announcements",
-  },
-  {
-    title: "ID Cards",
-    icon: IdCard,
-    value: "id-cards",
-    sub: [
-      { title: "Student ID Cards", value: "students" },
-      { title: "Staff ID Cards", value: "staff" },
+    label: "People",
+    items: [
+      { id: "users", title: "Users", icon: Users, tab: "users" },
+      {
+        id: "parents",
+        title: "Parents",
+        icon: Heart,
+        tab: "parents",
+        children: [
+          { title: "Parents", tab: "parents", subtab: "list" },
+          { title: "Child Links", tab: "parents", subtab: "links" },
+          { title: "Messages", tab: "parents", subtab: "messages" },
+          { title: "Announcements", tab: "parents", subtab: "announcements" },
+        ],
+      },
+      {
+        id: "hr",
+        title: "HR",
+        icon: Briefcase,
+        tab: "hr",
+        children: [
+          { title: "Leave Requests", tab: "hr", subtab: "leave" },
+          { title: "Payroll", tab: "hr", subtab: "payroll" },
+          { title: "Careers", tab: "hr", subtab: "careers" },
+        ],
+      },
+      {
+        id: "attendance",
+        title: "Attendance",
+        icon: ScanLine,
+        tab: "attendance-reports",
+        children: [
+          { title: "Reports", tab: "attendance-reports" },
+          { title: "Scan Station", tab: "attendance-scan" },
+        ],
+      },
+      {
+        id: "id-cards",
+        title: "ID Cards",
+        icon: IdCard,
+        tab: "id-cards",
+        children: [
+          { title: "Student ID Cards", tab: "id-cards", subtab: "students" },
+          { title: "Staff ID Cards", tab: "id-cards", subtab: "staff" },
+        ],
+      },
     ],
   },
   {
-    title: "Scan Attendance",
-    icon: ScanLine,
-    value: "attendance-scan",
-  },
-  {
-    title: "Users",
-    icon: Users,
-    value: "users",
-  },
-  {
-    title: "Parents",
-    icon: Heart,
-    value: "parents",
-    sub: [
-      { title: "Parents", value: "list" },
-      { title: "Child Links", value: "links" },
-      { title: "Messages", value: "messages" },
-      { title: "Announcements", value: "announcements" },
+    label: "Operations",
+    items: [
+      { id: "fees", title: "Fees", icon: CreditCard, tab: "fees" },
+      { id: "library", title: "Library", icon: Library, tab: "library" },
+      { id: "transport", title: "Transport", icon: Bus, tab: "transport" },
+      { id: "assets", title: "Assets", icon: Package, tab: "assets" },
+      {
+        id: "communications",
+        title: "Communications",
+        icon: Bell,
+        tab: "notifications",
+        children: [
+          { title: "Bulk Notifications", tab: "notifications" },
+          { title: "Announcements", tab: "announcements" },
+          { title: "Email Logs", tab: "system", subtab: "email-logs" },
+        ],
+      },
     ],
   },
   {
-    title: "Website",
-    icon: Globe,
-    value: "website",
-    sub: [
-      { title: "News & Articles", value: "news" },
-      { title: "Gallery", value: "gallery" },
-      { title: "Testimonials", value: "testimonials" },
-      { title: "School Info", value: "school-info" },
-      { title: "Site Settings", value: "site-settings" },
-    ],
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    value: "settings",
-  },
-  {
-    title: "HR",
-    icon: Briefcase,
-    value: "hr",
-    sub: [
-      { title: "Leave Requests", value: "leave" },
-      { title: "Payroll", value: "payroll" },
-      { title: "Careers", value: "careers" },
-    ],
-  },
-  {
-    title: "Transport",
-    icon: Bus,
-    value: "transport",
-  },
-  {
-    title: "Assets",
-    icon: Package,
-    value: "assets",
-  },
-  {
-    title: "System",
-    icon: Settings,
-    value: "system",
-    sub: [
-      { title: "Email Logs", value: "email-logs" },
-      { title: "Monitor", value: "monitor-logs" },
-      { title: "All Results", value: "results-modal" },
+    label: "Configuration",
+    items: [
+      {
+        id: "website",
+        title: "Website",
+        icon: Globe,
+        tab: "website",
+        children: [
+          { title: "News & Articles", tab: "website", subtab: "news" },
+          { title: "Gallery", tab: "website", subtab: "gallery" },
+          { title: "Testimonials", tab: "website", subtab: "testimonials" },
+          { title: "School Info", tab: "website", subtab: "school-info" },
+          { title: "Site Settings", tab: "website", subtab: "site-settings" },
+        ],
+      },
+      { id: "settings", title: "Settings", icon: Settings, tab: "settings" },
+      {
+        id: "system",
+        title: "System",
+        icon: ServerCog,
+        tab: "system",
+        children: [
+          { title: "Email Logs", tab: "system", subtab: "email-logs" },
+          { title: "Live Monitor", tab: "system", subtab: "monitor-logs" },
+          { title: "All Results", tab: "system", subtab: "results-modal" },
+        ],
+      },
     ],
   },
 ];
+
+/** Which nav item owns a given tab/subtab — used for the header breadcrumb. */
+export function findNavLocation(tab: string, subtab?: string | null) {
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      if (item.children) {
+        const leaf = item.children.find(
+          (c) => c.tab === tab && (c.subtab ?? null) === (subtab ?? null)
+        );
+        if (leaf) return { section: section.label, item, leaf };
+      }
+      if (item.tab === tab && (item.subtab ?? null) === (subtab ?? null)) {
+        return { section: section.label, item, leaf: undefined };
+      }
+    }
+  }
+  // Fall back to the first item that owns the tab.
+  for (const section of NAV_SECTIONS) {
+    for (const item of section.items) {
+      if (item.tab === tab) return { section: section.label, item, leaf: undefined };
+    }
+  }
+  return null;
+}
 
 export function AdminSidebar() {
   const { state } = useSidebar();
@@ -217,71 +242,123 @@ export function AdminSidebar() {
   const searchParams = new URLSearchParams(location.search);
   const currentTab = searchParams.get("tab") || "overview";
   const currentSubTab = searchParams.get("subtab");
-  
-  const [openGroups, setOpenGroups] = useState<string[]>(["admissions", "academic", "website", "system"]);
-
   const navigate = useNavigate();
 
-  const isActive = (value: string, subValue?: string) => {
-    if (subValue) {
-      return currentTab === value && currentSubTab === subValue;
+  const active = findNavLocation(currentTab, currentSubTab);
+  const activeItemId = active?.item.id;
+
+  // Only the group containing the current page is expanded.
+  const [openGroups, setOpenGroups] = useState<string[]>(activeItemId ? [activeItemId] : []);
+
+  useEffect(() => {
+    if (activeItemId) {
+      setOpenGroups((prev) => (prev.includes(activeItemId) ? prev : [...prev, activeItemId]));
     }
-    return currentTab === value && !currentSubTab;
+  }, [activeItemId]);
+
+  const isLeafActive = (leaf: NavLeaf) =>
+    currentTab === leaf.tab && (currentSubTab ?? null) === (leaf.subtab ?? null);
+
+  const isItemActive = (item: NavItem) =>
+    !item.children &&
+    currentTab === item.tab &&
+    (currentSubTab ?? null) === (item.subtab ?? null);
+
+  const go = (tab: string, subtab?: string) => {
+    navigate(subtab ? `/admin?tab=${tab}&subtab=${subtab}` : `/admin?tab=${tab}`);
   };
 
-  const isParentActive = (value: string) => {
-    return currentTab === value;
-  };
+  const toggleGroup = (id: string) =>
+    setOpenGroups((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
 
-  const handleNavigation = (value: string, subValue?: string) => {
-    if (subValue) {
-      navigate(`/admin?tab=${value}&subtab=${subValue}`);
-    } else {
-      navigate(`/admin?tab=${value}`);
-    }
-  };
-
-  const toggleGroup = (value: string) => {
-    setOpenGroups((prev) =>
-      prev.includes(value) ? prev.filter((g) => g !== value) : [...prev, value]
-    );
-  };
+  const activeClasses =
+    "bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-primary rounded-l-none";
 
   return (
     <Sidebar collapsible="icon" className={collapsed ? "w-14" : "w-64"}>
-      <SidebarContent>
-        <SidebarGroup>
-          {!collapsed && <SidebarGroupLabel>Admin Panel</SidebarGroupLabel>}
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <TooltipProvider>
-                {menuItems.map((item) =>
-                  item.sub ? (
-                    <Collapsible
-                      key={item.value}
-                      open={!collapsed && openGroups.includes(item.value)}
-                      onOpenChange={() => !collapsed && toggleGroup(item.value)}
-                    >
-                      <SidebarMenuItem>
+      <SidebarContent className="gap-0">
+        <TooltipProvider>
+          {NAV_SECTIONS.map((section) => (
+            <SidebarGroup key={section.label} className="py-1">
+              {!collapsed && (
+                <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                  {section.label}
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {section.items.map((item) =>
+                    item.children ? (
+                      <Collapsible
+                        key={item.id}
+                        open={!collapsed && openGroups.includes(item.id)}
+                        onOpenChange={() => !collapsed && toggleGroup(item.id)}
+                      >
+                        <SidebarMenuItem>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <CollapsibleTrigger asChild>
+                                <SidebarMenuButton
+                                  size="sm"
+                                  className={activeItemId === item.id ? "font-medium" : ""}
+                                  onClick={() => {
+                                    if (collapsed) {
+                                      const first = item.children![0];
+                                      go(first.tab, first.subtab);
+                                    }
+                                  }}
+                                >
+                                  <item.icon className="h-4 w-4 shrink-0" />
+                                  {!collapsed && (
+                                    <>
+                                      <span className="truncate">{item.title}</span>
+                                      <ChevronDown
+                                        className={`ml-auto h-3.5 w-3.5 transition-transform ${
+                                          openGroups.includes(item.id) ? "rotate-180" : ""
+                                        }`}
+                                      />
+                                    </>
+                                  )}
+                                </SidebarMenuButton>
+                              </CollapsibleTrigger>
+                            </TooltipTrigger>
+                            {collapsed && (
+                              <TooltipContent side="right">
+                                <p>{item.title}</p>
+                              </TooltipContent>
+                            )}
+                          </Tooltip>
+                          {!collapsed && (
+                            <CollapsibleContent>
+                              <SidebarMenuSub>
+                                {item.children.map((leaf) => (
+                                  <SidebarMenuSubItem key={`${leaf.tab}-${leaf.subtab ?? ""}-${leaf.title}`}>
+                                    <SidebarMenuSubButton
+                                      size="sm"
+                                      onClick={() => go(leaf.tab, leaf.subtab)}
+                                      className={isLeafActive(leaf) ? activeClasses : ""}
+                                    >
+                                      <span className="truncate">{leaf.title}</span>
+                                    </SidebarMenuSubButton>
+                                  </SidebarMenuSubItem>
+                                ))}
+                              </SidebarMenuSub>
+                            </CollapsibleContent>
+                          )}
+                        </SidebarMenuItem>
+                      </Collapsible>
+                    ) : (
+                      <SidebarMenuItem key={item.id}>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <CollapsibleTrigger asChild>
-                              <SidebarMenuButton
-                                className={isParentActive(item.value) ? "bg-accent" : ""}
-                              >
-                                <item.icon className="h-4 w-4" />
-                                {!collapsed && (
-                                  <>
-                                    <span>{item.title}</span>
-                                    <ChevronDown
-                                      className={`ml-auto h-4 w-4 transition-transform ${
-                                        openGroups.includes(item.value) ? "rotate-180" : ""
-                                      }`}
-                                    />
-                                  </>
-                                )}
-                              </SidebarMenuButton>
-                            </CollapsibleTrigger>
+                            <SidebarMenuButton
+                              size="sm"
+                              onClick={() => go(item.tab, item.subtab)}
+                              className={isItemActive(item) ? activeClasses : ""}
+                            >
+                              <item.icon className="h-4 w-4 shrink-0" />
+                              {!collapsed && <span className="truncate">{item.title}</span>}
+                            </SidebarMenuButton>
                           </TooltipTrigger>
                           {collapsed && (
                             <TooltipContent side="right">
@@ -289,53 +366,14 @@ export function AdminSidebar() {
                             </TooltipContent>
                           )}
                         </Tooltip>
-                        {!collapsed && (
-                          <CollapsibleContent>
-                            <SidebarMenuSub>
-                              {item.sub.map((subItem) => (
-                                <SidebarMenuSubItem key={subItem.value}>
-                                  <SidebarMenuSubButton
-                                    onClick={() => handleNavigation(item.value, subItem.value)}
-                                    className={
-                                      isActive(item.value, subItem.value)
-                                        ? "bg-accent font-medium"
-                                        : ""
-                                    }
-                                  >
-                                    <span>{subItem.title}</span>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              ))}
-                            </SidebarMenuSub>
-                          </CollapsibleContent>
-                        )}
                       </SidebarMenuItem>
-                    </Collapsible>
-                  ) : (
-                     <SidebarMenuItem key={`${item.value}-${item.subValue ?? ''}`}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <SidebarMenuButton
-                            onClick={() => handleNavigation(item.value, item.subValue)}
-                            className={isActive(item.value, item.subValue) ? "bg-accent font-medium" : ""}
-                          >
-                            <item.icon className="h-4 w-4" />
-                            {!collapsed && <span>{item.title}</span>}
-                          </SidebarMenuButton>
-                        </TooltipTrigger>
-                        {collapsed && (
-                          <TooltipContent side="right">
-                            <p>{item.title}</p>
-                          </TooltipContent>
-                        )}
-                      </Tooltip>
-                    </SidebarMenuItem>
-                  )
-                )}
-              </TooltipProvider>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                    )
+                  )}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          ))}
+        </TooltipProvider>
       </SidebarContent>
     </Sidebar>
   );
