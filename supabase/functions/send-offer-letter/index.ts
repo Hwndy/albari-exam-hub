@@ -10,8 +10,9 @@ const corsHeaders = {
 };
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-const FRONTEND_URL = Deno.env.get("FRONTEND_URL") || "https://irrxmoqbgygyyzozifdl.lovable.app";
-const LETTERHEAD_URL = `${FRONTEND_URL}/__l5e/assets-v1/5fe05427-7253-4d80-9bf2-ca75a2a096e5/albari-letterhead.png`;
+const FRONTEND_URL = (Deno.env.get("FRONTEND_URL") || "https://www.albari.com.ng").replace(/\/+$/, "");
+const ASSET_BASE_URL = (Deno.env.get("ASSET_BASE_URL") || FRONTEND_URL).replace(/\/+$/, "");
+const LETTERHEAD_URL = `${ASSET_BASE_URL}/__l5e/assets-v1/5fe05427-7253-4d80-9bf2-ca75a2a096e5/albari-letterhead.png`;
 const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
 const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
