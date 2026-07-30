@@ -42,7 +42,6 @@ import { StaffIDCardGenerator } from '@/components/admin/StaffIDCardGenerator';
 import { AnnouncementsComposer } from '@/components/admin/AnnouncementsComposer';
 import { SettingsHub } from '@/components/admin/SettingsHub';
 import { AttendanceReports } from '@/components/admin/attendance/AttendanceReports';
-import { AnalyticsDashboard } from '@/components/admin/AnalyticsDashboard';
 import { LeaveManagement } from '@/components/admin/hr/LeaveManagement';
 import { PayrollHub } from '@/components/admin/hr/PayrollHub';
 import { CareersManager } from '@/components/admin/hr/CareersManager';
@@ -330,7 +329,6 @@ export const AdminDashboard = () => {
       return <AttendanceReports />;
     }
 
-    if (activeTab === 'analytics') return <AnalyticsDashboard />;
     if (activeTab === 'transport') return <TransportHub />;
     if (activeTab === 'assets') return <AssetsHub />;
     if (activeTab === 'hr') {
