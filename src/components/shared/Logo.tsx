@@ -1,5 +1,6 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
+import logoSrc from '@/assets/albari-logo.png';
 
 interface LogoProps {
   className?: string;
@@ -23,9 +24,9 @@ export const Logo: React.FC<LogoProps> = ({
   return (
     <div className={cn('flex items-center gap-3', className)}>
       <img 
-        src="/albari_logo.jpg" 
+        src={logoSrc}
         alt="Al-Bari Group of Schools" 
-        className={cn('object-contain', sizeClasses[size])}
+        className={cn('object-contain bg-transparent', sizeClasses[size])}
       />
       {showText && (
         <div className="flex flex-col">
