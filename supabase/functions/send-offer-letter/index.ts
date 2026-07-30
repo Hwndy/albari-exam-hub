@@ -291,7 +291,28 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { application_id, acceptance_deadline }: OfferLetterRequest = await req.json();
+    const { application_id, acceptance_deadline, acceptance_fee }: OfferLetterRequest = await req.json();
+
+    // Resolve fee + note: explicit request value wins, otherwise fall back to admin settings.
+    const { data: settingsRows } = await supabase
+      .from("app_settings")
+      .select("setting_key, setting_value")
+      .in("setting_key", ["acceptance_fee_amount", "acceptance_fee_note"]);
+
+    const settings = Object.fromEntries(
+      (settingsRows ?? []).map((r: any) => [r.setting_key, r.setting_value])
+    );
+    const acceptanceFee = Number(
+      acceptance_fee ?? settings.acceptance_fee_amount ?? 50000
+    );
+    const acceptanceFeeNote = String(
+      settings.acceptance_fee_note ??
+        "This acceptance fee will be deducted from your child's school fees."
+    );
+
+    if (!Number.isFinite(acceptanceFee) || acceptanceFee <= 0) {
+      throw new Error("Invalid acceptance fee amount");
+    }
 
     console.log("Sending offer letter for:", application_id);
 
@@ -321,7 +342,12 @@ serve(async (req) => {
 
     // Generate PDF
     console.log("Generating offer letter PDF...");
-    const pdfBuffer = await generateOfferLetterPDF(application, acceptance_deadline);
+    const pdfBuffer = await generateOfferLetterPDF(
+      application,
+      acceptance_deadline,
+      acceptanceFee,
+      acceptanceFeeNote,
+    );
     
     if (existingOffer) {
       console.log("Offer already exists, updating instead of creating new one");
@@ -366,6 +392,7 @@ serve(async (req) => {
         .update({
           acceptance_deadline,
           acceptance_token: acceptanceToken,
+          acceptance_fee: acceptanceFee,
           offer_letter_url: offerLetterUrl,
           status: "sent",
           updated_at: new Date().toISOString()
@@ -415,7 +442,7 @@ serve(async (req) => {
           application_id,
           acceptance_deadline,
           acceptance_token: acceptanceToken,
-          acceptance_fee: 50000,
+          acceptance_fee: acceptanceFee,
           status: "sent",
           offer_letter_url: offerLetterUrl,
         });
