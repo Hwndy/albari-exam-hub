@@ -24,12 +24,18 @@ export const StudentBalances: React.FC = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: sts }, { data: cls }, { data: fs }, { data: pays }] = await Promise.all([
-      supabase.from('students').select('id, admission_number, user_id, profiles!students_user_id_fkey(full_name), class_assignments(class_id, classes(id,name))'),
+      supabase.from('students').select('id, admission_number, user_id, class_assignments(class_id, classes(id,name))'),
       supabase.from('classes').select('id, name').order('name'),
       supabase.from('fee_structures').select('amount, class_id'),
       supabase.from('fee_payments').select('student_id, amount_paid, status').eq('status', 'completed'),
     ]);
     setClasses((cls || []) as any);
+    const userIds = [...new Set((sts || []).map((s: any) => s.user_id).filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+      nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+    }
     const paidMap: Record<string, number> = {};
     (pays || []).forEach((p: any) => { paidMap[p.student_id] = (paidMap[p.student_id] || 0) + Number(p.amount_paid || 0); });
     const out: Row[] = (sts || []).map((s: any) => {
@@ -38,7 +44,7 @@ export const StudentBalances: React.FC = () => {
       const className = ca?.classes?.name || '—';
       const billed = (fs || []).filter((f: any) => !f.class_id || f.class_id === classId).reduce((a: number, b: any) => a + Number(b.amount), 0);
       const paid = paidMap[s.id] || 0;
-      return { id: s.id, name: s.profiles?.full_name || 'Unknown', admission: s.admission_number || '—', class_id: classId, class_name: className, billed, paid, outstanding: Math.max(0, billed - paid) };
+      return { id: s.id, name: nameMap.get(s.user_id) || 'Unknown', admission: s.admission_number || '—', class_id: classId, class_name: className, billed, paid, outstanding: Math.max(0, billed - paid) };
     });
     setRows(out); setLoading(false);
   };

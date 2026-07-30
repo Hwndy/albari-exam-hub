@@ -27,11 +27,25 @@ export const InstallmentPlans: React.FC = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: pls }, { data: sts }, { data: fs }] = await Promise.all([
-      supabase.from('fee_installment_plans').select('*, students(admission_number, profiles!students_user_id_fkey(full_name)), fee_structures(fee_type,academic_year), fee_installments(id,status,amount,paid_amount)').order('created_at', { ascending: false }),
-      supabase.from('students').select('id, admission_number, profiles!students_user_id_fkey(full_name)').order('admission_number'),
+      supabase.from('fee_installment_plans').select('*, students(id, user_id, admission_number), fee_structures(fee_type,academic_year), fee_installments(id,status,amount,paid_amount)').order('created_at', { ascending: false }),
+      supabase.from('students').select('id, user_id, admission_number').order('admission_number'),
       supabase.from('fee_structures').select('id, fee_type, amount, academic_year'),
     ]);
-    setPlans(pls || []); setStudents(sts || []); setStructures(fs || []);
+    const userIds = [...new Set([
+      ...((sts || []) as any[]).map(s => s.user_id),
+      ...((pls || []) as any[]).map(p => p.students?.user_id),
+    ].filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+      nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+    }
+    setPlans(((pls || []) as any[]).map(p => ({
+      ...p,
+      students: p.students ? { ...p.students, profiles: { full_name: nameMap.get(p.students.user_id) || 'Unknown' } } : null,
+    })));
+    setStudents(((sts || []) as any[]).map(s => ({ ...s, profiles: { full_name: nameMap.get(s.user_id) || 'Unknown' } })));
+    setStructures(fs || []);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
