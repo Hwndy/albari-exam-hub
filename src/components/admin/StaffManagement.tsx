@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2 } from "lucide-react";
+import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2, Download } from "lucide-react";
 import { format } from "date-fns";
 
 interface StaffMember {
@@ -57,6 +57,16 @@ export const StaffManagement = () => {
   const [selectedStaff, setSelectedStaff] = useState<StaffDetails | null>(null);
   const [teachers, setTeachers] = useState<any[]>([]);
   const [syncing, setSyncing] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
+  const [editForm, setEditForm] = useState<{
+    id: string;
+    employee_id: string;
+    department: string;
+    designation: string;
+    join_date: string;
+    employment_type: string;
+    status: string;
+  } | null>(null);
   
   // Form state
   const [formData, setFormData] = useState({
@@ -182,11 +192,10 @@ export const StaffManagement = () => {
 
       const rows: any[] = [];
       for (const userId of missing) {
-        const { data: empId } = await supabase.rpc("next_employee_id");
         const role = ((roleRows as any[]) || []).find((r) => r.user_id === userId)?.role;
         rows.push({
           user_id: userId,
-          employee_id: empId || null,
+          // employee_id is issued by the database (unique, sequence-backed)
           designation: role === "admin" ? "Administrator" : "Teacher",
           department: role === "admin" ? "Administration" : "Academics",
           employment_type: "full-time",
@@ -207,8 +216,8 @@ export const StaffManagement = () => {
   };
 
   const handleAddStaff = async () => {
-    if (!formData.user_id || !formData.employee_id) {
-      toast.error("Please fill in all required fields");
+    if (!formData.user_id) {
+      toast.error("Please select a user");
       return;
     }
 
@@ -218,7 +227,7 @@ export const StaffManagement = () => {
       .from("staff_details")
       .insert({
         user_id: formData.user_id,
-                employee_id: formData.employee_id,
+        employee_id: formData.employee_id.trim() || null,
         department: formData.department,
         designation: formData.designation,
         join_date: formData.join_date || null,
@@ -258,6 +267,67 @@ export const StaffManagement = () => {
     }
   };
 
+  const openEdit = (staff: StaffMember) => {
+    setEditForm({
+      id: staff.id,
+      employee_id: staff.employee_id || "",
+      department: staff.department || "",
+      designation: staff.designation || "",
+      join_date: staff.join_date || "",
+      employment_type: staff.employment_type || "full-time",
+      status: staff.status || "active",
+    });
+    setShowEditDialog(true);
+  };
+
+  const saveEdit = async () => {
+    if (!editForm) return;
+    setIsLoading(true);
+    const { error } = await supabase
+      .from("staff_details")
+      .update({
+        employee_id: editForm.employee_id.trim() || null,
+        department: editForm.department || null,
+        designation: editForm.designation || null,
+        join_date: editForm.join_date || null,
+        employment_type: editForm.employment_type,
+        status: editForm.status,
+      })
+      .eq("id", editForm.id);
+    setIsLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Staff record updated");
+    setShowEditDialog(false);
+    setEditForm(null);
+    fetchStaffMembers();
+  };
+
+  const exportDirectory = () => {
+    const header = ["Employee ID", "Name", "Role", "Department", "Designation", "Join Date", "Type", "Status"];
+    const rows = filteredStaff.map((s) => [
+      s.employee_id || "",
+      s.profile?.full_name || "",
+      s.user_roles?.[0]?.role || "",
+      s.department || "",
+      s.designation || "",
+      s.join_date || "",
+      s.employment_type || "",
+      s.status || "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `staff-directory-${format(new Date(), "yyyy-MM-dd")}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "active":
@@ -289,6 +359,10 @@ export const StaffManagement = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Staff Management</h2>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={exportDirectory} disabled={filteredStaff.length === 0}>
+            <Download className="h-4 w-4 mr-2" />
+            Export CSV
+          </Button>
           <Button variant="outline" onClick={syncStaffFromAccounts} disabled={syncing}>
             {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
             Sync staff from accounts
@@ -465,7 +539,7 @@ export const StaffManagement = () => {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button variant="ghost" size="icon" onClick={() => openEdit(staff)}>
                           <Edit className="h-4 w-4" />
                         </Button>
                       </div>
@@ -509,11 +583,11 @@ export const StaffManagement = () => {
               )}
             </div>
             <div>
-              <label className="text-sm font-medium">Employee ID *</label>
+              <label className="text-sm font-medium">Employee ID</label>
               <Input
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
-                placeholder="e.g., EMP001"
+                placeholder="Leave blank to auto-generate (ALB/STF/0001)"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
@@ -568,6 +642,83 @@ export const StaffManagement = () => {
             <Button onClick={handleAddStaff} disabled={isLoading}>
               Add Staff
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Staff Dialog */}
+      <Dialog open={showEditDialog} onOpenChange={(o) => { setShowEditDialog(o); if (!o) setEditForm(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Staff Record</DialogTitle>
+          </DialogHeader>
+          {editForm && (
+            <div className="space-y-4">
+              <div>
+                <label className="text-sm font-medium">Employee ID</label>
+                <Input
+                  value={editForm.employee_id}
+                  onChange={(e) => setEditForm({ ...editForm, employee_id: e.target.value })}
+                  placeholder="Leave blank to auto-generate"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Department</label>
+                  <Input
+                    value={editForm.department}
+                    onChange={(e) => setEditForm({ ...editForm, department: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Designation</label>
+                  <Input
+                    value={editForm.designation}
+                    onChange={(e) => setEditForm({ ...editForm, designation: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium">Join Date</label>
+                  <Input
+                    type="date"
+                    value={editForm.join_date}
+                    onChange={(e) => setEditForm({ ...editForm, join_date: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Employment Type</label>
+                  <Select
+                    value={editForm.employment_type}
+                    onValueChange={(v) => setEditForm({ ...editForm, employment_type: v })}
+                  >
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="full-time">Full Time</SelectItem>
+                      <SelectItem value="part-time">Part Time</SelectItem>
+                      <SelectItem value="contract">Contract</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Status</label>
+                <Select value={editForm.status} onValueChange={(v) => setEditForm({ ...editForm, status: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="on-leave">On Leave</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="terminated">Terminated</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditDialog(false)}>Cancel</Button>
+            <Button onClick={saveEdit} disabled={isLoading}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

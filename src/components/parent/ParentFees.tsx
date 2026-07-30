@@ -99,6 +99,12 @@ export const ParentFees: React.FC = () => {
       .filter(p => p.status === 'completed' && p.fee_structure_id === structureId)
       .reduce((s, p) => s + Number(p.amount_paid || 0), 0);
 
+  // Payments recorded without a fee structure (e.g. the acceptance fee credited
+  // towards school fees) reduce the outstanding balance of the mandatory fee.
+  const unallocatedCredit = payments
+    .filter(p => p.status === 'completed' && !p.fee_structure_id && !p.fee_installment_id)
+    .reduce((s, p) => s + Number(p.amount_paid || 0), 0);
+
   const pay = async (opts: { fee_structure_id?: string; fee_installment_id?: string; amount: number; label: string }) => {
     if (!selectedChild) return;
     setPaying(opts.fee_structure_id || opts.fee_installment_id || 'x');
@@ -142,6 +148,9 @@ export const ParentFees: React.FC = () => {
   const totalBilled = structures.reduce((s, f) => s + Number(f.amount || 0), 0);
   const totalPaid = payments.filter(p => p.status === 'completed').reduce((s, p) => s + Number(p.amount_paid || 0), 0);
   const outstanding = Math.max(0, totalBilled - totalPaid);
+  // Apply any unallocated credit to the first mandatory fee (falls back to the first fee).
+  const creditTargetId =
+    (structures.find(s => s.is_mandatory) || structures[0])?.id ?? null;
   const nextDue = structures
     .filter(s => s.due_date && paidFor(s.id) < s.amount)
     .sort((a, b) => (a.due_date! < b.due_date! ? -1 : 1))[0];
@@ -203,7 +212,8 @@ export const ParentFees: React.FC = () => {
               <TableBody>
                 {structures.map(f => {
                   const paid = paidFor(f.id);
-                  const balance = Number(f.amount) - paid;
+                  const credit = f.id === creditTargetId ? unallocatedCredit : 0;
+                  const balance = Math.max(0, Number(f.amount) - paid - credit);
                   const plan = plans.find(p => p.fee_structure_id === f.id);
                   return (
                     <TableRow key={f.id}>
@@ -211,7 +221,7 @@ export const ParentFees: React.FC = () => {
                       <TableCell>{f.academic_year}</TableCell>
                       <TableCell>{f.due_date ? format(new Date(f.due_date), 'PP') : '—'}</TableCell>
                       <TableCell className="text-right">{NGN(Number(f.amount))}</TableCell>
-                      <TableCell className="text-right text-green-600">{NGN(paid)}</TableCell>
+                      <TableCell className="text-right text-green-600">{NGN(paid + credit)}</TableCell>
                       <TableCell className="text-right">{NGN(balance)}</TableCell>
                       <TableCell className="text-right">
                         {balance <= 0 ? (
