@@ -47,6 +47,24 @@ export const AdmissionManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [siblingMap, setSiblingMap] = useState<Record<string, string[]>>({});
+
+  // Families frequently share ONE email across several children. Flag those so
+  // they are never mistaken for duplicate submissions.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('admission_applications')
+        .select('email, first_name, last_name, application_number');
+      const map: Record<string, string[]> = {};
+      (data ?? []).forEach((a: any) => {
+        const key = String(a.email ?? '').trim().toLowerCase();
+        if (!key) return;
+        (map[key] ||= []).push(`${a.first_name} ${a.last_name} (${a.application_number})`);
+      });
+      setSiblingMap(map);
+    })();
+  }, []);
 
   useEffect(() => {
     fetchApplications();
@@ -247,6 +265,18 @@ export const AdmissionManagement = () => {
                         {getStatusIcon(application.status)}
                         {application.status.replace('_', ' ')}
                       </Badge>
+                      {(siblingMap[String(application.email ?? '').trim().toLowerCase()]?.length ?? 0) > 1 && (
+                        <Badge
+                          variant="outline"
+                          title={siblingMap[String(application.email).trim().toLowerCase()]
+                            .filter((n) => !n.includes(application.application_number))
+                            .join(', ')}
+                        >
+                          Shared email ·{' '}
+                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1} sibling
+                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1 === 1 ? '' : 's'}
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-muted-foreground">
