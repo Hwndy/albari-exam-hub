@@ -41,6 +41,7 @@ export const StudentTimetable: React.FC = () => {
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
   const [selectedDay, setSelectedDay] = useState<number>(Math.max(0, Math.min(4, new Date().getDay() - 1)));
   const [className, setClassName] = useState<string>('');
+  const [hasClass, setHasClass] = useState(false);
 
   useEffect(() => {
     if (user?.id) {
@@ -53,20 +54,39 @@ export const StudentTimetable: React.FC = () => {
     
     setIsLoading(true);
     try {
-      // Get student's class assignment
-      const { data: classAssignment } = await supabase
+      // Get student's class assignment (rows are keyed by auth user id,
+      // but older rows may reference students.id)
+      let { data: classAssignment } = await supabase
         .from('class_assignments')
         .select('class_id, classes(id, name)')
         .eq('student_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!classAssignment?.class_id) {
+        const { data: studentRow } = await supabase
+          .from('students')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        if (studentRow?.id) {
+          const { data: alt } = await supabase
+            .from('class_assignments')
+            .select('class_id, classes(id, name)')
+            .eq('student_id', studentRow.id)
+            .maybeSingle();
+          classAssignment = alt as any;
+        }
+      }
+
+      if (!classAssignment?.class_id) {
+        setHasClass(false);
         setIsLoading(false);
         return;
       }
 
       const classData = classAssignment.classes as any;
-      setClassName(classData?.name || '');
+      setHasClass(true);
+      setClassName(classData?.name || 'My Class');
 
       // Fetch periods for the school
       const { data: periodsData } = await supabase
@@ -154,7 +174,7 @@ export const StudentTimetable: React.FC = () => {
     );
   }
 
-  if (!className) {
+  if (!hasClass) {
     return (
       <Card>
         <CardContent className="py-12 text-center text-muted-foreground">
@@ -168,6 +188,18 @@ export const StudentTimetable: React.FC = () => {
 
   const nextClass = getNextClass();
   const currentDayName = DAYS[new Date().getDay() - 1];
+
+  if (timetableEntries.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center text-muted-foreground">
+          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+          <p>No timetable has been published for {className} yet.</p>
+          <p className="text-sm">Please check back later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">

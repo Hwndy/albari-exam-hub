@@ -13,6 +13,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import { Loader2, UserCog } from 'lucide-react';
+import { PhotoUpload } from '@/components/shared/PhotoUpload';
 
 export interface EditStudentDialogProps {
   open: boolean;
@@ -159,12 +160,17 @@ export const EditStudentDialog: React.FC<EditStudentDialogProps> = ({
                 <Label>Admission Number</Label>
                 <Input value={admissionNumber} onChange={e => setAdmissionNumber(e.target.value)} />
               </div>
-              <div className="md:col-span-2">
-                <Label>Photo URL</Label>
+              <div className="md:col-span-2 space-y-2">
+                <PhotoUpload
+                  label="Passport Photo"
+                  value={photoUrl}
+                  onChange={setPhotoUrl}
+                  folder={`students/${userId}`}
+                />
                 <Input
                   value={photoUrl}
                   onChange={e => setPhotoUrl(e.target.value)}
-                  placeholder="https://…/student.jpg"
+                  placeholder="…or paste an image URL"
                 />
               </div>
               <div>
