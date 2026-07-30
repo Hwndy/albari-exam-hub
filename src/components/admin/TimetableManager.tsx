@@ -279,7 +279,18 @@ export const TimetableManager: React.FC = () => {
 
   const openEntryDialog = (dayIndex: number, periodId: string) => {
     const existing = getEntryForSlot(dayIndex, periodId);
-    setEditingEntry(existing || { day_of_week: dayIndex, period_id: periodId });
+    setEditingEntry(
+      existing
+        ? { ...existing }
+        : {
+            day_of_week: dayIndex,
+            period_id: periodId,
+            class_id: selectedClass,
+            subject_id: undefined,
+            teacher_id: undefined,
+            room_id: null,
+          } as any
+    );
     setIsDialogOpen(true);
   };
 
@@ -439,12 +450,13 @@ export const TimetableManager: React.FC = () => {
       )}
 
       {/* Entry Edit Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) setEditingEntry(null); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
               {editingEntry?.id ? 'Edit Timetable Entry' : 'Add Timetable Entry'}
             </DialogTitle>
+            <DialogDescription>Choose the subject, teacher and room for this slot.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
