@@ -59,6 +59,24 @@ export const SchoolLifePage = () => {
     "Quranic Recitation", "Arabic Calligraphy"
   ];
 
+  const classStructure = [
+    { level: 'CRECHE', title: 'Your babies in safe hands', description: 'Warm, supervised care with early sensory play and routine building.' },
+    { level: 'KG – NURSERY', title: 'Kindergarten', description: 'Foundation years building literacy, numeracy and social confidence.' },
+    { level: 'PRY 1 – 6', title: 'Primary', description: 'Core competencies across all subject areas with continuous assessment.' },
+    { level: 'JSS 1 – 3', title: 'Junior Secondary', description: 'Broad curriculum leading to BECE, with early subject guidance.' },
+    { level: 'SSS 1 – 3', title: 'Senior Secondary', description: 'Specialised tracks preparing students for WAEC, NECO and JAMB.' },
+    { level: '20–25', title: 'Class size', description: 'Small classes so every child is known, tracked and supported.' },
+  ];
+
+  const schedule = [
+    { time: '7:30 – 8:00 AM', activity: 'Morning assembly & prayers' },
+    { time: '8:00 – 11:30 AM', activity: 'First academic session' },
+    { time: '11:30 – 12:00 PM', activity: 'Break & refreshments' },
+    { time: '12:00 – 1:00 PM', activity: 'Second academic session' },
+    { time: '1:00 – 2:00 PM', activity: 'Lunch break & prayers' },
+    { time: '2:00 – 4:00 PM', activity: 'Madrasah & study period' },
+  ];
+
   return (
     <div className="space-y-0">
       <SEO
