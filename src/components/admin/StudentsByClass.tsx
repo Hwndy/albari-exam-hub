@@ -92,16 +92,8 @@ export const StudentsByClass: React.FC = () => {
 
   const fetchSchoolBranding = async () => {
     try {
-      let name = 'School';
-      let address: string | undefined;
-      let logo_url: string | null = null;
-            const { data: infos } = await supabase
-        .from('school_info').select('info_key, info_value').in('info_key', ['school_name', 'address']);
-      (infos ?? []).forEach((i: any) => {
-        if (i.info_key === 'school_name' && i.info_value) name = i.info_value;
-        if (i.info_key === 'address' && i.info_value && !address) address = i.info_value;
-      });
-      setSchoolInfo({ name, address, logo_url });
+      const b = await loadSchoolBranding();
+      setSchoolInfo({ name: b.name, address: b.address, logo_url: b.logo_url });
     } catch { /* ignore */ }
   };
 

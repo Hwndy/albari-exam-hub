@@ -14,6 +14,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FileText, Loader2, Printer, Eye, Save, MessageSquare, Send } from 'lucide-react';
 import { TagExamsDialog } from '@/components/admin/TagExamsDialog';
+import { fetchSchoolBranding } from '@/lib/school-branding';
+import { generateReportCardHTML, renderReportCardBody, wrapReportCardDocument, openReportCardPrintWindow } from '@/lib/report-card-html';
 
 interface ClassData {
   id: string;
@@ -100,6 +102,7 @@ interface SchoolInfo {
   email: string;
   motto: string;
   logo_url: string;
+  principal_name?: string;
 }
 
 interface AutomationSettings {
