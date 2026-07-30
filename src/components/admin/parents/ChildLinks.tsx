@@ -37,13 +37,16 @@ export const ChildLinks: React.FC = () => {
         .order('created_at', { ascending: false });
       const parentIds = [...new Set((rels || []).map((r: any) => r.parent_id))];
       const studentIds = [...new Set((rels || []).map((r: any) => r.student_id))];
-      const [{ data: parents }, { data: students }, { data: cas }] = await Promise.all([
+      const [{ data: parents }, { data: students }] = await Promise.all([
         parentIds.length ? supabase.from('parents').select('id,user_id').in('id', parentIds) : Promise.resolve({ data: [] as any }),
         studentIds.length ? supabase.from('students').select('id,user_id,admission_number').in('id', studentIds) : Promise.resolve({ data: [] as any }),
-        studentIds.length ? supabase.from('class_assignments').select('student_id,class_id').in('student_id', studentIds) : Promise.resolve({ data: [] as any }),
       ]);
       const puids = (parents || []).map((p: any) => p.user_id).filter(Boolean);
       const suids = (students || []).map((s: any) => s.user_id).filter(Boolean);
+      // class_assignments.student_id stores the student's auth user_id, not students.id
+      const { data: cas } = suids.length
+        ? await supabase.from('class_assignments').select('student_id,class_id').in('student_id', suids)
+        : { data: [] as any };
       const cids = (cas || []).map((c: any) => c.class_id).filter(Boolean);
       const [{ data: pprof }, { data: sprof }, { data: classes }] = await Promise.all([
         puids.length ? supabase.from('profiles').select('user_id,full_name').in('user_id', puids) : Promise.resolve({ data: [] as any }),
@@ -53,7 +56,7 @@ export const ChildLinks: React.FC = () => {
       const built: Row[] = (rels || []).map((r: any) => {
         const p = parents?.find((x: any) => x.id === r.parent_id);
         const s = students?.find((x: any) => x.id === r.student_id);
-        const ca = cas?.find((x: any) => x.student_id === r.student_id);
+        const ca = cas?.find((x: any) => x.student_id === s?.user_id);
         const cls = classes?.find((c: any) => c.id === ca?.class_id);
         return {
           id: r.id,
