@@ -205,15 +205,30 @@ const outcomeLabel: Record<string, string> = {
   pending: "Under Review",
 };
 
+const subjectTable = (data: any) => {
+  const rows = Array.isArray(data.subject_scores) ? data.subject_scores : [];
+  if (!rows.length) return "";
+  return `
+    <table cellpadding="6" cellspacing="0" border="1" style="border-collapse:collapse;margin:12px 0;">
+      <thead>
+        <tr><th align="left">Subject</th><th align="left">Score</th></tr>
+      </thead>
+      <tbody>
+        ${rows.map((r: any) => `<tr><td>${r.subject}</td><td>${r.score ?? "-"} / ${r.max ?? "-"}</td></tr>`).join("")}
+      </tbody>
+    </table>`;
+};
+
 emailTemplates.exam_result = (data: any) => ({
   subject: `Entrance Exam Result - ${data.application_number}`,
   html: `
     <h1>Entrance Examination Result</h1>
     <p>Dear ${data.first_name} ${data.last_name},</p>
     <p>Below is your result for <strong>${data.exam_title || "the entrance examination"}</strong>.</p>
+    ${subjectTable(data)}
     <ul>
       <li><strong>Application Number:</strong> ${data.application_number}</li>
-      <li><strong>Score:</strong> ${data.score ?? "-"}${data.max_score ? ` / ${data.max_score}` : ""}</li>
+      <li><strong>Total Score:</strong> ${data.score ?? "-"}${data.max_score ? ` / ${data.max_score}` : ""}</li>
       <li><strong>Percentage:</strong> ${data.percentage != null ? `${data.percentage}%` : "-"}</li>
       <li><strong>Outcome:</strong> ${outcomeLabel[data.result_status] || "Under Review"}</li>
     </ul>
@@ -229,6 +244,7 @@ emailTemplates.exam_resit = (data: any) => ({
     <h1>Entrance Examination Resit</h1>
     <p>Dear ${data.first_name} ${data.last_name},</p>
     <p>Following your performance in <strong>${data.exam_title || "the entrance examination"}</strong>, you have been invited to resit the examination.</p>
+    ${subjectTable(data)}
     <ul>
       <li><strong>Application Number:</strong> ${data.application_number}</li>
       ${data.score != null ? `<li><strong>Previous Score:</strong> ${data.score}${data.max_score ? ` / ${data.max_score}` : ""}${data.percentage != null ? ` (${data.percentage}%)` : ""}</li>` : ""}
