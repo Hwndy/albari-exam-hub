@@ -228,7 +228,7 @@ async function generateOfferLetterPDF(
   write(`Dear ${application.first_name},`, { gap: 3 });
 
   write(
-    `Following the assessment of your application, I am pleased to confirm that you have been offered a place in ${className} at Al-Bari College for the ${session} academic session. The offer is provisional and becomes final once the acceptance fee is paid and your original documents have been sighted at the school office.`,
+    `Following the assessment of your application, I am pleased to confirm that you have been offered a place in ${className} at Al-Bari College for the ${session} academic session. The offer is provisional until the acceptance fee is paid and your original documents are sighted at the school office.`,
     { gap: 5 },
   );
 
@@ -250,13 +250,8 @@ async function generateOfferLetterPDF(
   );
 
   write(
-    "Once payment is confirmed, the school will issue an admission number and portal login details for the student, together with the parent portal access used for results, attendance and fees.",
-    { gap: 3 },
-  );
-
-  write(
-    "Please bring the originals of the documents uploaded with your application, two passport photographs and this letter on resumption day.",
-    { gap: 6 },
+    "When payment is confirmed the school will issue an admission number and portal login details for the student, along with parent portal access for results, attendance and fees. Please bring the originals of your uploaded documents, two passport photographs and this letter on resumption day.",
+    { gap: 5 },
   );
 
   ensureSpace(30);
