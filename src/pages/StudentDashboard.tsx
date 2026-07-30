@@ -180,27 +180,21 @@ export const StudentDashboard = () => {
           <div className="overflow-x-auto mb-6">
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <BookOpen className="h-4 w-4 mr-1 hidden sm:inline" />
                 Exams
               </TabsTrigger>
               <TabsTrigger value="timetable" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <Calendar className="h-4 w-4 mr-1 hidden sm:inline" />
                 Timetable
               </TabsTrigger>
               <TabsTrigger value="library" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <Library className="h-4 w-4 mr-1 hidden sm:inline" />
                 Library
               </TabsTrigger>
               <TabsTrigger value="assignments" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <ClipboardList className="h-4 w-4 mr-1 hidden sm:inline" />
                 Assignments
               </TabsTrigger>
               <TabsTrigger value="notes" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <NotebookPen className="h-4 w-4 mr-1 hidden sm:inline" />
                 Lesson Notes
               </TabsTrigger>
               <TabsTrigger value="report-cards" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                <FileText className="h-4 w-4 mr-1 hidden sm:inline" />
                 Report Cards
               </TabsTrigger>
             </TabsList>

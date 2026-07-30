@@ -156,15 +156,12 @@ export const CommunicationHub = () => {
       <Tabs defaultValue="announcements" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="announcements">
-            <Megaphone className="h-4 w-4 mr-2" />
             Announcements
           </TabsTrigger>
           <TabsTrigger value="messages">
-            <MessageSquare className="h-4 w-4 mr-2" />
             Messages
           </TabsTrigger>
           <TabsTrigger value="notifications">
-            <Bell className="h-4 w-4 mr-2" />
             Notifications
           </TabsTrigger>
         </TabsList>

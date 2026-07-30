@@ -595,15 +595,12 @@ export const ExamCreationModal: React.FC<ExamCreationModalProps> = ({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0">
             <TabsList className="grid w-full grid-cols-3 flex-shrink-0">
               <TabsTrigger value="metadata">
-                <FileText className="h-4 w-4 mr-2" />
                 Details
               </TabsTrigger>
               <TabsTrigger value="questions">
-                <Plus className="h-4 w-4 mr-2" />
                 Questions ({questions.length})
               </TabsTrigger>
               <TabsTrigger value="preview">
-                <Eye className="h-4 w-4 mr-2" />
                 Preview
               </TabsTrigger>
             </TabsList>

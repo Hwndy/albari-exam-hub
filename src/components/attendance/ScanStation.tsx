@@ -174,9 +174,9 @@ export const ScanStation: React.FC = () => {
         <CardContent>
           <Tabs value={mode} onValueChange={(v) => { stopCamera(); setMode(v as Mode); }}>
             <TabsList>
-              <TabsTrigger value="student"><User className="h-4 w-4 mr-1" /> Students</TabsTrigger>
-              <TabsTrigger value="staff"><UserPlus className="h-4 w-4 mr-1" /> Staff</TabsTrigger>
-              <TabsTrigger value="visitor"><UserPlus className="h-4 w-4 mr-1" /> Visitors</TabsTrigger>
+              <TabsTrigger value="student">Students</TabsTrigger>
+              <TabsTrigger value="staff">Staff</TabsTrigger>
+              <TabsTrigger value="visitor">Visitors</TabsTrigger>
             </TabsList>
 
             <div className="mt-4 flex gap-2">
