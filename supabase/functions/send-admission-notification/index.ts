@@ -221,11 +221,10 @@ const subjectTable = (data: any) => {
 };
 
 emailTemplates.parent_welcome = (data: any) => ({
-  subject: "Your Al-Bari Parent Portal account",
+  subject: "Access to the Al-Bari parent portal",
   html: `
-    <h1>Welcome to the Al-Bari Parent Portal</h1>
     <p>Dear Parent/Guardian,</p>
-    <p>A parent account has been created for you so you can follow your ${
+    <p>A parent account has been created for you so that you can follow your ${
       (data.children?.length ?? 1) > 1 ? "children's" : "child's"
     } results, attendance and school fees in one place.</p>
     ${
@@ -237,53 +236,50 @@ emailTemplates.parent_welcome = (data: any) => ({
     }
     ${
       data.parent_password
-        ? `<p><strong>Login email:</strong> ${data.parent_email}<br>
-           <strong>Temporary password:</strong> ${data.parent_password}</p>
-           <p>You will be asked to set your own password the first time you sign in.</p>
-           <p><a href="${data.portal_url}" style="background:#166534;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block">Sign in to the Parent Portal</a></p>`
-        : `<p>Use the button below to set your password and activate your account.</p>
-           <p><a href="${data.action_link}" style="background:#166534;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block">Set my password</a></p>`
+        ? `<p>Login email: ${data.parent_email}<br>Temporary password: ${data.parent_password}</p>
+           <p>You will be asked to set your own password at first sign-in.</p>
+           <p><a href="${data.portal_url}" style="background:#15803d;color:#fff;padding:12px 22px;border-radius:4px;text-decoration:none;display:inline-block">Sign in to the parent portal</a></p>`
+        : `<p>Use the link below to set your password and activate the account.</p>
+           <p><a href="${data.action_link}" style="background:#15803d;color:#fff;padding:12px 22px;border-radius:4px;text-decoration:none;display:inline-block">Set my password</a></p>`
     }
-    <p>If more than one of your children attends Al-Bari, they all appear inside this single account — you can switch between them at the top of the dashboard.</p>
-    <p>Best regards,<br>Al-Bari Group of Schools</p>
+    <p>Where more than one of your children attends the school, they all appear inside this single account.</p>
+    ${SCHOOL_SIGNOFF}
   `,
 });
 
 emailTemplates.exam_result = (data: any) => ({
-  subject: `Entrance Exam Result - ${data.application_number}`,
+  subject: `Entrance examination result - ${data.application_number}`,
   html: `
-    <h1>Entrance Examination Result</h1>
     <p>Dear ${data.first_name} ${data.last_name},</p>
-    <p>Below is your result for <strong>${data.exam_title || "the entrance examination"}</strong>.</p>
+    <p>The result of your ${data.exam_title || "entrance examination"} is recorded below.</p>
     ${subjectTable(data)}
-    <ul>
-      <li><strong>Application Number:</strong> ${data.application_number}</li>
-      <li><strong>Total Score:</strong> ${data.score ?? "-"}${data.max_score ? ` / ${data.max_score}` : ""}</li>
-      <li><strong>Percentage:</strong> ${data.percentage != null ? `${data.percentage}%` : "-"}</li>
-      <li><strong>Outcome:</strong> ${outcomeLabel[data.result_status] || "Under Review"}</li>
-    </ul>
-    ${data.comment ? `<p><strong>Examiner's Comment:</strong><br>${data.comment}</p>` : ""}
-    <p>You will be contacted with the next steps in your admission process.</p>
-    <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+    <p>
+      <strong>Application number:</strong> ${data.application_number}<br>
+      <strong>Total score:</strong> ${data.score ?? "-"}${data.max_score ? ` / ${data.max_score}` : ""}<br>
+      <strong>Percentage:</strong> ${data.percentage != null ? `${data.percentage}%` : "-"}<br>
+      <strong>Outcome:</strong> ${outcomeLabel[data.result_status] || "Under review"}
+    </p>
+    ${data.comment ? `<p><strong>Examiner's remark:</strong> ${data.comment}</p>` : ""}
+    <p>The admissions office will write to you about the next stage of the process.</p>
+    ${SCHOOL_SIGNOFF}
   `,
 });
 
 emailTemplates.exam_resit = (data: any) => ({
-  subject: `Entrance Exam Resit - ${data.application_number}`,
+  subject: `Entrance examination resit - ${data.application_number}`,
   html: `
-    <h1>Entrance Examination Resit</h1>
     <p>Dear ${data.first_name} ${data.last_name},</p>
-    <p>Following your performance in <strong>${data.exam_title || "the entrance examination"}</strong>, you have been invited to resit the examination.</p>
+    <p>Following your performance in the ${data.exam_title || "entrance examination"}, you have been invited to sit the examination a second time.</p>
     ${subjectTable(data)}
-    <ul>
-      <li><strong>Application Number:</strong> ${data.application_number}</li>
-      ${data.score != null ? `<li><strong>Previous Score:</strong> ${data.score}${data.max_score ? ` / ${data.max_score}` : ""}${data.percentage != null ? ` (${data.percentage}%)` : ""}</li>` : ""}
-      <li><strong>Resit Date:</strong> ${data.resit_date || "To be communicated"}</li>
-      <li><strong>Venue:</strong> ${data.resit_venue || "Al-Bari Group of Schools Campus"}</li>
-    </ul>
-    ${data.comment ? `<p><strong>Examiner's Comment:</strong><br>${data.comment}</p>` : ""}
-    <p>Please arrive 30 minutes early with a valid means of identification and your application number.</p>
-    <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+    <p>
+      <strong>Application number:</strong> ${data.application_number}<br>
+      ${data.score != null ? `<strong>Previous score:</strong> ${data.score}${data.max_score ? ` / ${data.max_score}` : ""}${data.percentage != null ? ` (${data.percentage}%)` : ""}<br>` : ""}
+      <strong>Resit date:</strong> ${data.resit_date || "To be communicated"}<br>
+      <strong>Venue:</strong> ${data.resit_venue || "Al-Bari College, Badagry, Lagos"}
+    </p>
+    ${data.comment ? `<p><strong>Examiner's remark:</strong> ${data.comment}</p>` : ""}
+    <p>Please arrive thirty minutes early with a valid means of identification and your application number.</p>
+    ${SCHOOL_SIGNOFF}
   `,
 });
 
