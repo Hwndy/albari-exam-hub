@@ -523,7 +523,13 @@ serve(async (req) => {
     let emailResult;
     try {
       // Convert PDF buffer to base64 for email attachment
-      const pdfBase64 = btoa(String.fromCharCode(...new Uint8Array(pdfBuffer)));
+      const pdfBytes = new Uint8Array(pdfBuffer);
+      let pdfBinary = "";
+      const CHUNK = 0x8000;
+      for (let i = 0; i < pdfBytes.length; i += CHUNK) {
+        pdfBinary += String.fromCharCode(...pdfBytes.subarray(i, i + CHUNK));
+      }
+      const pdfBase64 = btoa(pdfBinary);
       
       emailResult = await sendEmailWithRetry({
         from: `Al-Bari Group of Schools <${SENDER_EMAIL}>`,
