@@ -47,6 +47,42 @@ export const AdmissionManagement = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [reviewNotes, setReviewNotes] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const [siblingMap, setSiblingMap] = useState<Record<string, string[]>>({});
+  const [backfilling, setBackfilling] = useState(false);
+  const [backfillResults, setBackfillResults] = useState<any[] | null>(null);
+
+  const runLoginBackfill = async () => {
+    setBackfilling(true);
+    const { data, error } = await supabase.functions.invoke('backfill-student-logins');
+    setBackfilling(false);
+    if (error || (data as any)?.error) {
+      toast({
+        title: 'Backfill failed',
+        description: (data as any)?.error || error?.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    setBackfillResults((data as any)?.results ?? []);
+    fetchApplications();
+  };
+
+  // Families frequently share ONE email across several children. Flag those so
+  // they are never mistaken for duplicate submissions.
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from('admission_applications')
+        .select('email, first_name, last_name, application_number');
+      const map: Record<string, string[]> = {};
+      (data ?? []).forEach((a: any) => {
+        const key = String(a.email ?? '').trim().toLowerCase();
+        if (!key) return;
+        (map[key] ||= []).push(`${a.first_name} ${a.last_name} (${a.application_number})`);
+      });
+      setSiblingMap(map);
+    })();
+  }, []);
 
   useEffect(() => {
     fetchApplications();
@@ -204,12 +240,51 @@ export const AdmissionManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Admission Management</h2>
-        <p className="text-muted-foreground">
-          Review and manage student admission applications
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Admission Management</h2>
+          <p className="text-muted-foreground">
+            Review and manage student admission applications
+          </p>
+        </div>
+        <Button variant="outline" onClick={runLoginBackfill} disabled={backfilling}>
+          {backfilling ? 'Fixing logins…' : 'Fix student logins & parent links'}
+        </Button>
       </div>
+
+      <Dialog open={!!backfillResults} onOpenChange={(o) => !o && setBackfillResults(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Student logins updated</DialogTitle>
+            <DialogDescription>
+              Each enrolled student now has a unique school-issued login ID, and the family email is
+              linked as a parent account. Share any temporary passwords shown below.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[60vh] overflow-auto space-y-3 text-sm">
+            {(backfillResults ?? []).length === 0 && <p>No enrolled students needed changes.</p>}
+            {(backfillResults ?? []).map((r, i) => (
+              <div key={i} className="rounded-md border p-3 space-y-1">
+                <p className="font-medium">{r.student || r.application_number}</p>
+                {r.error ? (
+                  <p className="text-destructive">{r.error}</p>
+                ) : (
+                  <>
+                    <p>Student login ID: <span className="font-mono">{r.login_email}</span></p>
+                    {r.parent_email && <p>Parent email: <span className="font-mono">{r.parent_email}</span></p>}
+                    {r.parent_temporary_password && (
+                      <p>Parent temp password: <span className="font-mono">{r.parent_temporary_password}</span></p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      {(r.changes ?? []).length ? (r.changes ?? []).join(', ') : 'already up to date'}
+                    </p>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Status Filter */}
       <Tabs value={statusFilter} onValueChange={setStatusFilter}>
@@ -247,6 +322,18 @@ export const AdmissionManagement = () => {
                         {getStatusIcon(application.status)}
                         {application.status.replace('_', ' ')}
                       </Badge>
+                      {(siblingMap[String(application.email ?? '').trim().toLowerCase()]?.length ?? 0) > 1 && (
+                        <Badge
+                          variant="outline"
+                          title={siblingMap[String(application.email).trim().toLowerCase()]
+                            .filter((n) => !n.includes(application.application_number))
+                            .join(', ')}
+                        >
+                          Shared email ·{' '}
+                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1} sibling
+                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1 === 1 ? '' : 's'}
+                        </Badge>
+                      )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-muted-foreground">

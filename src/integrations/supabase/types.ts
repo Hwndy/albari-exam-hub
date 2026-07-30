@@ -78,6 +78,7 @@ export type Database = {
           id: string
           last_name: string
           lga: string | null
+          login_email: string | null
           medical_conditions: string | null
           merit_rank: number | null
           middle_name: string | null
@@ -114,6 +115,7 @@ export type Database = {
           id?: string
           last_name: string
           lga?: string | null
+          login_email?: string | null
           medical_conditions?: string | null
           merit_rank?: number | null
           middle_name?: string | null
@@ -150,6 +152,7 @@ export type Database = {
           id?: string
           last_name?: string
           lga?: string | null
+          login_email?: string | null
           medical_conditions?: string | null
           merit_rank?: number | null
           middle_name?: string | null
