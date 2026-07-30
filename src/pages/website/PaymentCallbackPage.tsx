@@ -137,7 +137,20 @@ export const PaymentCallbackPage = () => {
                         className="h-14 mx-auto mb-3 object-contain"
                       />
                     )}
-                    <p className="font-semibold">{school?.name || 'Al-Bari Schools'}</p>
+                    <p className="font-semibold uppercase">{school?.name || 'Al-Bari Group of Schools'}</p>
+                    {school?.address && (
+                      <p className="text-xs text-muted-foreground">{school.address}</p>
+                    )}
+                    {(school?.contact_phone || school?.contact_email) && (
+                      <p className="text-xs text-muted-foreground">
+                        {[school?.contact_phone && `Tel: ${school.contact_phone}`, school?.contact_email && `Email: ${school.contact_email}`]
+                          .filter(Boolean)
+                          .join('  |  ')}
+                      </p>
+                    )}
+                    {school?.motto && (
+                      <p className="text-xs italic text-muted-foreground">“{school.motto}”</p>
+                    )}
                     <CheckCircle className="h-14 w-14 text-green-600 mx-auto my-3" />
                     <h1 className="text-2xl font-bold text-green-600">Payment Successful</h1>
                     <p className="text-muted-foreground text-sm mt-1">
