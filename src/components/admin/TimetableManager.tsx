@@ -449,7 +449,7 @@ export const TimetableManager: React.FC = () => {
             <div className="space-y-2">
               <Label>Subject</Label>
               <Select 
-                value={editingEntry?.subject_id || ''} 
+                value={editingEntry?.subject_id || undefined} 
                 onValueChange={(v) => setEditingEntry(prev => ({ ...prev, subject_id: v }))}
               >
                 <SelectTrigger>
@@ -466,7 +466,7 @@ export const TimetableManager: React.FC = () => {
             <div className="space-y-2">
               <Label>Teacher</Label>
               <Select 
-                value={editingEntry?.teacher_id || ''} 
+                value={editingEntry?.teacher_id || undefined} 
                 onValueChange={(v) => setEditingEntry(prev => ({ ...prev, teacher_id: v }))}
               >
                 <SelectTrigger>
@@ -483,14 +483,14 @@ export const TimetableManager: React.FC = () => {
             <div className="space-y-2">
               <Label>Room (Optional)</Label>
               <Select 
-                value={editingEntry?.room_id || ''} 
-                onValueChange={(v) => setEditingEntry(prev => ({ ...prev, room_id: v || null }))}
+                value={editingEntry?.room_id || 'none'} 
+                onValueChange={(v) => setEditingEntry(prev => ({ ...prev, room_id: v === 'none' ? null : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select room" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">No room</SelectItem>
+                  <SelectItem value="none">No room</SelectItem>
                   {rooms.map(r => (
                     <SelectItem key={r.id} value={r.id}>
                       {r.room_name} {r.capacity && `(${r.capacity} seats)`}
