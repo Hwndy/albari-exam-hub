@@ -237,35 +237,48 @@ serve(async (req) => {
             .eq("user_id", userId)
             .maybeSingle();
 
-          // Create student record
-          const { data: newStudent, error: studentError } = priorStudent
-            ? { data: priorStudent, error: null }
-            : await supabase
-            .from("students")
-            .insert({
-              user_id: userId,
-              admission_number: admissionNumber,
-              date_of_birth: application.date_of_birth,
-              gender: application.gender,
-              blood_group: application.blood_group,
-              address: application.address,
-              emergency_contact: application.parent_guardian_info,
-              medical_info: {
-                conditions: application.medical_conditions,
-                allergies: application.allergies,
-              },
-              admission_date: new Date().toISOString().split("T")[0],
-              status: "active",
-            })
-            .select()
-            .single();
-
-          if (studentError) {
-            console.error("Error creating student:", studentError);
-            throw studentError;
+          // Create the student record, retrying if another enrolment grabbed
+          // the same admission number in the meantime.
+          let newStudent: { id: string; admission_number: string } | null =
+            (priorStudent as any) ?? null;
+          let currentNumber = admissionNumber;
+          for (let attempt = 0; attempt < 5 && !newStudent; attempt++) {
+            const { data: inserted, error: studentError } = await supabase
+              .from("students")
+              .insert({
+                user_id: userId,
+                admission_number: currentNumber,
+                date_of_birth: application.date_of_birth,
+                gender: application.gender,
+                blood_group: application.blood_group,
+                address: application.address,
+                emergency_contact: application.parent_guardian_info,
+                medical_info: {
+                  conditions: application.medical_conditions,
+                  allergies: application.allergies,
+                },
+                admission_date: new Date().toISOString().split("T")[0],
+                status: "active",
+              })
+              .select()
+              .single();
+            if (!studentError) {
+              newStudent = inserted as any;
+              break;
+            }
+            if (studentError.code !== "23505") {
+              console.error("Error creating student:", studentError);
+              throw studentError;
+            }
+            console.warn("Admission number collision on", currentNumber, "- retrying");
+            const { data: retryNumber } = await supabase.rpc("next_admission_number");
+            if (!retryNumber) throw studentError;
+            currentNumber = String(retryNumber);
           }
+          if (!newStudent) throw new Error("Could not create the student record");
           const student = newStudent as { id: string; admission_number: string };
-          const finalAdmissionNumber = student.admission_number ?? admissionNumber;
+          const admissionNumberUsed = student.admission_number ?? currentNumber;
+          const finalAdmissionNumber = admissionNumberUsed;
 
           // Credit the acceptance fee against the student's school fees so the
           // "deducted from school fees" promise on the offer holds true.
