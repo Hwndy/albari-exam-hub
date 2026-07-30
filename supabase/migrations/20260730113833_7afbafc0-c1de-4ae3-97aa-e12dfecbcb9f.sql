@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.get_offer_by_token(text) TO supabase_read_only_user;
