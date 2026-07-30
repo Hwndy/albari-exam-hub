@@ -54,8 +54,8 @@ export const FeeReceiptGenerator = () => {
       .select(`
         *,
         student:students(
+          user_id,
           admission_number,
-          profile:profiles!students_user_id_fkey(full_name)
         ),
         fee_structure:fee_structures(fee_type, academic_year)
       `)
@@ -78,8 +78,8 @@ export const FeeReceiptGenerator = () => {
           .select(`
             *,
             student:students(
+              user_id,
               admission_number,
-              profile:profiles!students_user_id_fkey(full_name)
             ),
           fee_structure:fee_structures(fee_type, academic_year)
           `)
@@ -90,7 +90,17 @@ export const FeeReceiptGenerator = () => {
       }
     }
 
-    setPayments((data as any) || []);
+    const rows = ((data as any) || []) as any[];
+    const userIds = [...new Set(rows.map(r => r.student?.user_id).filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase.from("profiles").select("user_id, full_name").in("user_id", userIds);
+      nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+    }
+    setPayments(rows.map(r => ({
+      ...r,
+      student: r.student ? { ...r.student, profile: { full_name: nameMap.get(r.student.user_id) || "Unknown" } } : null,
+    })) as any);
     setIsLoading(false);
   };
 

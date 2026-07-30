@@ -119,20 +119,22 @@ export const LibraryManager: React.FC = () => {
       }));
       setIssues(processedIssues);
 
-      // Fetch students - use separate queries with explicit casting to avoid deep type instantiation
-      const profilesRes = await (supabase.from('profiles') as any).select('user_id, full_name').eq('role', 'student');
-      const studentsRes = await (supabase.from('students') as any).select('id, user_id');
-      const profilesData = (profilesRes.data || []) as { user_id: string; full_name: string }[];
-      const studentRecords = (studentsRes.data || []) as { id: string; user_id: string }[];
-
-      const studentsList = profilesData.map((p: any) => {
-        const studentRecord = studentRecords.find((s: any) => s.user_id === p.user_id);
-        return {
-          id: studentRecord?.id || p.user_id,
-          full_name: p.full_name,
-          user_id: p.user_id,
-        };
-      });
+      // Fetch students - separate queries with explicit casting to avoid deep type instantiation
+      const studentsRes = await (supabase.from('students') as any)
+        .select('id, user_id, admission_number')
+        .order('admission_number');
+      const studentRecords = (studentsRes.data || []) as { id: string; user_id: string; admission_number: string | null }[];
+      const userIds = [...new Set(studentRecords.map(s => s.user_id).filter(Boolean))];
+      let nameMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const profilesRes = await (supabase.from('profiles') as any).select('user_id, full_name').in('user_id', userIds);
+        nameMap = new Map(((profilesRes.data || []) as any[]).map((p: any) => [p.user_id, p.full_name]));
+      }
+      const studentsList = studentRecords.map((s) => ({
+        id: s.id,
+        full_name: `${nameMap.get(s.user_id) || 'Unknown'}${s.admission_number ? ` (${s.admission_number})` : ''}`,
+        user_id: s.user_id,
+      }));
       setStudents(studentsList);
     } catch (error) {
       console.error('Error fetching library data:', error);
