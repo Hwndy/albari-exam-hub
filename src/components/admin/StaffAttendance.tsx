@@ -236,18 +236,6 @@ export const StaffAttendance = () => {
     URL.revokeObjectURL(url);
   };
 
-  const legacyMarkAllPresent = () => {
-    const newRecords: Record<string, AttendanceRecord> = {};
-    staffMembers.forEach((staff) => {
-      newRecords[staff.user_id] = {
-        staff_id: staff.user_id,
-        status: "present",
-        check_in: "08:00",
-      };
-    });
-    setAttendanceRecords(newRecords);
-  };
-
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "present":
