@@ -6,6 +6,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Users, 
   Clock, 
@@ -73,6 +74,7 @@ export const EnhancedLiveMonitor: React.FC = () => {
   const [exams, setExams] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [autoRefresh, setAutoRefresh] = useState(true);
+  const [investigating, setInvestigating] = useState<SuspiciousActivity | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -501,7 +503,7 @@ export const EnhancedLiveMonitor: React.FC = () => {
                             <Badge variant={getSeverityColor(activity.severity)}>
                               {activity.severity}
                             </Badge>
-                            <Button size="sm" variant="outline">
+                            <Button size="sm" variant="outline" onClick={() => setInvestigating(activity)}>
                               Investigate
                             </Button>
                           </div>
@@ -573,6 +575,64 @@ export const EnhancedLiveMonitor: React.FC = () => {
           </div>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={!!investigating} onOpenChange={(open) => !open && setInvestigating(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Suspicious activity</DialogTitle>
+            <DialogDescription>Details recorded for this incident.</DialogDescription>
+          </DialogHeader>
+          {investigating && (
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Student</span>
+                <span className="font-medium">{investigating.student_name}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Type</span>
+                <span className="font-medium">{investigating.activity_type}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Severity</span>
+                <Badge variant={getSeverityColor(investigating.severity)}>{investigating.severity}</Badge>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span className="text-muted-foreground">Recorded</span>
+                <span className="font-medium">{new Date(investigating.timestamp).toLocaleString()}</span>
+              </div>
+              <div className="rounded-md border p-3 text-muted-foreground">{investigating.description}</div>
+              {(() => {
+                const session = liveSessions.find((s) => s.student_name === investigating.student_name);
+                if (!session) return null;
+                return (
+                  <div className="space-y-2 rounded-md border p-3">
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Exam</span>
+                      <span className="font-medium">{session.exam_title}</span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">
+                        {session.current_question_index + 1} / {session.total_questions}
+                      </span>
+                    </div>
+                    <div className="flex justify-between gap-4">
+                      <span className="text-muted-foreground">Flags on session</span>
+                      <span className="font-medium">{session.suspicious_activity_count}</span>
+                    </div>
+                    {session.ip_address && (
+                      <div className="flex justify-between gap-4">
+                        <span className="text-muted-foreground">IP address</span>
+                        <span className="font-medium">{session.ip_address}</span>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -217,7 +217,7 @@ export const PaymentCallbackPage = () => {
                 <h1 className="text-2xl font-bold text-destructive mb-2">Payment Failed</h1>
                 <p className="text-muted-foreground mb-6">{message}</p>
                 <div className="space-y-3">
-                  <Button onClick={() => navigate('/apply')} className="w-full">
+                  <Button onClick={() => navigate('/website/admissions/apply')} className="w-full">
                     Try Again
                   </Button>
                   <Button onClick={() => navigate('/')} variant="outline" className="w-full">

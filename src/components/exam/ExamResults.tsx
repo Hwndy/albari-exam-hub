@@ -311,15 +311,6 @@ export const ExamResults: React.FC = () => {
                 <Download className="h-4 w-4 mr-2" />
                 Print Results
               </Button>
-              
-        <Button 
-          onClick={() => navigate(`/exam/instructions?examId=${results.session_id}`)}
-          disabled
-          className="flex items-center opacity-50"
-        >
-          <RotateCcw className="h-4 w-4 mr-2" />
-          Retake Exam (Coming Soon)
-        </Button>
             </div>
           </CardContent>
         </Card>
