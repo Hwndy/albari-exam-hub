@@ -6,6 +6,7 @@ import { Award, Users, Target, Eye, BookOpen, ShieldCheck, GraduationCap, Landma
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Award,
@@ -60,22 +61,14 @@ export const AboutPage = () => {
         description="Learn about Al-Bari Group of Schools: our vision, mission, core values, and leadership team shaping the next generation of Nigerian leaders."
         path="/website/about"
       />
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img src={heroImage} alt="Al-Bari Group of Schools Campus Background" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-black/60" />
-        </div>
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge className="mb-6 bg-primary text-primary-foreground border-none px-3 py-1 shadow-md">About Al-Bari Group of Schools</Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-white mb-6 leading-tight tracking-tight">
-              {heroTitle}
-              <span className="text-primary block mt-1 drop-shadow-sm text-white mb-6 leading-tight tracking-tight">{heroHighlight}</span>
-            </h1>
-            <p className="text-lg sm:text-xl max-w-2xl mx-auto text-slate-200 font-medium leading-relaxed">{heroSubtitle}</p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="About Al-Bari Group of Schools"
+        title={heroTitle}
+        highlight={heroHighlight}
+        subtitle={heroSubtitle}
+        image={heroImage}
+        crumbs={[{ label: 'About Us' }]}
+      />
 
       <section className="py-16">
         <div className="container mx-auto px-4">

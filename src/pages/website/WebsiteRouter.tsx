@@ -16,6 +16,7 @@ import { PaymentCallbackPage } from './PaymentCallbackPage';
 import { GalleryPage } from './GalleryPage';
 import { TestimonialsPage } from './TestimonialsPage';
 import { CareersPage } from './CareersPage';
+import { NotFoundPage } from './NotFoundPage';
 
 export const WebsiteRouter = () => {
   return (
@@ -37,6 +38,7 @@ export const WebsiteRouter = () => {
         <Route path="/careers" element={<CareersPage />} />
         <Route path="/facilities" element={<FacilitiesPage />} />
         <Route path="/portals" element={<PortalsPage />} />
+        <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </WebsiteLayout>
   );

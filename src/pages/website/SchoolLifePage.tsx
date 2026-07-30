@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookOpen, Users, Microscope, Calculator, Globe, Palette, Music, Trophy } from 'lucide-react';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
 
 export const SchoolLifePage = () => {
   const academicPrograms = [
@@ -63,23 +64,13 @@ export const SchoolLifePage = () => {
         path="/website/school-life"
       />
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-6">
-              School Life at Al-Bari
-            </Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
-              Academic Excellence &
-              <span className="text-primary block">Holistic Development</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Experience a vibrant school life that combines rigorous academics with character 
-              development, extracurricular activities, and a supportive community environment.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="School Life at Al-Bari"
+        title="Academic Excellence &"
+        highlight="Holistic Development"
+        subtitle="Experience a vibrant school life that combines rigorous academics with character development, extracurricular activities, and a supportive community environment."
+        crumbs={[{ label: 'School Life' }]}
+      />
 
       {/* Academic Programs */}
       <section className="py-16">

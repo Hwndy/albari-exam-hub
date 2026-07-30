@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap } from 'lucide-react';
 import { useWebsiteSettings, useGallery, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   BookOpen, Microscope, Monitor, Trophy, Utensils, Bus, Home, Building2, Users, GraduationCap,
@@ -32,14 +33,12 @@ export const FacilitiesPage = () => {
         description="Explore Al-Bari's world-class facilities: modern classrooms, science labs, library, computer lab, sports complex, cafeteria, and safe transportation."
         path="/website/facilities"
       />
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">World-Class Facilities</h1>
-            <p className="text-lg text-muted-foreground">{intro}</p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Campus"
+        title="World-Class Facilities"
+        subtitle={intro}
+        crumbs={[{ label: 'Facilities' }]}
+      />
 
       <section className="py-16">
         <div className="container mx-auto px-4">

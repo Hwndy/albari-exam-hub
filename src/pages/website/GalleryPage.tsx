@@ -5,6 +5,9 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, X, Image as ImageIcon } from 'lucide-react';
 import { useGallery } from '@/hooks/useCms';
 import { SEO, SITE_URL } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
+import { EmptyState } from '@/components/website/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const CATEGORIES = ['all', 'facilities', 'events', 'activities', 'general'] as const;
 type Cat = typeof CATEGORIES[number];
@@ -48,15 +51,12 @@ export const GalleryPage: React.FC = () => {
         jsonLd={jsonLd}
       />
 
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <Badge variant="secondary" className="mb-6">Gallery</Badge>
-          <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-4">Moments from Campus</h1>
-          <p className="text-lg text-muted-foreground">
-            A visual journey through the life, learning and celebrations at Al-Bari Group of Schools.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Gallery"
+        title="Moments from Campus"
+        subtitle="A visual journey through the life, learning and celebrations at Al-Bari Group of Schools."
+        crumbs={[{ label: 'Gallery' }]}
+      />
 
       <section className="py-8 border-b border-border">
         <div className="container mx-auto px-4 flex flex-wrap gap-2 justify-center">
@@ -71,12 +71,19 @@ export const GalleryPage: React.FC = () => {
       <section className="py-12">
         <div className="container mx-auto px-4">
           {isLoading ? (
-            <p className="text-center text-muted-foreground">Loading...</p>
-          ) : items.length === 0 ? (
-            <div className="text-center py-16 text-muted-foreground">
-              <ImageIcon className="h-12 w-12 mx-auto mb-3 opacity-40" />
-              <p>No photos in this category yet.</p>
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <Skeleton key={i} className="aspect-square w-full rounded-xl" />
+              ))}
             </div>
+          ) : items.length === 0 ? (
+            <EmptyState
+              icon={ImageIcon}
+              title="No photos in this category yet"
+              description="We publish new photos after each event and term. Try another category or explore our facilities."
+              actionLabel="View facilities"
+              actionHref="/website/facilities"
+            />
           ) : (
             <div className="columns-1 sm:columns-2 lg:columns-3 xl:columns-4 gap-4 [column-fill:_balance]">
               {items.map((item, idx) => (

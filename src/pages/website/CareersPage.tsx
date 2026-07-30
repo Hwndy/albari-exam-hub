@@ -1,13 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
+import { EmptyState } from '@/components/website/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { format } from 'date-fns';
+import { Briefcase } from 'lucide-react';
 
 export const CareersPage: React.FC = () => {
   const [jobs, setJobs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     supabase
@@ -15,34 +20,43 @@ export const CareersPage: React.FC = () => {
       .select('*')
       .eq('is_open', true)
       .order('created_at', { ascending: false })
-      .then(({ data }) => setJobs(data || []));
+      .then(({ data }) => {
+        setJobs(data || []);
+        setLoading(false);
+      });
   }, []);
 
   return (
-    <div className="container mx-auto px-4 py-12">
+    <div className="space-y-0">
       <SEO
-        title="Careers | Al-Bari Model Schools"
-        description="Join our team. Explore teaching and support staff opportunities at Al-Bari Model Schools."
-        path="/careers"
+        title="Careers — Al-Bari Group of Schools"
+        description="Join our team. Explore teaching and support staff opportunities at Al-Bari Group of Schools."
+        path="/website/careers"
       />
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div>
-          <h1 className="text-4xl font-bold mb-3">Careers</h1>
-          <p className="text-muted-foreground text-lg">
-            Passionate educators and dedicated staff make Al-Bari what it is. Explore current openings below.
-          </p>
-        </div>
+      <PageHero
+        eyebrow="Work with us"
+        title="Careers at Al-Bari"
+        subtitle="Passionate educators and dedicated staff make Al-Bari what it is. Explore current openings below."
+        crumbs={[{ label: 'Careers' }]}
+      />
 
-        {jobs.length === 0 ? (
-          <Card>
-            <CardContent className="py-16 text-center">
-              <p className="text-lg text-muted-foreground">No open positions at the moment.</p>
-              <p className="text-sm text-muted-foreground mt-2">
-                Please check back soon or email us at{' '}
-                <a className="text-primary underline" href="mailto:careers@albari.com.ng">careers@albari.com.ng</a>.
-              </p>
-            </CardContent>
-          </Card>
+      <div className="container mx-auto max-w-4xl px-4 py-16">
+        {loading ? (
+          <div className="space-y-4">
+            {[0, 1, 2].map((i) => (
+              <Skeleton key={i} className="h-40 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : jobs.length === 0 ? (
+          <EmptyState
+            icon={Briefcase}
+            title="No open positions at the moment"
+            description="New roles are posted here as soon as they open. In the meantime, you are welcome to send us a speculative application."
+          >
+            <Button asChild className="rounded-full px-6">
+              <a href="mailto:careers@albari.com.ng?subject=Speculative%20application">Email careers@albari.com.ng</a>
+            </Button>
+          </EmptyState>
         ) : (
           <div className="space-y-4">
             {jobs.map((job) => (

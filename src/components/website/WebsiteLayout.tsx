@@ -2,7 +2,7 @@ import React, { ReactNode, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Logo } from '@/components/shared/Logo';
-import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Youtube, Menu, X, ChevronDown } from 'lucide-react';
+import { Phone, Mail, MapPin, Clock, Facebook, Twitter, Instagram, Youtube, Menu, X, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useSchoolInfo } from '@/hooks/useCms';
@@ -199,8 +199,26 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
 
       {/* Footer */}
       <footer className="bg-card border-t border-border mt-16">
+        {/* Pre-footer CTA */}
+        <div className="border-b border-border bg-primary/[0.05]">
+          <div className="container mx-auto flex flex-col items-center gap-4 px-4 py-8 text-center sm:flex-row sm:justify-between sm:text-left">
+            <div>
+              <h3 className="text-lg font-bold text-foreground">Admissions are open for the new session</h3>
+              <p className="text-sm text-muted-foreground">Apply online in minutes and track your application at every stage.</p>
+            </div>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <Button asChild className="rounded-full px-6">
+                <Link to="/website/admissions/apply">Apply Now</Link>
+              </Button>
+              <Button variant="outline" asChild className="rounded-full px-6">
+                <Link to="/website/track-application">Track Application</Link>
+              </Button>
+            </div>
+          </div>
+        </div>
+
         <div className="container mx-auto px-4 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-4 lg:grid-cols-5">
             {/* School Info */}
             <div className="md:col-span-2">
               <div className="flex items-center space-x-4 mb-4">
@@ -237,6 +255,19 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
               </ul>
             </div>
 
+            {/* For families */}
+            <div>
+              <h3 className="font-semibold text-foreground mb-4">For Families</h3>
+              <ul className="space-y-2">
+                <li><Link to="/website/admissions/apply" className="text-muted-foreground hover:text-primary transition-colors">Apply Online</Link></li>
+                <li><Link to="/website/track-application" className="text-muted-foreground hover:text-primary transition-colors">Track Application</Link></li>
+                <li><Link to="/website/portals" className="text-muted-foreground hover:text-primary transition-colors">Parent Portal</Link></li>
+                <li><Link to="/website/portals" className="text-muted-foreground hover:text-primary transition-colors">Student Portal</Link></li>
+                <li><Link to="/website/facilities" className="text-muted-foreground hover:text-primary transition-colors">Facilities</Link></li>
+                <li><Link to="/website/careers" className="text-muted-foreground hover:text-primary transition-colors">Careers</Link></li>
+              </ul>
+            </div>
+
             {/* Contact Info */}
             <div>
               <h3 className="font-semibold text-foreground mb-4">Contact Info</h3>
@@ -256,15 +287,27 @@ export const WebsiteLayout: React.FC<WebsiteLayoutProps> = ({ children }) => {
                 {info.contact_email && (
                   <div className="flex items-center space-x-2">
                     <Mail className="h-4 w-4 text-primary" />
-                    <span>{info.contact_email}</span>
+                    <span className="break-all">{info.contact_email}</span>
                   </div>
                 )}
+                <div className="flex items-start space-x-2">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                  <span>Mon – Fri, 8:00am – 4:00pm</span>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="border-t border-border mt-8 pt-8 text-center text-muted-foreground">
+          <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-border pt-8 text-center text-sm text-muted-foreground sm:flex-row sm:text-left">
             <p>&copy; {new Date().getFullYear()} {info.name}. All rights reserved.</p>
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+              <Link to="/website/about" className="hover:text-primary transition-colors">About</Link>
+              <Link to="/website/careers" className="hover:text-primary transition-colors">Careers</Link>
+              <Link to="/website/news" className="hover:text-primary transition-colors">News</Link>
+              {info.contact_email && (
+                <a href={`mailto:${info.contact_email}`} className="hover:text-primary transition-colors">Contact</a>
+              )}
+            </div>
           </div>
         </div>
       </footer>

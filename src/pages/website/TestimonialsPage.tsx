@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Star, Quote } from 'lucide-react';
+import { Star, Quote, MessageSquareQuote } from 'lucide-react';
 import { useTestimonials } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
+import { EmptyState } from '@/components/website/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ROLES = ['all', 'student', 'parent', 'alumni', 'staff'] as const;
 type Role = typeof ROLES[number];
@@ -21,15 +23,12 @@ export const TestimonialsPage: React.FC = () => {
         path="/website/testimonials"
       />
 
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4 text-center max-w-3xl">
-          <Badge variant="secondary" className="mb-6">Voices of Al-Bari</Badge>
-          <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-4">What Our Community Says</h1>
-          <p className="text-lg text-muted-foreground">
-            Real stories from the students, families and educators who call Al-Bari home.
-          </p>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Voices of Al-Bari"
+        title="What Our Community Says"
+        subtitle="Real stories from the students, families and educators who call Al-Bari home."
+        crumbs={[{ label: 'Testimonials' }]}
+      />
 
       <section className="py-8 border-b border-border">
         <div className="container mx-auto px-4 flex flex-wrap gap-2 justify-center">
@@ -44,9 +43,19 @@ export const TestimonialsPage: React.FC = () => {
       <section className="py-16">
         <div className="container mx-auto px-4">
           {isLoading ? (
-            <p className="text-center text-muted-foreground">Loading...</p>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {[0, 1, 2, 3, 4, 5].map((i) => (
+                <Skeleton key={i} className="h-56 w-full rounded-2xl" />
+              ))}
+            </div>
           ) : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-16">No testimonials yet.</p>
+            <EmptyState
+              icon={MessageSquareQuote}
+              title="No testimonials here yet"
+              description="We are collecting stories from our community. Check back soon, or read more about the school in the meantime."
+              actionLabel="About the school"
+              actionHref="/website/about"
+            />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filtered.map((t) => (

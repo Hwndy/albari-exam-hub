@@ -6,9 +6,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Calendar, Clock, ArrowLeft, Search, Share2, Facebook, Twitter, MessageCircle, Link as LinkIcon, CalendarPlus } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft, Search, Share2, Facebook, Twitter, MessageCircle, Link as LinkIcon, CalendarPlus, Newspaper } from 'lucide-react';
 import { useNews, useNewsArticle, type NewsItem } from '@/hooks/useCms';
 import { SEO, SITE_URL } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
+import { EmptyState } from '@/components/website/EmptyState';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
 const CATEGORIES = ['all', 'news', 'events', 'announcements'] as const;
@@ -86,20 +89,13 @@ const NewsList: React.FC = () => {
         path="/website/news"
       />
 
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <Badge variant="secondary" className="mb-6">News & Events</Badge>
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">
-              Stay Updated
-              <span className="text-primary block">Latest News</span>
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Keep up with the latest happenings, events, and announcements at Al-Bari Group of Schools.
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="News & Events"
+        title="Stay Updated"
+        highlight="Latest News"
+        subtitle="Keep up with the latest happenings, events, and announcements at Al-Bari Group of Schools."
+        crumbs={[{ label: 'News & Events' }]}
+      />
 
       <section className="py-8 border-b border-border">
         <div className="container mx-auto px-4">
@@ -124,9 +120,17 @@ const NewsList: React.FC = () => {
                 ))}
               </div>
               {isLoading ? (
-                <p className="text-center text-muted-foreground">Loading...</p>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-72 w-full rounded-xl" />
+                  ))}
+                </div>
               ) : filtered.length === 0 ? (
-                <div className="text-center py-16 text-muted-foreground"><p>No articles found.</p></div>
+                <EmptyState
+                  icon={Newspaper}
+                  title="No articles found"
+                  description="Nothing matches this filter yet. Try another category or clear your search."
+                />
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {filtered.map((item) => (

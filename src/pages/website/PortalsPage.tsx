@@ -5,6 +5,7 @@ import { Users, GraduationCap, UserCheck, Shield, ArrowRight, Briefcase, BookOpe
 import { Link } from 'react-router-dom';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 import { SEO } from '@/components/website/SEO';
+import { PageHero } from '@/components/website/PageHero';
 
 const ICONS: Record<string, React.ComponentType<any>> = {
   Users, GraduationCap, UserCheck, Shield, Briefcase, BookOpen,
@@ -40,16 +41,12 @@ export const PortalsPage = () => {
         description="Sign in to the Al-Bari student, parent, teacher, or admin portal to access grades, results, fees, communications, and school resources."
         path="/website/portals"
       />
-      <section className="bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl lg:text-6xl font-bold text-foreground mb-6">Access Your Portal</h1>
-            <p className="text-lg text-muted-foreground">
-              Choose your portal to access personalized features and stay connected with Al-Bari Group of Schools
-            </p>
-          </div>
-        </div>
-      </section>
+      <PageHero
+        eyebrow="Portals"
+        title="Access Your Portal"
+        subtitle="Choose your portal to access personalised features and stay connected with Al-Bari Group of Schools."
+        crumbs={[{ label: 'Portals' }]}
+      />
 
       <section className="py-16">
         <div className="container mx-auto px-4">
