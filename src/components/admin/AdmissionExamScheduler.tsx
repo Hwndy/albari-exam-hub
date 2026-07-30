@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Plus, Users, Calendar, ClipboardCheck } from "lucide-react";
+import { Plus, Users, Calendar, ClipboardCheck, Pencil } from "lucide-react";
 import { ConsolidatedExamCreator } from "@/components/shared/ConsolidatedExamCreator";
 import { EntranceExamResults } from "@/components/admin/admissions/EntranceExamResults";
 import { PaperExamCreator } from "@/components/admin/admissions/PaperExamCreator";
+import { EntranceExamEditor } from "@/components/admin/admissions/EntranceExamEditor";
 import { Badge } from "@/components/ui/badge";
 
 interface EntranceExam {
@@ -22,6 +23,7 @@ interface EntranceExam {
   total_questions: number;
   exam_mode?: string | null;
   paper_subjects?: { subject: string; max: number }[] | null;
+  instructions?: string | null;
 }
 
 export const AdmissionExamScheduler = () => {
@@ -32,6 +34,7 @@ export const AdmissionExamScheduler = () => {
   const [isAssignOpen, setIsAssignOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState<string | null>(null);
   const [resultsExam, setResultsExam] = useState<EntranceExam | null>(null);
+  const [editExam, setEditExam] = useState<EntranceExam | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -294,6 +297,15 @@ export const AdmissionExamScheduler = () => {
               <Button
                 size="sm"
                 className="w-full mt-4"
+                variant="secondary"
+                onClick={() => setEditExam(exam)}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit Exam
+              </Button>
+              <Button
+                size="sm"
+                className="w-full"
                 variant="outline"
                 onClick={() => {
                   setSelectedExam(exam.id);
@@ -330,6 +342,13 @@ export const AdmissionExamScheduler = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <EntranceExamEditor
+        exam={editExam}
+        open={!!editExam}
+        onOpenChange={(open) => !open && setEditExam(null)}
+        onSaved={fetchEntranceExams}
+      />
     </div>
   );
 };
