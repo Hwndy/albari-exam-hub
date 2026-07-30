@@ -439,7 +439,8 @@ serve(async (req) => {
 
     const acceptanceUrl = `${FRONTEND_URL}/website/accept-offer/${acceptanceToken}`;
     
-    const emailSubject = `🎉 Admission Offer - Al-Bari Group of Schools`;
+    const emailSubject = `Offer of provisional admission - ${application.application_number}`;
+    const prettyDeadline = new Date(acceptance_deadline).toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" });
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -447,97 +448,66 @@ serve(async (req) => {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
       </head>
-      <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
-          <!-- Letterhead -->
-          <div style="text-align: center; background-color: #ffffff;">
-            <img src="${LETTERHEAD_URL}" alt="Al-Bari College Letterhead" style="display: block; width: 100%; height: auto; max-width: 600px; margin: 0 auto;" />
-          </div>
-          
-          <!-- Content -->
-          <div style="padding: 40px 30px;">
-            <h2 style="color: #2563eb; margin: 0 0 20px 0; font-size: 24px;">🎉 Congratulations!</h2>
-            
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
-              Dear ${application.first_name} ${application.last_name},
-            </p>
-            
-            <p style="color: #374151; font-size: 16px; line-height: 1.6; margin-bottom: 25px;">
-              We are thrilled to inform you that you have been <strong>offered admission</strong> to <strong>Al-Bari Group of Schools</strong> for the <strong>${application.classes?.name || 'upcoming'}</strong> class.
-            </p>
-            
-            <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 25px; border-radius: 12px; margin: 30px 0; border-left: 4px solid #2563eb;">
-              <h3 style="margin: 0 0 15px 0; color: #1e40af; font-size: 18px;">📋 Admission Details</h3>
-              <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Application Number:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.application_number}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Class:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">${application.classes?.name || 'N/A'}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Deadline:</td>
-                  <td style="padding: 8px 0; color: #dc2626; font-weight: 600; font-size: 14px;">${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                </tr>
-                <tr>
-                  <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Acceptance Fee:</td>
-                  <td style="padding: 8px 0; color: #111827; font-weight: 600; font-size: 14px;">&#8358;${acceptanceFee.toLocaleString('en-NG')}</td>
-                </tr>
-              </table>
-              <p style="margin: 12px 0 0 0; color: #1e40af; font-size: 13px;">${acceptanceFeeNote}</p>
-            </div>
+      <body style="margin:0;padding:24px 0;background-color:#eef0ee;">
+        <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
+          <tr><td align="center">
+            <!-- The letter sits on the school letterhead, not beneath it -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="620"
+                   style="width:620px;max-width:100%;background-color:#ffffff;background-image:url('${LETTERHEAD_URL}');background-repeat:no-repeat;background-position:top center;background-size:100% auto;font-family:Georgia,'Times New Roman',serif;color:#111827;">
+              <tr><td style="height:190px;line-height:190px;font-size:0;">&nbsp;</td></tr>
+              <tr><td style="padding:0 56px 8px 56px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">
+                Ref: ${application.application_number}
+                <span style="float:right;">${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}</span>
+              </td></tr>
+              <tr><td style="padding:16px 56px 0 56px;font-size:15px;line-height:1.65;">
+                <p style="margin:0 0 4px 0;font-weight:bold;">${application.first_name} ${application.last_name}</p>
+                <p style="margin:0 0 22px 0;font-size:13px;color:#6b7280;">${application.email}</p>
 
-            <div style="background: #fefce8; border-left: 4px solid #eab308; padding: 20px; border-radius: 8px; margin: 25px 0;">
-              <p style="margin: 0; color: #713f12; font-size: 14px; line-height: 1.5;">
-                <strong>⚠️ Important:</strong> You must accept your offer by <strong>${new Date(acceptance_deadline).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</strong> to secure your place.
-              </p>
-            </div>
+                <p style="margin:0 0 6px 0;font-weight:bold;letter-spacing:0.4px;">OFFER OF PROVISIONAL ADMISSION</p>
+                <div style="height:2px;width:180px;background:#15803d;margin-bottom:20px;"></div>
 
-            <div style="margin: 30px 0;">
-              <h4 style="color: #1f2937; margin: 0 0 15px 0; font-size: 16px;">🎯 Next Steps:</h4>
-              <ol style="color: #4b5563; font-size: 14px; line-height: 1.8; margin: 0; padding-left: 20px;">
-                <li>Click the button below to accept or decline your offer</li>
-                <li>Complete the enrollment process</li>
-                <li>Receive your student login credentials via email</li>
-              </ol>
-            </div>
+                <p style="margin:0 0 16px 0;">Dear ${application.first_name},</p>
 
-            <div style="text-align: center; margin: 35px 0;">
-              <a href="${acceptanceUrl}" style="display: inline-block; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff; padding: 16px 40px; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);">
-                Accept Offer →
-              </a>
-            </div>
+                <p style="margin:0 0 18px 0;">
+                  Following the assessment of your application, I am pleased to confirm that you have been offered a place in
+                  <strong>${application.classes?.name || "the class applied for"}</strong> at Al-Bari College for the
+                  ${new Date().getFullYear()}/${new Date().getFullYear() + 1} academic session. The offer is provisional
+                  until the acceptance fee is paid and your original documents are sighted at the school office.
+                </p>
 
-            <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; text-align: center; margin: 25px 0;">
-              <p style="margin: 0; color: #1e40af; font-size: 13px;">
-                📎 Your official offer letter is attached to this email as a PDF document.
-              </p>
-            </div>
-            <p style="color: #6b7280; font-size: 14px; line-height: 1.6;">
-              If you have any questions, please contact our admissions office at 
-              <a href="mailto:admissions@albari.com.ng" style="color: #2563eb; text-decoration: none;">admissions@albari.com.ng</a>
-            </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
+                       style="font-family:Arial,Helvetica,sans-serif;font-size:14px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;margin:0 0 18px 0;">
+                  <tr><td style="padding:10px 0;color:#6b7280;">Application number</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.application_number}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Class offered</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.classes?.name || "-"}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Acceptance fee</td><td style="padding:10px 0;font-weight:bold;text-align:right;">&#8358;${acceptanceFee.toLocaleString("en-NG")}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Payment deadline</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${prettyDeadline}</td></tr>
+                </table>
 
-            <p style="margin-top: 30px; color: #059669; font-weight: 600; font-size: 16px;">
-              Welcome to the Al-Bari Group of Schools family! 🎓
-            </p>
-          </div>
+                <p style="margin:0 0 18px 0;font-size:13px;color:#4b5563;">${acceptanceFeeNote}</p>
 
-          <!-- Footer -->
-          <div style="background-color: #f9fafb; padding: 30px; text-align: center; border-top: 1px solid #e5e7eb;">
-            <p style="color: #6b7280; font-size: 12px; margin: 0 0 10px 0;">
-              Al-Bari Group of Schools | Excellence in Education
-            </p>
-            <p style="color: #9ca3af; font-size: 11px; margin: 0;">
-              This is an automated message from the admissions office. Please do not reply to this email.
-            </p>
-            <p style="color: #9ca3af; font-size: 11px; margin: 10px 0 0 0;">
-              &copy; ${new Date().getFullYear()} Al-Bari Group of Schools. All rights reserved.
-            </p>
-          </div>
-        </div>
+                <p style="margin:0 0 18px 0;">
+                  To take up the place, accept the offer using the link below and pay the acceptance fee on or before
+                  <strong>${prettyDeadline}</strong>. Offers not accepted by that date are released to candidates on the waiting list.
+                </p>
+
+                <p style="margin:0 0 26px 0;">
+                  <a href="${acceptanceUrl}" style="display:inline-block;background:#15803d;color:#ffffff;padding:13px 30px;text-decoration:none;border-radius:4px;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:bold;">Accept the offer</a>
+                </p>
+
+                <p style="margin:0 0 18px 0;">
+                  The signed offer letter is attached to this message as a PDF. Any question about the offer should be sent to
+                  <a href="mailto:admissions@albari.com.ng" style="color:#15803d;">admissions@albari.com.ng</a> or the numbers on the letterhead.
+                </p>
+
+                <p style="margin:0 0 40px 0;">Yours faithfully,<br><br>
+                  <strong>Admissions Officer</strong><br>
+                  <span style="font-size:13px;color:#6b7280;">For: Al-Bari College, Badagry, Lagos</span>
+                </p>
+              </td></tr>
+              <tr><td style="height:70px;line-height:70px;font-size:0;">&nbsp;</td></tr>
+            </table>
+          </td></tr>
+        </table>
       </body>
       </html>
     `;
