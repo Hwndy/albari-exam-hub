@@ -203,10 +203,17 @@ serve(async (req) => {
 
           // Assign to class
           if (application.admitted_to_class_id) {
-            await supabase.from("class_assignments").insert({
-              student_id: student.id,
-              class_id: application.admitted_to_class_id,
-            });
+            const { data: existingAssignment } = await supabase
+              .from("class_assignments")
+              .select("id")
+              .eq("student_id", student.id)
+              .maybeSingle();
+            if (!existingAssignment) {
+              await supabase.from("class_assignments").insert({
+                student_id: student.id,
+                class_id: application.admitted_to_class_id,
+              });
+            }
           }
 
           // Update application with student ID and status
@@ -225,7 +232,7 @@ serve(async (req) => {
                 application_id: payment.application_id,
                 notification_type: "enrolled",
                 additional_data: {
-                  admission_number: admissionNumber,
+                  admission_number: finalAdmissionNumber,
                   login_email: application.email,
                   temporary_password: password,
                 },
@@ -235,10 +242,10 @@ serve(async (req) => {
             console.error("Error sending welcome email:", emailError);
           }
 
-          console.log("Student enrolled successfully:", admissionNumber);
+          console.log("Student enrolled successfully:", finalAdmissionNumber);
           enrollment = {
             already_enrolled: false,
-            admission_number: admissionNumber,
+            admission_number: finalAdmissionNumber,
             login_email: application.email,
             application_number: application.application_number,
             student_name: `${application.first_name} ${application.last_name}`,
