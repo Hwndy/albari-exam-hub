@@ -12,7 +12,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
   allowedRoles = ['admin', 'teacher', 'student', 'parent'],
 }) => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, mustChangePassword } = useAuth();
   const location = useLocation();
 
   console.log('ProtectedRoute - isLoading:', isLoading, 'isAuthenticated:', isAuthenticated, 'user:', user);
@@ -30,6 +30,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   if (!isAuthenticated || !user) {
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Admin-provisioned / newly enrolled accounts must set their own password first.
+  if (mustChangePassword && location.pathname !== '/reset-password') {
+    return <Navigate to="/reset-password" replace />;
   }
 
   if (!allowedRoles.includes(user.role)) {
