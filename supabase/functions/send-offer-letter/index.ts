@@ -216,50 +216,50 @@ async function generateOfferLetterPDF(
   doc.text(today, pageWidth - SAFE_RIGHT, y, { align: "right" });
   y += 12;
 
-  write(candidate, { bold: true, gap: 1 });
-  if (application.email) write(application.email, { size: 10, colour: [75, 85, 99], gap: 10 });
+  write(candidate, { bold: true, gap: 0 });
+  if (application.email) write(application.email, { size: 10, colour: [75, 85, 99], gap: 8 });
 
-  write("OFFER OF PROVISIONAL ADMISSION", { bold: true, size: 12, gap: 2 });
+  write("OFFER OF PROVISIONAL ADMISSION", { bold: true, size: 12, gap: 1 });
   doc.setDrawColor(21, 128, 61);
   doc.setLineWidth(0.4);
   doc.line(SAFE_LEFT, y - 1, SAFE_LEFT + 78, y - 1);
-  y += 6;
+  y += 4;
 
-  write(`Dear ${application.first_name},`, { gap: 6 });
+  write(`Dear ${application.first_name},`, { gap: 3 });
 
   write(
     `Following the assessment of your application, I am pleased to confirm that you have been offered a place in ${className} at Al-Bari College for the ${session} academic session. The offer is provisional and becomes final once the acceptance fee is paid and your original documents have been sighted at the school office.`,
-    { gap: 8 },
+    { gap: 5 },
   );
 
-  write("Particulars of the offer", { bold: true, size: 11, gap: 5 });
+  write("Particulars of the offer", { bold: true, size: 11, gap: 3 });
   detailRow("Application number", String(application.application_number));
   detailRow("Class offered", String(className));
   detailRow("Academic session", session);
   detailRow("Acceptance fee", `NGN ${Number(acceptanceFee || 0).toLocaleString("en-NG")}`);
   detailRow("Payment deadline", deadline);
-  y += 4;
+  y += 2;
 
   if (acceptanceFeeNote) {
-    write(acceptanceFeeNote, { size: 10, colour: [75, 85, 99], gap: 8 });
+    write(acceptanceFeeNote, { size: 10, colour: [75, 85, 99], gap: 5 });
   }
 
   write(
     `To take up the place, please accept the offer online using the link in the accompanying email and pay the acceptance fee on or before ${deadline}. Offers that are not accepted by that date are released to candidates on the waiting list.`,
-    { gap: 6 },
+    { gap: 3 },
   );
 
   write(
     "Once payment is confirmed, the school will issue an admission number and portal login details for the student, together with the parent portal access used for results, attendance and fees.",
-    { gap: 6 },
+    { gap: 3 },
   );
 
   write(
     "Please bring the originals of the documents uploaded with your application, two passport photographs and this letter on resumption day.",
-    { gap: 10 },
+    { gap: 6 },
   );
 
-  write("Yours faithfully,", { gap: 16 });
+  write("Yours faithfully,", { gap: 14 });
   write("Admissions Officer", { bold: true, gap: 1 });
   write("For: Al-Bari College, Badagry, Lagos", { size: 10, colour: [75, 85, 99], gap: 0 });
 
