@@ -198,6 +198,49 @@ const emailTemplates = {
   }),
 };
 
+const outcomeLabel: Record<string, string> = {
+  pass: "Successful",
+  fail: "Unsuccessful",
+  resit: "Resit Required",
+  pending: "Under Review",
+};
+
+emailTemplates.exam_result = (data: any) => ({
+  subject: `Entrance Exam Result - ${data.application_number}`,
+  html: `
+    <h1>Entrance Examination Result</h1>
+    <p>Dear ${data.first_name} ${data.last_name},</p>
+    <p>Below is your result for <strong>${data.exam_title || "the entrance examination"}</strong>.</p>
+    <ul>
+      <li><strong>Application Number:</strong> ${data.application_number}</li>
+      <li><strong>Score:</strong> ${data.score ?? "-"}${data.max_score ? ` / ${data.max_score}` : ""}</li>
+      <li><strong>Percentage:</strong> ${data.percentage != null ? `${data.percentage}%` : "-"}</li>
+      <li><strong>Outcome:</strong> ${outcomeLabel[data.result_status] || "Under Review"}</li>
+    </ul>
+    ${data.comment ? `<p><strong>Examiner's Comment:</strong><br>${data.comment}</p>` : ""}
+    <p>You will be contacted with the next steps in your admission process.</p>
+    <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+  `,
+});
+
+emailTemplates.exam_resit = (data: any) => ({
+  subject: `Entrance Exam Resit - ${data.application_number}`,
+  html: `
+    <h1>Entrance Examination Resit</h1>
+    <p>Dear ${data.first_name} ${data.last_name},</p>
+    <p>Following your performance in <strong>${data.exam_title || "the entrance examination"}</strong>, you have been invited to resit the examination.</p>
+    <ul>
+      <li><strong>Application Number:</strong> ${data.application_number}</li>
+      ${data.score != null ? `<li><strong>Previous Score:</strong> ${data.score}${data.max_score ? ` / ${data.max_score}` : ""}${data.percentage != null ? ` (${data.percentage}%)` : ""}</li>` : ""}
+      <li><strong>Resit Date:</strong> ${data.resit_date || "To be communicated"}</li>
+      <li><strong>Venue:</strong> ${data.resit_venue || "Al-Bari Group of Schools Campus"}</li>
+    </ul>
+    ${data.comment ? `<p><strong>Examiner's Comment:</strong><br>${data.comment}</p>` : ""}
+    <p>Please arrive 30 minutes early with a valid means of identification and your application number.</p>
+    <p>Best regards,<br>Al-Bari Group of Schools Admissions Team</p>
+  `,
+});
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
