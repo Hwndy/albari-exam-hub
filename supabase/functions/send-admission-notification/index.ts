@@ -251,6 +251,40 @@ const subjectTable = (data: any) => {
 
 emailTemplates.exam_result = (data: any) => ({
   subject: `Entrance Exam Result - ${data.application_number}`,
+  html: "",
+});
+
+emailTemplates.parent_welcome = (data: any) => ({
+  subject: "Your Al-Bari Parent Portal account",
+  html: `
+    <h1>Welcome to the Al-Bari Parent Portal</h1>
+    <p>Dear Parent/Guardian,</p>
+    <p>A parent account has been created for you so you can follow your ${
+      (data.children?.length ?? 1) > 1 ? "children's" : "child's"
+    } results, attendance and school fees in one place.</p>
+    ${
+      data.children?.length
+        ? `<p><strong>Linked ${data.children.length > 1 ? "children" : "child"}:</strong></p><ul>${data.children
+            .map((c: string) => `<li>${c}</li>`)
+            .join("")}</ul>`
+        : ""
+    }
+    ${
+      data.parent_password
+        ? `<p><strong>Login email:</strong> ${data.parent_email}<br>
+           <strong>Temporary password:</strong> ${data.parent_password}</p>
+           <p>You will be asked to set your own password the first time you sign in.</p>
+           <p><a href="${data.portal_url}" style="background:#166534;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block">Sign in to the Parent Portal</a></p>`
+        : `<p>Use the button below to set your password and activate your account.</p>
+           <p><a href="${data.action_link}" style="background:#166534;color:#fff;padding:12px 20px;border-radius:6px;text-decoration:none;display:inline-block">Set my password</a></p>`
+    }
+    <p>If more than one of your children attends Al-Bari, they all appear inside this single account — you can switch between them at the top of the dashboard.</p>
+    <p>Best regards,<br>Al-Bari Group of Schools</p>
+  `,
+});
+
+emailTemplates.exam_result = (data: any) => ({
+  subject: `Entrance Exam Result - ${data.application_number}`,
   html: `
     <h1>Entrance Examination Result</h1>
     <p>Dear ${data.first_name} ${data.last_name},</p>
