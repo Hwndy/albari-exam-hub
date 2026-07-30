@@ -10,7 +10,7 @@ import { EnhancedExamResults } from '@/components/teacher/EnhancedExamResults';
 import { TeacherStudentCreator } from '@/components/teacher/TeacherStudentCreator';
 import { TeacherClassAssignment } from '@/components/admin/TeacherClassAssignment';
 import { AttendanceSystem } from '@/components/teacher/AttendanceSystem';
-import { GradebookSystem } from '@/components/teacher/GradebookSystem';
+import { TeacherStudentsList } from '@/components/teacher/TeacherStudentsList';
 import { TeacherTimetable } from '@/components/teacher/TeacherTimetable';
 import { TeacherResultsManagement } from '@/components/teacher/TeacherResultsManagement';
 import { AssignmentsManager } from '@/components/teacher/AssignmentsManager';
@@ -158,15 +158,13 @@ export const TeacherDashboard = () => {
           <div className="overflow-x-auto">
             <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
               <TabsTrigger value="exams" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">My Exams</TabsTrigger>
+              <TabsTrigger value="students-list" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Students</TabsTrigger>
               <TabsTrigger value="results" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">Student Results</TabsTrigger>
               <TabsTrigger value="timetable" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 Timetable
               </TabsTrigger>
               <TabsTrigger value="attendance" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 Attendance
-              </TabsTrigger>
-              <TabsTrigger value="gradebook" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
-                Gradebook
               </TabsTrigger>
               <TabsTrigger value="results-mgmt" className="text-xs sm:text-sm px-3 py-2 whitespace-nowrap">
                 Results Management
@@ -220,8 +218,8 @@ export const TeacherDashboard = () => {
             <AttendanceSystem />
           </TabsContent>
 
-          <TabsContent value="gradebook" className="space-y-4">
-            <GradebookSystem />
+          <TabsContent value="students-list" className="space-y-4">
+            <TeacherStudentsList />
           </TabsContent>
 
           <TabsContent value="results-mgmt" className="space-y-4">

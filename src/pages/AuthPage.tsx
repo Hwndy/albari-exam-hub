@@ -109,7 +109,6 @@ export const AuthPage = () => {
               setPreselectedRole(undefined);
               setMode('login');
             }}
-            allowStudentRegistration={allowStudentRegistration}
             initialRole={registerRole}
           />
         );
