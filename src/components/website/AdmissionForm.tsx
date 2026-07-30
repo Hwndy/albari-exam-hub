@@ -767,6 +767,10 @@ export const AdmissionForm = () => {
                       onChange={(e) => updateFormData('email', e.target.value)}
                       placeholder="Enter email address"
                     />
+                    <p className="text-xs text-muted-foreground">
+                      You may use the same email for all your children. Each child gets their own school-issued
+                      login ID, while all school emails come to this address.
+                    </p>
                   </div>
                 </div>
               </div>

@@ -17,6 +17,7 @@ interface Receipt {
   payment_type?: string | null;
   admission_number?: string | null;
   login_email?: string | null;
+  contact_email?: string | null;
   application_number?: string | null;
   student_name?: string | null;
 }
