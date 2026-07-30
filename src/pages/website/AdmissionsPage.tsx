@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, FileText, CreditCard, Calendar, Users, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { SEO } from '@/components/website/SEO';
 import { PageHero } from '@/components/website/PageHero';
+import { SectionBand, SectionHeading } from '@/components/website/Section';
+import { Reveal } from '@/components/website/Reveal';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
 
 export const AdmissionsPage = () => {
@@ -48,9 +48,13 @@ export const AdmissionsPage = () => {
     "Letter of Good Conduct from Previous School"
   ];
 
-  const feeStructure = [
-    { class: "JSS 1-3", admission: "₦25,000", tuition: "₦45,000", uniform: "₦15,000" },
-    { class: "SSS 1-3", admission: "₦30,000", tuition: "₦50,000", uniform: "₦18,000" }
+  const highlights = [
+    { title: 'Strong exam results', description: 'Consistent performance in WAEC, NECO and JAMB examinations.', icon: CheckCircle },
+    { title: 'Small class sizes', description: 'Around 25 students per class, so every child is known and supported.', icon: Users },
+    { title: 'Modern curriculum', description: 'Technology, critical thinking and 21st-century skills woven throughout.', icon: FileText },
+    { title: 'Qualified teachers', description: 'Experienced, certified educators committed to academics and character.', icon: CheckCircle },
+    { title: 'Holistic development', description: 'A balance of academics, faith, sport and extracurricular life.', icon: Calendar },
+    { title: 'Affordable fees', description: 'Competitive rates with flexible payment options available.', icon: CreditCard },
   ];
 
   return (
