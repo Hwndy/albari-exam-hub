@@ -400,15 +400,23 @@ export const AdminDashboard = () => {
         
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header */}
-          <header className="sticky top-0 z-10 border-b bg-card">
-            <div className="flex items-center justify-between px-4 lg:px-6 py-3">
-              <div className="flex items-center gap-4">
+          <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+            <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
+              <div className="flex items-center gap-3 min-w-0">
                 <SidebarTrigger />
-                <Logo className="h-8" />
-                <h1 className="hidden sm:block text-lg font-semibold">{getPageTitle()}</h1>
+                <Logo className="h-7 hidden sm:block" />
+                <div className="min-w-0">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">
+                    {breadcrumb.section}
+                    {breadcrumb.group ? ` › ${breadcrumb.group}` : ''}
+                  </p>
+                  <h1 className="text-base font-semibold leading-tight truncate">{breadcrumb.title}</h1>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="hidden sm:inline text-sm text-muted-foreground">{user?.email}</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="hidden md:inline text-sm text-muted-foreground truncate max-w-[200px]">
+                  {user?.email}
+                </span>
                 <Button variant="outline" size="sm" onClick={logout}>
                   Logout
                 </Button>
