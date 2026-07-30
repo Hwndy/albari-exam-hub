@@ -55,7 +55,7 @@ export const FeeReceiptGenerator = () => {
         *,
         student:students(
           user_id,
-          admission_number,
+          admission_number
         ),
         fee_structure:fee_structures(fee_type, academic_year)
       `)
@@ -79,7 +79,7 @@ export const FeeReceiptGenerator = () => {
             *,
             student:students(
               user_id,
-              admission_number,
+              admission_number
             ),
           fee_structure:fee_structures(fee_type, academic_year)
           `)
