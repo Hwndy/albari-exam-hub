@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +8,8 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { FileText, Download, Printer, Search } from "lucide-react";
 import { format } from "date-fns";
-import jsPDF from "jspdf";
+import { buildBrandedReceipt } from "@/lib/receipt-pdf";
+import { fetchSchoolBranding, DEFAULT_SCHOOL_BRANDING, SchoolBranding } from "@/lib/school-branding";
 
 interface Payment {
   id: string;
@@ -35,8 +36,12 @@ export const FeeReceiptGenerator = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<Payment | null>(null);
   const [showPreviewDialog, setShowPreviewDialog] = useState(false);
-  const [schoolInfo, setSchoolInfo] = useState<any>(null);
+  const [schoolInfo, setSchoolInfo] = useState<SchoolBranding>(DEFAULT_SCHOOL_BRANDING);
   const receiptRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetchSchoolBranding().then(setSchoolInfo).catch(() => {});
+  }, []);
 
   const searchPayments = async () => {
     if (!searchQuery.trim()) {
@@ -45,8 +50,6 @@ export const FeeReceiptGenerator = () => {
     }
 
     setIsLoading(true);
-
-    setSchoolInfo({ name: 'Al-Bari Model Schools' } as any);
 
     // Search by receipt number
     let { data, error } = await supabase
@@ -105,98 +108,23 @@ export const FeeReceiptGenerator = () => {
   };
 
   const generatePDF = async (payment: Payment) => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.setFont("helvetica", "bold");
-    doc.text(schoolInfo?.name || "School Name", pageWidth / 2, 20, { align: "center" });
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text(schoolInfo?.address || "School Address", pageWidth / 2, 28, { align: "center" });
-    doc.text(`Tel: ${schoolInfo?.phone || ""} | Email: ${schoolInfo?.email || ""}`, pageWidth / 2, 34, { align: "center" });
-    
-    // Receipt Title
-    doc.setFontSize(16);
-    doc.setFont("helvetica", "bold");
-    doc.text("FEE RECEIPT", pageWidth / 2, 50, { align: "center" });
-    
-    // Receipt border
-    doc.setDrawColor(0);
-    doc.setLineWidth(0.5);
-    doc.rect(15, 55, pageWidth - 30, 100);
-    
-    // Receipt Details
-    doc.setFontSize(11);
-    doc.setFont("helvetica", "normal");
-    
-    const leftCol = 25;
-    const rightCol = pageWidth / 2 + 10;
-    let y = 65;
-    const lineHeight = 8;
-    
-    doc.text("Receipt No:", leftCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.receipt_number || "N/A", leftCol + 35, y);
-    
-    doc.setFont("helvetica", "normal");
-    doc.text("Date:", rightCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.payment_date ? format(new Date(payment.payment_date), "MMM dd, yyyy") : "N/A", rightCol + 20, y);
-    
-    y += lineHeight * 2;
-    doc.setFont("helvetica", "normal");
-    doc.text("Student Name:", leftCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.student?.profile?.full_name || "N/A", leftCol + 40, y);
-    
-    y += lineHeight;
-    doc.setFont("helvetica", "normal");
-    doc.text("Admission No:", leftCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.student?.admission_number || "N/A", leftCol + 40, y);
-    
-    y += lineHeight * 2;
-    doc.setFont("helvetica", "normal");
-    doc.text("Fee Type:", leftCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.fee_structure?.fee_type || "N/A", leftCol + 30, y);
-    
-    doc.setFont("helvetica", "normal");
-    doc.text("Academic Year:", rightCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.fee_structure?.academic_year || "N/A", rightCol + 45, y);
-    
-    y += lineHeight * 2;
-    doc.setFont("helvetica", "normal");
-    doc.text("Payment Method:", leftCol, y);
-    doc.setFont("helvetica", "bold");
-    doc.text(payment.payment_method || "N/A", leftCol + 45, y);
-    
-    y += lineHeight * 2;
-    doc.setFillColor(240, 240, 240);
-    doc.rect(leftCol - 5, y - 5, pageWidth - 50, 15, "F");
-    doc.setFontSize(14);
-    doc.text("Amount Paid:", leftCol, y + 5);
-    doc.setFont("helvetica", "bold");
-    doc.text(`₦${payment.amount_paid.toLocaleString()}`, rightCol + 30, y + 5);
-    
-    // Footer
-    y = 165;
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.text("_______________________", leftCol, y);
-    doc.text("Authorized Signature", leftCol + 5, y + 8);
-    
-    doc.text("_______________________", rightCol + 20, y);
-    doc.text("School Stamp", rightCol + 35, y + 8);
-    
-    doc.setFontSize(8);
-    doc.text("This is a computer generated receipt.", pageWidth / 2, 190, { align: "center" });
-    
-    return doc;
+    return buildBrandedReceipt(
+      {
+        title: "FEE PAYMENT RECEIPT",
+        receiptNumber: payment.receipt_number,
+        date: payment.payment_date ? format(new Date(payment.payment_date), "MMM dd, yyyy") : null,
+        fields: [
+          { label: "Student Name", value: payment.student?.profile?.full_name },
+          { label: "Admission No.", value: payment.student?.admission_number },
+          { label: "Fee Type", value: payment.fee_structure?.fee_type },
+          { label: "Academic Year", value: payment.fee_structure?.academic_year },
+          { label: "Payment Method", value: payment.payment_method },
+          { label: "Status", value: payment.status },
+        ],
+        amount: Number(payment.amount_paid),
+      },
+      schoolInfo
+    );
   };
 
   const handleDownload = async (payment: Payment) => {
@@ -330,11 +258,23 @@ export const FeeReceiptGenerator = () => {
           {selectedPayment && (
             <div ref={receiptRef} className="p-6 border rounded-lg bg-white">
               <div className="text-center mb-6">
-                <h2 className="text-xl font-bold">{schoolInfo?.name || "School Name"}</h2>
-                <p className="text-sm text-muted-foreground">{schoolInfo?.address || "School Address"}</p>
-                <p className="text-sm text-muted-foreground">
-                  Tel: {schoolInfo?.phone || ""} | Email: {schoolInfo?.email || ""}
-                </p>
+                {schoolInfo.logo_url && (
+                  <img
+                    src={schoolInfo.logo_url}
+                    alt={`${schoolInfo.name} logo`}
+                    className="h-16 mx-auto mb-2 object-contain"
+                  />
+                )}
+                <h2 className="text-xl font-bold uppercase">{schoolInfo.name}</h2>
+                {schoolInfo.address && <p className="text-sm text-muted-foreground">{schoolInfo.address}</p>}
+                {(schoolInfo.phone || schoolInfo.email) && (
+                  <p className="text-sm text-muted-foreground">
+                    {[schoolInfo.phone && `Tel: ${schoolInfo.phone}`, schoolInfo.email && `Email: ${schoolInfo.email}`]
+                      .filter(Boolean)
+                      .join("  |  ")}
+                  </p>
+                )}
+                {schoolInfo.motto && <p className="text-xs italic text-muted-foreground">“{schoolInfo.motto}”</p>}
               </div>
 
               <h3 className="text-lg font-bold text-center mb-4 border-y py-2">FEE RECEIPT</h3>
