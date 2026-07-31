@@ -334,7 +334,7 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'transport') return <TransportHub />;
     if (activeTab === 'assets') return <AssetsHub />;
-    if (activeTab === 'hostel') return <HostelHub />;
+    if (activeTab === 'hostel') return <HostelHub subtab={activeSubTab} />;
     if (activeTab === 'hr') {
       switch (activeSubTab) {
         case 'staff': return <StaffManagement />;
