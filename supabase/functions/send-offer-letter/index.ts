@@ -208,7 +208,7 @@ async function generateOfferLetterPDF(
   const today = fmtDate(new Date());
   const deadline = fmtDate(acceptanceDeadline);
   const session = `${new Date().getFullYear()}/${new Date().getFullYear() + 1}`;
-  const className = application.classes?.name || "the class applied for";
+  const className = classInfo.admittedClassName;
   const candidate = `${application.first_name} ${application.last_name}`.replace(/\s+/g, " ").trim();
 
   // Reference line and date
@@ -231,13 +231,21 @@ async function generateOfferLetterPDF(
   write(`Dear ${application.first_name},`, { gap: 3 });
 
   write(
-    `Following the assessment of your application, I am pleased to confirm that you have been offered a place in ${className} at Al-Bari College for the ${session} academic session. The offer is provisional until the acceptance fee is paid and your original documents are sighted at the school office.`,
-    { gap: 5 },
+    `Following the assessment of your application, I am pleased to confirm that you have been admitted to ${className} at Al-Bari Group of Schools for the ${session} academic session. The offer is provisional until the acceptance fee is paid and your original documents are sighted at the school office.`,
+    { gap: classInfo.changed ? 3 : 5 },
   );
+
+  if (classInfo.changed) {
+    write(
+      `Following your performance in the entrance assessment, the school is offering admission into ${classInfo.admittedClassName} rather than ${classInfo.appliedClassName}.${classInfo.note ? ` ${classInfo.note}` : ""}`,
+      { gap: 5 },
+    );
+  }
 
   write("Particulars of the offer", { bold: true, size: 11, gap: 3 });
   detailRow("Application number", String(application.application_number));
-  detailRow("Class offered", String(className));
+  detailRow("Class applied for", String(classInfo.appliedClassName));
+  detailRow("Class admitted to", String(classInfo.admittedClassName));
   detailRow("Academic session", session);
   detailRow("Acceptance fee", `NGN ${Number(acceptanceFee || 0).toLocaleString("en-NG")}`);
   detailRow("Payment deadline", deadline);
