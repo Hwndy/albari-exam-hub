@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,11 +43,30 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
   const [checkingOffer, setCheckingOffer] = useState(true);
   const [fee, setFee] = useState<string>('50000');
   const [feeNote, setFeeNote] = useState<string>('');
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [appliedClassId, setAppliedClassId] = useState<string | null>(null);
+  const [admittedClassId, setAdmittedClassId] = useState<string>('');
+  const [classChangeNote, setClassChangeNote] = useState('');
 
   useEffect(() => {
     checkExistingOffer();
     loadDefaults();
+    loadClassContext();
   }, [applicationId]);
+
+  const loadClassContext = async () => {
+    const [{ data: classRows }, { data: app }] = await Promise.all([
+      supabase.from('classes').select('id, name').order('name'),
+      supabase
+        .from('admission_applications')
+        .select('applying_for_class_id, admitted_to_class_id')
+        .eq('id', applicationId)
+        .maybeSingle(),
+    ]);
+    setClasses(classRows ?? []);
+    setAppliedClassId(app?.applying_for_class_id ?? null);
+    setAdmittedClassId(app?.admitted_to_class_id || app?.applying_for_class_id || '');
+  };
 
   const loadDefaults = async () => {
     const { data } = await supabase
@@ -123,6 +144,8 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
           application_id: applicationId,
           acceptance_deadline: deadline.toISOString(),
           acceptance_fee: feeAmount,
+          admitted_class_id: admittedClassId || null,
+          class_change_note: classChangeNote.trim() || null,
         },
       });
 
@@ -237,6 +260,48 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
         </DialogHeader>
 
         <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Class applied for</Label>
+            <Input
+              readOnly
+              value={classes.find((c) => c.id === appliedClassId)?.name || 'Not specified'}
+              className="bg-muted"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Admit into class</Label>
+            <Select value={admittedClassId} onValueChange={setAdmittedClassId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {admittedClassId && appliedClassId && admittedClassId !== appliedClassId && (
+              <p className="text-xs text-muted-foreground">
+                The letter will state that admission is offered into this class rather than the class applied for.
+              </p>
+            )}
+          </div>
+
+          {admittedClassId && appliedClassId && admittedClassId !== appliedClassId && (
+            <div className="space-y-2">
+              <Label>Reason / note (optional)</Label>
+              <Textarea
+                rows={2}
+                placeholder="e.g. This placement follows the entrance assessment outcome."
+                value={classChangeNote}
+                onChange={(e) => setClassChangeNote(e.target.value)}
+              />
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label>Acceptance Fee (₦)</Label>
             <Input
