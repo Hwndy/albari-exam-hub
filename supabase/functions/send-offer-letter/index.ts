@@ -284,7 +284,13 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    const { application_id, acceptance_deadline, acceptance_fee }: OfferLetterRequest = await req.json();
+    const {
+      application_id,
+      acceptance_deadline,
+      acceptance_fee,
+      admitted_class_id,
+      class_change_note,
+    }: OfferLetterRequest = await req.json();
 
     // Resolve fee + note: explicit request value wins, otherwise fall back to admin settings.
     const { data: settingsRows } = await supabase
@@ -322,6 +328,39 @@ serve(async (req) => {
       throw new Error("Application not found");
     }
 
+    // Resolve applied vs admitted class. Admins may admit a candidate into a
+    // different (usually lower) class than the one applied for.
+    const appliedClassId: string | null = application.applying_for_class_id ?? null;
+    const admittedClassId: string | null =
+      admitted_class_id || application.admitted_to_class_id || appliedClassId;
+
+    const classIds = [...new Set([appliedClassId, admittedClassId].filter(Boolean))] as string[];
+    const { data: classRows } = classIds.length
+      ? await supabase.from("classes").select("id, name").in("id", classIds)
+      : { data: [] as { id: string; name: string }[] };
+    const classNameById = new Map((classRows ?? []).map((c: any) => [c.id, c.name]));
+
+    const appliedClassName =
+      classNameById.get(appliedClassId as string) || application.classes?.name || "the class applied for";
+    const admittedClassName = classNameById.get(admittedClassId as string) || appliedClassName;
+    const classChanged = Boolean(
+      appliedClassId && admittedClassId && appliedClassId !== admittedClassId
+    );
+    const classInfo = {
+      appliedClassName,
+      admittedClassName,
+      changed: classChanged,
+      note: class_change_note?.trim() || null,
+    };
+
+    if (admittedClassId && admittedClassId !== application.admitted_to_class_id) {
+      const { error: admitError } = await supabase
+        .from("admission_applications")
+        .update({ admitted_to_class_id: admittedClassId })
+        .eq("id", application_id);
+      if (admitError) console.error("Failed to store admitted class:", admitError);
+    }
+
     // Check if offer already exists
     const { data: existingOffer, error: offerCheckError } = await supabase
       .from("admission_offers")
@@ -340,6 +379,7 @@ serve(async (req) => {
       acceptance_deadline,
       acceptanceFee,
       acceptanceFeeNote,
+      classInfo,
     );
     
     if (existingOffer) {
