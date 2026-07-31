@@ -261,6 +261,48 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
 
         <div className="space-y-4">
           <div className="space-y-2">
+            <Label>Class applied for</Label>
+            <Input
+              readOnly
+              value={classes.find((c) => c.id === appliedClassId)?.name || 'Not specified'}
+              className="bg-muted"
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Admit into class</Label>
+            <Select value={admittedClassId} onValueChange={setAdmittedClassId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select class" />
+              </SelectTrigger>
+              <SelectContent>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {admittedClassId && appliedClassId && admittedClassId !== appliedClassId && (
+              <p className="text-xs text-muted-foreground">
+                The letter will state that admission is offered into this class rather than the class applied for.
+              </p>
+            )}
+          </div>
+
+          {admittedClassId && appliedClassId && admittedClassId !== appliedClassId && (
+            <div className="space-y-2">
+              <Label>Reason / note (optional)</Label>
+              <Textarea
+                rows={2}
+                placeholder="e.g. This placement follows the entrance assessment outcome."
+                value={classChangeNote}
+                onChange={(e) => setClassChangeNote(e.target.value)}
+              />
+            </div>
+          )}
+
+          <div className="space-y-2">
             <Label>Acceptance Fee (₦)</Label>
             <Input
               type="number"
