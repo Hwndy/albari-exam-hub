@@ -39,6 +39,7 @@ interface AdmissionFormData {
   applying_for_class: string;
   previous_school: string;
   previous_class: string;
+  boarding_interest: string;
   reason_for_leaving: string;
   
   // Parent/Guardian Information
@@ -99,6 +100,7 @@ export const AdmissionForm = () => {
     applying_for_class: '',
     previous_school: '',
     previous_class: '',
+    boarding_interest: 'day',
     reason_for_leaving: '',
     father_name: '',
     father_occupation: '',
@@ -340,6 +342,7 @@ export const AdmissionForm = () => {
             address: addressData,
             previous_school: formData.previous_school?.trim() || null,
             previous_class: formData.previous_class || null,
+            boarding_interest: formData.boarding_interest === 'boarding',
             applying_for_class_id: classId,
             parent_guardian_info: parentGuardianInfo,
             medical_conditions: formData.medical_conditions?.trim() || null,
@@ -830,6 +833,24 @@ export const AdmissionForm = () => {
                     placeholder="Please explain reason for leaving previous school"
                     rows={3}
                   />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="boarding_interest">Boarding Interest *</Label>
+                  <Select
+                    value={formData.boarding_interest}
+                    onValueChange={(value) => updateFormData('boarding_interest', value)}
+                  >
+                    <SelectTrigger id="boarding_interest">
+                      <SelectValue placeholder="Select an option" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="day">Day student</SelectItem>
+                      <SelectItem value="boarding">Boarding student (hostel)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">
+                    Hostel places are subject to availability and a separate hostel fee.
+                  </p>
                 </div>
               </div>
             </div>

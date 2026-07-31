@@ -49,6 +49,7 @@ import { StaffAttendance } from '@/components/admin/StaffAttendance';
 import { CareersManager } from '@/components/admin/hr/CareersManager';
 import { TransportHub } from '@/components/admin/transport/TransportHub';
 import { AssetsHub } from '@/components/admin/assets/AssetsHub';
+import { HostelHub } from '@/components/admin/hostel/HostelHub';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
 
 interface DashboardStats {
@@ -333,6 +334,7 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'transport') return <TransportHub />;
     if (activeTab === 'assets') return <AssetsHub />;
+    if (activeTab === 'hostel') return <HostelHub subtab={activeSubTab} />;
     if (activeTab === 'hr') {
       switch (activeSubTab) {
         case 'staff': return <StaffManagement />;

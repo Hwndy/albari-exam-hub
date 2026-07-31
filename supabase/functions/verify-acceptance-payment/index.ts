@@ -280,6 +280,7 @@ serve(async (req) => {
                 },
                 admission_date: new Date().toISOString().split("T")[0],
                 status: "active",
+                is_boarder: application.boarding_interest ?? false,
               })
               .select()
               .single();

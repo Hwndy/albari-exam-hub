@@ -16,7 +16,7 @@ import {
   Heart,
   ScanLine,
 } from "lucide-react";
-import { BarChart3, Bus, Package, Briefcase, ServerCog } from "lucide-react";
+import { BarChart3, Bus, Package, Briefcase, ServerCog, BedDouble } from "lucide-react";
 
 import {
   Sidebar,
@@ -178,6 +178,20 @@ export const NAV_SECTIONS: NavSection[] = [
       },
       { id: "library", title: "Library", icon: Library, tab: "library" },
       { id: "transport", title: "Transport", icon: Bus, tab: "transport" },
+      {
+        id: "hostel",
+        title: "Hostel",
+        icon: BedDouble,
+        tab: "hostel",
+        children: [
+          { title: "Hostels & Rooms", tab: "hostel", subtab: "hostels" },
+          { title: "Allocations", tab: "hostel", subtab: "allocations" },
+          { title: "Roll Call", tab: "hostel", subtab: "rollcall" },
+          { title: "Exeat Passes", tab: "hostel", subtab: "passes" },
+          { title: "Inspections", tab: "hostel", subtab: "inspections" },
+          { title: "Wardens", tab: "hostel", subtab: "wardens" },
+        ],
+      },
       { id: "assets", title: "Assets", icon: Package, tab: "assets" },
       {
         id: "communications",
