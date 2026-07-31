@@ -48,6 +48,8 @@ interface OfferLetterRequest {
   application_id: string;
   acceptance_deadline: string;
   acceptance_fee?: number;
+  admitted_class_id?: string | null;
+  class_change_note?: string | null;
 }
 
 // Helper function to send email with retry logic
@@ -134,6 +136,7 @@ async function generateOfferLetterPDF(
   acceptanceDeadline: string,
   acceptanceFee: number,
   acceptanceFeeNote: string,
+  classInfo: { appliedClassName: string; admittedClassName: string; changed: boolean; note?: string | null },
 ): Promise<Uint8Array> {
   const doc = new jsPDF({ unit: "mm", format: PAGE_FORMAT });
   const pageWidth = doc.internal.pageSize.getWidth();
