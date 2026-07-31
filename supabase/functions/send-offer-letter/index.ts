@@ -502,11 +502,14 @@ serve(async (req) => {
       <body style="margin:0;padding:24px 0;background-color:#eef0ee;">
         <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%">
           <tr><td align="center">
-            <!-- The letter sits on the school letterhead, not beneath it -->
+            <!-- Plain branded email. The official letterhead lives on the attached PDF. -->
             <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="620"
-                   style="width:620px;max-width:100%;background-color:#ffffff;background-image:url('${LETTERHEAD_URL}');background-repeat:no-repeat;background-position:top center;background-size:100% auto;font-family:Georgia,'Times New Roman',serif;color:#111827;">
-              <tr><td style="height:190px;line-height:190px;font-size:0;">&nbsp;</td></tr>
-              <tr><td style="padding:0 56px 8px 56px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">
+                   style="width:620px;max-width:100%;background-color:#ffffff;border-radius:6px;overflow:hidden;font-family:Georgia,'Times New Roman',serif;color:#111827;">
+              <tr><td style="background:#15803d;padding:22px 56px;font-family:Arial,Helvetica,sans-serif;color:#ffffff;">
+                <div style="font-size:18px;font-weight:bold;letter-spacing:0.3px;">Al-Bari Group of Schools</div>
+                <div style="font-size:12px;opacity:0.9;margin-top:4px;">Office of Admissions &middot; Badagry, Lagos</div>
+              </td></tr>
+              <tr><td style="padding:24px 56px 8px 56px;font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#4b5563;">
                 Ref: ${application.application_number}
                 <span style="float:right;">${new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "long", year: "numeric" })}</span>
               </td></tr>
@@ -520,16 +523,22 @@ serve(async (req) => {
                 <p style="margin:0 0 16px 0;">Dear ${application.first_name},</p>
 
                 <p style="margin:0 0 18px 0;">
-                  Following the assessment of your application, I am pleased to confirm that you have been offered a place in
-                  <strong>${application.classes?.name || "the class applied for"}</strong> at Al-Bari College for the
+                  Following the assessment of your application, I am pleased to confirm that you have been admitted to
+                  <strong>${admittedClassName}</strong> at Al-Bari Group of Schools for the
                   ${new Date().getFullYear()}/${new Date().getFullYear() + 1} academic session. The offer is provisional
                   until the acceptance fee is paid and your original documents are sighted at the school office.
                 </p>
 
+                ${classChanged ? `<p style="margin:0 0 18px 0;">
+                  Following your performance in the entrance assessment, the school is offering admission into
+                  <strong>${admittedClassName}</strong> rather than <strong>${appliedClassName}</strong>.${classInfo.note ? ` ${classInfo.note}` : ""}
+                </p>` : ""}
+
                 <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%"
                        style="font-family:Arial,Helvetica,sans-serif;font-size:14px;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;margin:0 0 18px 0;">
                   <tr><td style="padding:10px 0;color:#6b7280;">Application number</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.application_number}</td></tr>
-                  <tr><td style="padding:10px 0;color:#6b7280;">Class offered</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${application.classes?.name || "-"}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Class applied for</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${appliedClassName}</td></tr>
+                  <tr><td style="padding:10px 0;color:#6b7280;">Class admitted to</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${admittedClassName}</td></tr>
                   <tr><td style="padding:10px 0;color:#6b7280;">Acceptance fee</td><td style="padding:10px 0;font-weight:bold;text-align:right;">&#8358;${acceptanceFee.toLocaleString("en-NG")}</td></tr>
                   <tr><td style="padding:10px 0;color:#6b7280;">Payment deadline</td><td style="padding:10px 0;font-weight:bold;text-align:right;">${prettyDeadline}</td></tr>
                 </table>
@@ -546,16 +555,19 @@ serve(async (req) => {
                 </p>
 
                 <p style="margin:0 0 18px 0;">
-                  The signed offer letter is attached to this message as a PDF. Any question about the offer should be sent to
-                  <a href="mailto:admissions@albari.com.ng" style="color:#15803d;">admissions@albari.com.ng</a> or the numbers on the letterhead.
+                  The signed offer letter, on the official school letterhead, is attached to this message as a PDF. Any question about
+                  the offer should be sent to
+                  <a href="mailto:admissions@albari.com.ng" style="color:#15803d;">admissions@albari.com.ng</a>.
                 </p>
 
-                <p style="margin:0 0 40px 0;">Yours faithfully,<br><br>
+                <p style="margin:0 0 32px 0;">Yours faithfully,<br><br>
                   <strong>Admissions Officer</strong><br>
-                  <span style="font-size:13px;color:#6b7280;">For: Al-Bari College, Badagry, Lagos</span>
+                  <span style="font-size:13px;color:#6b7280;">For: Al-Bari Group of Schools, Badagry, Lagos</span>
                 </p>
               </td></tr>
-              <tr><td style="height:70px;line-height:70px;font-size:0;">&nbsp;</td></tr>
+              <tr><td style="padding:16px 56px;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#6b7280;">
+                Al-Bari Group of Schools &middot; admissions@albari.com.ng
+              </td></tr>
             </table>
           </td></tr>
         </table>
