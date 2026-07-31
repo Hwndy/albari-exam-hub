@@ -3,6 +3,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,11 +43,30 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
   const [checkingOffer, setCheckingOffer] = useState(true);
   const [fee, setFee] = useState<string>('50000');
   const [feeNote, setFeeNote] = useState<string>('');
+  const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
+  const [appliedClassId, setAppliedClassId] = useState<string | null>(null);
+  const [admittedClassId, setAdmittedClassId] = useState<string>('');
+  const [classChangeNote, setClassChangeNote] = useState('');
 
   useEffect(() => {
     checkExistingOffer();
     loadDefaults();
+    loadClassContext();
   }, [applicationId]);
+
+  const loadClassContext = async () => {
+    const [{ data: classRows }, { data: app }] = await Promise.all([
+      supabase.from('classes').select('id, name').order('name'),
+      supabase
+        .from('admission_applications')
+        .select('applying_for_class_id, admitted_to_class_id')
+        .eq('id', applicationId)
+        .maybeSingle(),
+    ]);
+    setClasses(classRows ?? []);
+    setAppliedClassId(app?.applying_for_class_id ?? null);
+    setAdmittedClassId(app?.admitted_to_class_id || app?.applying_for_class_id || '');
+  };
 
   const loadDefaults = async () => {
     const { data } = await supabase
@@ -123,6 +144,8 @@ export const OfferLetterGenerator: React.FC<OfferLetterGeneratorProps> = ({
           application_id: applicationId,
           acceptance_deadline: deadline.toISOString(),
           acceptance_fee: feeAmount,
+          admitted_class_id: admittedClassId || null,
+          class_change_note: classChangeNote.trim() || null,
         },
       });
 
