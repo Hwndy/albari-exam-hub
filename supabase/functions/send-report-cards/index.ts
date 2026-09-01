@@ -9,7 +9,7 @@ const corsHeaders = {
 
 const ALLOWED_EMAIL_DOMAIN = "albari.com.ng";
 const DEFAULT_SENDER_EMAIL = "admissions@albari.com.ng";
-const DEFAULT_REPLY_TO_EMAIL = "suleayo04@gmail.com";
+const DEFAULT_REPLY_TO_EMAIL = "admissions@albari.com.ng";
 
 function safeSender(): string {
   const v = Deno.env.get("SENDER_EMAIL")?.trim() || DEFAULT_SENDER_EMAIL;

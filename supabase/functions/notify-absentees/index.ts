@@ -32,7 +32,7 @@ serve(async (req) => {
     const parentUidById = new Map((parents || []).map((p: any) => [p.id, p.user_id]));
 
     const from = `Al-Bari Model Schools <admissions@albari.com.ng>`;
-    const replyTo = Deno.env.get("REPLY_TO_EMAIL")?.trim() || "suleayo04@gmail.com";
+    const replyTo = Deno.env.get("REPLY_TO_EMAIL")?.trim() || "admissions@albari.com.ng";
     let sent = 0;
 
     for (const r of rels || []) {
