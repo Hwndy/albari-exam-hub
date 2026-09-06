@@ -89,13 +89,14 @@ export const TeacherTimetable: React.FC = () => {
     }
   };
 
+  // UI columns are 0-based (Mon = 0) while the DB stores 1 = Monday ... 7 = Sunday
   const getEntryForSlot = (dayIndex: number, periodId: string) => {
-    return timetableEntries.find(e => e.day_of_week === dayIndex && e.period_id === periodId);
+    return timetableEntries.find(e => e.day_of_week === dayIndex + 1 && e.period_id === periodId);
   };
 
   const getTodaysClasses = () => {
-    const today = new Date().getDay() - 1; // 0 = Monday
-    if (today < 0 || today > 4) return []; // Weekend
+    const today = new Date().getDay(); // 1 = Monday ... 5 = Friday
+    if (today < 1 || today > 5) return []; // Weekend
     
     return timetableEntries
       .filter(e => e.day_of_week === today)
