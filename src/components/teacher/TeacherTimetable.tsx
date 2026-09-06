@@ -38,7 +38,7 @@ export const TeacherTimetable: React.FC = () => {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
-  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay() - 1);
+  const [selectedDay, setSelectedDay] = useState<number>(Math.max(0, Math.min(4, new Date().getDay() - 1)));
 
   useEffect(() => {
     if (user?.id) {
