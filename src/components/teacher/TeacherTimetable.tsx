@@ -38,7 +38,7 @@ export const TeacherTimetable: React.FC = () => {
   const [periods, setPeriods] = useState<Period[]>([]);
   const [timetableEntries, setTimetableEntries] = useState<TimetableEntry[]>([]);
   const [viewMode, setViewMode] = useState<'week' | 'day'>('week');
-  const [selectedDay, setSelectedDay] = useState<number>(new Date().getDay() - 1);
+  const [selectedDay, setSelectedDay] = useState<number>(Math.max(0, Math.min(4, new Date().getDay() - 1)));
 
   useEffect(() => {
     if (user?.id) {
@@ -89,13 +89,14 @@ export const TeacherTimetable: React.FC = () => {
     }
   };
 
+  // UI columns are 0-based (Mon = 0) while the DB stores 1 = Monday ... 7 = Sunday
   const getEntryForSlot = (dayIndex: number, periodId: string) => {
-    return timetableEntries.find(e => e.day_of_week === dayIndex && e.period_id === periodId);
+    return timetableEntries.find(e => e.day_of_week === dayIndex + 1 && e.period_id === periodId);
   };
 
   const getTodaysClasses = () => {
-    const today = new Date().getDay() - 1; // 0 = Monday
-    if (today < 0 || today > 4) return []; // Weekend
+    const today = new Date().getDay(); // 1 = Monday ... 5 = Friday
+    if (today < 1 || today > 5) return []; // Weekend
     
     return timetableEntries
       .filter(e => e.day_of_week === today)

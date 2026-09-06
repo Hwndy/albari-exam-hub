@@ -137,14 +137,15 @@ export const StudentTimetable: React.FC = () => {
     }
   };
 
+  // UI columns are 0-based (Mon = 0) while the DB stores 1 = Monday ... 7 = Sunday
   const getEntryForSlot = (dayIndex: number, periodId: string) => {
-    return timetableEntries.find(e => e.day_of_week === dayIndex && e.period_id === periodId);
+    return timetableEntries.find(e => e.day_of_week === dayIndex + 1 && e.period_id === periodId);
   };
 
   const getNextClass = () => {
     const now = new Date();
-    const currentDay = now.getDay() - 1; // 0 = Monday
-    if (currentDay < 0 || currentDay > 4) return null; // Weekend
+    const currentDay = now.getDay(); // 1 = Monday ... 5 = Friday
+    if (currentDay < 1 || currentDay > 5) return null; // Weekend
     
     const currentTime = now.getHours() * 60 + now.getMinutes();
     
