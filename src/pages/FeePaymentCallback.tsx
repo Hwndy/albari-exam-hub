@@ -4,7 +4,7 @@ import { CheckCircle2, Download, Loader2, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { buildBrandedReceipt } from '@/lib/receipt-pdf';
+import { downloadReceiptView } from '@/lib/receipt-print';
 import { fetchSchoolBranding, DEFAULT_SCHOOL_BRANDING, SchoolBranding } from '@/lib/school-branding';
 
 export const FeePaymentCallback = () => {
@@ -33,7 +33,7 @@ export const FeePaymentCallback = () => {
   }, [params]);
 
   const download = async () => {
-    const doc = await buildBrandedReceipt({
+    await downloadReceiptView({
       title: 'FEE PAYMENT RECEIPT',
       receiptNumber: result?.receipt_number,
       date: new Date().toLocaleDateString(),
@@ -45,8 +45,8 @@ export const FeePaymentCallback = () => {
         { label: 'Status', value: 'Completed' },
       ],
       amount: Number(result?.amount || 0),
-    }, school);
-    doc.save(`receipt-${result?.receipt_number || result?.reference}.pdf`);
+      school,
+    }, `receipt-${result?.receipt_number || result?.reference}.pdf`);
   };
 
   return <main className="min-h-screen flex items-center justify-center p-4 bg-background">
