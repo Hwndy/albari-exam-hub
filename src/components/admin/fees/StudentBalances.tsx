@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Search, Eye } from 'lucide-react';
 import { StudentBalanceDrawer } from './StudentBalanceDrawer';
 import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
+import { fetchStudentClassMap } from '@/lib/class-roster';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -21,16 +22,23 @@ export const StudentBalances: React.FC = () => {
   const [classFilter, setClassFilter] = useState('ALL');
   const [classes, setClasses] = useState<{ id: string; name: string }[]>([]);
   const [selected, setSelected] = useState<Row | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: sts }, { data: cls }, { data: fs }, { data: pays }] = await Promise.all([
-      supabase.from('students').select('id, admission_number, user_id, class_assignments(class_id, classes(id,name))').is('archived_at', null),
+    setError(null);
+    const [{ data: sts, error: stErr }, { data: cls }, { data: fs, error: fsErr }, { data: pays }] = await Promise.all([
+      supabase.from('students').select('id, admission_number, user_id').is('archived_at', null),
       supabase.from('classes').select('id, name').order('name'),
       supabase.from('fee_structures').select('amount, class_id'),
       supabase.from('fee_payments').select('student_id, amount_paid, status').eq('status', 'completed'),
     ]);
+    if (stErr || fsErr) {
+      setError((stErr || fsErr)!.message);
+      setRows([]); setLoading(false); return;
+    }
     setClasses((cls || []) as any);
+    const classMap = await fetchStudentClassMap((sts || []) as any);
     const userIds = [...new Set((sts || []).map((s: any) => s.user_id).filter(Boolean))];
     let nameMap = new Map<string, string>();
     if (userIds.length) {
@@ -40,16 +48,18 @@ export const StudentBalances: React.FC = () => {
     const paidMap: Record<string, number> = {};
     (pays || []).forEach((p: any) => { paidMap[p.student_id] = (paidMap[p.student_id] || 0) + Number(p.amount_paid || 0); });
     const out: Row[] = (sts || []).map((s: any) => {
-      const ca = s.class_assignments?.[0];
-      const classId = ca?.class_id || null;
-      const className = ca?.classes?.name || '—';
+      const info = classMap.get(s.id);
+      const classId = info?.class_id || null;
+      const className = info?.class_name || '—';
       const billed = (fs || []).filter((f: any) => !f.class_id || f.class_id === classId).reduce((a: number, b: any) => a + Number(b.amount), 0);
       const paid = paidMap[s.id] || 0;
-      return { id: s.id, name: nameMap.get(s.user_id) || 'Unknown', admission: s.admission_number || '—', class_id: classId, class_name: className, billed, paid, outstanding: Math.max(0, billed - paid) };
+      return { id: s.id, name: nameMap.get(s.user_id) || s.admission_number || 'Unknown', admission: s.admission_number || '—', class_id: classId, class_name: className, billed, paid, outstanding: Math.max(0, billed - paid) };
     });
+    out.sort((a, b) => a.name.localeCompare(b.name));
     setRows(out); setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
   useRealtimeRefresh('student-balances', ['students', 'fee_payments', 'class_assignments'], () => { void load(); });
 
   const filtered = useMemo(() => {
