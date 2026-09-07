@@ -111,8 +111,8 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
       const full = student.class_id === null ? await loadStudent(student.id) : student;
       const classId = full?.class_id;
       const structureQuery = classId
-        ? supabase.from('fee_structures').select('*').or(`class_id.eq.${classId},class_id.is.null`)
-        : supabase.from('fee_structures').select('*').is('class_id', null);
+        ? supabase.from('fee_structures').select('*').eq('is_active', true).or(`class_id.eq.${classId},class_id.is.null`)
+        : supabase.from('fee_structures').select('*').eq('is_active', true).is('class_id', null);
       const [{ data: fs }, { data: pays }, { data: plans }] = await Promise.all([
         structureQuery,
         supabase.from('fee_payments').select('fee_structure_id, amount_paid, status').eq('student_id', student.id),

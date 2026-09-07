@@ -29,7 +29,7 @@ export const InstallmentPlans: React.FC = () => {
     const [{ data: pls }, { data: sts }, { data: fs }] = await Promise.all([
       supabase.from('fee_installment_plans').select('*, students(id, user_id, admission_number), fee_structures(fee_type,academic_year), fee_installments(id,status,amount,paid_amount)').order('created_at', { ascending: false }),
       supabase.from('students').select('id, user_id, admission_number').is('archived_at', null).order('admission_number'),
-      supabase.from('fee_structures').select('id, fee_type, amount, academic_year'),
+      supabase.from('fee_structures').select('id, fee_type, amount, academic_year').eq('is_active', true),
     ]);
     const userIds = [...new Set([
       ...((sts || []) as any[]).map(s => s.user_id),

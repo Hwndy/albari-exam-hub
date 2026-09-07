@@ -10,12 +10,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Archive, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
-interface Structure { id: string; fee_type: string; academic_year: string; term: string | null; amount: number; due_date: string | null; class_id: string | null; is_mandatory: boolean | null; }
+interface Structure { id: string; fee_type: string; academic_year: string; term: string | null; amount: number; due_date: string | null; class_id: string | null; is_mandatory: boolean | null; is_active?: boolean | null; }
 interface Klass { id: string; name: string; }
 
 const emptyForm = { fee_type: '', academic_year: new Date().getFullYear().toString(), term: '', amount: '', due_date: '', scope: 'ALL' as 'ALL' | 'SELECTED', class_ids: [] as string[], is_mandatory: true };
@@ -24,23 +24,35 @@ export const FeeStructures: React.FC = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<Structure[]>([]);
   const [classes, setClasses] = useState<Klass[]>([]);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Structure | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState<{ s: Structure; mode: 'delete' | 'retire' } | null>(null);
+  const [code, setCode] = useState('');
+  const [working, setWorking] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: fs }, { data: cls }] = await Promise.all([
+    const [{ data: fs }, { data: cls }, { data: pays }, { data: plans }] = await Promise.all([
       supabase.from('fee_structures').select('*').order('academic_year', { ascending: false }),
       supabase.from('classes').select('id, name').order('name'),
+      supabase.from('fee_payments').select('fee_structure_id'),
+      supabase.from('fee_installment_plans').select('fee_structure_id'),
     ]);
+    const counts: Record<string, number> = {};
+    [...(pays || []), ...(plans || [])].forEach((r: any) => {
+      if (r.fee_structure_id) counts[r.fee_structure_id] = (counts[r.fee_structure_id] || 0) + 1;
+    });
+    setUsage(counts);
     setItems((fs || []) as Structure[]);
     setClasses((cls || []) as Klass[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [] }); setOpen(true); };
   const openEdit = (s: Structure) => {
@@ -81,11 +93,45 @@ export const FeeStructures: React.FC = () => {
     setOpen(false); load();
   };
 
-  const remove = async (s: Structure) => {
-    if (!confirm(`Delete "${s.fee_type}" (${s.academic_year})?`)) return;
-    const { error } = await supabase.from('fee_structures').delete().eq('id', s.id);
-    if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Deleted' }); load(); }
+  const askRemove = (s: Structure) => {
+    setCode('');
+    setConfirming({ s, mode: (usage[s.id] || 0) > 0 ? 'retire' : 'delete' });
+  };
+
+  const restore = async (s: Structure) => {
+    const { error } = await supabase.from('fee_structures').update({ is_active: true } as any).eq('id', s.id);
+    if (error) toast({ title: 'Restore failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Fee restored' }); load(); }
+  };
+
+  const confirmRemove = async () => {
+    if (!confirming) return;
+    setWorking(true);
+    const { data: setting } = await supabase.from('app_settings').select('setting_value').eq('setting_key', 'finance_delete_code').maybeSingle();
+    const expected = String((setting as any)?.setting_value ?? '4250645').replace(/"/g, '');
+    if (code.trim() !== expected) {
+      setWorking(false);
+      toast({ title: 'Wrong access code', description: 'Enter the finance access code to continue.', variant: 'destructive' });
+      return;
+    }
+    const { s, mode } = confirming;
+    const { error } = mode === 'delete'
+      ? await supabase.from('fee_structures').delete().eq('id', s.id)
+      : await supabase.from('fee_structures').update({ is_active: false } as any).eq('id', s.id);
+    setWorking(false);
+    if (error) {
+      toast({
+        title: mode === 'delete' ? 'Delete failed' : 'Retire failed',
+        description: /foreign key/i.test(error.message)
+          ? 'Payments have been recorded against this fee — retire it instead of deleting.'
+          : error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({ title: mode === 'delete' ? 'Fee deleted' : 'Fee retired — it will no longer be billed' });
+    setConfirming(null);
+    load();
   };
 
   return (
@@ -99,11 +145,12 @@ export const FeeStructures: React.FC = () => {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Fee Type</TableHead><TableHead>Class</TableHead><TableHead>Year</TableHead><TableHead>Term</TableHead>
-              <TableHead className="text-right">Amount</TableHead><TableHead>Due</TableHead><TableHead>Mandatory</TableHead><TableHead></TableHead>
+              <TableHead className="text-right">Amount</TableHead><TableHead>Due</TableHead><TableHead>Mandatory</TableHead>
+              <TableHead className="text-right">Payments</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {items.map(s => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={s.is_active === false ? 'opacity-60' : undefined}>
                   <TableCell className="font-medium">{s.fee_type}</TableCell>
                   <TableCell>{s.class_id ? (classes.find(c => c.id === s.class_id)?.name || '—') : <Badge variant="outline">All classes</Badge>}</TableCell>
                   <TableCell>{s.academic_year}</TableCell>
@@ -111,16 +158,27 @@ export const FeeStructures: React.FC = () => {
                   <TableCell className="text-right">{NGN(Number(s.amount))}</TableCell>
                   <TableCell>{s.due_date ? format(new Date(s.due_date), 'PP') : '—'}</TableCell>
                   <TableCell>{s.is_mandatory ? <Badge>Yes</Badge> : <Badge variant="outline">No</Badge>}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4"/></Button>
-                    <Button size="icon" variant="ghost" onClick={() => remove(s)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                  <TableCell className="text-right">{usage[s.id] || 0}</TableCell>
+                  <TableCell>{s.is_active === false ? <Badge variant="outline">Retired</Badge> : <Badge>Active</Badge>}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {s.is_active === false ? (
+                      <Button size="sm" variant="outline" onClick={() => restore(s)}><RotateCcw className="h-4 w-4 mr-1"/>Restore</Button>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4"/></Button>
+                        <Button size="icon" variant="ghost" title={(usage[s.id] || 0) > 0 ? 'Retire (payments recorded)' : 'Delete'} onClick={() => askRemove(s)}>
+                          {(usage[s.id] || 0) > 0 ? <Archive className="h-4 w-4 text-destructive"/> : <Trash2 className="h-4 w-4 text-destructive"/>}
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No fee structures yet</TableCell></TableRow>}
+              {items.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">No fee structures yet</TableCell></TableRow>}
             </TableBody>
           </Table>
         )}
+
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
@@ -179,6 +237,30 @@ export const FeeStructures: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{confirming?.mode === 'delete' ? 'Delete fee item' : 'Retire fee item'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {confirming?.mode === 'delete'
+                ? <>No payments are attached to “{confirming?.s.fee_type}”, so it can be removed permanently.</>
+                : <>{usage[confirming?.s.id || ''] || 0} payment(s) are recorded against “{confirming?.s.fee_type}”, so it cannot be deleted. Retiring it stops it being billed to students while keeping every receipt. You can restore it later.</>}
+            </p>
+            <div>
+              <Label>Finance access code</Label>
+              <Input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="Enter access code"/>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmRemove} disabled={working || !code.trim()}>
+              {working ? <Loader2 className="h-4 w-4 animate-spin"/> : (confirming?.mode === 'delete' ? 'Delete' : 'Retire')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

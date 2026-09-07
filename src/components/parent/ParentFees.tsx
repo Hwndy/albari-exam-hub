@@ -75,6 +75,7 @@ export const ParentFees: React.FC = () => {
         supabase
           .from('fee_structures')
           .select('*')
+          .eq('is_active', true)
           .or(`class_id.eq.${selectedChild.class_id || '00000000-0000-0000-0000-000000000000'},class_id.is.null`),
         supabase.from('fee_payments').select('*').eq('student_id', selectedChild.student_id).order('payment_date', { ascending: false }),
         supabase.from('fee_installment_plans').select('*').eq('student_id', selectedChild.student_id),
