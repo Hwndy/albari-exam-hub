@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -110,12 +110,36 @@ export const PayrollHub: React.FC = () => {
     setComponents((data as any[]) || []);
   };
 
+  const openPeriodRef = useRef<Period | null>(null);
+  useEffect(() => { openPeriodRef.current = openPeriod; }, [openPeriod]);
+
   useEffect(() => {
     load();
     loadStaffOptions();
     loadComponents();
     fetchSchoolBranding().then(setBranding).catch(() => {});
   }, []);
+
+  // Live refresh: keep periods and the open period's lines in sync with the database
+  useEffect(() => {
+    const channel = supabase
+      .channel('payroll-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payroll_periods' }, () => {
+        load();
+        const p = openPeriodRef.current;
+        if (p) {
+          supabase.from('payroll_periods').select('*').eq('id', p.id).maybeSingle()
+            .then(({ data }) => { if (data) setOpenPeriod(data as any); });
+        }
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'payroll_items' }, () => {
+        const p = openPeriodRef.current;
+        if (p) loadItems(p);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
 
   const loadItems = async (period: Period) => {
     setLoadingItems(true);
