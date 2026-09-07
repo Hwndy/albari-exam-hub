@@ -17,7 +17,7 @@ const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', c
 interface StudentOption { id: string; name: string; admission_number: string | null; class_id: string | null; class_name: string | null; }
 interface Item {
   key: string;
-  kind: 'structure' | 'installment';
+  kind: 'structure' | 'installment' | 'other';
   id: string;
   label: string;
   amount: number;
@@ -39,11 +39,13 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
   const [method, setMethod] = useState('cash');
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [notes, setNotes] = useState('');
+  const [otherLabel, setOtherLabel] = useState('');
   const [saving, setSaving] = useState(false);
+  const [structureCount, setStructureCount] = useState(0);
 
   const reset = () => {
     setQ(''); setStudents([]); setStudent(null); setItems([]); setItemKey('');
-    setAmount(''); setMethod('cash'); setDate(new Date().toISOString().slice(0, 10)); setNotes('');
+    setAmount(''); setMethod('cash'); setDate(new Date().toISOString().slice(0, 10)); setNotes(''); setOtherLabel(''); setStructureCount(0);
   };
 
   useEffect(() => { if (!open) reset(); }, [open]);
@@ -107,8 +109,11 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
       setLoadingItems(true);
       const full = student.class_id === null ? await loadStudent(student.id) : student;
       const classId = full?.class_id;
+      const structureQuery = classId
+        ? supabase.from('fee_structures').select('*').or(`class_id.eq.${classId},class_id.is.null`)
+        : supabase.from('fee_structures').select('*').is('class_id', null);
       const [{ data: fs }, { data: pays }, { data: plans }] = await Promise.all([
-        supabase.from('fee_structures').select('*').or(`class_id.eq.${classId || '00000000-0000-0000-0000-000000000000'},class_id.is.null`),
+        structureQuery,
         supabase.from('fee_payments').select('fee_structure_id, amount_paid, status').eq('student_id', student.id),
         supabase.from('fee_installment_plans').select('id, total_amount, fee_installments(id, installment_number, amount, paid_amount, due_date, status)').eq('student_id', student.id),
       ]);
@@ -135,7 +140,12 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
           });
       });
 
-      setItems([...structureItems, ...installmentItems]);
+      const otherItem: Item = {
+        key: 'other', kind: 'other', id: 'other',
+        label: 'Other / not listed', amount: 0, paid: 0,
+      };
+      setStructureCount(structureItems.length);
+      setItems([...structureItems, ...installmentItems, otherItem]);
       setLoadingItems(false);
       if (full && full !== student) setStudent(full);
     })();
@@ -143,7 +153,8 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
   }, [student?.id]);
 
   const selected = useMemo(() => items.find(i => i.key === itemKey) || null, [items, itemKey]);
-  const outstanding = selected ? Math.max(0, selected.amount - selected.paid) : 0;
+  const isOther = selected?.kind === 'other';
+  const outstanding = selected && !isOther ? Math.max(0, selected.amount - selected.paid) : 0;
 
   const printReceipt = async (receiptNumber: string, paidAmount: number) => {
     try {
@@ -155,7 +166,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
           { label: 'Student', value: student?.name },
           { label: 'Admission No.', value: student?.admission_number },
           { label: 'Class', value: student?.class_name },
-          { label: 'Payment for', value: selected?.label },
+          { label: 'Payment for', value: isOther ? (otherLabel || 'Other payment') : selected?.label },
           { label: 'Method', value: method.replace('_', ' ') },
           { label: 'Reference / Notes', value: notes || '—' },
         ],
@@ -173,7 +184,8 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     if (!student || !selected) { toast({ title: 'Select a student and what the payment is for', variant: 'destructive' }); return; }
     const value = Number(amount);
     if (!value || value <= 0) { toast({ title: 'Enter a valid amount', variant: 'destructive' }); return; }
-    if (value > outstanding + 0.001) {
+    if (isOther && !otherLabel.trim()) { toast({ title: 'Say what the payment is for', variant: 'destructive' }); return; }
+    if (!isOther && value > outstanding + 0.001) {
       toast({ title: 'Amount is more than the outstanding balance', description: `Outstanding: ${NGN(outstanding)}`, variant: 'destructive' });
       return;
     }
@@ -191,7 +203,8 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
       payment_date: date,
       paid_at: paidAt,
       receipt_number: receipt,
-      notes: notes || null,
+      notes: isOther ? [otherLabel.trim(), notes].filter(Boolean).join(' — ') : (notes || null),
+      metadata: isOther ? { description: otherLabel.trim(), recorded_as: 'other' } : null,
     }).select('id').maybeSingle();
 
     if (error) {
@@ -270,14 +283,26 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
                     ))}
                   </SelectContent>
                 </Select>
-                {selected && (
+                {selected && !isOther && (
                   <div className="flex items-center gap-2 text-sm">
                     <Badge variant="outline">Billed {NGN(selected.amount)}</Badge>
                     <Badge variant="outline">Paid {NGN(selected.paid)}</Badge>
                     <Badge>{outstanding > 0 ? `Outstanding ${NGN(outstanding)}` : 'Fully paid'}</Badge>
                   </div>
                 )}
-                {!loadingItems && items.length === 0 && <p className="text-sm text-muted-foreground">No fees configured for this student's class yet.</p>}
+                {isOther && (
+                  <div>
+                    <Label>What is this payment for? *</Label>
+                    <Input value={otherLabel} onChange={e => setOtherLabel(e.target.value)} placeholder="e.g. Tuition part payment, Uniform, Excursion" />
+                  </div>
+                )}
+                {!loadingItems && structureCount === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {student.class_name
+                      ? `No fee items set up for ${student.class_name} yet — create them in Finance → Fees & Income → Fee Structures, or use "Other / not listed" above.`
+                      : 'This student is not assigned to a class yet, so class fees cannot be matched. Assign a class from the Students page, or use "Other / not listed" above.'}
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
