@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Download, Search } from 'lucide-react';
+import { Loader2, Download, Search, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { RecordCashPaymentDialog } from './RecordCashPaymentDialog';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -14,6 +15,8 @@ export const PaymentsList: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [cashOpen, setCashOpen] = useState(false);
+
 
   useEffect(() => {
     (async () => {
