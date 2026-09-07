@@ -1,34 +1,28 @@
-# Live updates everywhere — no manual refresh
+# Live site picks up new versions by itself
 
-## Goal
+## First, one thing I can't change
 
-Any change made anywhere in the platform (by you, by staff, by a parent, or by the system) shows up on every open screen by itself. No page reload, no "Refresh" button, no "Update available" click.
+Sending your code changes to the live web address is a Lovable hosting step: you press Publish → Update once, and the new version goes out. There is no way for me to remove that button — it is how the hosting decides when a new version becomes public.
 
-## Today
+## What I can fix — and this is very likely what you're seeing
 
-Only a handful of screens refresh themselves: payroll, student lists, past students, hostel allocations, student balances, payments and the teacher student list. Everything else loads once when opened. Only 7 tables are switched on for live updates in the database (students, class assignments, fee payments, hostel allocations, payroll months, payroll lines, parent messages). New app versions also wait behind an "Update available" prompt you have to click.
+Once you publish, people already using the site (especially anyone who installed it on their phone) keep running the old version until they click an "Update available" button or close and reopen the app. That is caused by the offline cache built into the app. So a change looks like it "didn't go live" even though it did.
 
 ## What will change
 
-1. **Live updates switched on for the whole database** — admissions, applications, interviews, offers, documents, classes, subjects, timetables, attendance, gradebook and results, exams and exam sessions, fee structures and installments, expenses, revenue, staff and HR, hostel rooms/passes/roll call, library, transport, announcements, notifications, CMS/website content, users and profiles.
+1. **New versions install themselves.** As soon as a new version is published, an open tab or installed app picks it up and refreshes onto it automatically — no "Update available" click, no hard refresh.
+2. **Version check on the spot.** The app checks for a newer version when it starts, when you switch back to the tab or reopen the app, and every few minutes while it's open — instead of once an hour.
+3. **A brief, non-blocking note** ("Updated to the latest version") so you know why the page just refreshed. Nothing to click.
+4. **Never lose typed work.** If you are in the middle of filling a form, the refresh waits until that screen is idle.
+5. **Pages are always fetched fresh.** The cache will only ever serve the page shell offline; when you're online, the newest version is always what loads.
 
-2. **Every screen listens by itself.** One shared connection at the top of the app watches for changes and tells the screens that care. Each list, dashboard, table and detail page re-reads its data automatically a fraction of a second after a change lands — including the public website pages that read CMS content.
+## After this
 
-3. **Safety nets for when the live connection drops** (weak network, phone asleep, tab in the background):
-   - refresh when you come back to the tab or the app regains focus
-   - refresh when the connection is restored
-   - a slow background re-check as a fallback so nothing can get stuck stale
-
-4. **App updates apply themselves.** When a new version is published, it installs and reloads quietly instead of showing an "Update available" button — with a short toast so you know it happened.
-
-5. **No flicker.** Refreshes happen in the background and only redraw when the data actually differs, so tables don't blink or lose your place, and typing in an open form is never interrupted.
+Your workflow becomes: make a change → press Publish → everyone on the live link is on the new version within seconds, without touching anything.
 
 ## Technical notes
 
-- DB migration: `REPLICA IDENTITY FULL` + `ALTER PUBLICATION supabase_realtime ADD TABLE` for every remaining public table, generated defensively (skip if already present, skip views).
-- New `src/contexts/RealtimeProvider.tsx`: a small number of pooled `supabase.channel()` subscriptions covering all tables, with an event bus keyed by table name; avoids hitting the per-client channel limit that one-channel-per-component would cause.
-- Rework `src/hooks/useRealtimeRefresh.ts` to subscribe to that bus instead of opening its own channel (same call signature, so existing call sites keep working), and add visibilitychange/online/focus listeners plus a configurable polling interval fallback and 300ms debounce.
-- Add `useRealtimeRefresh` (or React Query `invalidateQueries` where the screen already uses React Query) to every data-loading screen: admin hubs (admissions, exams, results, fees, finance, HR/payroll, hostel, library, transport, parents, settings, CMS), teacher screens (gradebook, attendance, assignments, results, timetable, lesson notes), student screens (exams, results, report cards, assignments, timetable, library), parent portal screens, and website CMS-driven pages.
-- Set `refetchOnWindowFocus: true` and sensible `staleTime` on the shared `QueryClient` in `src/App.tsx`.
-- Service worker: switch `src/components/pwa/UpdateAvailable.tsx` to auto `skipWaiting` + `clients.claim` and reload, keeping a passive toast.
-- Realtime respects RLS, so no policy changes are required and no user sees data they couldn't already query.
+- `public/sw.js`: switch app-shell/HTML handling to network-first, keep offline fallback only for genuine offline; bump cache versioning and delete stale caches only for this registration's own buckets on `activate`; call `self.skipWaiting()` on install and `clients.claim()` on activate.
+- `src/main.tsx`: call `registration.update()` on load, on `visibilitychange`, on `online`, and on a short interval (~60s) instead of hourly; listen for `updatefound`/`controllerchange` and reload once the new worker takes control (guard against reload loops with a session flag).
+- `src/components/pwa/UpdateAvailable.tsx`: change from a manual "Update" button to a passive toast; auto-apply, deferring the reload while a form input has focus or the page has unsaved state.
+- No database or backend changes.
