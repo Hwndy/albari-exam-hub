@@ -110,6 +110,9 @@ export const PayrollHub: React.FC = () => {
     setComponents((data as any[]) || []);
   };
 
+  const openPeriodRef = useRef<Period | null>(null);
+  useEffect(() => { openPeriodRef.current = openPeriod; }, [openPeriod]);
+
   useEffect(() => {
     load();
     loadStaffOptions();
