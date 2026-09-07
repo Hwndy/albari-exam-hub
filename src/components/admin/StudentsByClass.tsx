@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/select';
 import {
   MoreVertical, UserPlus, Download, Search, Eye, Camera,
-  IdCard, Pencil, Trash2, Printer, GraduationCap, Hash, FileText,
+  IdCard, Pencil, Trash2, Printer, GraduationCap, Hash, FileText, Archive,
 } from 'lucide-react';
 import { UserEditModal } from './UserEditModal';
 import { StudentIDCard } from './StudentIDCard';
@@ -83,6 +83,8 @@ export const StudentsByClass: React.FC = () => {
   const [deleteTarget, setDeleteTarget] = useState<StudentRow | null>(null);
   const [busy, setBusy] = useState(false);
   const [bulkAssignOpen, setBulkAssignOpen] = useState(false);
+  const [archiveTarget, setArchiveTarget] = useState<StudentRow | null>(null);
+  const [archiveReason, setArchiveReason] = useState('');
   const [singleAssign, setSingleAssign] = useState<StudentRow | null>(null);
 
   useEffect(() => {
@@ -90,6 +92,17 @@ export const StudentsByClass: React.FC = () => {
     void fetchSchoolBranding();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Keep the list in sync with changes made elsewhere (archiving, enrolment, class moves)
+  useEffect(() => {
+    const channel = supabase
+      .channel('students-by-class-live')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'students' }, () => { void fetchAll(); })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'class_assignments' }, () => { void fetchAll(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchSchoolBranding = async () => {
     try {
@@ -268,6 +281,31 @@ export const StudentsByClass: React.FC = () => {
     } finally { setBusy(false); }
   };
 
+  /* -------- Archive -------- */
+  const handleArchive = async () => {
+    if (!archiveTarget?.student_id) {
+      toast({ title: 'Cannot archive', description: 'No student record found', variant: 'destructive' });
+      return;
+    }
+    setBusy(true);
+    try {
+      const { error } = await supabase.from('students')
+        .update({
+          archived_at: new Date().toISOString(),
+          archived_reason: archiveReason.trim() || 'Archived by admin',
+          status: 'archived',
+        })
+        .eq('id', archiveTarget.student_id);
+      if (error) throw error;
+      toast({ title: 'Student archived', description: 'Moved to Past Students.' });
+      setArchiveTarget(null);
+      setArchiveReason('');
+      await fetchAll();
+    } catch (e: any) {
+      toast({ title: 'Archive failed', description: e.message, variant: 'destructive' });
+    } finally { setBusy(false); }
+  };
+
   /* -------- Edit Profile -------- */
   const openEdit = async (s: StudentRow) => {
     const { data } = await supabase.from('profiles')
@@ -395,6 +433,9 @@ export const StudentsByClass: React.FC = () => {
                                     <Pencil className="h-4 w-4 mr-2" /> Edit Profile
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => { setArchiveReason(''); setArchiveTarget(s); }}>
+                                    <Archive className="h-4 w-4 mr-2" /> Archive Student
+                                  </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"
                                     onClick={() => setDeleteTarget(s)}>
@@ -414,6 +455,28 @@ export const StudentsByClass: React.FC = () => {
           })}
         </Accordion>
       )}
+
+      {/* Archive Student */}
+      <Dialog open={!!archiveTarget} onOpenChange={o => { if (!o) { setArchiveTarget(null); setArchiveReason(''); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Archive {archiveTarget?.full_name}?</DialogTitle>
+            <DialogDescription>
+              They will be removed from class lists, fees, hostel and report card screens, and moved to Past Students.
+              Their records are kept and they can be restored later.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label>Reason (optional)</Label>
+            <Input value={archiveReason} placeholder="e.g. Transferred, Withdrawn"
+              onChange={e => setArchiveReason(e.target.value)} />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setArchiveTarget(null)}>Cancel</Button>
+            <Button onClick={handleArchive} disabled={busy}>{busy ? 'Archiving…' : 'Archive Student'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Student */}
       <Dialog open={addOpen} onOpenChange={setAddOpen}>
