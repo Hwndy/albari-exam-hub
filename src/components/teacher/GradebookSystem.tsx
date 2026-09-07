@@ -195,6 +195,7 @@ export const GradebookSystem = () => {
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('id, admission_number, user_id')
+        .is('archived_at', null)
         .in('id', studentIds);
 
       if (studentsError) throw studentsError;
@@ -258,6 +259,7 @@ export const GradebookSystem = () => {
       const { data: studentsData } = await supabase
         .from('students')
         .select('id, admission_number, user_id')
+        .is('archived_at', null)
         .in('id', studentIds);
 
       const userIds = studentsData?.map(s => s.user_id).filter(Boolean) || [];

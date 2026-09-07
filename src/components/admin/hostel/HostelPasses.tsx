@@ -33,7 +33,7 @@ export const HostelPasses: React.FC = () => {
       supabase.from('hostel_exeat_passes').select('*').order('out_at', { ascending: false }).limit(200),
       supabase.from('hostel_allocations').select('student_id, room_id').eq('status', 'active'),
       supabase.from('hostel_rooms').select('id, hostel_id'),
-      supabase.from('students').select('id, user_id'),
+      supabase.from('students').select('id, user_id').is('archived_at', null),
       supabase.from('profiles').select('user_id, full_name'),
     ]);
     setPasses((p || []) as Pass[]);

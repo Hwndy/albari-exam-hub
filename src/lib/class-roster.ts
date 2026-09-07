@@ -30,8 +30,8 @@ export async function fetchClassRoster(classId: string): Promise<RosterStudent[]
   if (refs.length === 0) return [];
 
   const [byId, byUser] = await Promise.all([
-    supabase.from('students').select('id, user_id, admission_number, status, photo_url').in('id', refs),
-    supabase.from('students').select('id, user_id, admission_number, status, photo_url').in('user_id', refs),
+    supabase.from('students').select('id, user_id, admission_number, status, photo_url').is('archived_at', null).in('id', refs),
+    supabase.from('students').select('id, user_id, admission_number, status, photo_url').is('archived_at', null).in('user_id', refs),
   ]);
 
   const students = new Map<string, any>();

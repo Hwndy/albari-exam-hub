@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Loader2, RotateCcw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 export const PastStudents: React.FC = () => {
   const { toast } = useToast();
@@ -27,6 +28,7 @@ export const PastStudents: React.FC = () => {
   };
 
   useEffect(() => { load(); }, []);
+  useRealtimeRefresh('past-students', ['students'], () => { void load(); });
 
   const restore = async (id: string) => {
     await supabase.from('students').update({ archived_at: null, archived_reason: null }).eq('id', id);

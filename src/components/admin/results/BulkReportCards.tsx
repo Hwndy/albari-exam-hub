@@ -55,7 +55,7 @@ export const BulkReportCards: React.FC = () => {
       const { data: ca } = await supabase.from('class_assignments').select('student_id').eq('class_id', classId);
       const ids = (ca || []).map((c: any) => c.student_id);
       if (!ids.length) { setStudents([]); return; }
-      const { data: sts } = await supabase.from('students').select('id, user_id, admission_number').in('id', ids);
+      const { data: sts } = await supabase.from('students').select('id, user_id, admission_number').is('archived_at', null).in('id', ids);
       const uids = (sts || []).map((s: any) => s.user_id).filter(Boolean);
       const { data: profs } = uids.length ? await supabase.from('profiles').select('user_id, full_name').in('user_id', uids) : { data: [] as any };
       const nameMap = new Map<string, string>((profs || []).map((p: any) => [p.user_id, p.full_name]));

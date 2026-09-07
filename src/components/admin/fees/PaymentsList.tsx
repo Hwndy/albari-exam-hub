@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Download, Search, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { RecordCashPaymentDialog } from './RecordCashPaymentDialog';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -37,6 +38,7 @@ export const PaymentsList: React.FC = () => {
   };
 
   useEffect(() => { load(); }, []);
+  useRealtimeRefresh('fee-payments-list', ['fee_payments', 'fee_installments'], () => { void load(); });
 
 
   const filtered = useMemo(() => payments.filter((p: any) =>

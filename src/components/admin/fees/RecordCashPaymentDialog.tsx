@@ -80,7 +80,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     const term = q.trim();
     const handle = setTimeout(async () => {
       setSearching(true);
-      const { data: rows } = await supabase.from('students').select('id, user_id, admission_number').limit(400);
+      const { data: rows } = await supabase.from('students').select('id, user_id, admission_number').is('archived_at', null).limit(400);
       const list = (rows || []) as any[];
       const userIds = [...new Set(list.map(r => r.user_id).filter(Boolean))];
       let nameMap = new Map<string, string>();

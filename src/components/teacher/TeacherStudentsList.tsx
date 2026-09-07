@@ -12,6 +12,7 @@ import { Download, Loader2, Search, Users } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useTeacherScope } from '@/hooks/useTeacherScope';
 import { fetchClassRoster, RosterStudent, toCsv, downloadCsv } from '@/lib/class-roster';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 interface DetailState {
   student: RosterStudent;
@@ -36,6 +37,8 @@ export const TeacherStudentsList: React.FC = () => {
     if (!classId && classes.length) setClassId(classes[0].id);
   }, [classes, classId]);
 
+  const [refreshKey, setRefreshKey] = useState(0);
+
   useEffect(() => {
     if (!classId) { setRoster([]); return; }
     let cancelled = false;
@@ -49,7 +52,9 @@ export const TeacherStudentsList: React.FC = () => {
       }
     })();
     return () => { cancelled = true; };
-  }, [classId]);
+  }, [classId, refreshKey]);
+
+  useRealtimeRefresh('teacher-students', ['students', 'class_assignments'], () => setRefreshKey(k => k + 1));
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
