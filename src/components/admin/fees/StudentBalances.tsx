@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2, Search, Eye } from 'lucide-react';
 import { StudentBalanceDrawer } from './StudentBalanceDrawer';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -49,6 +50,7 @@ export const StudentBalances: React.FC = () => {
     setRows(out); setLoading(false);
   };
   useEffect(() => { load(); }, []);
+  useRealtimeRefresh('student-balances', ['students', 'fee_payments', 'class_assignments'], () => { void load(); });
 
   const filtered = useMemo(() => {
     return rows.filter(r =>

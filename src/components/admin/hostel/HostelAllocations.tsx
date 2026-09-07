@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { Download, BedDouble, LogOut, ArrowLeftRight } from 'lucide-react';
+import { useRealtimeRefresh } from '@/hooks/useRealtimeRefresh';
 
 type Hostel = { id: string; name: string; gender: string };
 type Room = { id: string; hostel_id: string; room_number: string; capacity: number };
@@ -59,6 +60,7 @@ export const HostelAllocations: React.FC = () => {
     })));
   };
   useEffect(() => { void load(); }, []);
+  useRealtimeRefresh('hostel-allocations', ['hostel_allocations', 'students'], () => { void load(); });
 
   const studentById = useMemo(() => new Map(students.map(s => [s.id, s])), [students]);
   const roomById = useMemo(() => new Map(rooms.map(r => [r.id, r])), [rooms]);
