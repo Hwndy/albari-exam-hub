@@ -88,6 +88,7 @@ export const StudentBalances: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent>
+        {error && <div className="mb-3 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm text-destructive">Could not load balances: {error}</div>}
         {loading ? <div className="flex justify-center p-6"><Loader2 className="animate-spin h-6 w-6"/></div> : (
           <Table>
             <TableHeader><TableRow>

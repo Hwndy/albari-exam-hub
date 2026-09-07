@@ -63,16 +63,16 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
   const loadStudent = async (id: string): Promise<StudentOption | null> => {
     const { data } = await supabase.from('students').select('id, user_id, admission_number').eq('id', id).maybeSingle();
     if (!data) return null;
-    const [{ data: prof }, { data: ca }] = await Promise.all([
+    const [{ data: prof }, cls] = await Promise.all([
       data.user_id ? supabase.from('profiles').select('full_name').eq('user_id', data.user_id).maybeSingle() : Promise.resolve({ data: null } as any),
-      supabase.from('class_assignments').select('class_id, classes(name)').eq('student_id', id).maybeSingle(),
+      fetchStudentClass(id),
     ]);
     return {
       id: data.id,
-      name: (prof as any)?.full_name || 'Unknown',
+      name: (prof as any)?.full_name || data.admission_number || 'Unknown',
       admission_number: data.admission_number,
-      class_id: (ca as any)?.class_id || null,
-      class_name: (ca as any)?.classes?.name || null,
+      class_id: cls.class_id,
+      class_name: cls.class_name,
     };
   };
 
