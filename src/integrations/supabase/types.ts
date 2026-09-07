@@ -2066,6 +2066,7 @@ export type Database = {
           due_date: string | null
           fee_type: string
           id: string
+          is_active: boolean
           is_mandatory: boolean | null
           term: string | null
         }
@@ -2077,6 +2078,7 @@ export type Database = {
           due_date?: string | null
           fee_type: string
           id?: string
+          is_active?: boolean
           is_mandatory?: boolean | null
           term?: string | null
         }
@@ -2088,6 +2090,7 @@ export type Database = {
           due_date?: string | null
           fee_type?: string
           id?: string
+          is_active?: boolean
           is_mandatory?: boolean | null
           term?: string | null
         }
