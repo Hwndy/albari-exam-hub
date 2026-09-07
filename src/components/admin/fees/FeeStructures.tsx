@@ -10,7 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, Archive, RotateCcw } from 'lucide-react';
 import { format } from 'date-fns';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
@@ -237,6 +237,30 @@ export const FeeStructures: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button onClick={save} disabled={saving}>{saving ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Save'}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={!!confirming} onOpenChange={(o) => !o && setConfirming(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{confirming?.mode === 'delete' ? 'Delete fee item' : 'Retire fee item'}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {confirming?.mode === 'delete'
+                ? <>No payments are attached to “{confirming?.s.fee_type}”, so it can be removed permanently.</>
+                : <>{usage[confirming?.s.id || ''] || 0} payment(s) are recorded against “{confirming?.s.fee_type}”, so it cannot be deleted. Retiring it stops it being billed to students while keeping every receipt. You can restore it later.</>}
+            </p>
+            <div>
+              <Label>Finance access code</Label>
+              <Input type="password" value={code} onChange={e => setCode(e.target.value)} placeholder="Enter access code"/>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirming(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={confirmRemove} disabled={working || !code.trim()}>
+              {working ? <Loader2 className="h-4 w-4 animate-spin"/> : (confirming?.mode === 'delete' ? 'Delete' : 'Retire')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
