@@ -60,14 +60,17 @@ export const PaymentsList: React.FC = () => {
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <CardTitle>All Payments</CardTitle>
-        <div className="flex gap-2">
-          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input className="pl-9 w-64" placeholder="Search..." value={q} onChange={e => setQ(e.target.value)}/></div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setCashOpen(true)}><Plus className="h-4 w-4 mr-1"/>Record cash payment</Button>
+          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input className="pl-9 w-full sm:w-64" placeholder="Search..." value={q} onChange={e => setQ(e.target.value)}/></div>
           <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-1"/>CSV</Button>
         </div>
       </CardHeader>
+
       <CardContent>
         {loading ? <div className="flex justify-center p-6"><Loader2 className="animate-spin h-6 w-6"/></div> : (
           <Table>
