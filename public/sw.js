@@ -1,5 +1,5 @@
-const CACHE_NAME = 'albari-exam-hub-v3';
-const STATIC_CACHE_NAME = 'albari-static-v3';
+const CACHE_NAME = 'albari-exam-hub-v4';
+const STATIC_CACHE_NAME = 'albari-static-v4';
 
 // Core assets to cache immediately
 const CORE_ASSETS = [
