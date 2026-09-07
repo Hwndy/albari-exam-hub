@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { buildBrandedReceipt } from '@/lib/receipt-pdf';
 import { Loader2, Search, Check } from 'lucide-react';
 import { format } from 'date-fns';
+import { fetchStudentClass } from '@/lib/class-roster';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
