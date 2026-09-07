@@ -1,5 +1,5 @@
-const CACHE_NAME = 'albari-exam-hub-v3';
-const STATIC_CACHE_NAME = 'albari-static-v3';
+const CACHE_NAME = 'albari-exam-hub-v4';
+const STATIC_CACHE_NAME = 'albari-static-v4';
 
 // Core assets to cache immediately
 const CORE_ASSETS = [
@@ -91,13 +91,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache-first strategy for static assets
-  if (url.pathname.startsWith('/assets/') || 
-      url.pathname.endsWith('.js') || 
-      url.pathname.endsWith('.css') ||
-      url.pathname.endsWith('.png') ||
-      url.pathname.endsWith('.jpg') ||
-      url.pathname.endsWith('.svg')) {
+  // Cache-first only for build-hashed assets and images (these never change in place)
+  const isHashedAsset = url.pathname.startsWith('/assets/');
+  const isImage = /\.(png|jpe?g|svg|gif|webp|ico)$/i.test(url.pathname);
+  if (isHashedAsset || isImage) {
     event.respondWith(
       caches.match(request)
         .then((cachedResponse) => {
@@ -121,6 +118,7 @@ self.addEventListener('fetch', (event) => {
     );
     return;
   }
+
 
   // Network-first for HTML pages with cache fallback
   event.respondWith(
