@@ -80,7 +80,10 @@ export function usePWA(): UsePWAReturn {
       });
 
       // Listen for controller change (new service worker activated)
+      let reloading = false;
       navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (reloading) return;
+        reloading = true;
         window.location.reload();
       });
     }
