@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { fetchStudentClass } from '@/lib/class-roster';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -25,10 +26,11 @@ export const StudentBalanceDrawer: React.FC<Props> = ({ studentId, name, onClose
 
   const load = async () => {
     setLoading(true);
-    const { data: ca } = await supabase.from('class_assignments').select('class_id').eq('student_id', studentId).maybeSingle();
-    const classId = ca?.class_id;
+    const { class_id: classId } = await fetchStudentClass(studentId);
     const [{ data: fs }, { data: pays }] = await Promise.all([
-      supabase.from('fee_structures').select('*').or(`class_id.eq.${classId || '00000000-0000-0000-0000-000000000000'},class_id.is.null`),
+      classId
+        ? supabase.from('fee_structures').select('*').or(`class_id.eq.${classId},class_id.is.null`)
+        : supabase.from('fee_structures').select('*').is('class_id', null),
       supabase.from('fee_payments').select('*, fee_structure:fee_structures(fee_type,academic_year)').eq('student_id', studentId).order('created_at', { ascending: false }),
     ]);
     setStructures(fs || []);
