@@ -93,11 +93,45 @@ export const FeeStructures: React.FC = () => {
     setOpen(false); load();
   };
 
-  const remove = async (s: Structure) => {
-    if (!confirm(`Delete "${s.fee_type}" (${s.academic_year})?`)) return;
-    const { error } = await supabase.from('fee_structures').delete().eq('id', s.id);
-    if (error) toast({ title: 'Delete failed', description: error.message, variant: 'destructive' });
-    else { toast({ title: 'Deleted' }); load(); }
+  const askRemove = (s: Structure) => {
+    setCode('');
+    setConfirming({ s, mode: (usage[s.id] || 0) > 0 ? 'retire' : 'delete' });
+  };
+
+  const restore = async (s: Structure) => {
+    const { error } = await supabase.from('fee_structures').update({ is_active: true } as any).eq('id', s.id);
+    if (error) toast({ title: 'Restore failed', description: error.message, variant: 'destructive' });
+    else { toast({ title: 'Fee restored' }); load(); }
+  };
+
+  const confirmRemove = async () => {
+    if (!confirming) return;
+    setWorking(true);
+    const { data: setting } = await supabase.from('app_settings').select('setting_value').eq('setting_key', 'finance_delete_code').maybeSingle();
+    const expected = String((setting as any)?.setting_value ?? '4250645').replace(/"/g, '');
+    if (code.trim() !== expected) {
+      setWorking(false);
+      toast({ title: 'Wrong access code', description: 'Enter the finance access code to continue.', variant: 'destructive' });
+      return;
+    }
+    const { s, mode } = confirming;
+    const { error } = mode === 'delete'
+      ? await supabase.from('fee_structures').delete().eq('id', s.id)
+      : await supabase.from('fee_structures').update({ is_active: false } as any).eq('id', s.id);
+    setWorking(false);
+    if (error) {
+      toast({
+        title: mode === 'delete' ? 'Delete failed' : 'Retire failed',
+        description: /foreign key/i.test(error.message)
+          ? 'Payments have been recorded against this fee — retire it instead of deleting.'
+          : error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+    toast({ title: mode === 'delete' ? 'Fee deleted' : 'Fee retired — it will no longer be billed' });
+    setConfirming(null);
+    load();
   };
 
   return (
@@ -111,11 +145,12 @@ export const FeeStructures: React.FC = () => {
           <Table>
             <TableHeader><TableRow>
               <TableHead>Fee Type</TableHead><TableHead>Class</TableHead><TableHead>Year</TableHead><TableHead>Term</TableHead>
-              <TableHead className="text-right">Amount</TableHead><TableHead>Due</TableHead><TableHead>Mandatory</TableHead><TableHead></TableHead>
+              <TableHead className="text-right">Amount</TableHead><TableHead>Due</TableHead><TableHead>Mandatory</TableHead>
+              <TableHead className="text-right">Payments</TableHead><TableHead>Status</TableHead><TableHead></TableHead>
             </TableRow></TableHeader>
             <TableBody>
               {items.map(s => (
-                <TableRow key={s.id}>
+                <TableRow key={s.id} className={s.is_active === false ? 'opacity-60' : undefined}>
                   <TableCell className="font-medium">{s.fee_type}</TableCell>
                   <TableCell>{s.class_id ? (classes.find(c => c.id === s.class_id)?.name || '—') : <Badge variant="outline">All classes</Badge>}</TableCell>
                   <TableCell>{s.academic_year}</TableCell>
@@ -123,16 +158,27 @@ export const FeeStructures: React.FC = () => {
                   <TableCell className="text-right">{NGN(Number(s.amount))}</TableCell>
                   <TableCell>{s.due_date ? format(new Date(s.due_date), 'PP') : '—'}</TableCell>
                   <TableCell>{s.is_mandatory ? <Badge>Yes</Badge> : <Badge variant="outline">No</Badge>}</TableCell>
-                  <TableCell className="text-right">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4"/></Button>
-                    <Button size="icon" variant="ghost" onClick={() => remove(s)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
+                  <TableCell className="text-right">{usage[s.id] || 0}</TableCell>
+                  <TableCell>{s.is_active === false ? <Badge variant="outline">Retired</Badge> : <Badge>Active</Badge>}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {s.is_active === false ? (
+                      <Button size="sm" variant="outline" onClick={() => restore(s)}><RotateCcw className="h-4 w-4 mr-1"/>Restore</Button>
+                    ) : (
+                      <>
+                        <Button size="icon" variant="ghost" onClick={() => openEdit(s)}><Pencil className="h-4 w-4"/></Button>
+                        <Button size="icon" variant="ghost" title={(usage[s.id] || 0) > 0 ? 'Retire (payments recorded)' : 'Delete'} onClick={() => askRemove(s)}>
+                          {(usage[s.id] || 0) > 0 ? <Archive className="h-4 w-4 text-destructive"/> : <Trash2 className="h-4 w-4 text-destructive"/>}
+                        </Button>
+                      </>
+                    )}
                   </TableCell>
                 </TableRow>
               ))}
-              {items.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-6">No fee structures yet</TableCell></TableRow>}
+              {items.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground py-6">No fee structures yet</TableCell></TableRow>}
             </TableBody>
           </Table>
         )}
+
       </CardContent>
 
       <Dialog open={open} onOpenChange={setOpen}>
