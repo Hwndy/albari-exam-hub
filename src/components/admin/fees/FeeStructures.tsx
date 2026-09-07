@@ -15,7 +15,7 @@ import { format } from 'date-fns';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
-interface Structure { id: string; fee_type: string; academic_year: string; term: string | null; amount: number; due_date: string | null; class_id: string | null; is_mandatory: boolean | null; }
+interface Structure { id: string; fee_type: string; academic_year: string; term: string | null; amount: number; due_date: string | null; class_id: string | null; is_mandatory: boolean | null; is_active?: boolean | null; }
 interface Klass { id: string; name: string; }
 
 const emptyForm = { fee_type: '', academic_year: new Date().getFullYear().toString(), term: '', amount: '', due_date: '', scope: 'ALL' as 'ALL' | 'SELECTED', class_ids: [] as string[], is_mandatory: true };
@@ -24,23 +24,35 @@ export const FeeStructures: React.FC = () => {
   const { toast } = useToast();
   const [items, setItems] = useState<Structure[]>([]);
   const [classes, setClasses] = useState<Klass[]>([]);
+  const [usage, setUsage] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState<Structure | null>(null);
   const [form, setForm] = useState<any>(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [confirming, setConfirming] = useState<{ s: Structure; mode: 'delete' | 'retire' } | null>(null);
+  const [code, setCode] = useState('');
+  const [working, setWorking] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [{ data: fs }, { data: cls }] = await Promise.all([
+    const [{ data: fs }, { data: cls }, { data: pays }, { data: plans }] = await Promise.all([
       supabase.from('fee_structures').select('*').order('academic_year', { ascending: false }),
       supabase.from('classes').select('id, name').order('name'),
+      supabase.from('fee_payments').select('fee_structure_id'),
+      supabase.from('fee_installment_plans').select('fee_structure_id'),
     ]);
+    const counts: Record<string, number> = {};
+    [...(pays || []), ...(plans || [])].forEach((r: any) => {
+      if (r.fee_structure_id) counts[r.fee_structure_id] = (counts[r.fee_structure_id] || 0) + 1;
+    });
+    setUsage(counts);
     setItems((fs || []) as Structure[]);
     setClasses((cls || []) as Klass[]);
     setLoading(false);
   };
   useEffect(() => { load(); }, []);
+
 
   const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [] }); setOpen(true); };
   const openEdit = (s: Structure) => {
