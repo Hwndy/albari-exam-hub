@@ -9,7 +9,7 @@ import { CreditCard, Receipt, Loader2, AlertCircle, Download } from 'lucide-reac
 import { format } from 'date-fns';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { buildBrandedReceipt } from '@/lib/receipt-pdf';
+import { downloadReceiptView } from '@/lib/receipt-print';
 
 interface FeeStructure {
   id: string;
@@ -157,7 +157,7 @@ export const ParentFees: React.FC = () => {
 
   const downloadReceipt = async (p: FeePayment) => {
     const structure = structures.find(s => s.id === p.fee_structure_id);
-    const doc = await buildBrandedReceipt({
+    await downloadReceiptView({
       title: 'FEE PAYMENT RECEIPT',
       receiptNumber: p.receipt_number,
       date: p.paid_at || p.payment_date ? format(new Date(p.paid_at || p.payment_date), 'PP') : null,
@@ -171,8 +171,7 @@ export const ParentFees: React.FC = () => {
         { label: 'Status', value: p.status },
       ],
       amount: Number(p.amount_paid),
-    });
-    doc.save(`receipt-${p.receipt_number || p.id}.pdf`);
+    }, `receipt-${p.receipt_number || p.id}.pdf`);
   };
 
   return (

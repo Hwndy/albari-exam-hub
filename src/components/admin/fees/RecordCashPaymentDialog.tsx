@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { buildBrandedReceipt } from '@/lib/receipt-pdf';
+import { downloadReceiptView } from '@/lib/receipt-print';
 import { Loader2, Search, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchStudentClass } from '@/lib/class-roster';
@@ -159,7 +159,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
 
   const printReceipt = async (receiptNumber: string, paidAmount: number) => {
     try {
-      const doc = await buildBrandedReceipt({
+      await downloadReceiptView({
         title: 'FEE PAYMENT RECEIPT',
         receiptNumber,
         date: format(new Date(date), 'dd MMM yyyy'),
@@ -174,8 +174,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
         amountLabel: 'Amount Paid',
         amount: paidAmount,
         footerNote: 'Payment received at the school bursary.',
-      });
-      doc.save(`${receiptNumber}.pdf`);
+      }, `${receiptNumber}.pdf`);
     } catch (e: any) {
       toast({ title: 'Receipt could not be generated', description: e?.message, variant: 'destructive' });
     }
