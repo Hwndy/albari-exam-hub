@@ -29,8 +29,8 @@ export const StudentBalanceDrawer: React.FC<Props> = ({ studentId, name, onClose
     const { class_id: classId } = await fetchStudentClass(studentId);
     const [{ data: fs }, { data: pays }] = await Promise.all([
       classId
-        ? supabase.from('fee_structures').select('*').or(`class_id.eq.${classId},class_id.is.null`)
-        : supabase.from('fee_structures').select('*').is('class_id', null),
+        ? supabase.from('fee_structures').select('*').eq('is_active', true).or(`class_id.eq.${classId},class_id.is.null`)
+        : supabase.from('fee_structures').select('*').eq('is_active', true).is('class_id', null),
       supabase.from('fee_payments').select('*, fee_structure:fee_structures(fee_type,academic_year)').eq('student_id', studentId).order('created_at', { ascending: false }),
     ]);
     setStructures(fs || []);

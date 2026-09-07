@@ -30,7 +30,7 @@ export const StudentBalances: React.FC = () => {
     const [{ data: sts, error: stErr }, { data: cls }, { data: fs, error: fsErr }, { data: pays }] = await Promise.all([
       supabase.from('students').select('id, admission_number, user_id').is('archived_at', null),
       supabase.from('classes').select('id, name').order('name'),
-      supabase.from('fee_structures').select('amount, class_id'),
+      supabase.from('fee_structures').select('amount, class_id').eq('is_active', true),
       supabase.from('fee_payments').select('student_id, amount_paid, status').eq('status', 'completed'),
     ]);
     if (stErr || fsErr) {
