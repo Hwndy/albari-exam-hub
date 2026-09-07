@@ -23,7 +23,7 @@ export const AddParentDialog: React.FC<Props> = ({ open, onOpenChange, onCreated
   useEffect(() => {
     if (!open) return;
     (async () => {
-      const { data: rows } = await supabase.from('students').select('id,user_id,admission_number').order('admission_number');
+      const { data: rows } = await supabase.from('students').select('id,user_id,admission_number').is('archived_at', null).order('admission_number');
       const ids = (rows || []).map(r => r.user_id).filter(Boolean);
       const { data: profs } = ids.length ? await supabase.from('profiles').select('user_id,full_name').in('user_id', ids) : { data: [] as any };
       setStudents((rows || []).map(r => ({

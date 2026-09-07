@@ -128,6 +128,7 @@ export const StudentsByClass: React.FC = () => {
         supabase.from('profiles').select('user_id, full_name').in('user_id', userIds),
         supabase.from('students')
           .select('user_id, id, admission_number, gender, date_of_birth, status, photo_url')
+          .is('archived_at', null)
           .in('user_id', userIds),
       ]);
 

@@ -47,7 +47,7 @@ export const HostelRollCall: React.FC = () => {
 
       const studentIds = (alloc || []).map((a: any) => a.student_id);
       const [{ data: st }, { data: pr }] = await Promise.all([
-        supabase.from('students').select('id, user_id').in('id', studentIds.length ? studentIds : ['00000000-0000-0000-0000-000000000000']),
+        supabase.from('students').select('id, user_id').is('archived_at', null).in('id', studentIds.length ? studentIds : ['00000000-0000-0000-0000-000000000000']),
         supabase.from('profiles').select('user_id, full_name'),
       ]);
       const names = new Map((pr || []).map((p: any) => [p.user_id, p.full_name]));

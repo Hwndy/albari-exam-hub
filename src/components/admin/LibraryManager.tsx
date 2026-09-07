@@ -122,6 +122,7 @@ export const LibraryManager: React.FC = () => {
       // Fetch students - separate queries with explicit casting to avoid deep type instantiation
       const studentsRes = await (supabase.from('students') as any)
         .select('id, user_id, admission_number')
+        .is('archived_at', null)
         .order('admission_number');
       const studentRecords = (studentsRes.data || []) as { id: string; user_id: string; admission_number: string | null }[];
       const userIds = [...new Set(studentRecords.map(s => s.user_id).filter(Boolean))];

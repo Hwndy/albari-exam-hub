@@ -24,7 +24,7 @@ export const StudentBalances: React.FC = () => {
   const load = async () => {
     setLoading(true);
     const [{ data: sts }, { data: cls }, { data: fs }, { data: pays }] = await Promise.all([
-      supabase.from('students').select('id, admission_number, user_id, class_assignments(class_id, classes(id,name))'),
+      supabase.from('students').select('id, admission_number, user_id, class_assignments(class_id, classes(id,name))').is('archived_at', null),
       supabase.from('classes').select('id, name').order('name'),
       supabase.from('fee_structures').select('amount, class_id'),
       supabase.from('fee_payments').select('student_id, amount_paid, status').eq('status', 'completed'),

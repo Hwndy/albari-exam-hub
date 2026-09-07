@@ -203,6 +203,7 @@ export const AttendanceSystem = () => {
       const { data: studentsData, error: studentsError } = await supabase
         .from('students')
         .select('id, admission_number, user_id')
+        .is('archived_at', null)
         .in('id', studentIds);
 
       if (studentsError) throw studentsError;

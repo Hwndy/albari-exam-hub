@@ -16,7 +16,7 @@ export const FeeOverview: React.FC = () => {
     try {
       const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
       const [{ data: students }, { data: structures }, { data: payments }, { count: overdue }] = await Promise.all([
-        supabase.from('students').select('id, class_assignments(class_id)'),
+        supabase.from('students').select('id, class_assignments(class_id)').is('archived_at', null),
         supabase.from('fee_structures').select('amount, class_id'),
         supabase.from('fee_payments').select('amount_paid, payment_date, status, student_id').eq('status', 'completed'),
         supabase.from('fee_installments').select('id', { count: 'exact', head: true }).eq('status', 'overdue'),

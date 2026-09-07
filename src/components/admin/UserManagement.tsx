@@ -79,7 +79,7 @@ export const UserManagement = () => {
         supabase.from('subjects').select('*').order('name')
       ;
 
-      const { data: studentRows } = await supabase.from('students').select('id,user_id,admission_number').order('admission_number');
+      const { data: studentRows } = await supabase.from('students').select('id,user_id,admission_number').is('archived_at', null).order('admission_number');
       const studentUserIds = (studentRows || []).map((student) => student.user_id).filter(Boolean);
       const { data: studentProfiles } = studentUserIds.length
         ? await supabase.from('profiles').select('user_id,full_name').in('user_id', studentUserIds)
