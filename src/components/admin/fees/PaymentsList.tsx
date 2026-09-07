@@ -93,5 +93,8 @@ export const PaymentsList: React.FC = () => {
         )}
       </CardContent>
     </Card>
+    <RecordCashPaymentDialog open={cashOpen} onOpenChange={setCashOpen} onSaved={load} />
+    </>
   );
+
 };
