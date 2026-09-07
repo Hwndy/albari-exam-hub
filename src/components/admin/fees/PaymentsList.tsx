@@ -5,8 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
-import { Loader2, Download, Search } from 'lucide-react';
+import { Loader2, Download, Search, Plus } from 'lucide-react';
 import { format } from 'date-fns';
+import { RecordCashPaymentDialog } from './RecordCashPaymentDialog';
 
 const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
 
@@ -14,26 +15,29 @@ export const PaymentsList: React.FC = () => {
   const [payments, setPayments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState('');
+  const [cashOpen, setCashOpen] = useState(false);
 
-  useEffect(() => {
-    (async () => {
-      const { data } = await supabase.from('fee_payments')
-        .select('*, students(id, user_id, admission_number), fee_structures(fee_type,academic_year)')
-        .order('created_at', { ascending: false }).limit(500);
-      const rows = (data || []) as any[];
-      const userIds = [...new Set(rows.map(r => r.students?.user_id).filter(Boolean))];
-      let nameMap = new Map<string, string>();
-      if (userIds.length) {
-        const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
-        nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
-      }
-      setPayments(rows.map(r => ({
-        ...r,
-        students: r.students ? { ...r.students, profiles: { full_name: nameMap.get(r.students.user_id) || 'Unknown' } } : null,
-      })));
-      setLoading(false);
-    })();
-  }, []);
+
+  const load = async () => {
+    const { data } = await supabase.from('fee_payments')
+      .select('*, students(id, user_id, admission_number), fee_structures(fee_type,academic_year)')
+      .order('created_at', { ascending: false }).limit(500);
+    const rows = (data || []) as any[];
+    const userIds = [...new Set(rows.map(r => r.students?.user_id).filter(Boolean))];
+    let nameMap = new Map<string, string>();
+    if (userIds.length) {
+      const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
+      nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+    }
+    setPayments(rows.map(r => ({
+      ...r,
+      students: r.students ? { ...r.students, profiles: { full_name: nameMap.get(r.students.user_id) || 'Unknown' } } : null,
+    })));
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
 
   const filtered = useMemo(() => payments.filter((p: any) =>
     !q || (p.students?.profiles?.full_name || '').toLowerCase().includes(q.toLowerCase())
@@ -56,14 +60,17 @@ export const PaymentsList: React.FC = () => {
   };
 
   return (
+    <>
     <Card>
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
         <CardTitle>All Payments</CardTitle>
-        <div className="flex gap-2">
-          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input className="pl-9 w-64" placeholder="Search..." value={q} onChange={e => setQ(e.target.value)}/></div>
+        <div className="flex flex-wrap gap-2">
+          <Button onClick={() => setCashOpen(true)}><Plus className="h-4 w-4 mr-1"/>Record cash payment</Button>
+          <div className="relative"><Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground"/><Input className="pl-9 w-full sm:w-64" placeholder="Search..." value={q} onChange={e => setQ(e.target.value)}/></div>
           <Button variant="outline" onClick={exportCsv}><Download className="h-4 w-4 mr-1"/>CSV</Button>
         </div>
       </CardHeader>
+
       <CardContent>
         {loading ? <div className="flex justify-center p-6"><Loader2 className="animate-spin h-6 w-6"/></div> : (
           <Table>
@@ -86,5 +93,8 @@ export const PaymentsList: React.FC = () => {
         )}
       </CardContent>
     </Card>
+    <RecordCashPaymentDialog open={cashOpen} onOpenChange={setCashOpen} onSaved={load} />
+    </>
   );
+
 };
