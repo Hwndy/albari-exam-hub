@@ -75,3 +75,51 @@ export function downloadCsv(filename: string, csv: string) {
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export interface StudentClassInfo { class_id: string | null; class_name: string | null; }
+
+/**
+ * Resolves the class of many students at once.
+ *
+ * `class_assignments.student_id` stores the student's auth user id (not
+ * `students.id`), so there is no foreign key between `students` and
+ * `class_assignments` and PostgREST embeds fail. This helper joins the two
+ * manually, accepting either id form.
+ */
+export async function fetchStudentClassMap(
+  students: { id: string; user_id?: string | null }[]
+): Promise<Map<string, StudentClassInfo>> {
+  const map = new Map<string, StudentClassInfo>();
+  if (!students.length) return map;
+
+  const [{ data: assigns }, { data: classes }] = await Promise.all([
+    supabase.from('class_assignments').select('student_id, class_id'),
+    supabase.from('classes').select('id, name'),
+  ]);
+
+  const classNameById = new Map((classes || []).map((c: any) => [c.id, c.name as string]));
+  const classByRef = new Map<string, string>();
+  (assigns || []).forEach((a: any) => {
+    if (a.student_id && a.class_id) classByRef.set(a.student_id, a.class_id);
+  });
+
+  students.forEach(s => {
+    const classId = (s.user_id && classByRef.get(s.user_id)) || classByRef.get(s.id) || null;
+    map.set(s.id, { class_id: classId, class_name: classId ? classNameById.get(classId) ?? null : null });
+  });
+  return map;
+}
+
+/** Resolves a single student's class, accepting the student record id. */
+export async function fetchStudentClass(studentId: string): Promise<StudentClassInfo> {
+  const { data: s } = await supabase.from('students').select('id, user_id').eq('id', studentId).maybeSingle();
+  if (!s) return { class_id: null, class_name: null };
+  const refs = [s.user_id, s.id].filter(Boolean) as string[];
+  const { data: ca } = await supabase
+    .from('class_assignments')
+    .select('class_id, classes(name)')
+    .in('student_id', refs)
+    .limit(1);
+  const row: any = (ca || [])[0];
+  return { class_id: row?.class_id ?? null, class_name: row?.classes?.name ?? null };
+}
