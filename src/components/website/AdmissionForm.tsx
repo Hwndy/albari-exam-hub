@@ -194,7 +194,7 @@ export const AdmissionForm = () => {
         allow: new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']),
       });
       if (err) {
-        toast.error(err);
+        toast({ title: 'File rejected', description: err, variant: 'destructive' });
         return;
       }
     }
