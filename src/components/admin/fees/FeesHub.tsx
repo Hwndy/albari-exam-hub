@@ -1,7 +1,9 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FeeOverview } from './FeeOverview';
-import { FeeStructures } from './FeeStructures';
+import { FeeRules } from './FeeRules';
+import { BillingRun } from './BillingRun';
+import { InvoicesList } from './InvoicesList';
 import { StudentBalances } from './StudentBalances';
 import { InstallmentPlans } from './InstallmentPlans';
 import { PaymentsList } from './PaymentsList';
@@ -15,7 +17,9 @@ export const FeesHub: React.FC = () => {
       <div className="overflow-x-auto">
         <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="structures">Fee Structures</TabsTrigger>
+          <TabsTrigger value="rules">Fee Rules</TabsTrigger>
+          <TabsTrigger value="generate">Create Bills</TabsTrigger>
+          <TabsTrigger value="invoices">Student Bills</TabsTrigger>
           <TabsTrigger value="balances">Student Balances</TabsTrigger>
           <TabsTrigger value="plans">Installment Plans</TabsTrigger>
           <TabsTrigger value="payments">Payments</TabsTrigger>
@@ -25,7 +29,9 @@ export const FeesHub: React.FC = () => {
         </TabsList>
       </div>
       <TabsContent value="overview"><FeeOverview /></TabsContent>
-      <TabsContent value="structures"><FeeStructures /></TabsContent>
+      <TabsContent value="rules"><FeeRules /></TabsContent>
+      <TabsContent value="generate"><BillingRun /></TabsContent>
+      <TabsContent value="invoices"><InvoicesList /></TabsContent>
       <TabsContent value="balances"><StudentBalances /></TabsContent>
       <TabsContent value="plans"><InstallmentPlans /></TabsContent>
       <TabsContent value="payments"><PaymentsList /></TabsContent>
