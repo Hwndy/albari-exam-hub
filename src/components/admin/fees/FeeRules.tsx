@@ -294,6 +294,34 @@ export const FeeRules: React.FC = () => {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
+              <div><Label>Boys or girls</Label>
+                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Both</SelectItem>
+                    <SelectItem value="male">Boys only</SelectItem>
+                    <SelectItem value="female">Girls only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Campuses</Label>
+                <div className="rounded-md border p-2 space-y-1 max-h-28 overflow-y-auto">
+                  {campuses.length === 0 && <p className="text-xs text-muted-foreground">No campuses yet</p>}
+                  {campuses.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={form.campus_ids.includes(c.id)}
+                        onCheckedChange={() => setForm((f: any) => ({ ...f, campus_ids: toggle(f.campus_ids, c.id) }))}
+                      /> {c.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  {form.campus_ids.length ? 'Only the ticked campuses pay this.' : 'Leave empty for every campus.'}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
               <div><Label>Compulsory or optional</Label>
                 <Select value={form.requirement_type} onValueChange={v => setForm({ ...form, requirement_type: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
