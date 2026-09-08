@@ -87,50 +87,65 @@ Deno.serve(async (req) => {
     // Create email map
     const emailMap = new Map(authUsers?.users?.map(u => [u.id, u.email]) || []);
 
+    // Paginated full-table fetch (avoids over-long .in() filters and the 1000-row cap)
+    const fetchAll = async (table: string, columns: string) => {
+      const rows: any[] = [];
+      let from = 0;
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        const { data, error } = await supabaseAdmin
+          .from(table)
+          .select(columns)
+          .range(from, from + 999);
+        if (error) {
+          console.error(`${table} error:`, error);
+          throw new Error(`Failed to load ${table}: ${error.message}`);
+        }
+        rows.push(...(data || []));
+        if (!data || data.length < 1000) break;
+        from += 1000;
+      }
+      return rows;
+    };
+
     // Fetch all user roles
-    const userIds = profiles?.map(p => p.user_id) || [];
-    const { data: rolesData } = await supabaseAdmin
-      .from('user_roles')
-      .select('user_id, role')
-      .in('user_id', userIds);
+    const rolesData = await fetchAll('user_roles', 'user_id, role');
+    const rolePriority: Record<string, number> = { admin: 0, teacher: 1, parent: 2, student: 3 };
+    const roleMap = new Map<string, string>();
+    for (const r of rolesData) {
+      const existing = roleMap.get(r.user_id);
+      if (!existing || (rolePriority[r.role] ?? 9) < (rolePriority[existing] ?? 9)) {
+        roleMap.set(r.user_id, r.role);
+      }
+    }
+    console.log(`Found ${rolesData.length} role records`);
 
-    const roleMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
-
-    // Fetch class assignments for students
-    const { data: classAssignments } = await supabaseAdmin
-      .from('class_assignments')
-      .select('student_id, class_id, classes(name)')
-      .in('student_id', userIds);
-
+    // Fetch class assignments (student_id references profiles.user_id)
+    const classAssignments = await fetchAll('class_assignments', 'student_id, class_id, classes(name)');
     const classMap = new Map(
-      classAssignments?.map(ca => [ca.student_id, (ca.classes as any)?.name || 'Unknown']) || []
+      classAssignments.map(ca => [ca.student_id, (ca.classes as any)?.name || 'Unknown'])
     );
+    console.log(`Found ${classAssignments.length} class assignments`);
 
-    console.log(`Found ${classAssignments?.length || 0} class assignments`);
+    // Student details (admission number, gender, etc.) — include archived rows
+    const studentRows = await fetchAll(
+      'students',
+      'user_id, admission_number, gender, date_of_birth, section, status, is_boarder, archived_at'
+    );
+    const studentMap = new Map(studentRows.filter(s => s.user_id).map(s => [s.user_id, s]));
+    console.log(`Found ${studentRows.length} students`);
 
-    // Fetch student details (admission number, gender, etc.) — include archived rows
-    const { data: studentRows } = await supabaseAdmin
-      .from('students')
-      .select('user_id, admission_number, gender, date_of_birth, section, status, is_boarder, archived_at')
-      .in('user_id', userIds);
+    // Staff details (employee id, department, etc.)
+    const staffRows = await fetchAll(
+      'staff_details',
+      'user_id, employee_id, department, designation, phone, employment_type, status'
+    );
+    const staffMap = new Map(staffRows.filter(s => s.user_id).map(s => [s.user_id, s]));
+    console.log(`Found ${staffRows.length} staff records`);
 
-    const studentMap = new Map(studentRows?.map(s => [s.user_id, s]) || []);
-
-    // Fetch staff details (employee id, department, etc.)
-    const { data: staffRows } = await supabaseAdmin
-      .from('staff_details')
-      .select('user_id, employee_id, department, designation, phone, employment_type, status')
-      .in('user_id', userIds);
-
-    const staffMap = new Map(staffRows?.map(s => [s.user_id, s]) || []);
-
-    // Fetch parent phone numbers
-    const { data: parentRows } = await supabaseAdmin
-      .from('parents')
-      .select('user_id, phone_primary')
-      .in('user_id', userIds);
-
-    const parentPhoneMap = new Map(parentRows?.map(p => [p.user_id, p.phone_primary]) || []);
+    // Parent phone numbers
+    const parentRows = await fetchAll('parents', 'user_id, phone_primary');
+    const parentPhoneMap = new Map(parentRows.filter(p => p.user_id).map(p => [p.user_id, p.phone_primary]));
 
     // Build user data with all info
     const usersData = profiles?.map(profile => {
