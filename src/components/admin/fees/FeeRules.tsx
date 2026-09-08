@@ -42,6 +42,7 @@ export const FeeRules: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [classes, setClasses] = useState<Klass[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [years, setYears] = useState<string[]>([]);
   const [year, setYear] = useState('');
   const [q, setQ] = useState('');
@@ -58,27 +59,31 @@ export const FeeRules: React.FC = () => {
     setLoading(true);
     const activeYear = y || year || (await fetchCurrentAcademicYear());
     if (!year) setYear(activeYear);
-    const [{ data: r }, { data: cls }, { data: cat }, ys] = await Promise.all([
+    const [{ data: r }, { data: cls }, { data: cat }, { data: camp }, ys] = await Promise.all([
       supabase.from('fee_rules').select('*, fees(name, category_id)').eq('academic_year', activeYear).order('created_at'),
       supabase.from('classes').select('id, name').order('name'),
       supabase.from('fee_categories').select('id, name').order('name'),
+      supabase.from('campuses').select('id, name').eq('is_active', true).order('name'),
       fetchAcademicYears(),
     ]);
     setRules((r || []) as any);
     setClasses((cls || []) as Klass[]);
     setCategories((cat || []) as Category[]);
+    setCampuses((camp || []) as Campus[]);
     setYears(ys.length ? ys : [activeYear]);
     setLoading(false);
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
-  const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [] }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [], campus_ids: [] }); setOpen(true); };
   const openEdit = (r: Rule) => {
     setEditing(r);
     setForm({
       fee_name: r.fees?.name || '', category_id: r.fees?.category_id || '', amount: String(r.amount),
       student_type: r.student_type, student_category: r.student_category,
       scope: (r.class_ids?.length ? 'SELECTED' : 'ALL'), class_ids: r.class_ids || [],
+      gender: r.genders?.length === 1 ? r.genders[0] : 'all',
+      campus_ids: r.campus_ids || [],
       requirement_type: r.requirement_type, frequency: r.frequency, terms: r.terms || [],
       due_date: r.due_date || '', is_active: r.is_active,
     });
