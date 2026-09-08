@@ -113,6 +113,8 @@ export const FeeRules: React.FC = () => {
       fee_id: feeId!, academic_year: year, amount: Number(form.amount),
       student_type: form.student_type, student_category: form.student_category,
       class_ids: form.scope === 'ALL' ? [] : form.class_ids,
+      genders: form.gender === 'all' ? null : [form.gender],
+      campus_ids: form.campus_ids.length ? form.campus_ids : null,
       requirement_type: form.requirement_type, frequency: form.frequency,
       terms: form.frequency === 'termly' ? form.terms : [form.terms[0] || 'First'],
       due_date: form.due_date || null, is_active: form.is_active,
