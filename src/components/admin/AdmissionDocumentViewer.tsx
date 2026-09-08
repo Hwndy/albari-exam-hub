@@ -173,10 +173,15 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
                 </CardTitle>
                 <CardDescription>{doc.document_name}</CardDescription>
               </div>
-              {doc.verified ? (
+              {(doc.verification_status ?? (doc.verified ? "verified" : "pending")) === "verified" ? (
                 <Badge variant="default" className="gap-1">
                   <CheckCircle className="h-3 w-3" />
                   Verified
+                </Badge>
+              ) : (doc.verification_status ?? "pending") === "rejected" ? (
+                <Badge variant="destructive" className="gap-1">
+                  <XCircle className="h-3 w-3" />
+                  Rejected
                 </Badge>
               ) : (
                 <Badge variant="secondary" className="gap-1">
@@ -184,6 +189,7 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
                   Pending
                 </Badge>
               )}
+
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -204,32 +210,38 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
                 <ExternalLink className="h-4 w-4 mr-2" />
                 Preview
               </Button>
-              {!doc.verified && (
-                <>
-                  <Button
-                    size="sm"
-                    onClick={() => handleVerify(doc.id, true)}
-                    disabled={verifyingDoc === doc.id}
-                  >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Verify
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleVerify(doc.id, false)}
-                    disabled={verifyingDoc === doc.id}
-                  >
-                    <XCircle className="h-4 w-4 mr-2" />
-                    Reject
-                  </Button>
-                </>
-              )}
+              <Button
+                size="sm"
+                onClick={() => handleVerify(doc.id, true)}
+                disabled={verifyingDoc === doc.id || (doc.verification_status ?? (doc.verified ? "verified" : "pending")) === "verified"}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Verify
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                onClick={() => handleVerify(doc.id, false)}
+                disabled={verifyingDoc === doc.id || (doc.verification_status ?? "pending") === "rejected"}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Reject
+              </Button>
             </div>
+            <Textarea
+              rows={2}
+              placeholder="Reason (required when rejecting)"
+              value={notes[doc.id] ?? ""}
+              onChange={(e) => setNotes((prev) => ({ ...prev, [doc.id]: e.target.value }))}
+            />
+            {doc.rejection_reason && (
+              <p className="text-sm text-destructive">Rejected: {doc.rejection_reason}</p>
+            )}
             <div className="text-sm text-muted-foreground">
               Uploaded: {new Date(doc.uploaded_at).toLocaleDateString()}
-              {doc.verified_at && ` • Verified: ${new Date(doc.verified_at).toLocaleDateString()}`}
+              {doc.verified_at && ` • Reviewed: ${new Date(doc.verified_at).toLocaleDateString()}`}
             </div>
+
           </CardContent>
         </Card>
       ))}
