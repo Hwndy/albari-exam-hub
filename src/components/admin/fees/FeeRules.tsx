@@ -214,11 +214,19 @@ export const FeeRules: React.FC = () => {
                     <TableCell className="text-xs">
                       <div>{labelFor(STUDENT_TYPES, r.student_type)}</div>
                       <div className="text-muted-foreground">{labelFor(STUDENT_CATEGORIES, r.student_category)}</div>
+                      {r.genders?.length === 1 && (
+                        <Badge variant="secondary" className="mt-1 capitalize">{r.genders[0]} only</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs max-w-[220px]">
                       {!r.class_ids?.length ? <Badge variant="outline">All classes</Badge>
                         : r.class_ids.length <= 3 ? r.class_ids.map(className).join(', ')
                         : `${r.class_ids.length} classes`}
+                      {r.campus_ids?.length ? (
+                        <div className="text-muted-foreground mt-1">
+                          {r.campus_ids.map(id => campuses.find(c => c.id === id)?.name || '—').join(', ')}
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-xs">
                       {(r.terms || []).join(', ')}
