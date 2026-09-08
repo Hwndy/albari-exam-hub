@@ -149,7 +149,10 @@ Deno.serve(async (req) => {
 
     // Build user data with all info
     const usersData = profiles?.map(profile => {
-      const role = roleMap.get(profile.user_id) || 'student';
+      const role = roleMap.get(profile.user_id)
+        || (studentMap.has(profile.user_id) ? 'student'
+          : staffMap.has(profile.user_id) ? 'teacher'
+          : parentPhoneMap.has(profile.user_id) ? 'parent' : '');
       const email = emailMap.get(profile.user_id) || '';
       const className = role === 'student' ? (classMap.get(profile.user_id) || 'Not Assigned') : 'N/A';
       const student = studentMap.get(profile.user_id);
