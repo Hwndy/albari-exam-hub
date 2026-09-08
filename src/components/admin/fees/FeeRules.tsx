@@ -20,16 +20,19 @@ import {
 interface Rule {
   id: string; fee_id: string; academic_year: string; amount: number;
   student_type: string; student_category: string; class_ids: string[] | null;
+  genders: string[] | null; campus_ids: string[] | null;
   requirement_type: string; frequency: string; terms: string[]; due_date: string | null;
   is_active: boolean; notes: string | null;
   fees?: { name: string; category_id: string | null } | null;
 }
 interface Klass { id: string; name: string }
 interface Category { id: string; name: string }
+interface Campus { id: string; name: string }
 
 const emptyForm = {
   fee_name: '', category_id: '', amount: '', student_type: 'both', student_category: 'both',
   scope: 'ALL' as 'ALL' | 'SELECTED', class_ids: [] as string[],
+  gender: 'all', campus_ids: [] as string[],
   requirement_type: 'compulsory', frequency: 'termly', terms: ['First', 'Second', 'Third'] as string[],
   due_date: '', is_active: true,
 };
