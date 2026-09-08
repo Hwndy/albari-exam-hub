@@ -151,6 +151,7 @@ serve(async (req) => {
                 },
                 admission_date: new Date().toISOString().split("T")[0],
                 status: "active",
+                is_boarder: application.boarding_interest ?? false,
               })
               .select()
               .single();
@@ -188,10 +189,10 @@ serve(async (req) => {
               }
             }
 
-            // Assign to class
+            // Assign to class (class_assignments.student_id references profiles.user_id)
             if (application.admitted_to_class_id) {
               await supabase.from("class_assignments").insert({
-                student_id: student.id,
+                student_id: authUser.user.id,
                 class_id: application.admitted_to_class_id,
               });
             }
