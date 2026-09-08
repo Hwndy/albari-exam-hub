@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { validateUpload } from '@/lib/file-upload-guards';
+
 
 interface AdmissionFormData {
   // Personal Information
