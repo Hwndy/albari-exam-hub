@@ -12,13 +12,12 @@ import { downloadReceiptView } from '@/lib/receipt-print';
 import { Loader2, Search, Check } from 'lucide-react';
 import { format } from 'date-fns';
 import { fetchStudentClass } from '@/lib/class-roster';
-
-const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
+import { NGN } from '@/lib/fees';
 
 interface StudentOption { id: string; name: string; admission_number: string | null; class_id: string | null; class_name: string | null; }
 interface Item {
   key: string;
-  kind: 'structure' | 'installment' | 'other';
+  kind: 'invoice' | 'installment' | 'other';
   id: string;
   label: string;
   amount: number;
@@ -42,16 +41,15 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
   const [notes, setNotes] = useState('');
   const [otherLabel, setOtherLabel] = useState('');
   const [saving, setSaving] = useState(false);
-  const [structureCount, setStructureCount] = useState(0);
+  const [billCount, setBillCount] = useState(0);
 
   const reset = () => {
     setQ(''); setStudents([]); setStudent(null); setItems([]); setItemKey('');
-    setAmount(''); setMethod('cash'); setDate(new Date().toISOString().slice(0, 10)); setNotes(''); setOtherLabel(''); setStructureCount(0);
+    setAmount(''); setMethod('cash'); setDate(new Date().toISOString().slice(0, 10)); setNotes(''); setOtherLabel(''); setBillCount(0);
   };
 
   useEffect(() => { if (!open) reset(); }, [open]);
 
-  // Preselected student (e.g. opened from a student row)
   useEffect(() => {
     if (!open || !studentId) return;
     (async () => {
@@ -103,29 +101,21 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     return () => clearTimeout(handle);
   }, [q, open, student]);
 
-  // Load payable items for the selected student
+  // Load payable bills for the selected student
   useEffect(() => {
     if (!student) { setItems([]); return; }
     (async () => {
       setLoadingItems(true);
       const full = student.class_id === null ? await loadStudent(student.id) : student;
-      const classId = full?.class_id;
-      const structureQuery = classId
-        ? supabase.from('fee_structures').select('*').eq('is_active', true).or(`class_id.eq.${classId},class_id.is.null`)
-        : supabase.from('fee_structures').select('*').eq('is_active', true).is('class_id', null);
-      const [{ data: fs }, { data: pays }, { data: plans }] = await Promise.all([
-        structureQuery,
-        supabase.from('fee_payments').select('fee_structure_id, amount_paid, status').eq('student_id', student.id),
-        supabase.from('fee_installment_plans').select('id, total_amount, fee_installments(id, installment_number, amount, paid_amount, due_date, status)').eq('student_id', student.id),
+      const [{ data: invoices }, { data: plans }] = await Promise.all([
+        supabase.from('student_invoices').select('*').eq('student_id', student.id).neq('status', 'cancelled').order('issue_date'),
+        supabase.from('fee_installment_plans').select('id, fee_installments(id, installment_number, amount, paid_amount, due_date, status)').eq('student_id', student.id),
       ]);
-      const paidFor = (id: string) => (pays || [])
-        .filter((p: any) => p.status === 'completed' && p.fee_structure_id === id)
-        .reduce((a: number, b: any) => a + Number(b.amount_paid || 0), 0);
 
-      const structureItems: Item[] = (fs || []).map((s: any) => ({
-        key: `structure:${s.id}`, kind: 'structure', id: s.id,
-        label: `${s.fee_type}${s.term ? ` • ${s.term}` : ''} (${s.academic_year || ''})`.trim(),
-        amount: Number(s.amount), paid: paidFor(s.id),
+      const invoiceItems: Item[] = (invoices || []).map((inv: any) => ({
+        key: `invoice:${inv.id}`, kind: 'invoice', id: inv.id,
+        label: `${inv.term} term ${inv.academic_year} bill (${inv.invoice_number})`,
+        amount: Number(inv.total || 0), paid: Number(inv.amount_paid || 0),
       }));
 
       const installmentItems: Item[] = [];
@@ -141,12 +131,9 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
           });
       });
 
-      const otherItem: Item = {
-        key: 'other', kind: 'other', id: 'other',
-        label: 'Other / not listed', amount: 0, paid: 0,
-      };
-      setStructureCount(structureItems.length);
-      setItems([...structureItems, ...installmentItems, otherItem]);
+      const otherItem: Item = { key: 'other', kind: 'other', id: 'other', label: 'Other / not listed', amount: 0, paid: 0 };
+      setBillCount(invoiceItems.length);
+      setItems([...invoiceItems, ...installmentItems, otherItem]);
       setLoadingItems(false);
       if (full && full !== student) setStudent(full);
     })();
@@ -185,7 +172,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     const value = Number(amount);
     if (!value || value <= 0) { toast({ title: 'Enter a valid amount', variant: 'destructive' }); return; }
     if (isOther && !otherLabel.trim()) { toast({ title: 'Say what the payment is for', variant: 'destructive' }); return; }
-    if (!isOther && value > outstanding + 0.001) {
+    if (selected.kind === 'installment' && value > outstanding + 0.001) {
       toast({ title: 'Amount is more than the outstanding balance', description: `Outstanding: ${NGN(outstanding)}`, variant: 'destructive' });
       return;
     }
@@ -195,7 +182,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
 
     const { data: inserted, error } = await supabase.from('fee_payments').insert({
       student_id: student.id,
-      fee_structure_id: selected.kind === 'structure' ? selected.id : null,
+      invoice_id: selected.kind === 'invoice' ? selected.id : null,
       fee_installment_id: selected.kind === 'installment' ? selected.id : null,
       amount_paid: value,
       payment_method: method,
@@ -205,7 +192,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
       receipt_number: receipt,
       notes: isOther ? [otherLabel.trim(), notes].filter(Boolean).join(' — ') : (notes || null),
       metadata: isOther ? { description: otherLabel.trim(), recorded_as: 'other' } : null,
-    }).select('id').maybeSingle();
+    } as any).select('id').maybeSingle();
 
     if (error) {
       setSaving(false);
@@ -226,7 +213,12 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     }
 
     setSaving(false);
-    toast({ title: 'Payment recorded', description: `Receipt ${receipt}` });
+    toast({
+      title: 'Payment recorded',
+      description: value > outstanding && selected.kind === 'invoice'
+        ? `Receipt ${receipt} — the extra ${NGN(value - outstanding)} is kept as credit`
+        : `Receipt ${receipt}`,
+    });
     await printReceipt(receipt, value);
     onSaved?.();
     onOpenChange(false);
@@ -236,7 +228,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Record cash payment</DialogTitle>
+          <DialogTitle>Record payment</DialogTitle>
           <DialogDescription>Enter a payment received in cash, by transfer, cheque or POS. A branded receipt is generated for printing.</DialogDescription>
         </DialogHeader>
 
@@ -274,17 +266,17 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
               <div className="space-y-2">
                 <Label>What is this payment for?</Label>
                 <Select value={itemKey} onValueChange={setItemKey} disabled={loadingItems}>
-                  <SelectTrigger><SelectValue placeholder={loadingItems ? 'Loading fees…' : 'Select a fee or installment'} /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={loadingItems ? 'Loading bills…' : 'Select a bill or installment'} /></SelectTrigger>
                   <SelectContent>
                     {items.map(i => (
                       <SelectItem key={i.key} value={i.key}>
-                        {i.label} — {NGN(Math.max(0, i.amount - i.paid))} due
+                        {i.kind === 'other' ? i.label : `${i.label} — ${NGN(Math.max(0, i.amount - i.paid))} due`}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {selected && !isOther && (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 text-sm">
                     <Badge variant="outline">Billed {NGN(selected.amount)}</Badge>
                     <Badge variant="outline">Paid {NGN(selected.paid)}</Badge>
                     <Badge>{outstanding > 0 ? `Outstanding ${NGN(outstanding)}` : 'Fully paid'}</Badge>
@@ -293,14 +285,12 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
                 {isOther && (
                   <div>
                     <Label>What is this payment for? *</Label>
-                    <Input value={otherLabel} onChange={e => setOtherLabel(e.target.value)} placeholder="e.g. Tuition part payment, Uniform, Excursion" />
+                    <Input value={otherLabel} onChange={e => setOtherLabel(e.target.value)} placeholder="e.g. Excursion, replacement ID card" />
                   </div>
                 )}
-                {!loadingItems && structureCount === 0 && (
+                {!loadingItems && billCount === 0 && (
                   <p className="text-sm text-muted-foreground">
-                    {student.class_name
-                      ? `No fee items set up for ${student.class_name} yet — create them in Finance → Fees & Income → Fee Structures, or use "Other / not listed" above.`
-                      : 'This student is not assigned to a class yet, so class fees cannot be matched. Assign a class from the Students page, or use "Other / not listed" above.'}
+                    This student has no bill yet. Create bills under Finance → Fees &amp; Income → Create Bills, or use “Other / not listed”.
                   </p>
                 )}
               </div>
@@ -337,7 +327,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
 
               <Button className="w-full" onClick={save} disabled={saving}>
                 {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
-                Save & print receipt
+                Save &amp; print receipt
               </Button>
             </>
           )}
