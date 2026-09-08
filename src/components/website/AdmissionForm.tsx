@@ -680,6 +680,19 @@ export const AdmissionForm = () => {
                     </Select>
                   </div>
                   <div className="space-y-2">
+                    <Label htmlFor="nin">NIN (National Identification Number) *</Label>
+                    <Input
+                      id="nin"
+                      inputMode="numeric"
+                      maxLength={11}
+                      value={formData.nin}
+                      onChange={(e) => updateFormData('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                      placeholder="11-digit NIN"
+                    />
+                    <p className="text-xs text-muted-foreground">Enter the applicant's 11-digit NIN.</p>
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="nationality">Nationality</Label>
                     <Input
                       id="nationality"
@@ -1087,12 +1100,13 @@ export const AdmissionForm = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Required Documents</h3>
               <p className="text-muted-foreground">
-                Please upload the following documents. You can also bring physical copies during the entrance examination.
+                All documents below are compulsory. Accepted formats: PDF, JPG or PNG (max 10MB each).
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="birth_certificate">Birth Certificate</Label>
+                  <Label htmlFor="birth_certificate">Birth Certificate *</Label>
+
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1115,7 +1129,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="previous_result">Previous School Result</Label>
+                  <Label htmlFor="previous_result">Previous School Result *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1138,7 +1152,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="passport_photos">Passport Photographs (4 copies)</Label>
+                  <Label htmlFor="passport_photos">Passport Photograph *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1161,7 +1175,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="medical_report">Medical Report/Certificate</Label>
+                  <Label htmlFor="medical_report">Medical Report/Certificate *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1182,7 +1196,31 @@ export const AdmissionForm = () => {
                     )}
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nin_slip">NIN Slip *</Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => updateDocuments('nin_slip', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="nin_slip"
+                    />
+                    <Button variant="outline" size="sm" onClick={() => document.getElementById('nin_slip')?.click()}>
+                      Choose File
+                    </Button>
+                    {formData.documents.nin_slip && (
+                      <p className="text-xs text-green-600 mt-2">
+                        {formData.documents.nin_slip.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
+
             </div>
           )}
 
@@ -1200,6 +1238,8 @@ export const AdmissionForm = () => {
                     <p><strong>Name:</strong> {formData.first_name} {formData.middle_name} {formData.last_name}</p>
                     <p><strong>Date of Birth:</strong> {formData.date_of_birth ? format(formData.date_of_birth, 'PPP') : 'Not provided'}</p>
                     <p><strong>Gender:</strong> {formData.gender}</p>
+                    <p><strong>NIN:</strong> {formData.nin || 'Not provided'}</p>
+
                     <p><strong>Phone:</strong> {formData.phone}</p>
                     <p><strong>Email:</strong> {formData.email}</p>
                   </CardContent>
@@ -1249,6 +1289,11 @@ export const AdmissionForm = () => {
                       <CheckCircle className={cn("h-4 w-4", formData.documents.medical_report ? "text-green-600" : "text-muted-foreground")} />
                       <span>Medical Report</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className={cn("h-4 w-4", formData.documents.nin_slip ? "text-green-600" : "text-muted-foreground")} />
+                      <span>NIN Slip</span>
+                    </div>
+
                   </CardContent>
                 </Card>
               </div>
