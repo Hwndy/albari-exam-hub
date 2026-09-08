@@ -187,6 +187,15 @@ export const AdmissionForm = () => {
   };
 
   const updateDocuments = (docType: keyof AdmissionFormData['documents'], file: File | null) => {
+    if (file) {
+      const err = validateUpload(file, {
+        allow: new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']),
+      });
+      if (err) {
+        toast.error(err);
+        return;
+      }
+    }
     setFormData(prev => ({
       ...prev,
       documents: {
@@ -195,6 +204,7 @@ export const AdmissionForm = () => {
       }
     }));
   };
+
 
   const validateStep = (step: number): boolean => {
     switch (step) {
