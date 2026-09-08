@@ -46,7 +46,13 @@ serve(async (req) => {
       .eq("student_id", input.student_id).eq("parents.user_id", userId).eq("can_view_fees", true).maybeSingle();
     if (!linked) return json({ error: "You cannot pay fees for this student" }, 403);
 
-    if (input.fee_structure_id) {
+    if (input.invoice_id) {
+      const { data: invoice } = await service.from("student_invoices").select("id,balance,status")
+        .eq("id", input.invoice_id).eq("student_id", input.student_id).maybeSingle();
+      if (!invoice || invoice.status === "cancelled" || input.amount > Number(invoice.balance)) {
+        return json({ error: "Invalid bill amount" }, 400);
+      }
+    } else if (input.fee_structure_id) {
       const { data: fee } = await service.from("fee_structures").select("id,amount").eq("id", input.fee_structure_id).maybeSingle();
       if (!fee || input.amount > Number(fee.amount)) return json({ error: "Invalid fee amount" }, 400);
     } else {
@@ -60,13 +66,15 @@ serve(async (req) => {
       method: "POST",
       headers: { Authorization: `Bearer ${Deno.env.get("PAYSTACK_SECRET_KEY")}`, "Content-Type": "application/json" },
       body: JSON.stringify({ email, amount: Math.round(input.amount * 100), currency: "NGN", reference, callback_url: input.callback_url,
-        metadata: { payment_type: "school_fee", student_id: input.student_id, fee_structure_id: input.fee_structure_id, fee_installment_id: input.fee_installment_id, parent_user_id: userId, label: input.label } }),
+        metadata: { payment_type: "school_fee", student_id: input.student_id, invoice_id: input.invoice_id, fee_structure_id: input.fee_structure_id, fee_installment_id: input.fee_installment_id, parent_user_id: userId, label: input.label } }),
     });
     const payload = await paystack.json();
     if (!paystack.ok || !payload?.status) return json({ error: payload?.message || "Payment provider rejected the request" }, 502);
-    const { error: insertError } = await service.from("fee_payments").insert({ student_id: input.student_id, fee_structure_id: input.fee_structure_id,
+    const { error: insertError } = await service.from("fee_payments").insert({ student_id: input.student_id, invoice_id: input.invoice_id,
+      fee_structure_id: input.fee_structure_id,
       fee_installment_id: input.fee_installment_id, amount_paid: input.amount, payment_method: "paystack", transaction_id: reference,
       payment_reference: reference, status: "pending", parent_user_id: userId, metadata: { label: input.label } });
+
     if (insertError) return json({ error: "Could not save payment request" }, 500);
     return json({ success: true, authorization_url: payload.data.authorization_url, reference });
   } catch (error) {
