@@ -392,14 +392,28 @@ export const UserManagement = () => {
 
       const users = data?.users || [];
 
-      // Build CSV data with email and class
-      const headers = ['Full Name', 'Email', 'Role', 'School', 'Class', 'Created Date'];
+      // Build CSV data with all available user details
+      const headers = [
+        'Full Name', 'Email', 'Role', 'Admission Number', 'Employee ID',
+        'Class', 'Phone', 'Department', 'Designation', 'Gender',
+        'Date of Birth', 'Section', 'Boarding', 'Status', 'Archived', 'Created Date'
+      ];
       const rows = users.map((user: any) => [
         user.full_name,
         user.email,
         user.role,
-        user.school,
+        user.admission_number || '',
+        user.employee_id || '',
         user.class_name,
+        user.phone || '',
+        user.department || '',
+        user.designation || '',
+        user.gender || '',
+        user.date_of_birth ? new Date(user.date_of_birth).toLocaleDateString() : '',
+        user.section || '',
+        user.is_boarder === true ? 'Yes' : (user.is_boarder === false ? 'No' : ''),
+        user.status || '',
+        user.archived ? 'Yes' : 'No',
         new Date(user.created_at).toLocaleDateString()
       ]);
 
