@@ -20,16 +20,19 @@ import {
 interface Rule {
   id: string; fee_id: string; academic_year: string; amount: number;
   student_type: string; student_category: string; class_ids: string[] | null;
+  genders: string[] | null; campus_ids: string[] | null;
   requirement_type: string; frequency: string; terms: string[]; due_date: string | null;
   is_active: boolean; notes: string | null;
   fees?: { name: string; category_id: string | null } | null;
 }
 interface Klass { id: string; name: string }
 interface Category { id: string; name: string }
+interface Campus { id: string; name: string }
 
 const emptyForm = {
   fee_name: '', category_id: '', amount: '', student_type: 'both', student_category: 'both',
   scope: 'ALL' as 'ALL' | 'SELECTED', class_ids: [] as string[],
+  gender: 'all', campus_ids: [] as string[],
   requirement_type: 'compulsory', frequency: 'termly', terms: ['First', 'Second', 'Third'] as string[],
   due_date: '', is_active: true,
 };
@@ -39,6 +42,7 @@ export const FeeRules: React.FC = () => {
   const [rules, setRules] = useState<Rule[]>([]);
   const [classes, setClasses] = useState<Klass[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
   const [years, setYears] = useState<string[]>([]);
   const [year, setYear] = useState('');
   const [q, setQ] = useState('');
@@ -55,27 +59,31 @@ export const FeeRules: React.FC = () => {
     setLoading(true);
     const activeYear = y || year || (await fetchCurrentAcademicYear());
     if (!year) setYear(activeYear);
-    const [{ data: r }, { data: cls }, { data: cat }, ys] = await Promise.all([
+    const [{ data: r }, { data: cls }, { data: cat }, { data: camp }, ys] = await Promise.all([
       supabase.from('fee_rules').select('*, fees(name, category_id)').eq('academic_year', activeYear).order('created_at'),
       supabase.from('classes').select('id, name').order('name'),
       supabase.from('fee_categories').select('id, name').order('name'),
+      supabase.from('campuses').select('id, name').eq('is_active', true).order('name'),
       fetchAcademicYears(),
     ]);
     setRules((r || []) as any);
     setClasses((cls || []) as Klass[]);
     setCategories((cat || []) as Category[]);
+    setCampuses((camp || []) as Campus[]);
     setYears(ys.length ? ys : [activeYear]);
     setLoading(false);
   };
   useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
 
-  const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [] }); setOpen(true); };
+  const openNew = () => { setEditing(null); setForm({ ...emptyForm, class_ids: [], campus_ids: [] }); setOpen(true); };
   const openEdit = (r: Rule) => {
     setEditing(r);
     setForm({
       fee_name: r.fees?.name || '', category_id: r.fees?.category_id || '', amount: String(r.amount),
       student_type: r.student_type, student_category: r.student_category,
       scope: (r.class_ids?.length ? 'SELECTED' : 'ALL'), class_ids: r.class_ids || [],
+      gender: r.genders?.length === 1 ? r.genders[0] : 'all',
+      campus_ids: r.campus_ids || [],
       requirement_type: r.requirement_type, frequency: r.frequency, terms: r.terms || [],
       due_date: r.due_date || '', is_active: r.is_active,
     });
@@ -105,6 +113,8 @@ export const FeeRules: React.FC = () => {
       fee_id: feeId!, academic_year: year, amount: Number(form.amount),
       student_type: form.student_type, student_category: form.student_category,
       class_ids: form.scope === 'ALL' ? [] : form.class_ids,
+      genders: form.gender === 'all' ? null : [form.gender],
+      campus_ids: form.campus_ids.length ? form.campus_ids : null,
       requirement_type: form.requirement_type, frequency: form.frequency,
       terms: form.frequency === 'termly' ? form.terms : [form.terms[0] || 'First'],
       due_date: form.due_date || null, is_active: form.is_active,
@@ -204,11 +214,19 @@ export const FeeRules: React.FC = () => {
                     <TableCell className="text-xs">
                       <div>{labelFor(STUDENT_TYPES, r.student_type)}</div>
                       <div className="text-muted-foreground">{labelFor(STUDENT_CATEGORIES, r.student_category)}</div>
+                      {r.genders?.length === 1 && (
+                        <Badge variant="secondary" className="mt-1 capitalize">{r.genders[0]} only</Badge>
+                      )}
                     </TableCell>
                     <TableCell className="text-xs max-w-[220px]">
                       {!r.class_ids?.length ? <Badge variant="outline">All classes</Badge>
                         : r.class_ids.length <= 3 ? r.class_ids.map(className).join(', ')
                         : `${r.class_ids.length} classes`}
+                      {r.campus_ids?.length ? (
+                        <div className="text-muted-foreground mt-1">
+                          {r.campus_ids.map(id => campuses.find(c => c.id === id)?.name || '—').join(', ')}
+                        </div>
+                      ) : null}
                     </TableCell>
                     <TableCell className="text-xs">
                       {(r.terms || []).join(', ')}
@@ -273,6 +291,34 @@ export const FeeRules: React.FC = () => {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{STUDENT_CATEGORIES.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
                 </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>Boys or girls</Label>
+                <Select value={form.gender} onValueChange={v => setForm({ ...form, gender: v })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Both</SelectItem>
+                    <SelectItem value="male">Boys only</SelectItem>
+                    <SelectItem value="female">Girls only</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>Campuses</Label>
+                <div className="rounded-md border p-2 space-y-1 max-h-28 overflow-y-auto">
+                  {campuses.length === 0 && <p className="text-xs text-muted-foreground">No campuses yet</p>}
+                  {campuses.map(c => (
+                    <label key={c.id} className="flex items-center gap-2 text-sm">
+                      <Checkbox
+                        checked={form.campus_ids.includes(c.id)}
+                        onCheckedChange={() => setForm((f: any) => ({ ...f, campus_ids: toggle(f.campus_ids, c.id) }))}
+                      /> {c.name}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground pt-1">
+                  {form.campus_ids.length ? 'Only the ticked campuses pay this.' : 'Leave empty for every campus.'}
+                </p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
