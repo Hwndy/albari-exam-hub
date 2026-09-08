@@ -72,6 +72,8 @@ interface AdmissionFormData {
     previous_result: File | null;
     passport_photos: File | null;
     medical_report: File | null;
+    nin_slip: File | null;
+
   };
   
   // Declaration
@@ -116,7 +118,9 @@ export const AdmissionForm = () => {
     guardian_relationship: '',
     guardian_phone: '',
     guardian_email: '',
+    nin: '',
     blood_group: '',
+
     allergies: '',
     medical_conditions: '',
     emergency_contact_name: '',
@@ -194,15 +198,19 @@ export const AdmissionForm = () => {
     switch (step) {
       case 0: // Personal Info
         return !!(formData.first_name && formData.last_name && formData.date_of_birth && 
-                 formData.gender && formData.phone && formData.email);
+                 formData.gender && formData.phone && formData.email &&
+                 /^\d{11}$/.test(formData.nin));
       case 1: // Academic Info
         return !!(formData.applying_for_class);
       case 2: // Parent/Guardian
         return !!(formData.father_name || formData.mother_name || formData.guardian_name);
       case 3: // Medical Info
         return !!(formData.emergency_contact_name && formData.emergency_contact_phone);
-      case 4: // Documents
-        return true; // Documents are optional for initial submission
+      case 4: // Documents — all are compulsory
+        return !!(formData.documents.birth_certificate && formData.documents.previous_result &&
+                 formData.documents.passport_photos && formData.documents.medical_report &&
+                 formData.documents.nin_slip);
+
       case 5: // Review
         return formData.declaration_accepted;
       default:
@@ -334,6 +342,8 @@ export const AdmissionForm = () => {
             last_name: formData.last_name.trim(),
             date_of_birth: formData.date_of_birth ? format(formData.date_of_birth, 'yyyy-MM-dd') : null,
             gender: normalizedGender,
+            nin: formData.nin.trim(),
+
             blood_group: formData.blood_group || null,
             state_of_origin: formData.state_of_origin || null,
             lga: formData.lga || null,
