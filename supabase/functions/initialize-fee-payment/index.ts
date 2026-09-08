@@ -9,12 +9,17 @@ import { z } from "npm:zod@3.23.8";
 
 const BodySchema = z.object({
   student_id: z.string().uuid(),
+  invoice_id: z.string().uuid().optional(),
   fee_structure_id: z.string().uuid().optional(),
   fee_installment_id: z.string().uuid().optional(),
   amount: z.number().positive().max(10000000),
   label: z.string().trim().min(1).max(120),
   callback_url: z.string().url().max(500),
-}).refine(v => Boolean(v.fee_structure_id) !== Boolean(v.fee_installment_id), "Choose one fee item");
+}).refine(
+  v => [v.invoice_id, v.fee_structure_id, v.fee_installment_id].filter(Boolean).length === 1,
+  "Choose one fee item",
+);
+
 
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
