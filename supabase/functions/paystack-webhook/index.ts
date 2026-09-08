@@ -189,7 +189,6 @@ serve(async (req) => {
               }
             }
 
-            // Assign to class
             // Assign to class (class_assignments.student_id references profiles.user_id)
             if (application.admitted_to_class_id) {
               await supabase.from("class_assignments").insert({
