@@ -671,6 +671,58 @@ export type Database = {
         }
         Relationships: []
       }
+      arms: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          legacy_class_id: string | null
+          offering_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          legacy_class_id?: string | null
+          offering_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          legacy_class_id?: string | null
+          offering_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arms_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arms_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
+            foreignKeyName: "arms_offering_id_fkey"
+            columns: ["offering_id"]
+            isOneToOne: false
+            referencedRelation: "campus_class_offerings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       assessment_types: {
         Row: {
           class_id: string | null
@@ -1276,6 +1328,81 @@ export type Database = {
           },
         ]
       }
+      campus_class_offerings: {
+        Row: {
+          campus_id: string
+          class_level_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+        }
+        Insert: {
+          campus_id: string
+          class_level_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Update: {
+          campus_id?: string
+          class_level_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campus_class_offerings_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campus_class_offerings_class_level_id_fkey"
+            columns: ["class_level_id"]
+            isOneToOne: false
+            referencedRelation: "class_levels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      campuses: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       class_assignments: {
         Row: {
           class_id: string
@@ -1316,6 +1443,90 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      class_levels: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          level_order: number
+          name: string
+          section: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          level_order?: number
+          name: string
+          section?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          level_order?: number
+          name?: string
+          section?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      class_structure_map: {
+        Row: {
+          applied_at: string | null
+          arm_code: string | null
+          campus_code: string
+          created_at: string
+          id: string
+          legacy_class_id: string
+          legacy_name: string
+          level_name: string
+          level_order: number
+          updated_at: string
+        }
+        Insert: {
+          applied_at?: string | null
+          arm_code?: string | null
+          campus_code?: string
+          created_at?: string
+          id?: string
+          legacy_class_id: string
+          legacy_name: string
+          level_name: string
+          level_order?: number
+          updated_at?: string
+        }
+        Update: {
+          applied_at?: string | null
+          arm_code?: string | null
+          campus_code?: string
+          created_at?: string
+          id?: string
+          legacy_class_id?: string
+          legacy_name?: string
+          level_name?: string
+          level_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_structure_map_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: true
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "class_structure_map_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: true
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
           },
         ]
       }
@@ -2098,7 +2309,10 @@ export type Database = {
         Row: {
           academic_year: string
           amount: number
+          arm_ids: string[] | null
+          campus_ids: string[] | null
           class_ids: string[]
+          class_level_ids: string[] | null
           created_at: string
           created_by: string | null
           due_date: string | null
@@ -2106,6 +2320,7 @@ export type Database = {
           effective_to: string | null
           fee_id: string
           frequency: string
+          genders: string[] | null
           id: string
           is_active: boolean
           notes: string | null
@@ -2118,7 +2333,10 @@ export type Database = {
         Insert: {
           academic_year: string
           amount: number
+          arm_ids?: string[] | null
+          campus_ids?: string[] | null
           class_ids?: string[]
+          class_level_ids?: string[] | null
           created_at?: string
           created_by?: string | null
           due_date?: string | null
@@ -2126,6 +2344,7 @@ export type Database = {
           effective_to?: string | null
           fee_id: string
           frequency?: string
+          genders?: string[] | null
           id?: string
           is_active?: boolean
           notes?: string | null
@@ -2138,7 +2357,10 @@ export type Database = {
         Update: {
           academic_year?: string
           amount?: number
+          arm_ids?: string[] | null
+          campus_ids?: string[] | null
           class_ids?: string[]
+          class_level_ids?: string[] | null
           created_at?: string
           created_by?: string | null
           due_date?: string | null
@@ -2146,6 +2368,7 @@ export type Database = {
           effective_to?: string | null
           fee_id?: string
           frequency?: string
+          genders?: string[] | null
           id?: string
           is_active?: boolean
           notes?: string | null
@@ -4843,6 +5066,97 @@ export type Database = {
           },
         ]
       }
+      student_enrollments: {
+        Row: {
+          academic_year: string | null
+          arm_id: string | null
+          boarding: string
+          campus_id: string | null
+          class_level_id: string | null
+          created_at: string
+          id: string
+          is_current: boolean
+          legacy_class_id: string | null
+          status: string
+          student_id: string
+          student_type: string
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: string | null
+          arm_id?: string | null
+          boarding?: string
+          campus_id?: string | null
+          class_level_id?: string | null
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          legacy_class_id?: string | null
+          status?: string
+          student_id: string
+          student_type?: string
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: string | null
+          arm_id?: string | null
+          boarding?: string
+          campus_id?: string | null
+          class_level_id?: string | null
+          created_at?: string
+          id?: string
+          is_current?: boolean
+          legacy_class_id?: string | null
+          status?: string
+          student_id?: string
+          student_type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_enrollments_arm_id_fkey"
+            columns: ["arm_id"]
+            isOneToOne: false
+            referencedRelation: "arms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_enrollments_campus_id_fkey"
+            columns: ["campus_id"]
+            isOneToOne: false
+            referencedRelation: "campuses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_enrollments_class_level_id_fkey"
+            columns: ["class_level_id"]
+            isOneToOne: false
+            referencedRelation: "class_levels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_enrollments_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "student_enrollments_legacy_class_id_fkey"
+            columns: ["legacy_class_id"]
+            isOneToOne: false
+            referencedRelation: "v_enrolment_by_class"
+            referencedColumns: ["class_id"]
+          },
+          {
+            foreignKeyName: "student_enrollments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_id_cards: {
         Row: {
           academic_year: string
@@ -4943,6 +5257,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "student_invoices_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      student_movement_log: {
+        Row: {
+          created_at: string
+          details: Json
+          event_type: string
+          id: string
+          performed_by: string | null
+          student_id: string
+        }
+        Insert: {
+          created_at?: string
+          details?: Json
+          event_type: string
+          id?: string
+          performed_by?: string | null
+          student_id: string
+        }
+        Update: {
+          created_at?: string
+          details?: Json
+          event_type?: string
+          id?: string
+          performed_by?: string | null
+          student_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "student_movement_log_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
@@ -5714,6 +6063,7 @@ export type Database = {
         Args: { p_relationship_id: string }
         Returns: undefined
       }
+      apply_class_structure_map: { Args: never; Returns: Json }
       apply_invoice_adjustment: {
         Args: {
           _amount: number
@@ -5728,6 +6078,7 @@ export type Database = {
         Args: { p_application_id: string; p_exam_id: string }
         Returns: string
       }
+      build_class_structure_map: { Args: never; Returns: Json }
       calculate_exam_score: {
         Args: { session_id_param: string }
         Returns: Json
@@ -5882,6 +6233,8 @@ export type Database = {
         Returns: Json
       }
       get_student_fee_summary: { Args: { _student_id: string }; Returns: Json }
+      get_student_structure_report: { Args: never; Returns: Json }
+      get_students_overview: { Args: never; Returns: Json }
       get_user_email: { Args: never; Returns: string }
       global_search: { Args: { q: string }; Returns: Json }
       has_role: {
@@ -5910,12 +6263,29 @@ export type Database = {
         }
         Returns: Json
       }
+      list_students_filtered: {
+        Args: {
+          p_admission_year?: number
+          p_arm_id?: string
+          p_boarding?: string
+          p_campus_id?: string
+          p_class_level_id?: string
+          p_gender?: string
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+          p_status?: string
+          p_student_type?: string
+        }
+        Returns: Json
+      }
       mark_entrance_result_sent: {
         Args: { p_assignment_id: string; p_kind: string }
         Returns: undefined
       }
       next_admission_number: { Args: never; Returns: string }
       next_employee_id: { Args: never; Returns: string }
+      parse_legacy_class: { Args: { _name: string }; Returns: Json }
       preview_student_bill: {
         Args: {
           _academic_year: string
