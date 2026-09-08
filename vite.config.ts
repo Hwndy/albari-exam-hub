@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => ({
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         skipWaiting: false,
+        importScripts: ['/sw-skip-waiting.js'],
+
         // Page loads are never served cache-first — see the NetworkFirst rule below.
         navigateFallback: undefined,
         navigateFallbackDenylist: [/^\/~oauth/, /^\/scan\//],
