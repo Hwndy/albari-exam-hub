@@ -13,10 +13,13 @@ interface Document {
   document_name: string;
   file_url: string;
   verified: boolean;
+  verification_status?: string | null;
+  rejection_reason?: string | null;
   verified_at: string | null;
   uploaded_at: string;
   mime_type: string | null;
 }
+
 
 interface AdmissionDocumentViewerProps {
   applicationId: string;
@@ -61,22 +64,22 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
   };
 
   const handleVerify = async (docId: string, verified: boolean) => {
+    if (!verified && !(notes[docId] || "").trim()) {
+      toast.error("Please enter a reason before rejecting this document");
+      return;
+    }
     setVerifyingDoc(docId);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      const { error } = await supabase
-        .from("admission_documents")
-        .update({
-          verified,
-          verified_by: user?.id,
-          verified_at: new Date().toISOString(),
-        })
-        .eq("id", docId);
+      const { error } = await supabase.rpc("set_document_verification", {
+        p_document_id: docId,
+        p_status: verified ? "verified" : "rejected",
+        p_reason: verified ? null : (notes[docId] || "").trim(),
+      } as any);
 
       if (error) throw error;
 
       toast.success(`Document ${verified ? "verified" : "rejected"} successfully`);
+      setNotes((prev) => ({ ...prev, [docId]: "" }));
       fetchDocuments();
     } catch (error: any) {
       toast.error("Failed to update document: " + error.message);
@@ -84,6 +87,7 @@ export const AdmissionDocumentViewer = ({ applicationId }: AdmissionDocumentView
       setVerifyingDoc(null);
     }
   };
+
 
   const resolveObjectPath = (fileUrl: string) => {
     const marker = "/admission-documents/";
