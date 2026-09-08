@@ -302,6 +302,21 @@ serve(async (req) => {
           const admissionNumberUsed = student.admission_number ?? currentNumber;
           const finalAdmissionNumber = admissionNumberUsed;
 
+          // Make sure gender and boarding interest are on the student record even
+          // when the student row already existed (gender drives some fee rules).
+          if (application.gender || application.boarding_interest != null) {
+            const patch: Record<string, unknown> = {};
+            if (application.gender) patch.gender = application.gender;
+            if (application.boarding_interest != null) {
+              patch.is_boarder = application.boarding_interest;
+            }
+            const { error: patchError } = await supabase
+              .from("students")
+              .update(patch)
+              .eq("id", student.id);
+            if (patchError) console.error("Error updating student profile:", patchError);
+          }
+
           // Credit the acceptance fee against the student's school fees so the
           // "deducted from school fees" promise on the offer holds true.
           const acceptanceAmount = Number(payment.amount ?? paystackData.data.amount / 100);
