@@ -131,6 +131,8 @@ export const AdmissionForm = () => {
       previous_result: null,
       passport_photos: null,
       medical_report: null,
+      nin_slip: null,
+
     },
     declaration_accepted: false
   });
