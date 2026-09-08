@@ -6109,6 +6109,7 @@ export type Database = {
         }
         Returns: Json
       }
+      current_academic_year: { Args: never; Returns: string }
       delete_user_profile: { Args: { user_id_param: string }; Returns: Json }
       expire_old_qr_tokens: { Args: never; Returns: number }
       fee_period_key: {
@@ -6309,6 +6310,14 @@ export type Database = {
       record_student_scan: {
         Args: { p_direction: string; p_token: string }
         Returns: Json
+      }
+      resolve_legacy_class: {
+        Args: { _class_id: string }
+        Returns: {
+          arm_id: string
+          campus_id: string
+          class_level_id: string
+        }[]
       }
       resolve_scan_token: { Args: { p_token: string }; Returns: Json }
       save_entrance_exam_result:
