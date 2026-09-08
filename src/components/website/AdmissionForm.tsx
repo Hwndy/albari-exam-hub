@@ -383,72 +383,55 @@ export const AdmissionForm = () => {
       const applicationId = applicationData?.id;
 
       // Upload documents if any
-      if (formData.documents.birth_certificate || formData.documents.previous_result || 
-          formData.documents.passport_photos || formData.documents.medical_report) {
-        
-        const documentsToUpload = [];
-        
-        if (formData.documents.birth_certificate) {
-          documentsToUpload.push({
-            type: 'birth_certificate',
-            file: formData.documents.birth_certificate
-          });
+      const documentsToUpload: Array<{ type: string; file: File }> = [];
+      const docFields: Array<[keyof AdmissionFormData['documents'], string]> = [
+        ['birth_certificate', 'birth_certificate'],
+        ['previous_result', 'previous_school_report'],
+        ['passport_photos', 'passport_photo'],
+        ['medical_report', 'medical_certificate'],
+        ['nin_slip', 'nin_slip'],
+      ];
+      for (const [field, type] of docFields) {
+        const file = formData.documents[field];
+        if (!file) {
+          throw new Error('All documents are required. Please go back to the Documents step and attach every file.');
         }
-        if (formData.documents.previous_result) {
-          documentsToUpload.push({
-            type: 'previous_result',
-            file: formData.documents.previous_result
-          });
-        }
-        if (formData.documents.passport_photos) {
-          documentsToUpload.push({
-            type: 'passport_photos',
-            file: formData.documents.passport_photos
-          });
-        }
-        if (formData.documents.medical_report) {
-          documentsToUpload.push({
-            type: 'medical_report',
-            file: formData.documents.medical_report
-          });
+        documentsToUpload.push({ type, file });
+      }
+
+      // Upload each document
+      for (const doc of documentsToUpload) {
+        const fileExt = doc.file.name.split('.').pop();
+        const fileName = `${applicationId}/${doc.type}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('admission-documents')
+          .upload(fileName, doc.file, { upsert: true, contentType: doc.file.type });
+
+        if (uploadError) {
+          console.error('Document upload failed:', doc.type, uploadError);
+          throw new Error(`We could not upload your ${doc.type.replace(/_/g, ' ')}. Please try again.`);
         }
 
-        // Upload each document
-        for (const doc of documentsToUpload) {
-          const fileExt = doc.file.name.split('.').pop();
-          const fileName = `${applicationId}/${doc.type}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('admission-documents')
-            .upload(fileName, doc.file, { upsert: true });
+        const { error: docInsertError } = await supabase
+          .from('admission_documents')
+          .insert({
+            application_id: applicationId,
+            document_type: doc.type,
+            document_name: doc.file.name,
+            // Store the storage path (not a public URL); the admin viewer
+            // downloads via supabase.storage.from(...).download(file_url).
+            file_url: fileName,
+            file_size: doc.file.size,
+            mime_type: doc.file.type,
+          } as any);
 
-          if (uploadError) {
-            console.error('Document upload failed:', doc.type, uploadError);
-            continue;
-          }
-
-          const { error: docInsertError } = await supabase
-            .from('admission_documents')
-            .insert({
-              application_id: applicationId,
-              document_type:
-                doc.type === 'previous_result' ? 'previous_school_report' :
-                doc.type === 'passport_photos' ? 'passport_photo' :
-                doc.type === 'medical_report' ? 'medical_certificate' :
-                doc.type,
-              document_name: doc.file.name,
-              // Store the storage path (not a public URL); the admin viewer
-              // downloads via supabase.storage.from(...).download(file_url).
-              file_url: fileName,
-              file_size: doc.file.size,
-              mime_type: doc.file.type,
-            } as any);
-
-          if (docInsertError) {
-            console.error('Document metadata insert failed:', doc.type, docInsertError);
-          }
+        if (docInsertError) {
+          console.error('Document metadata insert failed:', doc.type, docInsertError);
+          throw new Error(`We could not save your ${doc.type.replace(/_/g, ' ')}. Please try again.`);
         }
       }
+
 
       // Send notification email
       try {
