@@ -108,11 +108,37 @@ Deno.serve(async (req) => {
 
     console.log(`Found ${classAssignments?.length || 0} class assignments`);
 
+    // Fetch student details (admission number, gender, etc.) — include archived rows
+    const { data: studentRows } = await supabaseAdmin
+      .from('students')
+      .select('user_id, admission_number, gender, date_of_birth, section, status, is_boarder, archived_at')
+      .in('user_id', userIds);
+
+    const studentMap = new Map(studentRows?.map(s => [s.user_id, s]) || []);
+
+    // Fetch staff details (employee id, department, etc.)
+    const { data: staffRows } = await supabaseAdmin
+      .from('staff_details')
+      .select('user_id, employee_id, department, designation, phone, employment_type, status')
+      .in('user_id', userIds);
+
+    const staffMap = new Map(staffRows?.map(s => [s.user_id, s]) || []);
+
+    // Fetch parent phone numbers
+    const { data: parentRows } = await supabaseAdmin
+      .from('parents')
+      .select('user_id, phone_primary')
+      .in('user_id', userIds);
+
+    const parentPhoneMap = new Map(parentRows?.map(p => [p.user_id, p.phone_primary]) || []);
+
     // Build user data with all info
     const usersData = profiles?.map(profile => {
       const role = roleMap.get(profile.user_id) || 'student';
       const email = emailMap.get(profile.user_id) || '';
       const className = role === 'student' ? (classMap.get(profile.user_id) || 'Not Assigned') : 'N/A';
+      const student = studentMap.get(profile.user_id);
+      const staff = staffMap.get(profile.user_id);
 
       return {
         full_name: profile.full_name,
@@ -120,7 +146,19 @@ Deno.serve(async (req) => {
         role,
         school: 'Al-Bari Model Schools',
         class_name: className,
-        created_at: profile.created_at
+        created_at: profile.created_at,
+        admission_number: student?.admission_number || '',
+        employee_id: staff?.employee_id || '',
+        phone: staff?.phone || parentPhoneMap.get(profile.user_id) || '',
+        department: staff?.department || '',
+        designation: staff?.designation || '',
+        employment_type: staff?.employment_type || '',
+        gender: student?.gender || '',
+        date_of_birth: student?.date_of_birth || '',
+        section: student?.section || '',
+        is_boarder: student?.is_boarder ?? null,
+        status: student?.status || staff?.status || '',
+        archived: !!student?.archived_at,
       };
     }) || [];
 
