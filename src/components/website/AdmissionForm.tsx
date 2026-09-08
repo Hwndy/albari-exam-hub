@@ -15,6 +15,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { validateUpload } from '@/lib/file-upload-guards';
+
 
 interface AdmissionFormData {
   // Personal Information
@@ -22,6 +24,8 @@ interface AdmissionFormData {
   last_name: string;
   middle_name: string;
   date_of_birth: Date | undefined;
+  nin: string;
+
   gender: string;
   nationality: string;
   state_of_origin: string;
@@ -70,6 +74,8 @@ interface AdmissionFormData {
     previous_result: File | null;
     passport_photos: File | null;
     medical_report: File | null;
+    nin_slip: File | null;
+
   };
   
   // Declaration
@@ -114,7 +120,9 @@ export const AdmissionForm = () => {
     guardian_relationship: '',
     guardian_phone: '',
     guardian_email: '',
+    nin: '',
     blood_group: '',
+
     allergies: '',
     medical_conditions: '',
     emergency_contact_name: '',
@@ -125,6 +133,8 @@ export const AdmissionForm = () => {
       previous_result: null,
       passport_photos: null,
       medical_report: null,
+      nin_slip: null,
+
     },
     declaration_accepted: false
   });
@@ -179,6 +189,15 @@ export const AdmissionForm = () => {
   };
 
   const updateDocuments = (docType: keyof AdmissionFormData['documents'], file: File | null) => {
+    if (file) {
+      const err = validateUpload(file, {
+        allow: new Set(['application/pdf', 'image/png', 'image/jpeg', 'image/webp']),
+      });
+      if (err) {
+        toast({ title: 'File rejected', description: err, variant: 'destructive' });
+        return;
+      }
+    }
     setFormData(prev => ({
       ...prev,
       documents: {
@@ -188,19 +207,24 @@ export const AdmissionForm = () => {
     }));
   };
 
+
   const validateStep = (step: number): boolean => {
     switch (step) {
       case 0: // Personal Info
         return !!(formData.first_name && formData.last_name && formData.date_of_birth && 
-                 formData.gender && formData.phone && formData.email);
+                 formData.gender && formData.phone && formData.email &&
+                 /^\d{11}$/.test(formData.nin));
       case 1: // Academic Info
         return !!(formData.applying_for_class);
       case 2: // Parent/Guardian
         return !!(formData.father_name || formData.mother_name || formData.guardian_name);
       case 3: // Medical Info
         return !!(formData.emergency_contact_name && formData.emergency_contact_phone);
-      case 4: // Documents
-        return true; // Documents are optional for initial submission
+      case 4: // Documents — all are compulsory
+        return !!(formData.documents.birth_certificate && formData.documents.previous_result &&
+                 formData.documents.passport_photos && formData.documents.medical_report &&
+                 formData.documents.nin_slip);
+
       case 5: // Review
         return formData.declaration_accepted;
       default:
@@ -332,6 +356,8 @@ export const AdmissionForm = () => {
             last_name: formData.last_name.trim(),
             date_of_birth: formData.date_of_birth ? format(formData.date_of_birth, 'yyyy-MM-dd') : null,
             gender: normalizedGender,
+            nin: formData.nin.trim(),
+
             blood_group: formData.blood_group || null,
             state_of_origin: formData.state_of_origin || null,
             lga: formData.lga || null,
@@ -383,72 +409,55 @@ export const AdmissionForm = () => {
       const applicationId = applicationData?.id;
 
       // Upload documents if any
-      if (formData.documents.birth_certificate || formData.documents.previous_result || 
-          formData.documents.passport_photos || formData.documents.medical_report) {
-        
-        const documentsToUpload = [];
-        
-        if (formData.documents.birth_certificate) {
-          documentsToUpload.push({
-            type: 'birth_certificate',
-            file: formData.documents.birth_certificate
-          });
+      const documentsToUpload: Array<{ type: string; file: File }> = [];
+      const docFields: Array<[keyof AdmissionFormData['documents'], string]> = [
+        ['birth_certificate', 'birth_certificate'],
+        ['previous_result', 'previous_school_report'],
+        ['passport_photos', 'passport_photo'],
+        ['medical_report', 'medical_certificate'],
+        ['nin_slip', 'nin_slip'],
+      ];
+      for (const [field, type] of docFields) {
+        const file = formData.documents[field];
+        if (!file) {
+          throw new Error('All documents are required. Please go back to the Documents step and attach every file.');
         }
-        if (formData.documents.previous_result) {
-          documentsToUpload.push({
-            type: 'previous_result',
-            file: formData.documents.previous_result
-          });
-        }
-        if (formData.documents.passport_photos) {
-          documentsToUpload.push({
-            type: 'passport_photos',
-            file: formData.documents.passport_photos
-          });
-        }
-        if (formData.documents.medical_report) {
-          documentsToUpload.push({
-            type: 'medical_report',
-            file: formData.documents.medical_report
-          });
+        documentsToUpload.push({ type, file });
+      }
+
+      // Upload each document
+      for (const doc of documentsToUpload) {
+        const fileExt = doc.file.name.split('.').pop();
+        const fileName = `${applicationId}/${doc.type}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('admission-documents')
+          .upload(fileName, doc.file, { upsert: true, contentType: doc.file.type });
+
+        if (uploadError) {
+          console.error('Document upload failed:', doc.type, uploadError);
+          throw new Error(`We could not upload your ${doc.type.replace(/_/g, ' ')}. Please try again.`);
         }
 
-        // Upload each document
-        for (const doc of documentsToUpload) {
-          const fileExt = doc.file.name.split('.').pop();
-          const fileName = `${applicationId}/${doc.type}.${fileExt}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('admission-documents')
-            .upload(fileName, doc.file, { upsert: true });
+        const { error: docInsertError } = await supabase
+          .from('admission_documents')
+          .insert({
+            application_id: applicationId,
+            document_type: doc.type,
+            document_name: doc.file.name,
+            // Store the storage path (not a public URL); the admin viewer
+            // downloads via supabase.storage.from(...).download(file_url).
+            file_url: fileName,
+            file_size: doc.file.size,
+            mime_type: doc.file.type,
+          } as any);
 
-          if (uploadError) {
-            console.error('Document upload failed:', doc.type, uploadError);
-            continue;
-          }
-
-          const { error: docInsertError } = await supabase
-            .from('admission_documents')
-            .insert({
-              application_id: applicationId,
-              document_type:
-                doc.type === 'previous_result' ? 'previous_school_report' :
-                doc.type === 'passport_photos' ? 'passport_photo' :
-                doc.type === 'medical_report' ? 'medical_certificate' :
-                doc.type,
-              document_name: doc.file.name,
-              // Store the storage path (not a public URL); the admin viewer
-              // downloads via supabase.storage.from(...).download(file_url).
-              file_url: fileName,
-              file_size: doc.file.size,
-              mime_type: doc.file.type,
-            } as any);
-
-          if (docInsertError) {
-            console.error('Document metadata insert failed:', doc.type, docInsertError);
-          }
+        if (docInsertError) {
+          console.error('Document metadata insert failed:', doc.type, docInsertError);
+          throw new Error(`We could not save your ${doc.type.replace(/_/g, ' ')}. Please try again.`);
         }
       }
+
 
       // Send notification email
       try {
@@ -679,6 +688,19 @@ export const AdmissionForm = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="nin">NIN (National Identification Number) *</Label>
+                    <Input
+                      id="nin"
+                      inputMode="numeric"
+                      maxLength={11}
+                      value={formData.nin}
+                      onChange={(e) => updateFormData('nin', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                      placeholder="11-digit NIN"
+                    />
+                    <p className="text-xs text-muted-foreground">Enter the applicant's 11-digit NIN.</p>
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="nationality">Nationality</Label>
                     <Input
@@ -1087,12 +1109,13 @@ export const AdmissionForm = () => {
             <div className="space-y-6">
               <h3 className="text-lg font-semibold">Required Documents</h3>
               <p className="text-muted-foreground">
-                Please upload the following documents. You can also bring physical copies during the entrance examination.
+                All documents below are compulsory. Accepted formats: PDF, JPG or PNG (max 10MB each).
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <Label htmlFor="birth_certificate">Birth Certificate</Label>
+                  <Label htmlFor="birth_certificate">Birth Certificate *</Label>
+
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1115,7 +1138,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="previous_result">Previous School Result</Label>
+                  <Label htmlFor="previous_result">Previous School Result *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1138,7 +1161,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="passport_photos">Passport Photographs (4 copies)</Label>
+                  <Label htmlFor="passport_photos">Passport Photograph *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1161,7 +1184,7 @@ export const AdmissionForm = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="medical_report">Medical Report/Certificate</Label>
+                  <Label htmlFor="medical_report">Medical Report/Certificate *</Label>
                   <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                     <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
@@ -1182,7 +1205,31 @@ export const AdmissionForm = () => {
                     )}
                   </div>
                 </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="nin_slip">NIN Slip *</Label>
+                  <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+                    <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-2">Click to upload or drag and drop</p>
+                    <input
+                      type="file"
+                      accept=".pdf,.jpg,.jpeg,.png"
+                      onChange={(e) => updateDocuments('nin_slip', e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="nin_slip"
+                    />
+                    <Button variant="outline" size="sm" onClick={() => document.getElementById('nin_slip')?.click()}>
+                      Choose File
+                    </Button>
+                    {formData.documents.nin_slip && (
+                      <p className="text-xs text-green-600 mt-2">
+                        {formData.documents.nin_slip.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
               </div>
+
             </div>
           )}
 
@@ -1200,6 +1247,8 @@ export const AdmissionForm = () => {
                     <p><strong>Name:</strong> {formData.first_name} {formData.middle_name} {formData.last_name}</p>
                     <p><strong>Date of Birth:</strong> {formData.date_of_birth ? format(formData.date_of_birth, 'PPP') : 'Not provided'}</p>
                     <p><strong>Gender:</strong> {formData.gender}</p>
+                    <p><strong>NIN:</strong> {formData.nin || 'Not provided'}</p>
+
                     <p><strong>Phone:</strong> {formData.phone}</p>
                     <p><strong>Email:</strong> {formData.email}</p>
                   </CardContent>
@@ -1249,6 +1298,11 @@ export const AdmissionForm = () => {
                       <CheckCircle className={cn("h-4 w-4", formData.documents.medical_report ? "text-green-600" : "text-muted-foreground")} />
                       <span>Medical Report</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className={cn("h-4 w-4", formData.documents.nin_slip ? "text-green-600" : "text-muted-foreground")} />
+                      <span>NIN Slip</span>
+                    </div>
+
                   </CardContent>
                 </Card>
               </div>
