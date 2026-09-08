@@ -1,146 +1,151 @@
 import React, { useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Wallet } from 'lucide-react';
 import { format } from 'date-fns';
-import { fetchStudentClass } from '@/lib/class-roster';
-
-const NGN = (n: number) => new Intl.NumberFormat('en-NG', { style: 'currency', currency: 'NGN', minimumFractionDigits: 0 }).format(n || 0);
+import { NGN, TERMS, invoiceStatusLabel } from '@/lib/fees';
+import RecordCashPaymentDialog from './RecordCashPaymentDialog';
 
 interface Props { studentId: string; name: string; onClose: () => void; }
 
 export const StudentBalanceDrawer: React.FC<Props> = ({ studentId, name, onClose }) => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
-  const [structures, setStructures] = useState<any[]>([]);
-  const [payments, setPayments] = useState<any[]>([]);
-  const [form, setForm] = useState({ fee_structure_id: '', amount: '', payment_method: 'cash', notes: '' });
-  const [saving, setSaving] = useState(false);
+  const [billing, setBilling] = useState<any>(null);
+  const [term, setTerm] = useState('First');
+  const [pay, setPay] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
-    const { class_id: classId } = await fetchStudentClass(studentId);
-    const [{ data: fs }, { data: pays }] = await Promise.all([
-      classId
-        ? supabase.from('fee_structures').select('*').eq('is_active', true).or(`class_id.eq.${classId},class_id.is.null`)
-        : supabase.from('fee_structures').select('*').eq('is_active', true).is('class_id', null),
-      supabase.from('fee_payments').select('*, fee_structure:fee_structures(fee_type,academic_year)').eq('student_id', studentId).order('created_at', { ascending: false }),
-    ]);
-    setStructures(fs || []);
-    setPayments(pays || []);
+    const { data, error } = await supabase.rpc('get_student_billing', { _student_id: studentId } as any);
+    if (error) toast({ title: 'Could not load bills', description: error.message, variant: 'destructive' });
+    setBilling(data || null);
     setLoading(false);
   };
-  useEffect(() => { load(); }, [studentId]);
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, [studentId]);
 
-  const paidFor = (id: string) => payments.filter(p => p.status === 'completed' && p.fee_structure_id === id).reduce((a, b) => a + Number(b.amount_paid || 0), 0);
+  const invoices: any[] = billing?.invoices || [];
+  const optional: any[] = billing?.optional_fees || [];
+  const totals = invoices.reduce((a, i) => ({
+    billed: a.billed + Number(i.total || 0),
+    paid: a.paid + Number(i.amount_paid || 0),
+    due: a.due + Number(i.balance || 0),
+  }), { billed: 0, paid: 0, due: 0 });
 
-  const record = async () => {
-    if (!form.fee_structure_id || !form.amount) { toast({ title: 'Select fee and amount', variant: 'destructive' }); return; }
-    setSaving(true);
-    const receipt = `REC-${new Date().getFullYear()}-${Math.random().toString(36).slice(2, 10).toUpperCase()}`;
-    const now = new Date().toISOString();
-    const { error } = await supabase.from('fee_payments').insert({
-      student_id: studentId, fee_structure_id: form.fee_structure_id,
-      amount_paid: Number(form.amount), payment_method: form.payment_method,
-      status: 'completed', payment_date: now.slice(0,10), paid_at: now,
-      receipt_number: receipt, notes: form.notes || null,
-    });
-    setSaving(false);
-    if (error) { toast({ title: 'Failed', description: error.message, variant: 'destructive' }); return; }
-    toast({ title: 'Payment recorded', description: `Receipt ${receipt}` });
-    setForm({ fee_structure_id: '', amount: '', payment_method: 'cash', notes: '' });
+  const toggleOptional = async (rule: any, selected: boolean) => {
+    setBusy(rule.fee_rule_id);
+    const { error } = await supabase.rpc('set_optional_selection', {
+      _student_id: studentId, _fee_rule_id: rule.fee_rule_id,
+      _academic_year: billing?.academic_year, _term: term, _selected: selected,
+    } as any);
+    setBusy(null);
+    if (error) { toast({ title: 'Could not update', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: selected ? `${rule.fee_name} added to the bill` : `${rule.fee_name} removed` });
     load();
   };
-
-  const totalBilled = structures.reduce((a, b) => a + Number(b.amount), 0);
-  const totalPaid = payments.filter(p => p.status === 'completed').reduce((a, b) => a + Number(b.amount_paid || 0), 0);
 
   return (
     <Sheet open onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader><SheetTitle>{name}</SheetTitle></SheetHeader>
-        {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin h-6 w-6"/></div> : (
+        {loading ? <div className="flex justify-center p-8"><Loader2 className="animate-spin h-6 w-6" /></div> : (
           <div className="space-y-6 mt-4">
-            <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Billed</div><div className="font-semibold">{NGN(totalBilled)}</div></div>
-              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Paid</div><div className="font-semibold text-green-600">{NGN(totalPaid)}</div></div>
-              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Outstanding</div><div className="font-semibold text-red-600">{NGN(Math.max(0, totalBilled - totalPaid))}</div></div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline">{billing?.profile?.student_type === 'new' ? 'New student' : 'Returning student'}</Badge>
+              <Badge variant="outline">{billing?.profile?.student_category === 'boarding' ? 'Boarder' : 'Day student'}</Badge>
+              <Badge variant="outline">{billing?.academic_year}</Badge>
             </div>
 
-            <div>
-              <h3 className="font-semibold mb-2">Fee Breakdown</h3>
-              <Table>
-                <TableHeader><TableRow><TableHead>Fee</TableHead><TableHead>Year/Term</TableHead><TableHead className="text-right">Amount</TableHead><TableHead className="text-right">Paid</TableHead><TableHead className="text-right">Balance</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {structures.map(s => {
-                    const paid = paidFor(s.id); const bal = Number(s.amount) - paid;
-                    return <TableRow key={s.id}>
-                      <TableCell>{s.fee_type}</TableCell>
-                      <TableCell>{s.academic_year}{s.term ? ` • ${s.term}` : ''}</TableCell>
-                      <TableCell className="text-right">{NGN(Number(s.amount))}</TableCell>
-                      <TableCell className="text-right text-green-600">{NGN(paid)}</TableCell>
-                      <TableCell className="text-right">{bal <= 0 ? <Badge>Paid</Badge> : NGN(bal)}</TableCell>
-                    </TableRow>;
-                  })}
-                  {structures.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-4">No fees configured</TableCell></TableRow>}
-                </TableBody>
-              </Table>
+            <div className="grid grid-cols-4 gap-3 text-center">
+              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Billed</div><div className="font-semibold">{NGN(totals.billed)}</div></div>
+              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Paid</div><div className="font-semibold text-green-600">{NGN(totals.paid)}</div></div>
+              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Outstanding</div><div className="font-semibold text-red-600">{NGN(totals.due)}</div></div>
+              <div className="p-3 border rounded"><div className="text-xs text-muted-foreground">Credit</div><div className="font-semibold">{NGN(Number(billing?.credit_balance || 0))}</div></div>
             </div>
 
-            <div className="border rounded p-4 space-y-3">
-              <h3 className="font-semibold">Record Offline Payment</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div><Label>Fee</Label>
-                  <Select value={form.fee_structure_id} onValueChange={v => setForm({ ...form, fee_structure_id: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select fee"/></SelectTrigger>
-                    <SelectContent>{structures.map(s => <SelectItem key={s.id} value={s.id}>{s.fee_type} — {NGN(Number(s.amount))}</SelectItem>)}</SelectContent>
-                  </Select>
+            <Button onClick={() => setPay(true)} className="w-full"><Wallet className="h-4 w-4 mr-2" />Record payment</Button>
+
+            {invoices.length === 0 && <p className="text-sm text-muted-foreground">No bills yet for this session.</p>}
+
+            {invoices.map((inv: any) => (
+              <div key={inv.id} className="border rounded p-3 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium">{inv.term} term • {inv.invoice_number}</div>
+                    <div className="text-xs text-muted-foreground">
+                      Issued {inv.issue_date ? format(new Date(inv.issue_date), 'PP') : '—'}
+                      {inv.due_date ? ` • due ${format(new Date(inv.due_date), 'PP')}` : ''}
+                    </div>
+                  </div>
+                  <Badge variant={inv.status === 'paid' ? 'secondary' : inv.status === 'partial' ? 'outline' : 'destructive'}>
+                    {invoiceStatusLabel(inv.status)}
+                  </Badge>
                 </div>
-                <div><Label>Amount</Label><Input type="number" value={form.amount} onChange={e => setForm({ ...form, amount: e.target.value })}/></div>
-                <div><Label>Method</Label>
-                  <Select value={form.payment_method} onValueChange={v => setForm({ ...form, payment_method: v })}>
-                    <SelectTrigger><SelectValue/></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="cheque">Cheque</SelectItem>
-                      <SelectItem value="pos">POS</SelectItem>
-                    </SelectContent>
-                  </Select>
+                <Table>
+                  <TableHeader><TableRow><TableHead>Charge</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
+                  <TableBody>
+                    {(inv.items || []).map((it: any) => (
+                      <TableRow key={it.id}>
+                        <TableCell>{it.description}{it.requirement_type === 'optional' && <Badge variant="outline" className="ml-2">Optional</Badge>}</TableCell>
+                        <TableCell className="text-right">{NGN(Number(it.final_amount))}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="flex justify-between text-sm font-medium">
+                  <span>Total {NGN(Number(inv.total))} • paid {NGN(Number(inv.amount_paid))}</span>
+                  <span>Balance {NGN(Number(inv.balance))}</span>
                 </div>
-                <div><Label>Notes</Label><Input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} placeholder="Ref / bank / cheque #"/></div>
               </div>
-              <Button onClick={record} disabled={saving} className="w-full">{saving ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Record Payment'}</Button>
-            </div>
+            ))}
+
+            {optional.length > 0 && (
+              <div className="border rounded p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold">Optional charges</h3>
+                  <Select value={term} onValueChange={setTerm}>
+                    <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
+                    <SelectContent>{TERMS.map(t => <SelectItem key={t} value={t}>{t} term</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                {optional.map((o: any) => (
+                  <div key={o.fee_rule_id} className="flex items-center justify-between text-sm">
+                    <div>{o.fee_name} <span className="text-muted-foreground">— {NGN(Number(o.amount))}</span></div>
+                    <Switch checked={!!o.selected} disabled={busy === o.fee_rule_id} onCheckedChange={v => toggleOptional(o, v)} />
+                  </div>
+                ))}
+              </div>
+            )}
 
             <div>
-              <h3 className="font-semibold mb-2">Payment History</h3>
+              <h3 className="font-semibold mb-2">Payment history</h3>
               <Table>
-                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Fee</TableHead><TableHead>Receipt</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Amount</TableHead><TableHead>Status</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Receipt</TableHead><TableHead>Method</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                 <TableBody>
-                  {payments.map(p => (
+                  {invoices.flatMap((i: any) => (i.payments || []).map((p: any) => ({ ...p, term: i.term }))).map((p: any) => (
                     <TableRow key={p.id}>
                       <TableCell>{p.payment_date ? format(new Date(p.payment_date), 'PP') : '—'}</TableCell>
-                      <TableCell>{p.fee_structure?.fee_type || '—'}</TableCell>
                       <TableCell className="font-mono text-xs">{p.receipt_number || '—'}</TableCell>
-                      <TableCell className="capitalize">{p.payment_method}</TableCell>
+                      <TableCell className="capitalize">{(p.payment_method || '').replace('_', ' ')}</TableCell>
                       <TableCell className="text-right">{NGN(Number(p.amount_paid))}</TableCell>
-                      <TableCell><Badge variant={p.status === 'completed' ? 'default' : 'outline'}>{p.status}</Badge></TableCell>
                     </TableRow>
                   ))}
-                  {payments.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-4">No payments yet</TableCell></TableRow>}
+                  {invoices.every((i: any) => !(i.payments || []).length) && (
+                    <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-4">No payments yet</TableCell></TableRow>
+                  )}
                 </TableBody>
               </Table>
             </div>
           </div>
         )}
+        <RecordCashPaymentDialog open={pay} onOpenChange={setPay} studentId={studentId} onSaved={load} />
       </SheetContent>
     </Sheet>
   );
