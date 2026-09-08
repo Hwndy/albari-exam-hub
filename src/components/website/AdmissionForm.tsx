@@ -22,6 +22,8 @@ interface AdmissionFormData {
   last_name: string;
   middle_name: string;
   date_of_birth: Date | undefined;
+  nin: string;
+
   gender: string;
   nationality: string;
   state_of_origin: string;
