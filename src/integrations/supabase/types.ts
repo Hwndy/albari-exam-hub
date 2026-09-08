@@ -84,6 +84,7 @@ export type Database = {
           merit_rank: number | null
           middle_name: string | null
           nationality: string | null
+          nin: string | null
           parent_guardian_info: Json
           phone: string
           previous_class: string | null
@@ -122,6 +123,7 @@ export type Database = {
           merit_rank?: number | null
           middle_name?: string | null
           nationality?: string | null
+          nin?: string | null
           parent_guardian_info: Json
           phone: string
           previous_class?: string | null
@@ -160,6 +162,7 @@ export type Database = {
           merit_rank?: number | null
           middle_name?: string | null
           nationality?: string | null
+          nin?: string | null
           parent_guardian_info?: Json
           phone?: string
           previous_class?: string | null
@@ -221,7 +224,10 @@ export type Database = {
           file_url: string
           id: string
           mime_type: string | null
+          rejection_reason: string | null
+          updated_at: string
           uploaded_at: string
+          verification_status: string
           verified: boolean | null
           verified_at: string | null
           verified_by: string | null
@@ -234,7 +240,10 @@ export type Database = {
           file_url: string
           id?: string
           mime_type?: string | null
+          rejection_reason?: string | null
+          updated_at?: string
           uploaded_at?: string
+          verification_status?: string
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null
@@ -247,7 +256,10 @@ export type Database = {
           file_url?: string
           id?: string
           mime_type?: string | null
+          rejection_reason?: string | null
+          updated_at?: string
           uploaded_at?: string
+          verification_status?: string
           verified?: boolean | null
           verified_at?: string | null
           verified_by?: string | null
@@ -6136,7 +6148,10 @@ export type Database = {
           file_url: string
           id: string
           mime_type: string | null
+          rejection_reason: string | null
+          updated_at: string
           uploaded_at: string
+          verification_status: string
           verified: boolean | null
           verified_at: string | null
           verified_by: string | null
@@ -6344,6 +6359,31 @@ export type Database = {
             }
             Returns: undefined
           }
+      set_document_verification: {
+        Args: { p_document_id: string; p_reason?: string; p_status: string }
+        Returns: {
+          application_id: string
+          document_name: string
+          document_type: string
+          file_size: number | null
+          file_url: string
+          id: string
+          mime_type: string | null
+          rejection_reason: string | null
+          updated_at: string
+          uploaded_at: string
+          verification_status: string
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "admission_documents"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       set_entrance_resit_details: {
         Args: {
           p_assignment_id: string
