@@ -52,55 +52,16 @@ import { AssetsHub } from '@/components/admin/assets/AssetsHub';
 import { HostelHub } from '@/components/admin/hostel/HostelHub';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
 
-interface DashboardStats {
-  totalStudents: number;
-  totalTeachers: number;
-  totalClasses: number;
-  totalSubjects: number;
-  totalExams: number;
-  activeExams: number;
-  totalQuestions: number;
-  activeSessions: number;
-}
-
-interface RecentExam {
-  id: string;
-  title: string;
-  subject: string;
-  class: string;
-  status: string;
-  created_at: string;
-  duration_minutes: number;
-  total_questions: number;
-}
+import AdminOverview from '@/components/admin/overview/AdminOverview';
 
 export const AdminDashboard = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalStudents: 0,
-    totalTeachers: 0,
-    totalClasses: 0,
-    totalSubjects: 0,
-    totalExams: 0,
-    activeExams: 0,
-    totalQuestions: 0,
-    activeSessions: 0,
-  });
-  
-  const [recentExams, setRecentExams] = useState<RecentExam[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [resultsModalOpen, setResultsModalOpen] = useState(false);
-  const { toast } = useToast();
   const { user, logout } = useAuth();
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
   const activeTab = searchParams.get('tab') || 'overview';
   const activeSubTab = searchParams.get('subtab');
 
-  useEffect(() => {
-    if (activeTab === 'overview') {
-      fetchDashboardData();
-    }
-  }, [activeTab]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchDashboardData = async () => {
     try {
@@ -207,61 +168,9 @@ export const AdminDashboard = () => {
 
   const renderContent = () => {
     if (activeTab === 'overview') {
-      return (
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Exams</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-4">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="animate-pulse">
-                      <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
-                      <div className="h-3 bg-muted rounded w-1/2"></div>
-                    </div>
-                  ))}
-                </div>
-              ) : recentExams.length > 0 ? (
-                <div className="space-y-4">
-                  {recentExams.map((exam) => (
-                    <Card key={exam.id} className="p-4">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-2">
-                          <h3 className="text-lg font-semibold">{exam.title}</h3>
-                          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-                            <span>{exam.subject}</span>
-                            <span>•</span>
-                            <span>{exam.class}</span>
-                            <span>•</span>
-                            <span>{exam.duration_minutes} min</span>
-                            <span>•</span>
-                            <span>{exam.total_questions} questions</span>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <Badge variant={exam.status === 'published' ? 'default' : 'secondary'}>
-                              {exam.status}
-                            </Badge>
-                            <span className="text-sm text-muted-foreground">
-                              {new Date(exam.created_at).toLocaleDateString()}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No recent exams found
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      );
+      return <AdminOverview />;
     }
+
 
 
     if (activeTab === 'admissions') {
@@ -432,29 +341,6 @@ export const AdminDashboard = () => {
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto p-4 lg:p-6 space-y-6">
               {/* Compact KPI row — only on Overview */}
-              {activeTab === 'overview' && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-                  {[
-                    { label: 'Students', value: stats.totalStudents, icon: Users },
-                    { label: 'Teachers', value: stats.totalTeachers, icon: Shield },
-                    { label: 'Classes', value: stats.totalClasses, icon: School },
-                    { label: 'Subjects', value: stats.totalSubjects, icon: BookOpen },
-                    { label: 'Active Exams', value: `${stats.activeExams}/${stats.totalExams}`, icon: FileText },
-                    { label: 'Questions', value: stats.totalQuestions, icon: TrendingUp },
-                    { label: 'Live Sessions', value: stats.activeSessions, icon: Clock },
-                  ].map(({ label, value, icon: Icon }) => (
-                    <Card key={label} className="shadow-sm">
-                      <CardContent className="p-3">
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                          <Icon className="h-3.5 w-3.5" />
-                          <span className="text-[11px] uppercase tracking-wide truncate">{label}</span>
-                        </div>
-                        <p className="text-xl font-bold mt-1">{isLoading ? '—' : value}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              )}
 
               {/* Content */}
               {renderContent()}
