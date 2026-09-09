@@ -6193,6 +6193,7 @@ export type Database = {
       }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
+      get_dashboard_overview: { Args: never; Returns: Json }
       get_entrance_exam_results: {
         Args: { p_exam_id: string }
         Returns: {
