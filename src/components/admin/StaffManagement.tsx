@@ -21,6 +21,7 @@ interface StaffMember {
   join_date: string;
   employment_type: string;
   status: string;
+  phone?: string | null;
   profile?: {
     full_name: string;
     user_id: string;
