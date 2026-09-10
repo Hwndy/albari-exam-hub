@@ -163,87 +163,40 @@ export const UserManagement = () => {
         return;
       }
 
-      // Use the create_user_with_profile function
-      const { data, error } = await supabase.rpc('create_user_with_profile', {
-        user_email: userForm.email,
-        user_password: userForm.password,
-        user_full_name: userForm.fullName,
-        user_role: userForm.role
+      // Accounts are created server-side so the admin stays signed in and the
+      // correct role / staff record / assignments are written atomically.
+      const { data, error } = await supabase.functions.invoke('create-staff-user', {
+        body: {
+          fullName: userForm.fullName.trim(),
+          email: userForm.email.trim().toLowerCase(),
+          password: userForm.password,
+          role: userForm.role,
+          classIds:
+            userForm.role === 'teacher'
+              ? userForm.classIds
+              : userForm.classId
+                ? [userForm.classId]
+                : [],
+          subjectIds: userForm.role === 'teacher' ? userForm.subjectIds : [],
+        },
       });
 
-      if (error) throw error;
-
-      if (data && typeof data === 'object' && 'error' in data) {
-        throw new Error(data.error as string);
+      if (error) {
+        // Edge function errors carry the JSON body in the response
+        let message = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          const body = ctx && typeof ctx.json === 'function' ? await ctx.json() : null;
+          if (body?.message) message = body.message;
+        } catch {
+          /* keep default message */
+        }
+        throw new Error(message);
+      }
+      if (data && (data as any).error) {
+        throw new Error((data as any).message || (data as any).error);
       }
 
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: userForm.email,
-        password: userForm.password,
-        options: {
-          data: {
-            full_name: userForm.fullName,
-            role: userForm.role
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Handle role-specific assignments
-        if (userForm.role === 'student' && userForm.classId) {
-          await supabase
-            .from('class_assignments')
-            .insert({
-              student_id: authData.user.id,
-              class_id: userForm.classId
-            });
-        }
-
-        if (userForm.role === 'teacher') {
-          console.log('🎓 Creating teacher account:', {
-            email: userForm.email,
-            subjects: userForm.subjectIds.length,
-            classes: userForm.classIds.length
-          });
-
-          // Create subject assignments for EACH combination of subject and class
-          if (userForm.subjectIds.length > 0 && userForm.classIds.length > 0) {
-            const subjectAssignments = [];
-            
-            for (const classId of userForm.classIds) {
-              for (const subjectId of userForm.subjectIds) {
-                subjectAssignments.push({
-                  user_id: authData.user.id,
-                  subject_id: subjectId,
-                  class_id: classId
-                });
-              }
-            }
-            
-            console.log('✅ Subject assignments to create:', subjectAssignments.length);
-            await supabase
-              .from('subject_assignments')
-              .insert(subjectAssignments);
-          }
-
-          // Add class assignments for teachers using RPC function to bypass RLS
-          if (userForm.classIds.length > 0) {
-            console.log('✅ Creating class assignments via RPC:', userForm.classIds.length);
-            
-            const { error: classAssignError } = await supabase
-              .rpc('create_teacher_class_assignments', {
-                p_teacher_id: authData.user.id,
-                p_class_ids: userForm.classIds
-              });
-              
-            if (classAssignError) throw classAssignError;
-            
-            console.log('✅ Class assignments created successfully');
-          }
-        }
-      }
 
       // If successful, refresh the profiles list
       await fetchData();

@@ -21,6 +21,7 @@ interface StaffMember {
   join_date: string;
   employment_type: string;
   status: string;
+  phone?: string | null;
   profile?: {
     full_name: string;
     user_id: string;
@@ -58,8 +59,12 @@ export const StaffManagement = () => {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [addMode, setAddMode] = useState<"existing" | "new">("new");
   const [editForm, setEditForm] = useState<{
     id: string;
+    user_id: string;
+    full_name: string;
+    phone: string;
     employee_id: string;
     department: string;
     designation: string;
@@ -67,7 +72,7 @@ export const StaffManagement = () => {
     employment_type: string;
     status: string;
   } | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     user_id: "",
@@ -76,7 +81,28 @@ export const StaffManagement = () => {
     designation: "",
     join_date: "",
     employment_type: "full-time",
+    // new-account fields
+    full_name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "teacher",
   });
+
+  const resetForm = () =>
+    setFormData({
+      user_id: "",
+      employee_id: "",
+      department: "",
+      designation: "",
+      join_date: "",
+      employment_type: "full-time",
+      full_name: "",
+      email: "",
+      password: "",
+      phone: "",
+      role: "teacher",
+    });
 
   useEffect(() => {
     fetchStaffMembers();
@@ -215,7 +241,70 @@ export const StaffManagement = () => {
     }
   };
 
+  /** Friendly message for common database errors. */
+  const friendlyError = (message: string) => {
+    if (/duplicate key/i.test(message) && /employee_id/i.test(message)) {
+      return "That employee ID is already in use. Leave it blank to auto-generate one.";
+    }
+    if (/duplicate key/i.test(message) && /user_id/i.test(message)) {
+      return "This person already has a staff record.";
+    }
+    return message;
+  };
+
+  /** Create a brand-new staff login plus their staff record (server-side). */
+  const createNewStaffAccount = async () => {
+    if (!formData.full_name.trim()) return toast.error("Enter the staff member's full name");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim()))
+      return toast.error("Enter a valid email address");
+    if (formData.password.length < 8) return toast.error("Password must be at least 8 characters");
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-staff-user", {
+        body: {
+          fullName: formData.full_name.trim(),
+          email: formData.email.trim().toLowerCase(),
+          password: formData.password,
+          role: formData.role,
+          department: formData.department,
+          designation: formData.designation,
+          joinDate: formData.join_date || undefined,
+          employmentType: formData.employment_type,
+          phone: formData.phone,
+        },
+      });
+
+      if (error) {
+        let message = error.message;
+        try {
+          const ctx: any = (error as any).context;
+          const body = ctx && typeof ctx.json === "function" ? await ctx.json() : null;
+          if (body?.message) message = body.message;
+        } catch {
+          /* keep default message */
+        }
+        throw new Error(message);
+      }
+      if (data && (data as any).error) throw new Error((data as any).message || (data as any).error);
+
+      toast.success(
+        `${formData.full_name} can now sign in${(data as any)?.employee_id ? ` — employee ID ${(data as any).employee_id}` : ""}`,
+      );
+      setShowAddDialog(false);
+      resetForm();
+      await fetchStaffMembers();
+      await fetchTeachers();
+    } catch (e: any) {
+      toast.error(e.message || "Could not create the staff account");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const handleAddStaff = async () => {
+    if (addMode === "new") return createNewStaffAccount();
+
     if (!formData.user_id) {
       toast.error("Please select a user");
       return;
@@ -232,21 +321,15 @@ export const StaffManagement = () => {
         designation: formData.designation,
         join_date: formData.join_date || null,
         employment_type: formData.employment_type,
+        phone: formData.phone || null,
       });
 
     if (error) {
-      toast.error(error.message);
+      toast.error(friendlyError(error.message));
     } else {
       toast.success("Staff member added successfully");
       setShowAddDialog(false);
-      setFormData({
-        user_id: "",
-        employee_id: "",
-        department: "",
-        designation: "",
-        join_date: "",
-        employment_type: "full-time",
-      });
+      resetForm();
       fetchStaffMembers();
       fetchTeachers();
     }
@@ -270,6 +353,9 @@ export const StaffManagement = () => {
   const openEdit = (staff: StaffMember) => {
     setEditForm({
       id: staff.id,
+      user_id: staff.user_id,
+      full_name: staff.profile?.full_name || "",
+      phone: staff.phone || "",
       employee_id: staff.employee_id || "",
       department: staff.department || "",
       designation: staff.designation || "",
@@ -283,26 +369,63 @@ export const StaffManagement = () => {
   const saveEdit = async () => {
     if (!editForm) return;
     setIsLoading(true);
-    const { error } = await supabase
-      .from("staff_details")
-      .update({
-        employee_id: editForm.employee_id.trim() || null,
-        department: editForm.department || null,
-        designation: editForm.designation || null,
-        join_date: editForm.join_date || null,
-        employment_type: editForm.employment_type,
-        status: editForm.status,
-      })
-      .eq("id", editForm.id);
-    setIsLoading(false);
-    if (error) {
-      toast.error(error.message);
+    try {
+      const { error } = await supabase
+        .from("staff_details")
+        .update({
+          employee_id: editForm.employee_id.trim() || null,
+          department: editForm.department || null,
+          designation: editForm.designation || null,
+          join_date: editForm.join_date || null,
+          employment_type: editForm.employment_type,
+          status: editForm.status,
+          phone: editForm.phone || null,
+        })
+        .eq("id", editForm.id);
+      if (error) throw new Error(friendlyError(error.message));
+
+      if (editForm.full_name.trim()) {
+        const { error: profErr } = await supabase
+          .from("profiles")
+          .update({ full_name: editForm.full_name.trim() })
+          .eq("user_id", editForm.user_id);
+        if (profErr) throw new Error(profErr.message);
+      }
+
+      toast.success("Staff record updated");
+      setShowEditDialog(false);
+      setEditForm(null);
+      await fetchStaffMembers();
+    } catch (e: any) {
+      toast.error(e.message || "Could not save the staff record");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /** Admin-initiated password reset for a staff login. */
+  const resetStaffPassword = async (staff: StaffMember) => {
+    const newPassword = window.prompt(
+      `Enter a new temporary password for ${staff.profile?.full_name || "this staff member"} (at least 8 characters):`,
+    );
+    if (!newPassword) return;
+    if (newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters");
       return;
     }
-    toast.success("Staff record updated");
-    setShowEditDialog(false);
-    setEditForm(null);
-    fetchStaffMembers();
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("update-user-password", {
+        body: { userId: staff.user_id, newPassword },
+      });
+      if (error) throw new Error(error.message);
+      if (data && (data as any).error) throw new Error((data as any).error);
+      toast.success("Password updated. Share it with the staff member securely.");
+    } catch (e: any) {
+      toast.error(e.message || "Could not reset the password");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const exportDirectory = () => {
