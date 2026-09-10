@@ -58,8 +58,12 @@ export const StaffManagement = () => {
   const [teachers, setTeachers] = useState<any[]>([]);
   const [syncing, setSyncing] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
+  const [addMode, setAddMode] = useState<"existing" | "new">("new");
   const [editForm, setEditForm] = useState<{
     id: string;
+    user_id: string;
+    full_name: string;
+    phone: string;
     employee_id: string;
     department: string;
     designation: string;
@@ -67,7 +71,7 @@ export const StaffManagement = () => {
     employment_type: string;
     status: string;
   } | null>(null);
-  
+
   // Form state
   const [formData, setFormData] = useState({
     user_id: "",
@@ -76,7 +80,28 @@ export const StaffManagement = () => {
     designation: "",
     join_date: "",
     employment_type: "full-time",
+    // new-account fields
+    full_name: "",
+    email: "",
+    password: "",
+    phone: "",
+    role: "teacher",
   });
+
+  const resetForm = () =>
+    setFormData({
+      user_id: "",
+      employee_id: "",
+      department: "",
+      designation: "",
+      join_date: "",
+      employment_type: "full-time",
+      full_name: "",
+      email: "",
+      password: "",
+      phone: "",
+      role: "teacher",
+    });
 
   useEffect(() => {
     fetchStaffMembers();
