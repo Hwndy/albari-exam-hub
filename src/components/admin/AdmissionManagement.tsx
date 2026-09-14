@@ -585,6 +585,16 @@ export const AdmissionManagement = () => {
                             )}
                             {selectedApplication.status === 'accepted' && (
                               <>
+                                {!pendingEnrolments[selectedApplication.id] && (
+                                  <RecordAcceptancePaymentDialog
+                                    applicationId={selectedApplication.id}
+                                    applicantName={`${selectedApplication.first_name} ${selectedApplication.last_name}`}
+                                    onRecorded={() => {
+                                      fetchApplications();
+                                      fetchPendingEnrolments();
+                                    }}
+                                  />
+                                )}
                                 {pendingEnrolments[selectedApplication.id] && (
                                   <Button
                                     variant="secondary"
