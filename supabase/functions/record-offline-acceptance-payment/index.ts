@@ -63,6 +63,9 @@ serve(async (req) => {
       .eq("id", applicationId)
       .maybeSingle();
     if (appError || !application) return json({ error: "Application not found" }, 404);
+    if (!['accepted', 'payment_pending', 'enrolled'].includes(application.status)) {
+      return json({ error: "Only an accepted applicant can have an acceptance fee recorded" }, 400);
+    }
 
     const reference =
       providedRef ||
