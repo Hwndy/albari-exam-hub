@@ -88,6 +88,8 @@ serve(async (req) => {
       transaction_id: reference,
       payment_reference: reference,
       paid_at: paidAt.toISOString(),
+      recorded_by: userData.user.id,
+      notes: note || null,
     };
 
     if (pendingPayment) {

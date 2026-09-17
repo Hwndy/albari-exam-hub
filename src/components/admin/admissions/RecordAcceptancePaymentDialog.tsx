@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Banknote, Copy, CheckCircle } from 'lucide-react';
 
 interface Props {
-  applicationId: string;
+  applicationId?: string;
   applicantName?: string;
   onRecorded?: () => void;
   trigger?: React.ReactNode;
@@ -55,11 +55,24 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [result, setResult] = useState<EnrolResult | null>(null);
+  const [applications, setApplications] = useState<Array<{ id: string; application_number: string; first_name: string; last_name: string }>>([]);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(applicationId ?? '');
 
   useEffect(() => {
     if (!open) return;
     setResult(null);
+    setSelectedApplicationId(applicationId ?? '');
     (async () => {
+      if (!applicationId) {
+        const { data } = await supabase
+          .from('admission_applications')
+          .select('id, application_number, first_name, last_name')
+          .eq('status', 'accepted')
+          .is('student_id', null)
+          .order('created_at', { ascending: false });
+        setApplications((data as any) ?? []);
+        return;
+      }
       const { data: offer } = await supabase
         .from('admission_offers')
         .select('acceptance_fee')
@@ -80,16 +93,43 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
     })();
   }, [open, applicationId]);
 
+  useEffect(() => {
+    if (!open || !selectedApplicationId) return;
+    (async () => {
+      const { data: offer } = await supabase
+        .from('admission_offers')
+        .select('acceptance_fee')
+        .eq('application_id', selectedApplicationId)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      let fee = Number((offer as any)?.acceptance_fee ?? 0);
+      if (!fee) {
+        const { data: setting } = await supabase
+          .from('app_settings')
+          .select('setting_value')
+          .eq('setting_key', 'acceptance_fee_amount')
+          .maybeSingle();
+        fee = Number((setting as any)?.setting_value ?? 0);
+      }
+      if (fee) setAmount(String(fee));
+    })();
+  }, [open, selectedApplicationId]);
+
   const copy = (value: string) => {
     navigator.clipboard.writeText(value);
     toast({ title: 'Copied' });
   };
 
   const submit = async () => {
+    if (!selectedApplicationId) {
+      toast({ title: 'Choose an accepted applicant', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     const { data, error } = await supabase.functions.invoke('record-offline-acceptance-payment', {
       body: {
-        application_id: applicationId,
+        application_id: selectedApplicationId,
         amount: Number(amount),
         method,
         paid_at: paidAt,
@@ -198,6 +238,21 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
           </div>
         ) : (
           <div className="space-y-4">
+            {!applicationId && (
+              <div className="space-y-2">
+                <Label>Accepted applicant</Label>
+                <Select value={selectedApplicationId} onValueChange={setSelectedApplicationId}>
+                  <SelectTrigger><SelectValue placeholder="Choose an applicant" /></SelectTrigger>
+                  <SelectContent>
+                    {applications.map(app => (
+                      <SelectItem key={app.id} value={app.id}>
+                        {app.application_number} — {app.first_name} {app.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="acc-amount">Amount received (₦)</Label>
               <Input

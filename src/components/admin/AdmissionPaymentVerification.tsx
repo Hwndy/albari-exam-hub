@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { DollarSign, CheckCircle, Clock, XCircle } from "lucide-react";
+import { RecordAcceptancePaymentDialog } from "@/components/admin/admissions/RecordAcceptancePaymentDialog";
 interface Payment {
   id: string;
   application_id: string;
@@ -133,6 +134,9 @@ export const AdmissionPaymentVerification = () => {
           <div className="flex items-center justify-between">
             <CardTitle>Payment Records</CardTitle>
             <div className="flex gap-2">
+                <RecordAcceptancePaymentDialog
+                  trigger={<Button size="sm" variant="outline">Record offline payment</Button>}
+                />
               <Button
                 size="sm"
                 variant={filter === "all" ? "default" : "outline"}
