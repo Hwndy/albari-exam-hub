@@ -764,10 +764,6 @@ export const StaffManagement = () => {
                   placeholder="e.g., Science"
                 />
              </div>
-             {addMode === "new" && <div>
-               <label className="text-sm font-medium">Phone</label>
-               <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
-             </div>}
               <div>
                 <label className="text-sm font-medium">Designation</label>
                 <Input
