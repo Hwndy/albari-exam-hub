@@ -481,10 +481,12 @@ export type Database = {
           application_id: string
           created_at: string
           id: string
+          notes: string | null
           paid_at: string | null
           payment_method: string | null
           payment_reference: string | null
           payment_type: string
+          recorded_by: string | null
           status: string
           transaction_id: string | null
         }
@@ -493,10 +495,12 @@ export type Database = {
           application_id: string
           created_at?: string
           id?: string
+          notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           payment_reference?: string | null
           payment_type?: string
+          recorded_by?: string | null
           status?: string
           transaction_id?: string | null
         }
@@ -505,10 +509,12 @@ export type Database = {
           application_id?: string
           created_at?: string
           id?: string
+          notes?: string | null
           paid_at?: string | null
           payment_method?: string | null
           payment_reference?: string | null
           payment_type?: string
+          recorded_by?: string | null
           status?: string
           transaction_id?: string | null
         }

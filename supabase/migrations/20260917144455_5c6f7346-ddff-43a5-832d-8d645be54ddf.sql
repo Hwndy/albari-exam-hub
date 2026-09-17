@@ -1,0 +1,1 @@
+ALTER TABLE public.admission_payments ADD COLUMN IF NOT EXISTS recorded_by uuid, ADD COLUMN IF NOT EXISTS notes text;
