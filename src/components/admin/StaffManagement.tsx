@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2, Download } from "lucide-react";
+import { Users, Plus, Search, Edit, Eye, Briefcase, Calendar, RefreshCw, Loader2, Download, KeyRound } from "lucide-react";
 import { format } from "date-fns";
 
 interface StaffMember {
@@ -665,6 +665,14 @@ export const StaffManagement = () => {
                         <Button variant="ghost" size="icon" onClick={() => openEdit(staff)}>
                           <Edit className="h-4 w-4" />
                         </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => resetStaffPassword(staff)}
+                          title="Reset password"
+                        >
+                          <KeyRound className="h-4 w-4" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -682,38 +690,72 @@ export const StaffManagement = () => {
             <DialogTitle>Add Staff Member</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Select User *</label>
-              <Select
-                value={formData.user_id}
-                onValueChange={(value) => setFormData({ ...formData, user_id: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a user" />
-                </SelectTrigger>
-                <SelectContent>
-                  {teachers.map((teacher) => (
-                    <SelectItem key={teacher.user_id} value={teacher.user_id}>
-                      {teacher.full_name} ({teacher.role})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {teachers.length === 0 && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  No available users. All teachers/admins already have staff records.
-                </p>
-              )}
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant={addMode === "new" ? "default" : "outline"} onClick={() => setAddMode("new")}>
+                New account
+              </Button>
+              <Button type="button" variant={addMode === "existing" ? "default" : "outline"} onClick={() => setAddMode("existing")}>
+                Existing account
+              </Button>
             </div>
-            <div>
+            {addMode === "new" ? (
+              <>
+                <div>
+                  <label className="text-sm font-medium">Full name *</label>
+                  <Input value={formData.full_name} onChange={(e) => setFormData({ ...formData, full_name: e.target.value })} />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Email *</label>
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Temporary password *</label>
+                    <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium">Role</label>
+                    <Select value={formData.role} onValueChange={(value) => setFormData({ ...formData, role: value })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="teacher">Teacher</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Phone</label>
+                    <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div>
+                <label className="text-sm font-medium">Select user *</label>
+                <Select value={formData.user_id} onValueChange={(value) => setFormData({ ...formData, user_id: value })}>
+                  <SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger>
+                  <SelectContent>
+                    {teachers.map((teacher) => (
+                      <SelectItem key={teacher.user_id} value={teacher.user_id}>
+                        {teacher.full_name} ({teacher.role})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {teachers.length === 0 && <p className="text-sm text-muted-foreground mt-1">No available users without a staff record.</p>}
+              </div>
+            )}
+             {addMode === "existing" && <div>
               <label className="text-sm font-medium">Employee ID</label>
               <Input
                 value={formData.employee_id}
                 onChange={(e) => setFormData({ ...formData, employee_id: e.target.value })}
                 placeholder="Leave blank to auto-generate (ALB/STF/0001)"
               />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+             </div>}
+             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Department</label>
                 <Input
@@ -721,7 +763,11 @@ export const StaffManagement = () => {
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
                   placeholder="e.g., Science"
                 />
-              </div>
+             </div>
+             {addMode === "new" && <div>
+               <label className="text-sm font-medium">Phone</label>
+               <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
+             </div>}
               <div>
                 <label className="text-sm font-medium">Designation</label>
                 <Input
@@ -762,8 +808,8 @@ export const StaffManagement = () => {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddStaff} disabled={isLoading}>
-              Add Staff
+             <Button onClick={handleAddStaff} disabled={isLoading}>
+               {addMode === "new" ? "Create account" : "Add Staff"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -777,6 +823,14 @@ export const StaffManagement = () => {
           </DialogHeader>
           {editForm && (
             <div className="space-y-4">
+               <div>
+                 <label className="text-sm font-medium">Full name</label>
+                 <Input value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} />
+               </div>
+               <div>
+                 <label className="text-sm font-medium">Phone</label>
+                 <Input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} />
+               </div>
               <div>
                 <label className="text-sm font-medium">Employee ID</label>
                 <Input

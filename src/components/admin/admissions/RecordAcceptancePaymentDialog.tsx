@@ -158,7 +158,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Admission number: <strong>{result.admission_number}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.admission_number!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.admission_number && copy(result.admission_number)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -168,7 +168,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Student login: <strong>{result.login_email}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.login_email!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.login_email && copy(result.login_email)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -178,7 +178,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Temporary password: <strong>{result.temporary_password}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.temporary_password!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.temporary_password && copy(result.temporary_password)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
