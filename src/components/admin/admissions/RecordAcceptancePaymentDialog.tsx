@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Banknote, Copy, CheckCircle } from 'lucide-react';
 
 interface Props {
-  applicationId: string;
+  applicationId?: string;
   applicantName?: string;
   onRecorded?: () => void;
   trigger?: React.ReactNode;
@@ -55,15 +55,33 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
   const [reference, setReference] = useState('');
   const [note, setNote] = useState('');
   const [result, setResult] = useState<EnrolResult | null>(null);
+  const [applications, setApplications] = useState<Array<{ id: string; application_number: string; first_name: string; last_name: string }>>([]);
+  const [selectedApplicationId, setSelectedApplicationId] = useState(applicationId ?? '');
 
   useEffect(() => {
     if (!open) return;
     setResult(null);
+    setSelectedApplicationId(applicationId ?? '');
+    (async () => {
+      if (!applicationId) {
+        const { data } = await supabase
+          .from('admission_applications')
+          .select('id, application_number, first_name, last_name')
+          .eq('status', 'accepted')
+          .is('student_id', null)
+          .order('created_at', { ascending: false });
+        setApplications((data as any) ?? []);
+      }
+    })();
+  }, [open, applicationId]);
+
+  useEffect(() => {
+    if (!open || !selectedApplicationId) return;
     (async () => {
       const { data: offer } = await supabase
         .from('admission_offers')
         .select('acceptance_fee')
-        .eq('application_id', applicationId)
+        .eq('application_id', selectedApplicationId)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
@@ -78,7 +96,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
       }
       if (fee) setAmount(String(fee));
     })();
-  }, [open, applicationId]);
+  }, [open, selectedApplicationId]);
 
   const copy = (value: string) => {
     navigator.clipboard.writeText(value);
@@ -86,10 +104,14 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
   };
 
   const submit = async () => {
+    if (!selectedApplicationId) {
+      toast({ title: 'Choose an accepted applicant', variant: 'destructive' });
+      return;
+    }
     setSaving(true);
     const { data, error } = await supabase.functions.invoke('record-offline-acceptance-payment', {
       body: {
-        application_id: applicationId,
+        application_id: selectedApplicationId,
         amount: Number(amount),
         method,
         paid_at: paidAt,
@@ -158,7 +180,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Admission number: <strong>{result.admission_number}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.admission_number!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.admission_number && copy(result.admission_number)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -168,7 +190,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Student login: <strong>{result.login_email}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.login_email!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.login_email && copy(result.login_email)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -178,7 +200,7 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
                 <span>
                   Temporary password: <strong>{result.temporary_password}</strong>
                 </span>
-                <Button size="sm" variant="ghost" onClick={() => copy(result.temporary_password!)}>
+                <Button size="sm" variant="ghost" onClick={() => result.temporary_password && copy(result.temporary_password)}>
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -198,6 +220,21 @@ export const RecordAcceptancePaymentDialog: React.FC<Props> = ({
           </div>
         ) : (
           <div className="space-y-4">
+            {!applicationId && (
+              <div className="space-y-2">
+                <Label>Accepted applicant</Label>
+                <Select value={selectedApplicationId} onValueChange={setSelectedApplicationId}>
+                  <SelectTrigger><SelectValue placeholder="Choose an applicant" /></SelectTrigger>
+                  <SelectContent>
+                    {applications.map(app => (
+                      <SelectItem key={app.id} value={app.id}>
+                        {app.application_number} — {app.first_name} {app.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="acc-amount">Amount received (₦)</Label>
               <Input

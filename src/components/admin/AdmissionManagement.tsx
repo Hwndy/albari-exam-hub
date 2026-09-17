@@ -19,6 +19,7 @@ import { RejectionNotifier } from '@/components/admin/RejectionNotifier';
 import { InterviewPanelManager } from '@/components/admin/InterviewPanelManager';
 import { InterviewFeedbackForm } from '@/components/admin/InterviewFeedbackForm';
 import { ApplicationExamResult } from '@/components/admin/admissions/ApplicationExamResult';
+import { RecordAcceptancePaymentDialog } from '@/components/admin/admissions/RecordAcceptancePaymentDialog';
 
 type AdmissionStatus = 'submitted' | 'under_review' | 'interview_scheduled' | 'accepted' | 'rejected' | 'payment_pending' | 'enrolled' | 'withdrawn';
 
