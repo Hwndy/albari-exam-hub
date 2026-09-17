@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { CheckCircle, XCircle, Clock, Award } from "lucide-react";
+import { RecordAcceptancePaymentDialog } from "@/components/admin/admissions/RecordAcceptancePaymentDialog";
 interface ApplicationWithScore {
   id: string;
   application_number: string;
@@ -163,6 +164,9 @@ export const AdmissionDecisionBoard = () => {
           <h2 className="text-3xl font-bold tracking-tight">Admission Decision Board</h2>
           <p className="text-muted-foreground">Review and approve/reject applications</p>
         </div>
+          <RecordAcceptancePaymentDialog
+            trigger={<Button variant="outline">Record offline acceptance payment</Button>}
+          />
       </div>
 
       <div className="grid gap-4 md:grid-cols-4">
