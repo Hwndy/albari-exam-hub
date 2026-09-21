@@ -31,9 +31,17 @@ export const PastStudents: React.FC = () => {
   useRealtimeRefresh('past-students', ['students'], () => { void load(); });
 
   const restore = async (id: string) => {
-    await supabase.from('students').update({ archived_at: null, archived_reason: null }).eq('id', id);
+    const { error } = await supabase.from('students').update({
+      archived_at: null,
+      archived_reason: null,
+      status: 'active',
+    }).eq('id', id);
+    if (error) {
+      toast({ title: 'Restore failed', description: error.message, variant: 'destructive' });
+      return;
+    }
     toast({ title: 'Restored', description: 'Student moved back to active list.' });
-    load();
+    await load();
   };
 
   return (

@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.sync_student_archive_status() FROM service_role;

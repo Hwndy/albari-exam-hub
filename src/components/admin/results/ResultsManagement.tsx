@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ManualScoresEntry } from '@/components/admin/ManualScoresEntry';
 import { AutomationSettings } from '@/components/admin/results/AutomationSettings';
@@ -7,14 +7,23 @@ import { PromotionPanel } from '@/components/admin/results/PromotionPanel';
 import { PastStudents } from '@/components/admin/results/PastStudents';
 import { BulkReportCards } from '@/components/admin/results/BulkReportCards';
 
-export const ResultsManagement: React.FC = () => {
+const TAB_MAP: Record<string, string> = {
+  'enter-scores': 'enter', broadsheet: 'broadsheet', 'bulk-reports': 'bulk',
+  promotion: 'promotion', 'past-students': 'past', automation: 'automation',
+};
+
+export const ResultsManagement: React.FC<{ subtab?: string | null }> = ({ subtab }) => {
+  const nextTab = subtab ? TAB_MAP[subtab] ?? 'enter' : 'enter';
+  const [tab, setTab] = useState(nextTab);
+  useEffect(() => { setTab(nextTab); }, [nextTab]);
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold">Results Management</h2>
         <p className="text-muted-foreground">Enter scores, view broadsheets, promote students and manage automation.</p>
       </div>
-      <Tabs defaultValue="enter" className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <TabsList className="flex flex-wrap h-auto">
           <TabsTrigger value="enter">Enter Scores</TabsTrigger>
           <TabsTrigger value="broadsheet">Broadsheet</TabsTrigger>

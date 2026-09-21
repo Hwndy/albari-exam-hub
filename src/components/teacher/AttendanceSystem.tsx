@@ -153,19 +153,13 @@ export const AttendanceSystem = () => {
 
       if (sessionsError) throw sessionsError;
 
-      // Fetch class details separately
-      const classDetails = await Promise.all(
-        (classAssignments || []).map(async (assignment) => {
-          const { data: cls } = await supabase
-            .from('classes')
-            .select('id, name')
-            .eq('id', assignment.class_id)
-            .single();
-          return cls;
-        })
-      );
+      const classIds = [...new Set((classAssignments || []).map(assignment => assignment.class_id).filter(Boolean))];
+      const { data: classDetails, error: classDetailsError } = classIds.length
+        ? await supabase.from('classes').select('id, name').in('id', classIds)
+        : { data: [], error: null };
+      if (classDetailsError) throw classDetailsError;
       
-      setClasses(classDetails.filter(Boolean));
+      setClasses(classDetails || []);
       setSubjects(subjectAssignments?.map(sa => sa.subjects).filter(Boolean) || []);
       setAttendanceSessions(sessions || []);
     } catch (error) {
@@ -198,13 +192,14 @@ export const AttendanceSystem = () => {
         return;
       }
 
-      const studentIds = assignments.map(a => a.student_id);
+      const studentRefs = assignments.map(a => a.student_id);
       
-      const { data: studentsData, error: studentsError } = await supabase
-        .from('students')
-        .select('id, admission_number, user_id')
-        .is('archived_at', null)
-        .in('id', studentIds);
+      const [byId, byUser] = await Promise.all([
+        supabase.from('students').select('id, admission_number, user_id').is('archived_at', null).in('id', studentRefs),
+        supabase.from('students').select('id, admission_number, user_id').is('archived_at', null).in('user_id', studentRefs),
+      ]);
+      const studentsError = byId.error || byUser.error;
+      const studentsData = [...new Map([...(byId.data || []), ...(byUser.data || [])].map(row => [row.id, row])).values()];
 
       if (studentsError) throw studentsError;
 

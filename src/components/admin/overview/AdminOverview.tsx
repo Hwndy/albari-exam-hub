@@ -32,8 +32,6 @@ export interface OverviewData {
   activity: { kind: string; at: string; title: string; detail: string }[];
 }
 
-interface RpcError { message: string }
-
 const naira = (n: number) => `₦${Math.round(Number(n) || 0).toLocaleString()}`;
 const FUNNEL_ORDER = ['submitted', 'under_review', 'interview_scheduled', 'accepted', 'payment_pending', 'enrolled', 'rejected', 'withdrawn'];
 const pretty = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -48,12 +46,15 @@ export const AdminOverview: React.FC = () => {
 
   const load = useCallback(async (quiet = false) => {
     if (quiet) setRefreshing(true);
+    else setLoading(true);
     setError(null);
     try {
-      const callOverview = supabase.rpc as unknown as (name: string) => Promise<{ data: unknown; error: RpcError | null }>;
-      const { data: res, error: err } = await callOverview('get_dashboard_overview');
+      const { data: res, error: err } = await supabase.rpc('get_dashboard_overview');
       if (err) throw err;
-      setData(res as OverviewData);
+      if (!res || typeof res !== 'object' || Array.isArray(res)) {
+        throw new Error('The dashboard returned an invalid response.');
+      }
+      setData(normalizeOverview(res));
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Could not load the dashboard');
     } finally {
@@ -112,7 +113,7 @@ export const AdminOverview: React.FC = () => {
   const feeTrend = [...(data.fee_trend || [])].sort((a, b) => a.month.localeCompare(b.month)).map(d => ({ label: d.label, amount: Number(d.amount) || 0 }));
   const levels = [...(data.students_by_level || [])].sort((a, b) => a.order - b.order).map(l => ({ name: l.name, Male: l.male, Female: l.female }));
   const quickActions = [
-    { label: 'Record payment', icon: Banknote, onClick: () => go('fees', 'fees') },
+    { label: 'Record payment', icon: Banknote, onClick: () => go('fees', 'payments') },
     { label: 'Manage students', icon: UserPlus, onClick: () => go('academic', 'students') },
     { label: 'Create exam', icon: FileText, onClick: () => go('academic') },
     { label: 'Announcement', icon: Megaphone, onClick: () => go('announcements') },
@@ -174,5 +175,68 @@ export const AdminOverview: React.FC = () => {
 };
 
 const Empty = ({ text }: { text: string }) => <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">{text}</div>;
+
+const finiteNumber = (value: unknown) => {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : 0;
+};
+
+const recordValue = (value: unknown): Record<string, unknown> =>
+  value && typeof value === 'object' && !Array.isArray(value) ? value as Record<string, unknown> : {};
+
+const arrayValue = (value: unknown): unknown[] => Array.isArray(value) ? value : [];
+
+function normalizeOverview(value: object): OverviewData {
+  const source = value as Record<string, unknown>;
+  const students = recordValue(source.students);
+  const attendance = recordValue(source.attendance);
+  const finance = recordValue(source.finance);
+  const admissions = recordValue(source.admissions);
+  const exams = recordValue(source.exams);
+  const attention = recordValue(source.attention);
+
+  return {
+    academic_year: typeof source.academic_year === 'string' ? source.academic_year : 'Current academic year',
+    generated_at: typeof source.generated_at === 'string' ? source.generated_at : new Date().toISOString(),
+    students: {
+      total: finiteNumber(students.total), male: finiteNumber(students.male), female: finiteNumber(students.female),
+      missing_gender: finiteNumber(students.missing_gender), boarding: finiteNumber(students.boarding),
+    },
+    students_by_level: arrayValue(source.students_by_level).map(item => {
+      const row = recordValue(item);
+      return { name: String(row.name ?? 'Unassigned'), order: finiteNumber(row.order), male: finiteNumber(row.male), female: finiteNumber(row.female) };
+    }),
+    attendance: { marked: finiteNumber(attendance.marked), present: finiteNumber(attendance.present), absent: finiteNumber(attendance.absent) },
+    attendance_trend: arrayValue(source.attendance_trend).map(item => {
+      const row = recordValue(item);
+      return { date: String(row.date ?? ''), rate: row.rate == null ? null : finiteNumber(row.rate) };
+    }).filter(item => item.date),
+    finance: {
+      billed: finiteNumber(finance.billed), collected: finiteNumber(finance.collected), outstanding: finiteNumber(finance.outstanding),
+      invoices: finiteNumber(finance.invoices), overdue: finiteNumber(finance.overdue),
+    },
+    fee_trend: arrayValue(source.fee_trend).map(item => {
+      const row = recordValue(item);
+      return { month: String(row.month ?? ''), label: String(row.label ?? ''), amount: finiteNumber(row.amount) };
+    }).filter(item => item.month),
+    admissions: {
+      total: finiteNumber(admissions.total), pending: finiteNumber(admissions.pending),
+      accepted: finiteNumber(admissions.accepted), enrolled: finiteNumber(admissions.enrolled),
+    },
+    admission_funnel: arrayValue(source.admission_funnel).map(item => {
+      const row = recordValue(item);
+      return { status: String(row.status ?? ''), count: finiteNumber(row.count) };
+    }).filter(item => item.status),
+    exams: {
+      total: finiteNumber(exams.total), published: finiteNumber(exams.published), live_sessions: finiteNumber(exams.live_sessions),
+      teachers: finiteNumber(exams.teachers), classes: finiteNumber(exams.classes), subjects: finiteNumber(exams.subjects),
+    },
+    attention: Object.fromEntries(Object.entries(attention).map(([key, count]) => [key, finiteNumber(count)])),
+    activity: arrayValue(source.activity).map(item => {
+      const row = recordValue(item);
+      return { kind: String(row.kind ?? 'activity'), at: String(row.at ?? ''), title: String(row.title ?? 'Activity'), detail: String(row.detail ?? '') };
+    }).filter(item => item.at),
+  };
+}
 
 export default AdminOverview;

@@ -114,23 +114,24 @@ export const IDCardGenerator: React.FC = () => {
         
         const profilesData = profilesResponse.data as any[] || [];
 
-        // Fetch class assignments for these students (student_id = auth user_id)
+        const studentIds = studentsData.map(s => s.id);
+        const assignmentRefs = [...new Set([...studentIds, ...userIds].filter(Boolean))];
+        // Historical assignments may reference either students.id or auth user_id.
         const assignmentsResponse = await supabase
           .from('class_assignments')
           .select('student_id, class_id')
-          .in('student_id', userIds);
+          .in('student_id', assignmentRefs);
         const assignments = (assignmentsResponse.data as any[]) || [];
         const classesMap = new Map(
           ((classesResponse.data as any[]) || []).map((c: any) => [c.id, c.name])
         );
-        const userClassMap = new Map<string, string>();
+        const classByStudentRef = new Map<string, string>();
         for (const a of assignments) {
           const name = classesMap.get(a.class_id);
-          if (name) userClassMap.set(a.student_id, name);
+          if (name) classByStudentRef.set(a.student_id, name);
         }
 
         // QR tokens
-        const studentIds = studentsData.map(s => s.id);
         const tokensResponse = await supabase
           .from('student_qr_tokens')
           .select('student_id, token')
@@ -149,8 +150,8 @@ export const IDCardGenerator: React.FC = () => {
           photo_url: student.photo_url,
           date_of_birth: student.date_of_birth,
           qr_token: tokenMap.get(student.id) || null,
-          class: userClassMap.has(student.user_id)
-            ? { name: userClassMap.get(student.user_id)! }
+          class: classByStudentRef.get(student.id) || classByStudentRef.get(student.user_id)
+            ? { name: classByStudentRef.get(student.id) || classByStudentRef.get(student.user_id) || '' }
             : undefined,
         }));
 

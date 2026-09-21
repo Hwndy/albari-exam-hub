@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
 import { AdmissionManagement } from '@/components/admin/AdmissionManagement';
@@ -39,12 +39,15 @@ const TABS: Array<{ value: AdmissionTab; label: string }> = [
  * inside one tabbed hub, sharing a single page shell.
  */
 export const AdmissionsHub: React.FC<AdmissionsHubProps> = ({ initialTab = 'applications' }) => {
+  const [tab, setTab] = useState<AdmissionTab>(initialTab);
+  useEffect(() => { setTab(initialTab); }, [initialTab]);
+
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">
         Manage applications, sessions, exams, interviews, payments, and decisions in one place.
       </p>
-      <Tabs defaultValue={initialTab} className="space-y-4">
+      <Tabs value={tab} onValueChange={value => setTab(value as AdmissionTab)} className="space-y-4">
         <Card className="p-1 overflow-hidden">
           <div className="overflow-x-auto">
             <TabsList className="inline-flex h-auto w-max gap-1 bg-transparent p-0">

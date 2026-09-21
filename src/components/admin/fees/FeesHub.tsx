@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { FeeOverview } from './FeeOverview';
 import { FeeRules } from './FeeRules';
@@ -11,9 +11,16 @@ import { RemindersPanel } from './RemindersPanel';
 import { FeeReceiptGenerator } from '@/components/admin/FeeReceiptGenerator';
 import { Reconciliation } from './Reconciliation';
 
-export const FeesHub: React.FC = () => {
+const FEE_TABS = ['overview', 'rules', 'generate', 'invoices', 'balances', 'plans', 'payments', 'receipts', 'reminders', 'reconciliation'];
+
+export const FeesHub: React.FC<{ initialTab?: string }> = ({ initialTab = 'overview' }) => {
+  const [tab, setTab] = useState(FEE_TABS.includes(initialTab) ? initialTab : 'overview');
+  useEffect(() => {
+    setTab(FEE_TABS.includes(initialTab) ? initialTab : 'overview');
+  }, [initialTab]);
+
   return (
-    <Tabs defaultValue="overview" className="space-y-4">
+    <Tabs value={tab} onValueChange={setTab} className="space-y-4">
       <div className="overflow-x-auto">
         <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
           <TabsTrigger value="overview">Overview</TabsTrigger>

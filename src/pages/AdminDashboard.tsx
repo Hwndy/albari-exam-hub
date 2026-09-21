@@ -104,7 +104,7 @@ export const AdminDashboard = () => {
     }
 
     if (activeTab === 'results-mgmt') {
-      return <ResultsManagement />;
+      return <ResultsManagement subtab={activeSubTab} />;
     }
 
     if (activeTab === 'fees') {
@@ -161,7 +161,7 @@ export const AdminDashboard = () => {
     }
 
     if (activeTab === 'parents') {
-      return <ParentsHub />;
+      return <ParentsHub subtab={activeSubTab} />;
     }
 
     if (activeTab === 'website') {

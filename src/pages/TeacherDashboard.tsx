@@ -29,6 +29,7 @@ interface TeacherStats {
 
 export const TeacherDashboard = () => {
   const { user } = useAuth();
+  const [examRevision, setExamRevision] = useState(0);
   const [stats, setStats] = useState<TeacherStats>({
     totalExams: 0,
     questionsBank: 0,
@@ -198,11 +199,11 @@ export const TeacherDashboard = () => {
                 isTeacher={true}
                 onExamCreated={() => {
                   fetchTeacherStats();
-                  window.location.reload();
+                  setExamRevision(value => value + 1);
                 }}
               />
             </div>
-            <TeacherExamBuilder />
+            <TeacherExamBuilder key={examRevision} />
           </TabsContent>
 
           <TabsContent value="results" className="space-y-4">
