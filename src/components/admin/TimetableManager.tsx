@@ -142,8 +142,7 @@ export const TimetableManager: React.FC = () => {
           *,
           subjects(name),
           rooms(room_name)
-        `)
-        .eq('class_id', selectedClass);
+        `);
 
       if (error) throw error;
 
@@ -162,8 +161,9 @@ export const TimetableManager: React.FC = () => {
         room: entry.rooms ? { name: entry.rooms.room_name } : undefined,
       }));
 
-      setTimetableEntries(entries as TimetableEntry[]);
-      checkConflicts(entries);
+      const allEntries = entries as TimetableEntry[];
+      setTimetableEntries(allEntries.filter(entry => entry.class_id === selectedClass));
+      checkConflicts(allEntries);
     } catch (error) {
       console.error('Error fetching timetable:', error);
     }

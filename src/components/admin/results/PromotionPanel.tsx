@@ -196,7 +196,7 @@ export const PromotionPanel: React.FC = () => {
       const ids = selectedRows.map(r => r.id);
       for (const part of chunk(ids)) {
         await supabase.from('students')
-          .update({ archived_at: new Date().toISOString(), archived_reason: 'Graduated' })
+          .update({ archived_at: new Date().toISOString(), archived_reason: 'Graduated', status: 'inactive' })
           .in('id', part);
       }
       await logHistory(selectedRows, null, 'graduated', `Graduated from ${className(classId)}`);

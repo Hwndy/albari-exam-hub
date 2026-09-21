@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HostelsRooms } from './HostelsRooms';
 import { HostelAllocations } from './HostelAllocations';
@@ -12,10 +12,12 @@ interface Props { subtab?: string | null }
 export const HostelHub: React.FC<Props> = ({ subtab }) => {
   const initial = subtab && ['hostels', 'allocations', 'rollcall', 'passes', 'inspections', 'wardens'].includes(subtab)
     ? subtab : 'hostels';
+  const [tab, setTab] = useState(initial);
+  useEffect(() => { setTab(initial); }, [initial]);
   return (
     <div className="space-y-4">
       <p className="text-sm text-muted-foreground">Hostels, bed allocation, roll call, exeat passes and inspections.</p>
-      <Tabs defaultValue={initial} className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
         <div className="overflow-x-auto">
           <TabsList className="flex w-max min-w-full h-auto gap-1 p-1">
             <TabsTrigger value="hostels">Hostels &amp; Rooms</TabsTrigger>

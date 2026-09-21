@@ -7,10 +7,13 @@ import { FinanceReports } from './FinanceReports';
 import { PayrollHub } from '@/components/admin/hr/PayrollHub';
 
 const VALID = ['reports', 'fees', 'expenses', 'revenue', 'payroll'];
+const FEE_TABS = ['overview', 'rules', 'generate', 'invoices', 'balances', 'plans', 'payments', 'receipts', 'reminders', 'reconciliation'];
 
 export const FinanceHub: React.FC<{ subtab?: string | null }> = ({ subtab }) => {
-  const [tab, setTab] = useState(subtab && VALID.includes(subtab) ? subtab : 'reports');
-  useEffect(() => { if (subtab && VALID.includes(subtab)) setTab(subtab); }, [subtab]);
+  const outerTab = subtab && VALID.includes(subtab) ? subtab : subtab && FEE_TABS.includes(subtab) ? 'fees' : 'reports';
+  const feeTab = subtab && FEE_TABS.includes(subtab) ? subtab : 'overview';
+  const [tab, setTab] = useState(outerTab);
+  useEffect(() => { setTab(outerTab); }, [outerTab]);
 
   return (
     <div className="space-y-6">
@@ -29,7 +32,7 @@ export const FinanceHub: React.FC<{ subtab?: string | null }> = ({ subtab }) => 
           </TabsList>
         </div>
         <TabsContent value="reports"><FinanceReports /></TabsContent>
-        <TabsContent value="fees"><FeesHub /></TabsContent>
+        <TabsContent value="fees"><FeesHub initialTab={feeTab} /></TabsContent>
         <TabsContent value="expenses"><ExpensesPanel /></TabsContent>
         <TabsContent value="revenue"><OtherRevenuePanel /></TabsContent>
         <TabsContent value="payroll"><PayrollHub /></TabsContent>
