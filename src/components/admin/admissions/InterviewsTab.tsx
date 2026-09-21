@@ -49,7 +49,7 @@ export const InterviewsTab: React.FC = () => {
     if (error) {
       toast({ title: 'Failed to load interviews', description: error.message, variant: 'destructive' });
     } else {
-      setRows((data ?? []).map((row: any) => ({
+      setRows((data ?? []).map((row) => ({
         ...row,
         admission_applications: Array.isArray(row.admission_applications)
           ? row.admission_applications[0] ?? null

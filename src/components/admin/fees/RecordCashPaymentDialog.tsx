@@ -15,6 +15,14 @@ import { fetchStudentClass } from '@/lib/class-roster';
 import { NGN } from '@/lib/fees';
 
 interface StudentOption { id: string; name: string; admission_number: string | null; class_id: string | null; class_name: string | null; }
+interface StudentSearchRow {
+  id: string;
+  full_name: string | null;
+  admission_number: string | null;
+  legacy_class_id: string | null;
+  class_name: string | null;
+  arm_code: string | null;
+}
 interface Item {
   key: string;
   kind: 'invoice' | 'installment' | 'other';
@@ -81,7 +89,7 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     const term = q.trim();
     const handle = setTimeout(async () => {
       setSearching(true);
-      const { data, error } = await (supabase as any).rpc('list_students_filtered', {
+      const { data, error } = await supabase.rpc('list_students_filtered', {
         p_class_level_id: null,
         p_campus_id: null,
         p_arm_id: null,
@@ -99,7 +107,8 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
         setSearching(false);
         return;
       }
-      setStudents(((data?.rows || []) as any[]).map(r => ({
+      const result = data as unknown as { rows?: StudentSearchRow[] } | null;
+      setStudents((result?.rows ?? []).map(r => ({
         id: r.id,
         name: r.full_name || 'Unknown',
         admission_number: r.admission_number,
