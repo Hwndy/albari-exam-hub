@@ -46,6 +46,7 @@ import { TransportHub } from '@/components/admin/transport/TransportHub';
 import { AssetsHub } from '@/components/admin/assets/AssetsHub';
 import { HostelHub } from '@/components/admin/hostel/HostelHub';
 import { GlobalSearch } from '@/components/admin/GlobalSearch';
+import { SystemAuditLog } from '@/components/admin/SystemAuditLog';
 
 import AdminOverview from '@/components/admin/overview/AdminOverview';
 
@@ -176,6 +177,7 @@ export const AdminDashboard = () => {
 
     if (activeTab === 'system') {
       switch (activeSubTab) {
+        case 'audit-log': return <SystemAuditLog />;
         case 'monitor-logs': return <EnhancedLiveMonitor />;
         case 'results-modal': 
           return (
