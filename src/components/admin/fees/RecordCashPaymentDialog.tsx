@@ -81,21 +81,31 @@ export const RecordCashPaymentDialog: React.FC<Props> = ({ open, onOpenChange, o
     const term = q.trim();
     const handle = setTimeout(async () => {
       setSearching(true);
-      const { data: rows } = await supabase.from('students').select('id, user_id, admission_number').is('archived_at', null).limit(400);
-      const list = (rows || []) as any[];
-      const userIds = [...new Set(list.map(r => r.user_id).filter(Boolean))];
-      let nameMap = new Map<string, string>();
-      if (userIds.length) {
-        const { data: profs } = await supabase.from('profiles').select('user_id, full_name').in('user_id', userIds);
-        nameMap = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+      const { data, error } = await (supabase as any).rpc('list_students_filtered', {
+        p_class_level_id: null,
+        p_campus_id: null,
+        p_arm_id: null,
+        p_gender: null,
+        p_boarding: null,
+        p_student_type: null,
+        p_status: 'active',
+        p_search: term || null,
+        p_admission_year: null,
+        p_limit: 25,
+        p_offset: 0,
+      });
+      if (error) {
+        setStudents([]);
+        setSearching(false);
+        return;
       }
-      const opts: StudentOption[] = list.map(r => ({
-        id: r.id, name: nameMap.get(r.user_id) || 'Unknown', admission_number: r.admission_number, class_id: null, class_name: null,
-      }));
-      const t = term.toLowerCase();
-      setStudents(
-        (t ? opts.filter(o => o.name.toLowerCase().includes(t) || (o.admission_number || '').toLowerCase().includes(t)) : opts).slice(0, 25)
-      );
+      setStudents(((data?.rows || []) as any[]).map(r => ({
+        id: r.id,
+        name: r.full_name || 'Unknown',
+        admission_number: r.admission_number,
+        class_id: r.legacy_class_id || null,
+        class_name: [r.class_name, r.arm_code].filter(Boolean).join(' ') || null,
+      })));
       setSearching(false);
     }, 250);
     return () => clearTimeout(handle);

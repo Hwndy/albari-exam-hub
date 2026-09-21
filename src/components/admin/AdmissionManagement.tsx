@@ -40,6 +40,9 @@ interface Application {
   address: any;
 }
 
+const normalizedEmail = (email: string | null | undefined) =>
+  String(email ?? '').trim().toLowerCase();
+
 export const AdmissionManagement = () => {
   const { toast } = useToast();
   const [applications, setApplications] = useState<Application[]>([]);
@@ -371,17 +374,20 @@ export const AdmissionManagement = () => {
                         {getStatusIcon(application.status)}
                         {application.status.replace('_', ' ')}
                       </Badge>
-                      {(siblingMap[String(application.email ?? '').trim().toLowerCase()]?.length ?? 0) > 1 && (
+                      {(siblingMap[normalizedEmail(application.email)]?.length ?? 0) > 1 && (
                         <Badge
                           variant="outline"
-                          title={siblingMap[String(application.email).trim().toLowerCase()]
+                          title={siblingMap[normalizedEmail(application.email)]
                             .filter((n) => !n.includes(application.application_number))
                             .join(', ')}
                         >
                           Shared email ·{' '}
-                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1} sibling
-                          {siblingMap[String(application.email).trim().toLowerCase()].length - 1 === 1 ? '' : 's'}
+                          {siblingMap[normalizedEmail(application.email)].length - 1} sibling
+                          {siblingMap[normalizedEmail(application.email)].length - 1 === 1 ? '' : 's'}
                         </Badge>
+                      )}
+                      {pendingEnrolments[application.id] && (
+                        <Badge variant="destructive">Paid · enrolment incomplete</Badge>
                       )}
                     </div>
 
@@ -409,6 +415,16 @@ export const AdmissionManagement = () => {
                     </div>
                   </div>
 
+                  <div className="flex items-center gap-2">
+                    {pendingEnrolments[application.id] && (
+                      <Button
+                        variant="secondary"
+                        onClick={() => completeEnrolment(application.id)}
+                        disabled={completingId === application.id}
+                      >
+                        {completingId === application.id ? 'Completing…' : 'Complete enrolment'}
+                      </Button>
+                    )}
                   <Dialog>
                     <DialogTrigger asChild>
                       <Button
@@ -618,6 +634,7 @@ export const AdmissionManagement = () => {
                       )}
                     </DialogContent>
                   </Dialog>
+                  </div>
                 </div>
               </CardContent>
             </Card>
