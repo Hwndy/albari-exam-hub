@@ -1258,9 +1258,12 @@ export type Database = {
           action: string
           actor_email: string | null
           actor_id: string | null
+          actor_name: string | null
+          actor_role: string | null
           after_data: Json | null
           before_data: Json | null
           created_at: string
+          domain: string | null
           id: string
           metadata: Json | null
           row_id: string | null
@@ -1270,9 +1273,12 @@ export type Database = {
           action: string
           actor_email?: string | null
           actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
           after_data?: Json | null
           before_data?: Json | null
           created_at?: string
+          domain?: string | null
           id?: string
           metadata?: Json | null
           row_id?: string | null
@@ -1282,9 +1288,12 @@ export type Database = {
           action?: string
           actor_email?: string | null
           actor_id?: string | null
+          actor_name?: string | null
+          actor_role?: string | null
           after_data?: Json | null
           before_data?: Json | null
           created_at?: string
+          domain?: string | null
           id?: string
           metadata?: Json | null
           row_id?: string | null
@@ -6197,6 +6206,45 @@ export type Database = {
         Args: { p_class_id?: string; p_end: string; p_start: string }
         Returns: Json
       }
+      get_audit_log_actors: {
+        Args: never
+        Returns: {
+          actor_email: string
+          actor_id: string
+          actor_name: string
+          actor_role: string
+          event_count: number
+        }[]
+      }
+      get_audit_logs: {
+        Args: {
+          p_action?: string
+          p_actor_id?: string
+          p_domain?: string
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_role?: string
+          p_search?: string
+          p_to?: string
+        }
+        Returns: {
+          action: string
+          actor_email: string
+          actor_id: string
+          actor_name: string
+          actor_role: string
+          after_data: Json
+          before_data: Json
+          created_at: string
+          domain: string
+          id: string
+          metadata: Json
+          row_id: string
+          table_name: string
+          total_count: number
+        }[]
+      }
       get_current_session: { Args: never; Returns: string }
       get_current_user_role: { Args: never; Returns: string }
       get_dashboard_overview: { Args: never; Returns: Json }
@@ -6333,6 +6381,7 @@ export type Database = {
         Args: { p_direction: string; p_token: string }
         Returns: Json
       }
+      redact_audit_json: { Args: { p_payload: Json }; Returns: Json }
       resolve_legacy_class: {
         Args: { _class_id: string }
         Returns: {
