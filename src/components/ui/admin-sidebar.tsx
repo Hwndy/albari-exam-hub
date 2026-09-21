@@ -338,8 +338,8 @@ export function AdminSidebar() {
                                   className={activeItemId === item.id ? "font-semibold text-sidebar-accent-foreground" : "text-sidebar-foreground/80"}
                                   onClick={() => {
                                     if (collapsed) {
-                                      const first = item.children![0];
-                                      go(first.tab, first.subtab);
+                                      const first = item.children?.[0];
+                                      if (first) go(first.tab, first.subtab);
                                     }
                                   }}
                                 >
@@ -411,10 +411,10 @@ export function AdminSidebar() {
         </TooltipProvider>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-3">
-        <button
+        <SidebarMenuButton
           type="button"
           onClick={() => void logout()}
-          className="flex w-full items-center gap-3 rounded-md p-2 text-left text-sidebar-foreground/80 transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          className="h-auto min-h-12 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
         >
           <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent font-heading text-xs font-bold text-sidebar-accent-foreground">
             {(user?.name || user?.email || 'A').slice(0, 1).toUpperCase()}
@@ -425,7 +425,7 @@ export function AdminSidebar() {
               <span className="block truncate text-[10px] uppercase text-sidebar-foreground/45">{user?.role || 'Admin'}</span>
             </span>
           )}
-        </button>
+        </SidebarMenuButton>
       </SidebarFooter>
     </Sidebar>
   );
