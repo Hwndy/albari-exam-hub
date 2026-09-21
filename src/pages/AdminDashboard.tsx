@@ -8,7 +8,7 @@ import { AdminSidebar } from '@/components/ui/admin-sidebar';
 import { findNavLocation } from '@/components/ui/admin-sidebar';
 import { Logo } from '@/components/shared/Logo';
 import { useAuth } from '@/contexts/AuthContext';
-import { Users, School, FileText, Shield, BookOpen, Clock, TrendingUp } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { UserManagement } from '@/components/admin/UserManagement';
 import { ClassManagement } from '@/components/admin/ClassManagement';
 import { SubjectManagement } from '@/components/admin/SubjectManagement';
@@ -214,31 +214,31 @@ export const AdminDashboard = () => {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background">
+      <div className="admin-shell flex min-h-screen w-full bg-background font-body">
         <AdminSidebar />
         <GlobalSearch />
         
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {/* Header */}
-          <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-            <div className="flex items-center justify-between gap-3 px-4 lg:px-6 h-14">
+          <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/90">
+            <div className="flex items-center justify-between gap-3 px-4 lg:px-8 h-16">
               <div className="flex items-center gap-3 min-w-0">
-                <SidebarTrigger />
-                <Logo size="sm" showText={false} className="hidden sm:flex shrink-0" />
+                <SidebarTrigger className="h-9 w-9 border border-border" />
                 <div className="min-w-0">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground truncate">
+                  <p className="text-[10px] uppercase font-bold text-muted-foreground truncate">
                     {breadcrumb.section}
                     {breadcrumb.group ? ` › ${breadcrumb.group}` : ''}
                   </p>
-                  <h1 className="text-base font-semibold leading-tight truncate">{breadcrumb.title}</h1>
+                  <h1 className="font-heading text-base font-semibold leading-tight truncate">{breadcrumb.title}</h1>
                 </div>
               </div>
               <div className="flex items-center gap-3 shrink-0">
-                <span className="hidden md:inline text-sm text-muted-foreground truncate max-w-[200px]">
-                  {user?.email}
-                </span>
-                <Button variant="outline" size="sm" onClick={logout}>
-                  Logout
+                <div className="hidden sm:block text-right max-w-[220px]">
+                  <p className="text-sm font-semibold truncate">{user?.name || 'Administrator'}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <Button variant="outline" size="icon" onClick={logout} aria-label="Log out" title="Log out">
+                  <LogOut className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -246,7 +246,7 @@ export const AdminDashboard = () => {
 
           {/* Main Content */}
           <main className="flex-1 overflow-auto">
-            <div className="container mx-auto p-4 lg:p-6 space-y-6">
+            <div className="mx-auto w-full max-w-[1600px] p-4 sm:p-6 lg:p-8 space-y-6">
               {/* Compact KPI row — only on Overview */}
 
               {/* Content */}

@@ -29,25 +29,25 @@
 
 @layer base {
   :root {
-    /* Core Brand Colors - Deep Academic Blues */
-    --background: 0 0% 100%;
-    --foreground: 210 22% 22%;
+    /* Al-Bari heritage palette */
+    --background: 120 14% 97%;
+    --foreground: 140 16% 11%;
     
     --card: 0 0% 100%;
-    --card-foreground: 210 22% 22%;
+    --card-foreground: 140 16% 11%;
     
     --popover: 0 0% 100%;
-    --popover-foreground: 210 22% 22%;
+    --popover-foreground: 140 16% 11%;
     
     /* Primary - ALBARI Brand Green */
-    --primary: 142 61% 30%;
-    --primary-hover: 142 61% 25%;
+    --primary: 148 53% 15%;
+    --primary-hover: 148 53% 12%;
     --primary-foreground: 0 0% 100%;
     
     /* Secondary - Light Academic Gray */
-    --secondary: 210 17% 95%;
-    --secondary-hover: 210 17% 90%;
-    --secondary-foreground: 210 22% 22%;
+    --secondary: 104 20% 93%;
+    --secondary-hover: 104 20% 88%;
+    --secondary-foreground: 148 53% 15%;
     
     /* Success - Academic Green */
     --success: 142 71% 45%;
@@ -62,24 +62,24 @@
     --destructive-foreground: 0 0% 100%;
     
     /* Muted - Subtle Text and Backgrounds */
-    --muted: 210 17% 97%;
-    --muted-foreground: 210 12% 55%;
+    --muted: 104 20% 95%;
+    --muted-foreground: 140 8% 43%;
     
     /* Accent - Interactive Elements */
-    --accent: 142 61% 96%;
-    --accent-foreground: 142 61% 25%;
+    --accent: 84 36% 90%;
+    --accent-foreground: 148 53% 15%;
 
     /* Lemon green accent for marketing surfaces (matches logo) */
-    --gold: 80 75% 50%;
+    --gold: 88 39% 47%;
     --gold-foreground: 142 61% 15%;
     --gold-soft: 80 75% 92%;
     
     /* Borders and Inputs */
-    --border: 210 20% 88%;
-    --input: 210 20% 88%;
-    --ring: 142 61% 30%;
+    --border: 120 10% 87%;
+    --input: 120 10% 84%;
+    --ring: 88 39% 47%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
     
     /* Gradients for Enhanced Visual Appeal */
     --gradient-primary: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-hover)));
@@ -95,21 +95,14 @@
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 148 53% 11%;
+    --sidebar-foreground: 105 18% 84%;
+    --sidebar-primary: 88 39% 47%;
+    --sidebar-primary-foreground: 148 53% 10%;
+    --sidebar-accent: 148 35% 19%;
+    --sidebar-accent-foreground: 88 49% 66%;
+    --sidebar-border: 148 27% 21%;
+    --sidebar-ring: 88 39% 47%;
   }
 
   .dark {
@@ -167,5 +160,16 @@
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Manrope', sans-serif;
   }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Sora', sans-serif;
+    letter-spacing: 0;
+  }
+}
+
+@layer utilities {
+  .font-heading { font-family: 'Sora', sans-serif; }
+  .font-body { font-family: 'Manrope', sans-serif; }
 }
