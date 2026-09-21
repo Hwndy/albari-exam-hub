@@ -32,6 +32,8 @@ export interface OverviewData {
   activity: { kind: string; at: string; title: string; detail: string }[];
 }
 
+interface RpcError { message: string }
+
 const naira = (n: number) => `₦${Math.round(Number(n) || 0).toLocaleString()}`;
 const FUNNEL_ORDER = ['submitted', 'under_review', 'interview_scheduled', 'accepted', 'payment_pending', 'enrolled', 'rejected', 'withdrawn'];
 const pretty = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
@@ -48,11 +50,12 @@ export const AdminOverview: React.FC = () => {
     if (quiet) setRefreshing(true);
     setError(null);
     try {
-      const { data: res, error: err } = await (supabase as any).rpc('get_dashboard_overview');
+      const callOverview = supabase.rpc as unknown as (name: string) => Promise<{ data: unknown; error: RpcError | null }>;
+      const { data: res, error: err } = await callOverview('get_dashboard_overview');
       if (err) throw err;
       setData(res as OverviewData);
-    } catch (e: any) {
-      setError(e.message || 'Could not load the dashboard');
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Could not load the dashboard');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -143,10 +146,10 @@ export const AdminOverview: React.FC = () => {
 
     <section className="grid gap-4 xl:grid-cols-12">
       <Card className="xl:col-span-7 overflow-hidden"><CardHeader className="flex-row items-center justify-between space-y-0 border-b p-5"><div><CardTitle className="text-base">Fee collection trend</CardTitle><p className="mt-1 text-xs text-muted-foreground">Payments received over the last six months</p></div><TrendingUp className="h-5 w-5 text-primary" /></CardHeader><CardContent className="h-72 p-4 pt-5">
-        {feeTrend.length === 0 ? <Empty text="No payments recorded yet." /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={feeTrend}><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} /><YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${Math.round(v / 1000)}k`} /><Tooltip contentStyle={chartTooltip} formatter={(v: any) => naira(v)} /><Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer>}
+        {feeTrend.length === 0 ? <Empty text="No payments recorded yet." /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={feeTrend}><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="label" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} /><YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${Math.round(v / 1000)}k`} /><Tooltip contentStyle={chartTooltip} formatter={v => naira(Number(v))} /><Bar dataKey="amount" fill="hsl(var(--primary))" radius={[4,4,0,0]} /></BarChart></ResponsiveContainer>}
       </CardContent></Card>
       <Card className="xl:col-span-5 overflow-hidden"><CardHeader className="flex-row items-center justify-between space-y-0 border-b p-5"><div><CardTitle className="text-base">Attendance pulse</CardTitle><p className="mt-1 text-xs text-muted-foreground">Present rate across recent school days</p></div><CalendarCheck className="h-5 w-5 text-primary" /></CardHeader><CardContent className="h-72 p-4 pt-5">
-        {attTrend.length === 0 ? <Empty text="No attendance recorded yet." /> : <ResponsiveContainer width="100%" height="100%"><LineChart data={attTrend}><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} /><YAxis domain={[0,100]} stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} /><Tooltip contentStyle={chartTooltip} formatter={(v: any) => `${v}%`} /><Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--gold))', strokeWidth: 0, r: 3 }} activeDot={{ r: 5 }} /></LineChart></ResponsiveContainer>}
+        {attTrend.length === 0 ? <Empty text="No attendance recorded yet." /> : <ResponsiveContainer width="100%" height="100%"><LineChart data={attTrend}><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="day" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} /><YAxis domain={[0,100]} stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} tickFormatter={v => `${v}%`} /><Tooltip contentStyle={chartTooltip} formatter={v => `${Number(v)}%`} /><Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={3} dot={{ fill: 'hsl(var(--gold))', strokeWidth: 0, r: 3 }} activeDot={{ r: 5 }} /></LineChart></ResponsiveContainer>}
       </CardContent></Card>
       <Card className="xl:col-span-7 overflow-hidden"><CardHeader className="border-b p-5"><CardTitle className="text-base">Students by class</CardTitle><p className="text-xs text-muted-foreground">Male and female enrolment distribution</p></CardHeader><CardContent className="h-72 p-4 pt-5">
         {levels.length === 0 ? <Empty text="No class placements yet." /> : <ResponsiveContainer width="100%" height="100%"><BarChart data={levels}><CartesianGrid vertical={false} strokeDasharray="3 3" stroke="hsl(var(--border))" /><XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={10} interval={0} angle={-25} textAnchor="end" height={58} tickLine={false} axisLine={false} /><YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} /><Tooltip contentStyle={chartTooltip} /><Legend iconType="circle" iconSize={8} /><Bar dataKey="Male" stackId="a" fill="hsl(var(--primary))" /><Bar dataKey="Female" stackId="a" fill="hsl(var(--gold))" radius={[3,3,0,0]} /></BarChart></ResponsiveContainer>}

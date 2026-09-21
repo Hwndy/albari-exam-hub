@@ -15,6 +15,7 @@ import {
   ClipboardList,
   Heart,
   ScanLine,
+  type LucideIcon,
 } from "lucide-react";
 import { BarChart3, Bus, Package, Briefcase, ServerCog, BedDouble } from "lucide-react";
 
@@ -48,7 +49,7 @@ export type NavLeaf = { title: string; tab: string; subtab?: string };
 export type NavItem = {
   id: string;
   title: string;
-  icon: any;
+  icon: LucideIcon;
   tab: string;
   subtab?: string;
   children?: NavLeaf[];
