@@ -15,12 +15,15 @@ import {
   ClipboardList,
   Heart,
   ScanLine,
+  type LucideIcon,
 } from "lucide-react";
 import { BarChart3, Bus, Package, Briefcase, ServerCog, BedDouble } from "lucide-react";
 
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -32,6 +35,8 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Logo } from "@/components/shared/Logo";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Tooltip,
   TooltipContent,
@@ -44,7 +49,7 @@ export type NavLeaf = { title: string; tab: string; subtab?: string };
 export type NavItem = {
   id: string;
   title: string;
-  icon: any;
+  icon: LucideIcon;
   tab: string;
   subtab?: string;
   children?: NavLeaf[];
@@ -270,6 +275,7 @@ export function AdminSidebar() {
   const currentTab = searchParams.get("tab") || "overview";
   const currentSubTab = searchParams.get("subtab");
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const active = findNavLocation(currentTab, currentSubTab);
   const activeItemId = active?.item.id;
@@ -299,16 +305,19 @@ export function AdminSidebar() {
     setOpenGroups((prev) => (prev.includes(id) ? prev.filter((g) => g !== id) : [...prev, id]));
 
   const activeClasses =
-    "bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-2 border-primary rounded-l-none";
+    "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-l-2 border-sidebar-primary rounded-l-none";
 
   return (
     <Sidebar collapsible="icon" className={collapsed ? "w-14" : "w-64"}>
-      <SidebarContent className="gap-0">
+      <SidebarHeader className="h-20 justify-center border-b border-sidebar-border px-4">
+        <Logo size="sm" showText={!collapsed} className="[&_span:first-of-type]:text-sidebar-accent-foreground [&_span:last-of-type]:text-sidebar-foreground/60" />
+      </SidebarHeader>
+      <SidebarContent className="gap-0 py-2">
         <TooltipProvider>
           {NAV_SECTIONS.map((section) => (
-            <SidebarGroup key={section.label} className="py-1">
+              <SidebarGroup key={section.label} className="py-1 px-2">
               {!collapsed && (
-                <SidebarGroupLabel className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                <SidebarGroupLabel className="text-[10px] uppercase font-bold text-sidebar-foreground/45">
                   {section.label}
                 </SidebarGroupLabel>
               )}
@@ -327,11 +336,11 @@ export function AdminSidebar() {
                               <CollapsibleTrigger asChild>
                                 <SidebarMenuButton
                                   size="sm"
-                                  className={activeItemId === item.id ? "font-medium" : ""}
+                                  className={activeItemId === item.id ? "font-semibold text-sidebar-accent-foreground" : "text-sidebar-foreground/80"}
                                   onClick={() => {
                                     if (collapsed) {
-                                      const first = item.children![0];
-                                      go(first.tab, first.subtab);
+                                      const first = item.children?.[0];
+                                      if (first) go(first.tab, first.subtab);
                                     }
                                   }}
                                 >
@@ -402,6 +411,23 @@ export function AdminSidebar() {
           ))}
         </TooltipProvider>
       </SidebarContent>
+      <SidebarFooter className="border-t border-sidebar-border p-3">
+        <SidebarMenuButton
+          type="button"
+          onClick={() => void logout()}
+          className="h-auto min-h-12 text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+        >
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-sidebar-accent font-heading text-xs font-bold text-sidebar-accent-foreground">
+            {(user?.name || user?.email || 'A').slice(0, 1).toUpperCase()}
+          </span>
+          {!collapsed && (
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-xs font-semibold">{user?.name || 'Administrator'}</span>
+              <span className="block truncate text-[10px] uppercase text-sidebar-foreground/45">{user?.role || 'Admin'}</span>
+            </span>
+          )}
+        </SidebarMenuButton>
+      </SidebarFooter>
     </Sidebar>
   );
 }
