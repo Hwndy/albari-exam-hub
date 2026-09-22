@@ -25,6 +25,18 @@ serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+    const { data: caller } = token ? await supabase.auth.getUser(token) : { data: null };
+    const { data: isAdmin } = caller?.user
+      ? await supabase.rpc('has_role', { _user_id: caller.user.id, _role: 'admin' })
+      : { data: false };
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ success: false, error: 'Administrator access required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { user_ids, title, body, url, data }: PushNotificationRequest = await req.json();
 
     console.log('Sending push notifications:', { user_ids, title });
@@ -96,10 +108,7 @@ serve(async (req: Request) => {
     // or implement the Web Push protocol manually
     for (const sub of subscriptions) {
       try {
-        // Placeholder for actual push notification sending
-        // This would use the subscription.subscription object with VAPID keys
-        console.log(`Would send push to user ${sub.user_id}:`, payload);
-        successCount++;
+        throw new Error('Web Push provider is not configured');
       } catch (pushError) {
         console.error(`Failed to send push to user ${sub.user_id}:`, pushError);
         failedCount++;
