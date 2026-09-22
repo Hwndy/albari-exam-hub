@@ -30,7 +30,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
-    role: 'student' as 'admin' | 'teacher' | 'student',
+    role: 'student' as 'admin' | 'teacher' | 'student' | 'parent',
     password: '',
     isActive: true,
     notes: '',
@@ -54,18 +54,20 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
     if (!user) return;
 
     try {
-      // Fetch user role from user_roles table
-      const { data: roleData, error: roleError } = await supabase
+      // Load every role and choose the same deterministic priority used by login and the user directory.
+      const { data: roleRows, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.user_id)
-        .single();
+        .limit(10);
 
       if (roleError) {
         console.error('Error fetching user role:', roleError);
       }
 
-      const userRole = roleData?.role || 'student';
+      const userRole = [...(roleRows ?? [])]
+        .map((row) => row.role)
+        .sort((a, b) => ({ admin: 0, teacher: 1, parent: 2, student: 3 }[a] ?? 99) - ({ admin: 0, teacher: 1, parent: 2, student: 3 }[b] ?? 99))[0] || user.role || 'student';
 
       // Fetch user assignments
       const { data: subjectAssignments } = await supabase
@@ -111,7 +113,7 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
       setFormData({
         full_name: user.full_name,
         email: '',
-        role: userRole as 'admin' | 'teacher' | 'student',
+        role: userRole as 'admin' | 'teacher' | 'student' | 'parent',
         password: '',
         isActive: true,
         notes: '',
@@ -154,13 +156,11 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
 
       if (profileError) throw profileError;
 
-      // Update role in user_roles table
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .update({ role: formData.role })
-        .eq('user_id', user.user_id);
-
+      const { data: roleData, error: roleError } = await supabase.functions.invoke('update-user-role', {
+        body: { userId: user.user_id, role: formData.role },
+      });
       if (roleError) throw roleError;
+      if (roleData?.error) throw new Error(roleData.message || roleData.error);
 
       // Update password if provided (via edge function for admin access)
       if (formData.password.trim()) {
@@ -305,7 +305,8 @@ export const UserEditModal: React.FC<UserEditModalProps> = ({
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="teacher">Teacher</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                   <SelectItem value="admin">Admin</SelectItem>
+                   <SelectItem value="parent">Parent / Guardian</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

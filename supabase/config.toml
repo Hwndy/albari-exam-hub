@@ -90,5 +90,8 @@ verify_jwt = true
 [functions.list-users]
 verify_jwt = true
 
+[functions.update-user-role]
+verify_jwt = true
+
 [functions.record-offline-acceptance-payment]
 verify_jwt = false
