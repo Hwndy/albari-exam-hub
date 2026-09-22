@@ -89,14 +89,48 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const normalizedEmail = email.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
+      return new Response(JSON.stringify({ error: 'Enter a valid email address' }), {
+        status: 400,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     // Initialize Supabase client
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
 
+    const { data: recentOtp } = await supabase
+      .from('password_reset_otps')
+      .select('created_at')
+      .eq('email', normalizedEmail)
+      .gte('created_at', new Date(Date.now() - 60 * 1000).toISOString())
+      .maybeSingle();
+    if (recentOtp) {
+      return new Response(JSON.stringify({ error: 'Please wait before requesting another code' }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
+    if (type === 'reset_password') {
+      const { data: users } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      const knownUser = users?.users?.some((u) => u.email?.toLowerCase() === normalizedEmail);
+      if (!knownUser) {
+        return new Response(JSON.stringify({ success: true, message: 'If the account exists, a code will be sent.' }), {
+          status: 200,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        });
+      }
+    }
+
     // Generate a 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const random = new Uint32Array(1);
+    crypto.getRandomValues(random);
+    const otp = String(100000 + (random[0] % 900000));
     
     // Store OTP in database with 10-minute expiration
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
@@ -104,7 +138,7 @@ const handler = async (req: Request): Promise<Response> => {
     const { error: dbError } = await supabase
       .from('password_reset_otps')
       .upsert({
-        email: email.toLowerCase(),
+        email: normalizedEmail,
         otp_code: otp,
         expires_at: expiresAt,
         used: false,

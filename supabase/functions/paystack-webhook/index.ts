@@ -39,7 +39,15 @@ serve(async (req) => {
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 
-    if (hash !== signature) {
+    const received = signature ?? '';
+    const hashBytes = new TextEncoder().encode(hash);
+    const receivedBytes = new TextEncoder().encode(received);
+    let signaturesMatch = hashBytes.length === receivedBytes.length;
+    const maxLength = Math.max(hashBytes.length, receivedBytes.length);
+    for (let i = 0; i < maxLength; i++) {
+      signaturesMatch = signaturesMatch && (hashBytes[i] ?? 0) === (receivedBytes[i] ?? 0);
+    }
+    if (!signaturesMatch) {
       console.error("Invalid signature");
       return new Response(
         JSON.stringify({ error: "Invalid signature" }),
@@ -48,6 +56,12 @@ serve(async (req) => {
     }
 
     const event = JSON.parse(body);
+    if (!event || typeof event.event !== 'string' || !event.data || typeof event.data !== 'object') {
+      return new Response(JSON.stringify({ error: 'Malformed webhook payload' }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     console.log("Webhook event received:", event.event);
 
     // Log webhook for debugging

@@ -11,6 +11,7 @@ interface VerifyOTPRequest {
   otp: string;
   newPassword?: string; // Required for password reset
   type: 'reset_password' | 'email_verification';
+  checkOnly?: boolean;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -20,7 +21,7 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { email, otp, newPassword, type }: VerifyOTPRequest = await req.json();
+    const { email, otp, newPassword, type, checkOnly }: VerifyOTPRequest = await req.json();
     
     if (!email || !otp || !type) {
       return new Response(
@@ -32,7 +33,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (type === 'reset_password' && !newPassword) {
+    if (type === 'reset_password' && !newPassword && !checkOnly) {
       return new Response(
         JSON.stringify({ error: 'New password is required for password reset' }),
         {
@@ -69,11 +70,19 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Mark OTP as used
+    if (checkOnly) {
+      return new Response(
+        JSON.stringify({ success: true, message: 'OTP is valid' }),
+        { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } },
+      );
+    }
+
+    // Mark OTP as used only after the password-reset request is submitted.
     const { error: updateError } = await supabase
       .from('password_reset_otps')
       .update({ used: true, updated_at: new Date().toISOString() })
-      .eq('id', otpRecord.id);
+      .eq('id', otpRecord.id)
+      .eq('used', false);
 
     if (updateError) {
       console.error('Failed to mark OTP as used:', updateError);

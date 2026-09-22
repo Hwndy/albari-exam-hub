@@ -91,8 +91,11 @@ export async function enrollApplicant(
   // Unambiguous temporary password (no 0/O/1/l/I).
   const alphabet = "abcdefghjkmnpqrstuvwxyz";
   const digits = "23456789";
-  const pick = (src: string, n: number) =>
-    Array.from({ length: n }, () => src[Math.floor(Math.random() * src.length)]).join("");
+  const pick = (src: string, n: number) => {
+    const random = new Uint32Array(n);
+    crypto.getRandomValues(random);
+    return Array.from(random, (value) => src[value % src.length]).join("");
+  };
   let password: string | null = `Alb${pick(alphabet, 5)}${pick(digits, 3)}`;
 
   let userId: string | null = null;
