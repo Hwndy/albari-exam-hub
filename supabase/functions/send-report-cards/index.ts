@@ -34,6 +34,10 @@ serve(async (req) => {
   try {
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
+    const { data: caller } = token ? await supabase.auth.getUser(token) : { data: null };
+    const { data: isAdmin } = caller?.user ? await supabase.rpc("has_role", { _user_id: caller.user.id, _role: "admin" }) : { data: false };
+    if (!isAdmin) return new Response(JSON.stringify({ error: "Administrator access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     const { student_ids, class_id, session_id, term } = (await req.json()) as Body;
 
     if (!Array.isArray(student_ids) || !student_ids.length || !class_id || !session_id || !term) {
