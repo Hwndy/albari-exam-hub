@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -76,6 +77,7 @@ serve(async (req: Request) => {
     
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admissions@albari.com.ng';
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       console.log('VAPID keys not configured - push notifications disabled');
@@ -89,6 +91,8 @@ serve(async (req: Request) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
     // Build the notification payload
     const payload = JSON.stringify({
@@ -108,7 +112,8 @@ serve(async (req: Request) => {
     // or implement the Web Push protocol manually
     for (const sub of subscriptions) {
       try {
-        throw new Error('Web Push provider is not configured');
+        await webpush.sendNotification(sub.subscription, payload);
+        successCount++;
       } catch (pushError) {
         console.error(`Failed to send push to user ${sub.user_id}:`, pushError);
         failedCount++;

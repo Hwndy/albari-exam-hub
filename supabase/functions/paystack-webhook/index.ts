@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { enrollApplicant } from "../_shared/enroll-applicant.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -106,139 +107,12 @@ serve(async (req) => {
           console.log("Application fee payment processed, status updated to under_review");
 
         } else if (payment.payment_type === "acceptance_fee") {
-          // Get application details for enrollment
-          const { data: application } = await supabase
-            .from("admission_applications")
-            .select("*")
-            .eq("id", payment.application_id)
-            .single();
-
-          if (application) {
-            // Generate admission number
-            const year = new Date().getFullYear();
-            const { count } = await supabase
-              .from("students")
-              .select("*", { count: "exact", head: true });
-            
-            const sequence = String((count || 0) + 1).padStart(4, "0");
-            const admissionNumber = `ALB/${year}/${sequence}`;
-
-            // Generate random password
-            const password = `Alb${Math.random().toString(36).slice(-8)}!`;
-
-            // Create user account
-            const { data: authUser, error: authError } = await supabase.auth.admin.createUser({
-              email: application.email,
-              password: password,
-              email_confirm: true,
-              user_metadata: {
-                full_name: `${application.first_name} ${application.last_name}`,
-              },
-            });
-
-            if (authError) {
-              console.error("Error creating user:", authError);
-              throw authError;
-            }
-
-            // Create user role
-            await supabase.from("user_roles").insert({
-              user_id: authUser.user.id,
-              role: "student",
-              created_by: authUser.user.id,
-            });
-
-            // Create student record
-            const { data: student, error: studentError } = await supabase
-              .from("students")
-              .insert({
-                user_id: authUser.user.id,
-                admission_number: admissionNumber,
-                date_of_birth: application.date_of_birth,
-                gender: application.gender,
-                blood_group: application.blood_group,
-                address: application.address,
-                emergency_contact: application.parent_guardian_info,
-                medical_info: {
-                  conditions: application.medical_conditions,
-                  allergies: application.allergies,
-                },
-                admission_date: new Date().toISOString().split("T")[0],
-                status: "active",
-                is_boarder: application.boarding_interest ?? false,
-              })
-              .select()
-              .single();
-
-            if (studentError) {
-              console.error("Error creating student:", studentError);
-              throw studentError;
-            }
-
-            // Credit the acceptance fee towards the student's school fees.
-            const acceptanceAmount = Number(payment.amount ?? 0);
-            if (Number.isFinite(acceptanceAmount) && acceptanceAmount > 0) {
-              const { data: existingCredit } = await supabase
-                .from("fee_payments")
-                .select("id")
-                .eq("transaction_id", reference)
-                .maybeSingle();
-              if (existingCredit) {
-                console.log("Acceptance fee already credited for", reference);
-              } else {
-              const { error: creditError } = await supabase.from("fee_payments").insert({
-                student_id: student.id,
-                amount_paid: acceptanceAmount,
-                payment_method: channel || "paystack",
-                transaction_id: reference,
-                payment_reference: reference,
-                status: "completed",
-                paid_at: new Date().toISOString(),
-                notes: "Acceptance fee credited towards school fees",
-                metadata: { source: "acceptance_fee", application_id: payment.application_id },
-              });
-              if (creditError) {
-                console.error("Error crediting acceptance fee:", creditError);
-              }
-              }
-            }
-
-            // Assign to class (class_assignments.student_id references profiles.user_id)
-            if (application.admitted_to_class_id) {
-              await supabase.from("class_assignments").insert({
-                student_id: authUser.user.id,
-                class_id: application.admitted_to_class_id,
-              });
-            }
-
-            // Update application with student ID and status
-            await supabase
-              .from("admission_applications")
-              .update({
-                status: "enrolled",
-                student_id: student.id,
-              })
-              .eq("id", payment.application_id);
-
-            // Send welcome email
-            try {
-              await supabase.functions.invoke("send-admission-notification", {
-                body: {
-                  application_id: payment.application_id,
-                  notification_type: "enrolled",
-                  additional_data: {
-                    admission_number: admissionNumber,
-                    login_email: application.email,
-                    temporary_password: password,
-                  },
-                },
-              });
-            } catch (emailError) {
-              console.error("Error sending welcome email:", emailError);
-            }
-
-            console.log("Student enrolled successfully:", admissionNumber);
-          }
+          const enrollment = await enrollApplicant(supabase, payment.application_id, {
+            amount: Number(payment.amount ?? amount / 100),
+            method: channel || "paystack",
+            reference,
+          });
+          console.log("Student enrollment completed:", enrollment.admission_number);
         }
 
         // Mark webhook as processed
