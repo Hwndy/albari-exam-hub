@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Plus, Edit, Trash2, Search, Download } from 'lucide-react';
+import { Plus, Edit, Trash2, Search, Download, Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -22,6 +22,7 @@ export const UserManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<string>('all');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [exporting, setExporting] = useState(false);
   const { toast } = useToast();
 
@@ -49,54 +50,58 @@ export const UserManagement = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
 
-      const { data: profilesData } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const { data: directoryData, error: directoryError } = await supabase.functions.invoke('list-users');
+      if (directoryError) {
+        let message = directoryError.message;
+        try {
+          const body = await (directoryError as any).context?.json?.();
+          if (body?.message) message = body.message;
+        } catch {
+          // Keep the function error when the response body is unavailable.
+        }
+        throw new Error(message || 'Could not load users.');
+      }
+      if (!directoryData || !Array.isArray(directoryData.users)) {
+        throw new Error(directoryData?.message || 'The user directory returned an invalid response.');
+      }
 
-      // Fetch user roles for the filtered profiles
-      const profileUserIds = profilesData?.map(p => p.user_id) || [];
-      const { data: rolesData } = profileUserIds.length > 0
-        ? await supabase.from('user_roles').select('user_id, role').in('user_id', profileUserIds)
-        : await Promise.resolve({ data: [] });
+      const [{ data: classesData, error: classesError }, { data: subjectsData, error: subjectsError }] = await Promise.all([
+        supabase.from('classes').select('*').order('name'),
+        supabase.from('subjects').select('*').order('name'),
+      ]);
+      if (classesError) throw classesError;
+      if (subjectsError) throw subjectsError;
 
-      // Combine profiles with roles
-      const profilesWithRoles = profilesData?.map(profile => {
-        const roleEntry = rolesData?.find(r => r.user_id === profile.user_id);
-        return {
-          ...profile,
-          role: roleEntry?.role || 'student'
-        };
-      }) || [];
+      const { data: studentRows, error: studentsError } = await supabase
+        .from('students')
+        .select('id,user_id,admission_number')
+        .is('archived_at', null)
+        .order('admission_number');
+      if (studentsError) throw studentsError;
 
-      // Fetch classes and subjects filtered by school using withSchoolFilter
-      const { data: classesData } = await 
-        supabase.from('classes').select('*').order('name')
-      ;
-
-      const { data: subjectsData } = await 
-        supabase.from('subjects').select('*').order('name')
-      ;
-
-      const { data: studentRows } = await supabase.from('students').select('id,user_id,admission_number').is('archived_at', null).order('admission_number');
       const studentUserIds = (studentRows || []).map((student) => student.user_id).filter(Boolean);
-      const { data: studentProfiles } = studentUserIds.length
+      const { data: studentProfiles, error: studentProfilesError } = studentUserIds.length
         ? await supabase.from('profiles').select('user_id,full_name').in('user_id', studentUserIds)
         : { data: [] as Array<{ user_id: string; full_name: string }> };
+      if (studentProfilesError) throw studentProfilesError;
 
-      setProfiles(profilesWithRoles);
-      if (classesData) setClasses(classesData);
-      if (subjectsData) setSubjects(subjectsData);
+      setProfiles(directoryData.users as Profile[]);
+      setClasses(classesData || []);
+      setSubjects(subjectsData || []);
       setStudents((studentRows || []).map((student) => ({
         id: student.id,
         admission_number: student.admission_number,
         full_name: studentProfiles?.find((profile) => profile.user_id === student.user_id)?.full_name || student.admission_number || 'Student',
       })));
     } catch (error: any) {
+      const message = error?.message || 'Failed to load the user directory.';
+      setLoadError(message);
+      setProfiles([]);
       toast({
         title: 'Error',
-        description: 'Failed to fetch data',
+        description: message,
         variant: 'destructive',
       });
     } finally {
@@ -316,7 +321,14 @@ export const UserManagement = () => {
   };
 
   const filteredProfiles = profiles.filter(profile => {
-    const matchesSearch = profile.full_name.toLowerCase().includes(searchTerm.toLowerCase());
+    const query = searchTerm.trim().toLowerCase();
+    const matchesSearch = [
+      profile.full_name,
+      profile.email,
+      profile.admission_number,
+      profile.employee_id,
+      profile.class_name,
+    ].some((value) => value?.toLowerCase().includes(query));
     const matchesRole = filterRole === 'all' || profile.role === filterRole;
     return matchesSearch && matchesRole;
   });
@@ -442,8 +454,8 @@ export const UserManagement = () => {
         <div className="flex flex-col sm:flex-row gap-2">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search users..."
+           <Input
+               placeholder="Search name, email, admission or employee ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -679,7 +691,26 @@ export const UserManagement = () => {
           <CardTitle>Users ({filteredProfiles.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
+          {loading ? (
+            <div className="flex items-center justify-center gap-2 py-12 text-muted-foreground">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              Loading users...
+            </div>
+          ) : loadError ? (
+            <div className="flex flex-col items-center justify-center gap-3 py-12 text-center">
+              <AlertCircle className="h-8 w-8 text-destructive" />
+              <p className="font-medium">The user list could not be loaded.</p>
+              <p className="max-w-md text-sm text-muted-foreground">{loadError}</p>
+              <Button variant="outline" onClick={fetchData}>
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Try again
+              </Button>
+            </div>
+          ) : filteredProfiles.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              {profiles.length === 0 ? 'No accounts found.' : 'No users match your search or role filter.'}
+            </div>
+          ) : <div className="space-y-4">
             {filteredProfiles.map((profile) => (
               <div
                 key={profile.id}
@@ -699,10 +730,18 @@ export const UserManagement = () => {
                     >
                       {profile.role}
                     </Badge>
+                    {profile.email && <span className="text-sm text-muted-foreground">{profile.email}</span>}
                     <span className="text-sm text-muted-foreground">
                       Created: {new Date(profile.created_at).toLocaleDateString()}
                     </span>
                   </div>
+                  {(profile.admission_number || profile.employee_id || profile.class_name) && (
+                    <div className="text-xs text-muted-foreground">
+                      {profile.admission_number && `Admission: ${profile.admission_number}`}
+                      {profile.employee_id && `Employee: ${profile.employee_id}`}
+                      {profile.class_name && `Class: ${profile.class_name}`}
+                    </div>
+                  )}
                 </div>
                 <div className="flex space-x-2">
                   <Button
@@ -722,7 +761,7 @@ export const UserManagement = () => {
                 </div>
               </div>
             ))}
-          </div>
+          </div>}
         </CardContent>
       </Card>
 
