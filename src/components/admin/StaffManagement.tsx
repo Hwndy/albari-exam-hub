@@ -104,6 +104,12 @@ export const StaffManagement = () => {
       role: "teacher",
     });
 
+  const openAddDialog = () => {
+    resetForm();
+    setAddMode("new");
+    setShowAddDialog(true);
+  };
+
   useEffect(() => {
     fetchStaffMembers();
     fetchTeachers();

@@ -14,8 +14,8 @@ export const PastStudents: React.FC = () => {
 
   const load = async () => {
     setLoading(true);
-    const { data: studs } = await 
-      supabase.from('students').select('id,user_id,registration_number,archived_at,archived_reason').not('archived_at', 'is', null)
+      const { data: studs } = await 
+       supabase.from('students').select('id,user_id,registration_number,archived_at,archived_reason,status').not('archived_at', 'is', null)
     ;
     const uids = (studs || []).map((s: any) => s.user_id);
     const nameMap = new Map<string, string>();
