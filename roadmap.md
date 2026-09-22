@@ -9,3 +9,5 @@
 - [x] Run public-route smoke checks and targeted validation; authenticated verification awaits a preview login.
 - [x] Add secure, searchable administrator audit log coverage and System navigation.
 - [ ] Verify the authenticated audit log with a signed-in administrator session.
+- [x] Harden teacher/admin provisioning and verify exact roles after account creation.
+- [x] Replace the admin user list with a paginated server-side directory including auth-only accounts.
