@@ -1,8 +1,6 @@
 import { supabase } from '@/integrations/supabase/client';
 
-// VAPID public key would be stored in environment/config
-// For now, we'll use a placeholder approach
-const VAPID_PUBLIC_KEY = '';
+const VAPID_PUBLIC_KEY = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
@@ -39,7 +37,6 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
 
 export async function subscribeToPushNotifications(
   userId: string,
-  undefined?: string
 ): Promise<boolean> {
   try {
     const permission = await requestNotificationPermission();
@@ -53,12 +50,17 @@ export async function subscribeToPushNotifications(
       return false;
     }
 
+    if (!VAPID_PUBLIC_KEY) {
+      console.error('Push notifications are not configured: VITE_VAPID_PUBLIC_KEY is missing');
+      return false;
+    }
+
     const registration = await navigator.serviceWorker.ready;
 
     // Check if already subscribed
     let subscription = await registration.pushManager.getSubscription();
 
-    if (!subscription && VAPID_PUBLIC_KEY) {
+    if (!subscription) {
       // Subscribe to push notifications
       const applicationServerKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       subscription = await registration.pushManager.subscribe({
@@ -68,9 +70,8 @@ export async function subscribeToPushNotifications(
     }
 
     if (!subscription) {
-      console.log('Could not create push subscription (VAPID key may not be configured)');
-      // Still return true to indicate the user opted in - we can use in-app notifications
-      return true;
+      console.error('Could not create push subscription');
+      return false;
     }
 
     // Save subscription to Supabase using raw insert with explicit typing

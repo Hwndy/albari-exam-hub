@@ -11,7 +11,6 @@ const SUPABASE_ANON =
 interface Entry { path: string; lastmod?: string; changefreq?: string; priority?: string; }
 
 const staticEntries: Entry[] = [
-  { path: '/', changefreq: 'weekly', priority: '1.0' },
   { path: '/website', changefreq: 'weekly', priority: '1.0' },
   { path: '/website/about', changefreq: 'monthly', priority: '0.8' },
   { path: '/website/school-life', changefreq: 'monthly', priority: '0.7' },
@@ -23,6 +22,7 @@ const staticEntries: Entry[] = [
   { path: '/website/gallery', changefreq: 'weekly', priority: '0.6' },
   { path: '/website/testimonials', changefreq: 'monthly', priority: '0.5' },
   { path: '/website/portals', changefreq: 'yearly', priority: '0.4' },
+  { path: '/website/careers', changefreq: 'monthly', priority: '0.5' },
 ];
 
 async function fetchNews(): Promise<Entry[]> {
