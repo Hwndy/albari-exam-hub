@@ -222,6 +222,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     phone?: string;
   }) => {
     setIsLoading(true);
+
+    // Teacher and admin accounts must be provisioned through the protected
+    // server paths so the signup trigger cannot leave them as students.
+    if (userData.role === 'teacher' || userData.role === 'admin') {
+      setIsLoading(false);
+      throw new Error('Staff accounts must be created through the school staff registration or admin user screen.');
+    }
     
     const { data, error } = await supabase.auth.signUp({
       email: userData.email,

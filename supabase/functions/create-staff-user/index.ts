@@ -130,6 +130,16 @@ Deno.serve(async (req) => {
       .upsert({ user_id: userId, role, created_by: userData.user.id }, { onConflict: 'user_id,role' });
     if (roleError) return await rollback(roleError.message, 'role_failed');
 
+    const { data: storedRoles, error: storedRoleError } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    if (storedRoleError) return await rollback(storedRoleError.message, 'role_verification_failed');
+    const finalRoles = (storedRoles ?? []).map((row) => row.role);
+    if (finalRoles.length !== 1 || finalRoles[0] !== role) {
+      return await rollback('The requested role could not be saved exactly.', 'role_verification_failed');
+    }
+
     // ---- profile ---------------------------------------------------------
     const { error: profileError } = await admin
       .from('profiles')
