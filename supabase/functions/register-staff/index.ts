@@ -99,19 +99,42 @@ Deno.serve(async (req) => {
       return json({ error: 'role_failed', message: roleError.message }, 500);
     }
 
-    await admin.from('profiles').upsert({ user_id: userId, full_name: fullName }, { onConflict: 'user_id' });
+    const { error: profileError } = await admin
+      .from('profiles')
+      .upsert({ user_id: userId, full_name: fullName }, { onConflict: 'user_id' });
+    if (profileError) {
+      await admin.auth.admin.deleteUser(userId);
+      return json({ error: 'profile_failed', message: profileError.message }, 500);
+    }
+
+    const { data: storedRoles, error: storedRoleError } = await admin
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+    if (storedRoleError || storedRoles?.length !== 1 || storedRoles[0]?.role !== 'teacher') {
+      await admin.auth.admin.deleteUser(userId);
+      return json({ error: 'role_verification_failed', message: storedRoleError?.message || 'Teacher role could not be verified.' }, 500);
+    }
 
     if (classIds.length) {
-      await admin
+      const { error: classError } = await admin
         .from('teacher_class_assignments')
         .upsert(classIds.map((class_id) => ({ teacher_id: userId, class_id })), { onConflict: 'teacher_id,class_id' });
+      if (classError) {
+        await admin.auth.admin.deleteUser(userId);
+        return json({ error: 'class_assignment_failed', message: classError.message }, 500);
+      }
     }
 
     const subjectRows = subjectIds.flatMap((subject_id) =>
       classIds.map((class_id) => ({ user_id: userId, subject_id, class_id })),
     );
     if (subjectRows.length) {
-      await admin.from('subject_assignments').insert(subjectRows);
+      const { error: subjectError } = await admin.from('subject_assignments').insert(subjectRows);
+      if (subjectError) {
+        await admin.auth.admin.deleteUser(userId);
+        return json({ error: 'subject_assignment_failed', message: subjectError.message }, 500);
+      }
     }
 
     return json({ success: true, user_id: userId });

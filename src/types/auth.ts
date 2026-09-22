@@ -15,6 +15,16 @@ export interface Profile {
   role: string;
   created_at: string;
   updated_at: string;
+  email?: string;
+  roles?: string[];
+  admission_number?: string;
+  employee_id?: string;
+  class_name?: string;
+  phone?: string;
+  department?: string;
+  designation?: string;
+  status?: string;
+  archived?: boolean;
 }
 
 export interface Class {

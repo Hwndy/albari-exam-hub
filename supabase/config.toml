@@ -85,7 +85,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.create-staff-user]
-verify_jwt = false
+verify_jwt = true
+
+[functions.list-users]
+verify_jwt = true
 
 [functions.record-offline-acceptance-payment]
 verify_jwt = false
