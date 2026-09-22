@@ -61,11 +61,12 @@ export async function buildUserDirectory(admin: SupabaseAdmin): Promise<Director
     page += 1;
   }
 
-  const [profiles, roles, classAssignments, teacherClassAssignments, students, staff, parents] = await Promise.all([
+  const [profiles, roles, classAssignments, teacherClassAssignments, classes, students, staff, parents] = await Promise.all([
     fetchAll(admin, 'profiles', 'id, user_id, full_name, created_at'),
     fetchAll(admin, 'user_roles', 'user_id, role'),
-    fetchAll(admin, 'class_assignments', 'student_id, class_id, classes(name)'),
-    fetchAll(admin, 'teacher_class_assignments', 'teacher_id, class_id, classes(name)'),
+    fetchAll(admin, 'class_assignments', 'student_id, class_id'),
+    fetchAll(admin, 'teacher_class_assignments', 'teacher_id, class_id'),
+    fetchAll(admin, 'classes', 'id, name'),
     fetchAll(admin, 'students', 'user_id, admission_number, gender, date_of_birth, section, status, is_boarder, archived_at'),
     fetchAll(admin, 'staff_details', 'user_id, employee_id, department, designation, phone, employment_type, status'),
     fetchAll(admin, 'parents', 'user_id, phone_primary'),
@@ -81,15 +82,16 @@ export async function buildUserDirectory(admin: SupabaseAdmin): Promise<Director
   const roleForUser = (userId: string) =>
     (rolesByUser.get(userId) ?? []).sort((a, b) => (ROLE_PRIORITY[a] ?? 99) - (ROLE_PRIORITY[b] ?? 99))[0] ?? 'unassigned';
 
+  const classNameMap = new Map(classes.map((row) => [row.id, row.name]));
   const studentClassMap = new Map<string, string[]>();
   for (const row of classAssignments) {
-    const name = relationName(row.classes);
+    const name = classNameMap.get(row.class_id);
     if (!name) continue;
     studentClassMap.set(row.student_id, [...(studentClassMap.get(row.student_id) ?? []), name]);
   }
   const teacherClassMap = new Map<string, string[]>();
   for (const row of teacherClassAssignments) {
-    const name = relationName(row.classes);
+    const name = classNameMap.get(row.class_id);
     if (!name) continue;
     teacherClassMap.set(row.teacher_id, [...(teacherClassMap.get(row.teacher_id) ?? []), name]);
   }
