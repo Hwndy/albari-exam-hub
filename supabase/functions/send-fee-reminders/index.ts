@@ -13,10 +13,18 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const token = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!token) {
+      return new Response(JSON.stringify({ error: "Not signed in" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const { data: caller } = await supabase.auth.getUser(token);
+    const { data: isAdmin } = caller?.user ? await supabase.rpc("has_role", { _user_id: caller.user.id, _role: "admin" }) : { data: false };
+    if (!isAdmin) return new Response(JSON.stringify({ error: "Administrator access required" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const { reminder_days = [7, 3, 1] } = await req.json();
 

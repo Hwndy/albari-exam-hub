@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,6 +25,18 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const token = (req.headers.get('Authorization') ?? '').replace(/^Bearer\s+/i, '').trim();
+    const { data: caller } = token ? await supabase.auth.getUser(token) : { data: null };
+    const { data: isAdmin } = caller?.user
+      ? await supabase.rpc('has_role', { _user_id: caller.user.id, _role: 'admin' })
+      : { data: false };
+    if (!isAdmin) {
+      return new Response(JSON.stringify({ success: false, error: 'Administrator access required' }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     const { user_ids, title, body, url, data }: PushNotificationRequest = await req.json();
 
@@ -64,6 +77,7 @@ serve(async (req: Request) => {
     
     const vapidPublicKey = Deno.env.get('VAPID_PUBLIC_KEY');
     const vapidPrivateKey = Deno.env.get('VAPID_PRIVATE_KEY');
+    const vapidSubject = Deno.env.get('VAPID_SUBJECT') || 'mailto:admissions@albari.com.ng';
 
     if (!vapidPublicKey || !vapidPrivateKey) {
       console.log('VAPID keys not configured - push notifications disabled');
@@ -77,6 +91,8 @@ serve(async (req: Request) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    webpush.setVapidDetails(vapidSubject, vapidPublicKey, vapidPrivateKey);
 
     // Build the notification payload
     const payload = JSON.stringify({
@@ -96,9 +112,7 @@ serve(async (req: Request) => {
     // or implement the Web Push protocol manually
     for (const sub of subscriptions) {
       try {
-        // Placeholder for actual push notification sending
-        // This would use the subscription.subscription object with VAPID keys
-        console.log(`Would send push to user ${sub.user_id}:`, payload);
+        await webpush.sendNotification(sub.subscription, payload);
         successCount++;
       } catch (pushError) {
         console.error(`Failed to send push to user ${sub.user_id}:`, pushError);

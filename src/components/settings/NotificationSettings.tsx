@@ -69,7 +69,7 @@ export const NotificationSettings: React.FC = () => {
           return;
         }
 
-        const success = await subscribeToPushNotifications(user.id, undefined);
+        const success = await subscribeToPushNotifications(user.id);
         if (success) {
           setIsSubscribed(true);
           toast.success('Notifications enabled');

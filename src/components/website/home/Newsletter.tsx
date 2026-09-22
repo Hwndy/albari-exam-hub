@@ -3,18 +3,24 @@ import { Mail, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useWebsiteSettings, settingValue } from '@/hooks/useCms';
+import { supabase } from '@/integrations/supabase/client';
 
 export const Newsletter: React.FC = () => {
   const { settings } = useWebsiteSettings();
   const enabled = settingValue<boolean>(settings, 'newsletter_enabled', true);
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   if (!enabled) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setSubmitted(true);
+    setIsSubmitting(true);
+    const { error } = await (supabase.from('newsletter_subscribers') as any)
+      .upsert({ email: email.trim().toLowerCase(), source: 'homepage' }, { onConflict: 'email' });
+    setIsSubmitting(false);
+    if (!error) setSubmitted(true);
   };
 
   return (
@@ -57,6 +63,7 @@ export const Newsletter: React.FC = () => {
               <Button
                 type="submit"
                 size="lg"
+                disabled={isSubmitting}
                 className="bg-gold text-gold-foreground hover:bg-gold/90 font-semibold shadow-lg"
               >
                 Subscribe

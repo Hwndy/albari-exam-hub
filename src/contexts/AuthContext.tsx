@@ -23,6 +23,19 @@ interface AuthContextType extends AuthState {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const ROLE_PRIORITY: Record<string, number> = {
+  admin: 0,
+  teacher: 1,
+  parent: 2,
+  student: 3,
+};
+
+function preferredRole(rows: Array<{ role: string }> | null | undefined) {
+  return [...(rows ?? [])].sort(
+    (a, b) => (ROLE_PRIORITY[a.role] ?? 99) - (ROLE_PRIORITY[b.role] ?? 99),
+  )[0] ?? null;
+}
+
 export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -95,7 +108,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 .select('role')
                 .eq('user_id', session.user.id)
                 .limit(5);
-              const roleData = roleRows?.[0] ?? null;
+              const roleData = preferredRole(roleRows);
               
               if (!mounted) return;
               
@@ -180,7 +193,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       .select('role')
       .eq('user_id', data.user.id)
       .limit(5);
-    if (roleError || !roles?.[0]?.role) {
+    if (roleError || !preferredRole(roles)?.role) {
       await supabase.auth.signOut();
       setIsLoading(false);
       throw new Error('Your account setup is incomplete. Please contact the school administrator.');

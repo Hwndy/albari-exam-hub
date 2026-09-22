@@ -10,6 +10,14 @@ const corsHeaders = {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    const expectedSecret = Deno.env.get("NOTIFY_ABSENTEES_SECRET")?.trim();
+    const suppliedSecret = req.headers.get("x-cron-secret")?.trim();
+    if (!expectedSecret || suppliedSecret !== expectedSecret) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const today = new Date().toISOString().slice(0, 10);
