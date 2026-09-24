@@ -6378,6 +6378,7 @@ export type Database = {
         Args: { p_assignment_id: string; p_kind: string }
         Returns: undefined
       }
+      merge_classes: { Args: { _from: string; _to: string }; Returns: number }
       next_admission_number: { Args: never; Returns: string }
       next_employee_id: { Args: never; Returns: string }
       parse_legacy_class: { Args: { _name: string }; Returns: Json }
