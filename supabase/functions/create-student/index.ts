@@ -68,13 +68,58 @@ serve(async (req) => {
       let errorMessage = createError.message || 'Failed to create student';
       let errorCode = createError.code || 'unknown_error';
       
-      if (createError.message?.includes('User already registered') || 
-          createError.message?.includes('already exists') ||
-          errorCode === '23505') {
-        errorMessage = 'This email address is already registered';
-        errorCode = 'email_exists';
+      if (errorCode === 'email_exists' || createError.message?.includes('already been registered') ||
+          createError.message?.includes('User already registered') ||
+          createError.message?.includes('already exists') || errorCode === '23505') {
+        // Look up who owns this email so the admin sees a useful message
+        let existing: Record<string, unknown> | null = null;
+        try {
+          let page = 1;
+          let found: any = null;
+          while (!found && page <= 20) {
+            const { data } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
+            const users = data?.users ?? [];
+            found = users.find((u: any) => (u.email ?? '').toLowerCase() === String(email).toLowerCase());
+            if (users.length < 1000) break;
+            page++;
+          }
+          if (found) {
+            const [{ data: prof }, { data: stu }, { data: ca }, { data: roles }] = await Promise.all([
+              supabaseAdmin.from('profiles').select('full_name').eq('user_id', found.id).maybeSingle(),
+              supabaseAdmin.from('students').select('id, admission_number, status').eq('user_id', found.id).maybeSingle(),
+              supabaseAdmin.from('class_assignments').select('class_id').eq('student_id', found.id),
+              supabaseAdmin.from('user_roles').select('role').eq('user_id', found.id),
+            ]);
+            let className: string | null = null;
+            const classIds = (ca ?? []).map((r: any) => r.class_id);
+            if (classIds.length) {
+              const { data: cls } = await supabaseAdmin.from('classes').select('name').in('id', classIds);
+              className = (cls ?? []).map((c: any) => c.name).join(', ') || null;
+            }
+            existing = {
+              user_id: found.id,
+              student_id: stu?.id ?? null,
+              full_name: prof?.full_name || found.user_metadata?.full_name || found.email,
+              admission_number: stu?.admission_number ?? null,
+              status: stu?.status ?? null,
+              class_name: className,
+              roles: (roles ?? []).map((r: any) => r.role),
+            };
+          }
+        } catch (lookupErr) {
+          console.error('existing lookup failed', lookupErr);
+        }
+        const who = existing
+          ? `${existing.full_name}${existing.admission_number ? ` (${existing.admission_number}${existing.class_name ? `, ${existing.class_name}` : ''})` : ''}`
+          : 'another account';
+        return new Response(JSON.stringify({
+          error: `This email already belongs to ${who}.`,
+          code: 'email_exists',
+          existing,
+        }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
       }
-      
+
+      if (/password/i.test(errorMessage)) errorMessage = `Password problem: ${errorMessage}`;
       return new Response(JSON.stringify({ 
         error: errorMessage,
         code: errorCode,

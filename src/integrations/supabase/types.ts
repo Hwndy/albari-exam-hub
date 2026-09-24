@@ -6102,6 +6102,7 @@ export type Database = {
         Args: { p_acceptance_token: string; p_decision: string }
         Returns: Json
       }
+      admin_delete_applications: { Args: { _ids: string[] }; Returns: number }
       admin_link_parent_to_student: {
         Args: {
           p_parent_user_id: string
