@@ -348,6 +348,26 @@ export const PromotionPanel: React.FC = () => {
               <RotateCcw className="h-4 w-4 mr-2" />Keep unselected in current class
             </Button>
           </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-t pt-4 text-sm">
+            <label className="flex items-center gap-2 text-muted-foreground">
+              <Checkbox checked={showEmpty} onCheckedChange={(v) => setShowEmpty(!!v)} />
+              Show empty classes
+            </label>
+            {classId && (
+              <>
+                <span className="text-muted-foreground">Duplicate class? Merge {className(classId)} into</span>
+                <Select value={mergeTo} onValueChange={setMergeTo}>
+                  <SelectTrigger className="w-48"><SelectValue placeholder="Choose class" /></SelectTrigger>
+                  <SelectContent>{classes.filter(c => c.id !== classId).map(c => <SelectItem key={c.id} value={c.id}>{classLabel(c)}</SelectItem>)}</SelectContent>
+                </Select>
+                <Button size="sm" variant="outline" disabled={!mergeTo || working}
+                  onClick={() => { if (window.confirm(`Move everyone in ${className(classId)} into ${className(mergeTo)}? This cannot be undone.`)) void runMerge(); }}>
+                  Merge
+                </Button>
+              </>
+            )}
+          </div>
         </CardContent>
       </Card>
 
