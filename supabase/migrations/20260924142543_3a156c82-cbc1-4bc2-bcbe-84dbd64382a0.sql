@@ -1,0 +1,1 @@
+REVOKE ALL ON FUNCTION public.students_auto_admission_number() FROM PUBLIC, anon, authenticated;
