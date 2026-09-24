@@ -81,6 +81,8 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
 
   const [addOpen, setAddOpen] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [existingMatch, setExistingMatch] = useState<any | null>(null);
+  useEffect(() => { if (!addOpen) setExistingMatch(null); }, [addOpen]);
   const [addForm, setAddForm] = useState({
     fullName: '', email: '', password: '', admissionNumber: '',
     gender: '', campusId: '', armId: '', boarding: 'day',
@@ -253,7 +255,48 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
       setAddForm({ fullName: '', email: '', password: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
       await fetchRows();
     } catch (e: any) {
-      toast({ title: 'Could not add student', description: e.message, variant: 'destructive' });
+      const { readEdgeError } = await import('@/lib/edge-error');
+      const { message, body } = await readEdgeError(e);
+      if (body?.code === 'email_exists' && body.existing) setExistingMatch(body.existing);
+      toast({ title: 'Could not add student', description: message, variant: 'destructive' });
+    } finally { setCreating(false); }
+  };
+
+  const handleMoveExisting = async () => {
+    if (!existingMatch?.student_id) return;
+    setCreating(true);
+    try {
+      const arm = arms.find(a => a.id === addForm.armId);
+      const campusId = addForm.campusId;
+      const legacyClassId = arm?.legacy_class_id
+        || (await supabase.from('class_structure_map').select('legacy_class_id')
+              .eq('campus_code', campuses.find(c => c.id === campusId)?.code || 'MAIN')
+              .eq('level_name', levelName).maybeSingle()).data?.legacy_class_id
+        || null;
+      if (!campusId) throw new Error('Pick a campus first.');
+      await supabase.from('student_enrollments').update({ status: 'transferred' } as any)
+        .eq('student_id', existingMatch.student_id).eq('status', 'active');
+      const { error: enrErr } = await supabase.from('student_enrollments').insert({
+        student_id: existingMatch.student_id, campus_id: campusId, class_level_id: levelId,
+        arm_id: addForm.armId || null, legacy_class_id: legacyClassId,
+        student_type: 'returning', boarding: addForm.boarding, status: 'active',
+      } as any);
+      if (enrErr) throw enrErr;
+      if (legacyClassId) {
+        await supabase.from('class_assignments').delete().eq('student_id', existingMatch.user_id);
+        await supabase.from('class_assignments').insert({ student_id: existingMatch.user_id, class_id: legacyClassId } as any);
+      }
+      await supabase.from('student_movement_log').insert({
+        student_id: existingMatch.student_id, event_type: 'class_change',
+        details: { from: existingMatch.class_name, to: levelName, arm: arm?.code || null },
+      } as any);
+      toast({ title: 'Student moved', description: `${existingMatch.full_name} is now in ${levelName}.` });
+      setExistingMatch(null);
+      setAddOpen(false);
+      setAddForm({ fullName: '', email: '', password: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
+      await fetchRows();
+    } catch (e: any) {
+      toast({ title: 'Could not move student', description: e.message, variant: 'destructive' });
     } finally { setCreating(false); }
   };
 
@@ -556,6 +599,23 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
                 </SelectContent>
               </Select>
             </div>
+            {existingMatch && (
+              <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm space-y-2">
+                <p>
+                  This email already belongs to <strong>{existingMatch.full_name}</strong>
+                  {existingMatch.admission_number ? ` (${existingMatch.admission_number}` : ''}
+                  {existingMatch.class_name ? `, ${existingMatch.class_name}` : ''}
+                  {existingMatch.admission_number ? ')' : ''}.
+                </p>
+                {existingMatch.student_id ? (
+                  <Button type="button" size="sm" variant="secondary" disabled={creating} onClick={handleMoveExisting}>
+                    Move this student to {levelName}
+                  </Button>
+                ) : (
+                  <p className="text-muted-foreground">This email is used by a non-student account. Please use a different email.</p>
+                )}
+              </div>
+            )}
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setAddOpen(false)}>Cancel</Button>
               <Button type="submit" disabled={creating}>

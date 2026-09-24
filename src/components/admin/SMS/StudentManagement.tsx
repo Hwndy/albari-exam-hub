@@ -186,7 +186,10 @@ export const StudentManagement = () => {
           admissionNumber: newStudent.admission_number?.trim() || null,
         },
       });
-      if (fnError) throw fnError;
+      if (fnError) {
+        const { readEdgeError } = await import('@/lib/edge-error');
+        throw new Error((await readEdgeError(fnError)).message);
+      }
       if ((res as any)?.error) throw new Error((res as any).error);
       const userId = (res as any)?.user?.id;
 
