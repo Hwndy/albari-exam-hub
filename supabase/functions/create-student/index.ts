@@ -87,15 +87,19 @@ serve(async (req) => {
 
     console.log('Student user created:', newUser.user?.id);
 
-    // Create student entry
+    // Create student entry (admission number auto-assigned by the database when blank)
+    let assignedAdmission: string | null = null;
     if (newUser.user) {
       const studentInsert: Record<string, any> = {
         user_id: newUser.user.id,
-              };
-      if (admissionNumber) studentInsert.admission_number = admissionNumber;
-      const { error: studentError } = await supabaseAdmin
+      };
+      if (admissionNumber && String(admissionNumber).trim()) studentInsert.admission_number = String(admissionNumber).trim();
+      const { data: stRow, error: studentError } = await supabaseAdmin
         .from('students')
-        .insert(studentInsert);
+        .insert(studentInsert)
+        .select('admission_number')
+        .single();
+      assignedAdmission = stRow?.admission_number ?? null;
       
       if (studentError) {
         console.error('Student entry creation error:', studentError);
@@ -130,6 +134,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       user: newUser.user,
+      admission_number: assignedAdmission,
       message: 'Student created successfully' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

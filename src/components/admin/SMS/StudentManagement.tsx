@@ -168,62 +168,41 @@ export const StudentManagement = () => {
 
   const handleAddStudent = async () => {
     try {
-      if (!newStudent.full_name || !newStudent.email || !newStudent.admission_number) {
+      if (!newStudent.full_name || !newStudent.email) {
         toast({
           title: 'Error',
-          description: 'Please fill in all required fields',
+          description: 'Please enter the student name and email',
           variant: 'destructive',
         });
         return;
       }
 
-      // Create user account
-      const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-        email: newStudent.email,
-        password: newStudent.password || 'defaultPassword123',
-        email_confirm: true,
-        user_metadata: {
-          full_name: newStudent.full_name,
-          role: 'student'
-        }
+      const { data: res, error: fnError } = await supabase.functions.invoke('create-student', {
+        body: {
+          email: newStudent.email,
+          password: newStudent.password || undefined,
+          fullName: newStudent.full_name,
+          classId: newStudent.class_id || null,
+          admissionNumber: newStudent.admission_number?.trim() || null,
+        },
       });
+      if (fnError) throw fnError;
+      if ((res as any)?.error) throw new Error((res as any).error);
+      const userId = (res as any)?.user?.id;
 
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('Failed to create user');
-
-      // Create student record
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .insert({
-          user_id: authData.user.id,
-          admission_number: newStudent.admission_number,
+      if (userId) {
+        await supabase.from('students').update({
           date_of_birth: newStudent.date_of_birth ? format(newStudent.date_of_birth, 'yyyy-MM-dd') : null,
-          gender: newStudent.gender,
-          address: newStudent.address,
-          emergency_contact: newStudent.emergency_contact,
-          medical_info: newStudent.medical_info,
-                    status: 'active'
-        })
-        .select()
-        .single();
-
-      if (studentError) throw studentError;
-
-      // Assign to class if selected
-      if (newStudent.class_id) {
-        const { error: assignmentError } = await supabase
-          .from('class_assignments')
-          .insert({
-            student_id: studentData.id,
-            class_id: newStudent.class_id
-          });
-
-        if (assignmentError) throw assignmentError;
+          gender: newStudent.gender || null,
+          address: newStudent.address || null,
+          emergency_contact: newStudent.emergency_contact || null,
+          medical_info: newStudent.medical_info || null,
+        }).eq('user_id', userId);
       }
 
       toast({
-        title: 'Success',
-        description: 'Student created successfully',
+        title: 'Student created',
+        description: `Admission number: ${(res as any)?.admission_number || 'assigned'}`,
       });
 
       setShowAddStudent(false);
@@ -490,13 +469,13 @@ export const StudentManagement = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="admission_number">Admission Number *</Label>
+                  <Label htmlFor="admission_number">Admission Number</Label>
                   <div className="flex gap-2">
                     <Input
                       id="admission_number"
                       value={newStudent.admission_number}
                       onChange={(e) => setNewStudent(prev => ({ ...prev, admission_number: e.target.value }))}
-                      placeholder="Enter admission number"
+                      placeholder="Auto-assigned (leave blank)"
                     />
                     <Button 
                       type="button" 
