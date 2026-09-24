@@ -10,7 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, MapPin } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, FileText, Calendar, User, Mail, Phone, MapPin, Trash2 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import {
+  AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription,
+  AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 import { InterviewScheduler } from '@/components/admin/InterviewScheduler';
 import { AdmissionDocumentViewer } from '@/components/admin/AdmissionDocumentViewer';
@@ -58,6 +63,36 @@ export const AdmissionManagement = () => {
   // created (a post-payment step failed). Maps application id -> payment ref.
   const [pendingEnrolments, setPendingEnrolments] = useState<Record<string, string>>({});
   const [completingId, setCompletingId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [deleteTargets, setDeleteTargets] = useState<Application[]>([]);
+  const [deleteConfirm, setDeleteConfirm] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const handleDeleteApplications = async () => {
+    const ids = deleteTargets.map(a => a.id);
+    if (!ids.length) return;
+    setDeleting(true);
+    try {
+      const { data: docs } = await supabase
+        .from('admission_documents').select('file_url').in('application_id', ids);
+      const { error } = await (supabase.rpc as any)('admin_delete_applications', { _ids: ids });
+      if (error) throw error;
+      const paths = (docs ?? [])
+        .map((d: any) => String(d.file_url ?? ''))
+        .filter(p => p && !p.startsWith('http'));
+      if (paths.length) await supabase.storage.from('admission-documents').remove(paths);
+      toast({ title: 'Deleted', description: `${ids.length} application${ids.length === 1 ? '' : 's'} removed.` });
+      setDeleteTargets([]);
+      setSelectedIds(prev => prev.filter(id => !ids.includes(id)));
+      if (selectedApplication && ids.includes(selectedApplication.id)) setSelectedApplication(null);
+      fetchApplications();
+      fetchPendingEnrolments();
+    } catch (e: any) {
+      toast({ title: 'Could not delete', description: e.message, variant: 'destructive' });
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const fetchPendingEnrolments = async () => {
     const { data: apps } = await supabase
@@ -351,6 +386,57 @@ export const AdmissionManagement = () => {
         </TabsList>
       </Tabs>
 
+      {selectedIds.length > 0 && (
+        <Card>
+          <CardContent className="flex items-center justify-between gap-3 p-3">
+            <span className="text-sm">{selectedIds.length} selected</span>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={() => setSelectedIds([])}>Clear</Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => { setDeleteTargets(applications.filter(a => selectedIds.includes(a.id))); setDeleteConfirm(''); }}
+              >
+                <Trash2 className="h-4 w-4 mr-2" /> Delete selected
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <AlertDialog open={deleteTargets.length > 0} onOpenChange={(o) => !o && setDeleteTargets([])}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Delete {deleteTargets.length === 1 ? 'this application' : `${deleteTargets.length} applications`}?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <ul className="max-h-40 overflow-y-auto text-sm list-disc pl-5">
+                  {deleteTargets.map(a => (
+                    <li key={a.id}>{a.first_name} {a.last_name} — {a.application_number}</li>
+                  ))}
+                </ul>
+                {deleteTargets.some(a => ['accepted', 'payment_pending'].includes(a.status) || pendingEnrolments[a.id]) && (
+                  <p className="text-destructive font-medium">
+                    Warning: some of these applicants have been accepted or have paid. Their payment records will be deleted too.
+                  </p>
+                )}
+                <p>This removes the documents, interview, exam booking, offer and payment records. It cannot be undone.</p>
+                <p>Type <strong>DELETE</strong> to confirm.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)} placeholder="DELETE" />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <Button variant="destructive" disabled={deleteConfirm !== 'DELETE' || deleting} onClick={handleDeleteApplications}>
+              {deleting ? 'Deleting…' : 'Delete'}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Applications List */}
       <div className="grid gap-4">
         {applications.length === 0 ? (
@@ -364,7 +450,14 @@ export const AdmissionManagement = () => {
           applications.map((application) => (
             <Card key={application.id} className="hover:shadow-md transition-shadow">
               <CardContent className="p-6">
-                <div className="flex items-start justify-between">
+                <div className="flex items-start justify-between gap-3">
+                  <Checkbox
+                    className="mt-1.5"
+                    aria-label={`Select ${application.application_number}`}
+                    disabled={application.status === 'enrolled'}
+                    checked={selectedIds.includes(application.id)}
+                    onCheckedChange={(c) => setSelectedIds(prev => c ? [...prev, application.id] : prev.filter(id => id !== application.id))}
+                  />
                   <div className="space-y-3 flex-1">
                     <div className="flex items-center gap-3">
                       <h3 className="text-lg font-semibold">
@@ -416,6 +509,17 @@ export const AdmissionManagement = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {application.status !== 'enrolled' && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Delete application"
+                        title="Delete application"
+                        onClick={() => { setDeleteTargets([application]); setDeleteConfirm(''); }}
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    )}
                     {pendingEnrolments[application.id] && (
                       <Button
                         variant="secondary"
