@@ -48,34 +48,66 @@ export const PromotionPanel: React.FC = () => {
   const [working, setWorking] = useState(false);
   const [confirm, setConfirm] = useState<Action | null>(null);
 
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [showEmpty, setShowEmpty] = useState(false);
+  const [mergeTo, setMergeTo] = useState('');
+  const [reloadKey, setReloadKey] = useState(0);
+
   useEffect(() => {
     (async () => {
-      const [c, ss] = await Promise.all([
+      const [c, ss, ca, en, st] = await Promise.all([
         supabase.from('classes').select('id,name').order('name'),
         supabase.from('admission_sessions').select('id,session_name,is_current').order('start_date', { ascending: false }),
+        supabase.from('class_assignments').select('student_id,class_id').range(0, 9999),
+        supabase.from('student_enrollments').select('student_id,legacy_class_id').eq('is_current', true).range(0, 9999),
+        supabase.from('students').select('id,user_id').is('archived_at', null).range(0, 9999),
       ]);
       setClasses(c.data || []);
       const list = ss.data || [];
       setSessions(list);
       const cur = list.find((x: any) => x.is_current) || list[0];
-      if (cur) setSessionId(cur.id);
+      if (cur && !sessionId) setSessionId(cur.id);
+      const byUser = new Map((st.data || []).map((s: any) => [s.user_id, s.id]));
+      const activeIds = new Set((st.data || []).map((s: any) => s.id));
+      const sets: Record<string, Set<string>> = {};
+      (ca.data || []).forEach((a: any) => {
+        const sid = byUser.get(a.student_id); if (!sid) return;
+        (sets[a.class_id] ||= new Set()).add(sid);
+      });
+      (en.data || []).forEach((e: any) => {
+        if (!e.legacy_class_id || !activeIds.has(e.student_id)) return;
+        (sets[e.legacy_class_id] ||= new Set()).add(e.student_id);
+      });
+      setCounts(Object.fromEntries(Object.entries(sets).map(([k, v]) => [k, v.size])));
     })();
-  }, []);
+    // eslint-disable-next-line
+  }, [reloadKey]);
 
   useEffect(() => {
     if (!classId || !sessionId) { setRows([]); setSelected(new Set()); return; }
     (async () => {
       setLoading(true);
       setSelected(new Set());
-      const { data: assigns } = await supabase.from('class_assignments').select('student_id').eq('class_id', classId);
-      const uids = (assigns || []).map((a: any) => a.student_id);
-      if (uids.length === 0) { setRows([]); setHasScores(false); setLoading(false); return; }
-      const [{ data: studs }, { data: profs }] = await Promise.all([
-        supabase.from('students').select('id,user_id,archived_at').in('user_id', uids),
-        supabase.from('profiles').select('user_id,full_name').in('user_id', uids),
+      const [{ data: assigns }, { data: enr }] = await Promise.all([
+        supabase.from('class_assignments').select('student_id').eq('class_id', classId),
+        supabase.from('student_enrollments').select('student_id').eq('legacy_class_id', classId).eq('is_current', true),
       ]);
-      const active = (studs || []).filter((s: any) => !s.archived_at);
+      const uids = (assigns || []).map((a: any) => a.student_id);
+      const sids = (enr || []).map((e: any) => e.student_id);
+      if (uids.length === 0 && sids.length === 0) { setRows([]); setHasScores(false); setLoading(false); return; }
+      const [r1, r2] = await Promise.all([
+        uids.length ? supabase.from('students').select('id,user_id,archived_at,admission_number').in('user_id', uids) : Promise.resolve({ data: [] as any[] }),
+        sids.length ? supabase.from('students').select('id,user_id,archived_at,admission_number').in('id', sids) : Promise.resolve({ data: [] as any[] }),
+      ]);
+      const merged = new Map<string, any>();
+      [...(r1.data || []), ...(r2.data || [])].forEach((s: any) => merged.set(s.id, s));
+      const active = Array.from(merged.values()).filter((s: any) => !s.archived_at);
+      const userIds = active.map((s: any) => s.user_id).filter(Boolean);
+      const { data: profs } = userIds.length
+        ? await supabase.from('profiles').select('user_id,full_name').in('user_id', userIds)
+        : { data: [] as any[] };
       const uToName = new Map((profs || []).map((p: any) => [p.user_id, p.full_name]));
+      const admBy = new Map(active.map((s: any) => [s.id, s.admission_number]));
 
       const ids = active.map((s: any) => s.id);
       const { data: scores } = ids.length
@@ -101,13 +133,25 @@ export const PromotionPanel: React.FC = () => {
         return {
           id: s.id,
           user_id: s.user_id,
-          name: uToName.get(s.user_id) || '—',
+          name: (uToName.get(s.user_id) as string) || admBy.get(s.id) || 'Unnamed student',
           average: t && t.n ? Math.round((t.sum / t.n) * 10) / 10 : null,
         };
       }).sort((a, b) => a.name.localeCompare(b.name)));
       setLoading(false);
     })();
-  }, [classId, sessionId]);
+  }, [classId, sessionId, reloadKey]);
+
+  const runMerge = async () => {
+    if (!classId || !mergeTo) return;
+    setWorking(true);
+    const { error } = await supabase.rpc('merge_classes' as any, { _from: classId, _to: mergeTo });
+    setWorking(false);
+    if (error) { toast({ title: 'Merge failed', description: error.message, variant: 'destructive' }); return; }
+    toast({ title: 'Classes merged', description: `Everyone in ${className(classId)} is now in ${className(mergeTo)}.` });
+    setClassId(mergeTo); setMergeTo(''); setReloadKey(k => k + 1);
+  };
+  const classLabel = (c: any) => `${c.name} (${counts[c.id] || 0})`;
+  const pickable = classes.filter(c => showEmpty || (counts[c.id] || 0) > 0 || c.id === classId);
 
   const visible = useMemo(
     () => rows.filter(r => r.name.toLowerCase().includes(search.trim().toLowerCase())),
