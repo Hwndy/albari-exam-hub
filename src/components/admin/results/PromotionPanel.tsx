@@ -295,7 +295,7 @@ export const PromotionPanel: React.FC = () => {
             <div className="space-y-2"><Label>Current class</Label>
               <Select value={classId} onValueChange={setClassId}>
                 <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
-                <SelectContent>{classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{pickable.map(c => <SelectItem key={c.id} value={c.id}>{classLabel(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Session</Label>
@@ -307,7 +307,7 @@ export const PromotionPanel: React.FC = () => {
             <div className="space-y-2"><Label>Promote to</Label>
               <Select value={nextClassId} onValueChange={setNextClassId}>
                 <SelectTrigger><SelectValue placeholder="Next class" /></SelectTrigger>
-                <SelectContent>{classes.filter(c => c.id !== classId).map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                <SelectContent>{classes.filter(c => c.id !== classId).map(c => <SelectItem key={c.id} value={c.id}>{classLabel(c)}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div className="space-y-2"><Label>Mode</Label>
@@ -354,7 +354,7 @@ export const PromotionPanel: React.FC = () => {
       <Card>
         <CardContent className="p-0">
           {loading ? <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>
-          : rows.length === 0 ? <div className="py-12 text-center text-muted-foreground">Select a class and session.</div>
+          : rows.length === 0 ? <div className="py-12 text-center text-muted-foreground">{classId ? 'No active students are in this class. It may be a duplicate — check the student count shown next to each class.' : 'Select a class and session.'}</div>
           : (
             <>
               <div className="p-3 border-b flex flex-wrap items-center gap-3">
