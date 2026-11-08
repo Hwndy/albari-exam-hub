@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface Student {
   id: string;
@@ -59,7 +60,7 @@ export const StudentManagement = () => {
   const [newStudent, setNewStudent] = useState({
     full_name: '',
     email: '',
-    password: '',
+    password: STUDENT_DEFAULT_PASSWORD,
     admission_number: '',
     date_of_birth: undefined as Date | undefined,
     gender: '',
@@ -180,7 +181,7 @@ export const StudentManagement = () => {
       const { data: res, error: fnError } = await supabase.functions.invoke('create-student', {
         body: {
           email: newStudent.email,
-          password: newStudent.password || undefined,
+          password: STUDENT_DEFAULT_PASSWORD,
           fullName: newStudent.full_name,
           classId: newStudent.class_id || null,
           admissionNumber: newStudent.admission_number?.trim() || null,
@@ -212,7 +213,7 @@ export const StudentManagement = () => {
       setNewStudent({
         full_name: '',
         email: '',
-        password: '',
+        password: STUDENT_DEFAULT_PASSWORD,
         admission_number: '',
         date_of_birth: undefined,
         gender: '',
@@ -470,6 +471,10 @@ export const StudentManagement = () => {
                     onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
                     placeholder="Enter email address"
                   />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="student-initial-password">Initial password</Label>
+                  <Input id="student-initial-password" value={STUDENT_DEFAULT_PASSWORD} readOnly />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="admission_number">Admission Number</Label>

@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Plus, UserPlus, Mail, User, Eye, EyeOff } from 'lucide-react';
+import { Plus, UserPlus, Mail, User } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface StudentForm {
   fullName: string;
@@ -24,14 +25,13 @@ export const TeacherStudentCreator: React.FC = () => {
   const [isCreatingStudent, setIsCreatingStudent] = useState(false);
   const [loading, setLoading] = useState(true);
   const [createdStudents, setCreatedStudents] = useState<any[]>([]);
-  const [showPassword, setShowPassword] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
 
   const [studentForm, setStudentForm] = useState<StudentForm>({
     fullName: '',
     email: '',
-    password: '',
+    password: STUDENT_DEFAULT_PASSWORD,
     classId: '',
   });
 
@@ -110,7 +110,7 @@ export const TeacherStudentCreator: React.FC = () => {
   const handleCreateStudent = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!studentForm.fullName || !studentForm.email || !studentForm.password) {
+    if (!studentForm.fullName || !studentForm.email) {
       toast({
         title: "Error",
         description: "Please fill in all required fields",
@@ -139,7 +139,7 @@ export const TeacherStudentCreator: React.FC = () => {
       const { data: result, error: functionError } = await supabase.functions.invoke('create-student', {
         body: {
           email: studentForm.email,
-          password: studentForm.password,
+          password: STUDENT_DEFAULT_PASSWORD,
           fullName: studentForm.fullName,
           classId: studentForm.classId || null
         }
@@ -204,19 +204,9 @@ export const TeacherStudentCreator: React.FC = () => {
     setStudentForm({
       fullName: '',
       email: '',
-      password: '',
+      password: STUDENT_DEFAULT_PASSWORD,
       classId: '',
     });
-  };
-
-  const generatePassword = () => {
-    const length = 12;
-    const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
-    let password = "";
-    for (let i = 0; i < length; i++) {
-      password += charset.charAt(Math.floor(Math.random() * charset.length));
-    }
-    setStudentForm({ ...studentForm, password });
   };
 
   if (loading) {
@@ -267,36 +257,8 @@ export const TeacherStudentCreator: React.FC = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="flex space-x-2">
-                  <div className="relative flex-1">
-                    <Input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      value={studentForm.password}
-                      onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })}
-                      placeholder="Enter password"
-                      required
-                      className="pr-10"
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
-                      {showPassword ? (
-                        <EyeOff className="h-4 w-4 text-muted-foreground" />
-                      ) : (
-                        <Eye className="h-4 w-4 text-muted-foreground" />
-                      )}
-                    </Button>
-                  </div>
-                  <Button type="button" variant="outline" onClick={generatePassword}>
-                    Generate
-                  </Button>
-                </div>
+                <Label htmlFor="password">Initial password</Label>
+                <Input id="password" value={STUDENT_DEFAULT_PASSWORD} readOnly />
               </div>
               
               <div className="space-y-2">
@@ -346,7 +308,7 @@ export const TeacherStudentCreator: React.FC = () => {
               <h4 className="font-medium">What you can do:</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
                 <li>• Create student accounts for your assigned classes</li>
-                <li>• Generate secure passwords automatically</li>
+                <li>• Student accounts start with the school’s preset password</li>
                 <li>• Assign students to specific classes</li>
                 <li>• Students can take exams you create</li>
               </ul>

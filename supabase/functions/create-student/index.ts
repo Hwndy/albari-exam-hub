@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { getStudentCreationPassword } from './password.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -46,14 +47,14 @@ serve(async (req) => {
       });
     }
 
-    const { email, password, fullName, classId, admissionNumber } = await req.json();
+    const { email, fullName, classId, admissionNumber } = await req.json();
 
     console.log('Creating student:', { email, fullName, classId });
 
     // Create user using admin API (no auto-login)
     const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
-      password,
+      password: getStudentCreationPassword(),
       email_confirm: true,
       user_metadata: {
         full_name: fullName,

@@ -32,6 +32,7 @@ import {
   MoreVertical, Eye, Pencil, Archive, Loader2,
 } from 'lucide-react';
 import { EditStudentDialog } from '@/components/admin/EditStudentDialog';
+import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 export interface RosterProps {
   levelId: string;
@@ -84,7 +85,7 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
   const [existingMatch, setExistingMatch] = useState<any | null>(null);
   useEffect(() => { if (!addOpen) setExistingMatch(null); }, [addOpen]);
   const [addForm, setAddForm] = useState({
-    fullName: '', email: '', password: '', admissionNumber: '',
+    fullName: '', email: '', admissionNumber: '',
     gender: '', campusId: '', armId: '', boarding: 'day',
   });
 
@@ -200,8 +201,8 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.fullName || !addForm.email || !addForm.password || !addForm.gender || !addForm.campusId) {
-      toast({ title: 'Missing details', description: 'Name, email, password, gender and campus are required.', variant: 'destructive' });
+    if (!addForm.fullName || !addForm.email || !addForm.gender || !addForm.campusId) {
+      toast({ title: 'Missing details', description: 'Name, email, gender and campus are required.', variant: 'destructive' });
       return;
     }
     setCreating(true);
@@ -219,7 +220,7 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
         body: {
           fullName: addForm.fullName,
           email: addForm.email,
-          password: addForm.password,
+          password: STUDENT_DEFAULT_PASSWORD,
           classId: legacyClassId || undefined,
           admissionNumber: addForm.admissionNumber || undefined,
         },
@@ -252,7 +253,7 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
       }
       toast({ title: 'Student added', description: addForm.fullName });
       setAddOpen(false);
-      setAddForm({ fullName: '', email: '', password: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
+      setAddForm({ fullName: '', email: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
       await fetchRows();
     } catch (e: any) {
       const { readEdgeError } = await import('@/lib/edge-error');
@@ -293,7 +294,7 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
       toast({ title: 'Student moved', description: `${existingMatch.full_name} is now in ${levelName}.` });
       setExistingMatch(null);
       setAddOpen(false);
-      setAddForm({ fullName: '', email: '', password: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
+      setAddForm({ fullName: '', email: '', admissionNumber: '', gender: '', campusId: '', armId: '', boarding: 'day' });
       await fetchRows();
     } catch (e: any) {
       toast({ title: 'Could not move student', description: e.message, variant: 'destructive' });
@@ -553,7 +554,7 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
             <div><Label>Full name</Label><Input value={addForm.fullName} onChange={e => setAddForm({ ...addForm, fullName: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Email</Label><Input type="email" value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} /></div>
-              <div><Label>Password</Label><Input type="text" value={addForm.password} onChange={e => setAddForm({ ...addForm, password: e.target.value })} /></div>
+              <div><Label>Initial password</Label><Input value={STUDENT_DEFAULT_PASSWORD} readOnly /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Student ID (optional)</Label><Input value={addForm.admissionNumber} onChange={e => setAddForm({ ...addForm, admissionNumber: e.target.value })} /></div>

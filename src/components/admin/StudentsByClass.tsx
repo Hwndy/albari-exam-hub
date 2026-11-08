@@ -40,6 +40,7 @@ import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
 import html2canvas from 'html2canvas';
 import { printNode } from '@/lib/print-node';
 import { fetchSchoolBranding as loadSchoolBranding } from '@/lib/school-branding';
+import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -73,7 +74,7 @@ export const StudentsByClass: React.FC = () => {
   // Dialogs
   const [addOpen, setAddOpen] = useState(false);
   const [addClassId, setAddClassId] = useState<string>('');
-  const [addForm, setAddForm] = useState({ fullName: '', email: '', password: '', admissionNumber: '' });
+  const [addForm, setAddForm] = useState({ fullName: '', email: '', admissionNumber: '' });
   const [creating, setCreating] = useState(false);
 
   const [viewStudent, setViewStudent] = useState<StudentRow | null>(null);
@@ -190,7 +191,7 @@ export const StudentsByClass: React.FC = () => {
   /* -------- Add Student -------- */
   const handleAddStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!addForm.fullName || !addForm.email || !addForm.password || !addClassId) {
+    if (!addForm.fullName || !addForm.email || !addClassId) {
       toast({ title: 'Missing info', description: 'Fill all fields and pick a class', variant: 'destructive' });
       return;
     }
@@ -200,7 +201,7 @@ export const StudentsByClass: React.FC = () => {
         body: {
           fullName: addForm.fullName,
           email: addForm.email,
-          password: addForm.password,
+          password: STUDENT_DEFAULT_PASSWORD,
           classId: addClassId,
           admissionNumber: addForm.admissionNumber || undefined,
         },
@@ -208,7 +209,7 @@ export const StudentsByClass: React.FC = () => {
       if (error) throw error;
       toast({ title: 'Student created', description: addForm.fullName });
       setAddOpen(false);
-      setAddForm({ fullName: '', email: '', password: '', admissionNumber: '' });
+      setAddForm({ fullName: '', email: '', admissionNumber: '' });
       await fetchAll();
     } catch (e: any) {
       toast({ title: 'Create failed', description: e.message || 'Try again', variant: 'destructive' });
@@ -489,9 +490,8 @@ export const StudentsByClass: React.FC = () => {
             <div><Label>Email</Label>
               <Input type="email" value={addForm.email} required
                 onChange={e => setAddForm({ ...addForm, email: e.target.value })} /></div>
-            <div><Label>Password</Label>
-              <Input type="text" value={addForm.password} required minLength={6}
-                onChange={e => setAddForm({ ...addForm, password: e.target.value })} /></div>
+            <div><Label>Initial password</Label>
+              <Input value={STUDENT_DEFAULT_PASSWORD} readOnly /></div>
             <div><Label>Admission # <span className="text-xs text-muted-foreground">(optional)</span></Label>
               <Input value={addForm.admissionNumber}
                 placeholder="Leave blank to assign later"
