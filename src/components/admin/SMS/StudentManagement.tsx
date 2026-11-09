@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
+import { generateStudentEmail, STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface Student {
   id: string;
@@ -172,7 +172,7 @@ export const StudentManagement = () => {
       if (!newStudent.full_name || !newStudent.email) {
         toast({
           title: 'Error',
-          description: 'Please enter the student name and email',
+          description: 'Please enter a valid student name',
           variant: 'destructive',
         });
         return;
@@ -206,7 +206,7 @@ export const StudentManagement = () => {
 
       toast({
         title: 'Student created',
-        description: `Admission number: ${(res as any)?.admission_number || 'assigned'}`,
+        description: `Login email: ${(res as any)?.email || newStudent.email}. Admission number: ${(res as any)?.admission_number || 'assigned'}`,
       });
 
       setShowAddStudent(false);
@@ -458,7 +458,7 @@ export const StudentManagement = () => {
                   <Input
                     id="full_name"
                     value={newStudent.full_name}
-                    onChange={(e) => setNewStudent(prev => ({ ...prev, full_name: e.target.value }))}
+                    onChange={(e) => setNewStudent(prev => ({ ...prev, full_name: e.target.value, email: generateStudentEmail(e.target.value) }))}
                     placeholder="Enter full name"
                   />
                 </div>
@@ -468,8 +468,8 @@ export const StudentManagement = () => {
                     id="email"
                     type="email"
                     value={newStudent.email}
-                    onChange={(e) => setNewStudent(prev => ({ ...prev, email: e.target.value }))}
-                    placeholder="Enter email address"
+                    readOnly
+                    placeholder="Generated from the student's name"
                   />
                 </div>
                 <div className="space-y-2">

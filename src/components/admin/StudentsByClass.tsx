@@ -40,7 +40,7 @@ import { AssignAdmissionNumbersDialog } from './AssignAdmissionNumbersDialog';
 import html2canvas from 'html2canvas';
 import { printNode } from '@/lib/print-node';
 import { fetchSchoolBranding as loadSchoolBranding } from '@/lib/school-branding';
-import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
+import { generateStudentEmail, STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface ClassRow { id: string; name: string; description?: string | null; }
 interface StudentRow {
@@ -486,10 +486,10 @@ export const StudentsByClass: React.FC = () => {
           <form onSubmit={handleAddStudent} className="space-y-3">
             <div><Label>Full Name</Label>
               <Input value={addForm.fullName} required
-                onChange={e => setAddForm({ ...addForm, fullName: e.target.value })} /></div>
-            <div><Label>Email</Label>
+                onChange={e => setAddForm({ ...addForm, fullName: e.target.value, email: generateStudentEmail(e.target.value) })} /></div>
+            <div><Label>Generated email</Label>
               <Input type="email" value={addForm.email} required
-                onChange={e => setAddForm({ ...addForm, email: e.target.value })} /></div>
+                readOnly /></div>
             <div><Label>Initial password</Label>
               <Input value={STUDENT_DEFAULT_PASSWORD} readOnly /></div>
             <div><Label>Admission # <span className="text-xs text-muted-foreground">(optional)</span></Label>

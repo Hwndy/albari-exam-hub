@@ -12,6 +12,7 @@ import { User, Profile, Class, Subject } from '@/types/auth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { UserEditModal } from './UserEditModal';
+import { generateStudentEmail, STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 export const UserManagement = () => {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [classes, setClasses] = useState<Class[]>([]);
@@ -168,6 +169,25 @@ export const UserManagement = () => {
         return;
       }
 
+      let generatedStudentEmail: string | null = null;
+      if (userForm.role === 'student') {
+        generatedStudentEmail = generateStudentEmail(userForm.fullName);
+        const { data, error } = await supabase.functions.invoke('create-student', {
+          body: {
+            fullName: userForm.fullName.trim(),
+            email: generatedStudentEmail,
+            password: STUDENT_DEFAULT_PASSWORD,
+            classId: userForm.classId,
+          },
+        });
+        if (error) {
+          const { readEdgeError } = await import('@/lib/edge-error');
+          throw new Error((await readEdgeError(error)).message);
+        }
+        if (data?.error) throw new Error(data.error);
+        generatedStudentEmail = data?.email || generatedStudentEmail;
+      } else {
+
       // Accounts are created server-side so the admin stays signed in and the
       // correct role / staff record / assignments are written atomically.
       const { data, error } = await supabase.functions.invoke('create-staff-user', {
@@ -201,6 +221,7 @@ export const UserManagement = () => {
       if (data && (data as any).error) {
         throw new Error((data as any).message || (data as any).error);
       }
+      }
 
 
       // If successful, refresh the profiles list
@@ -211,7 +232,7 @@ export const UserManagement = () => {
       
       toast({
         title: 'User Created',
-        description: `${userForm.fullName} has been added successfully.`,
+        description: `${userForm.fullName} has been added successfully.${generatedStudentEmail ? ` Login email: ${generatedStudentEmail}` : ''}`,
       });
     } catch (error: any) {
       toast({
@@ -498,7 +519,7 @@ export const UserManagement = () => {
                 <Input
                   id="fullName"
                   value={userForm.fullName}
-                  onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value })}
+                  onChange={(e) => setUserForm({ ...userForm, fullName: e.target.value, email: userForm.role === 'student' ? generateStudentEmail(e.target.value) : userForm.email })}
                   required
                 />
               </div>
@@ -508,11 +529,16 @@ export const UserManagement = () => {
                   id="email"
                   type="email"
                   value={userForm.email}
+                  readOnly={userForm.role === 'student'}
+                  placeholder={userForm.role === 'student' ? 'Generated from the student’s name' : undefined}
                   onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
                   required
                 />
               </div>
-              {userForm.role !== 'parent' && <div className="space-y-2">
+              {userForm.role === 'student' ? <div className="space-y-2">
+                <Label htmlFor="password">Initial password</Label>
+                <Input id="password" value={STUDENT_DEFAULT_PASSWORD} readOnly />
+              </div> : userForm.role !== 'parent' && <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -526,9 +552,13 @@ export const UserManagement = () => {
                 <Label htmlFor="role">Role</Label>
                 <Select
                   value={userForm.role}
-                  onValueChange={(value: 'admin' | 'teacher' | 'student' | 'parent') =>
-                    setUserForm({ ...userForm, role: value, classId: '', classIds: [], subjectIds: [], studentId: '' })
-                  }
+                  onValueChange={(value: 'admin' | 'teacher' | 'student' | 'parent') => setUserForm({
+                    ...userForm,
+                    role: value,
+                    email: value === 'student' ? generateStudentEmail(userForm.fullName) : userForm.role === 'student' ? '' : userForm.email,
+                    password: value === 'student' ? STUDENT_DEFAULT_PASSWORD : userForm.role === 'student' ? '' : userForm.password,
+                    classId: '', classIds: [], subjectIds: [], studentId: '',
+                  })}
                 >
                   <SelectTrigger>
                     <SelectValue />

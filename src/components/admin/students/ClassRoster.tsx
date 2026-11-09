@@ -32,7 +32,7 @@ import {
   MoreVertical, Eye, Pencil, Archive, Loader2,
 } from 'lucide-react';
 import { EditStudentDialog } from '@/components/admin/EditStudentDialog';
-import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
+import { generateStudentEmail, STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 export interface RosterProps {
   levelId: string;
@@ -551,9 +551,9 @@ export const ClassRoster: React.FC<RosterProps> = ({ levelId, levelName, onBack 
             <DialogDescription>Campus decides which arms are available. Gender is required.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAdd} className="space-y-3">
-            <div><Label>Full name</Label><Input value={addForm.fullName} onChange={e => setAddForm({ ...addForm, fullName: e.target.value })} /></div>
+            <div><Label>Full name</Label><Input value={addForm.fullName} onChange={e => setAddForm({ ...addForm, fullName: e.target.value, email: generateStudentEmail(e.target.value) })} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Email</Label><Input type="email" value={addForm.email} onChange={e => setAddForm({ ...addForm, email: e.target.value })} /></div>
+              <div><Label>Generated email</Label><Input type="email" value={addForm.email} readOnly /></div>
               <div><Label>Initial password</Label><Input value={STUDENT_DEFAULT_PASSWORD} readOnly /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">

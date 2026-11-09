@@ -1,11 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.75.0";
+import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { getStudentCreationPassword } from './password.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { generateStudentEmail } from './email.ts';
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -19,8 +16,14 @@ serve(async (req) => {
     );
 
     // Verify requester is a teacher or admin
-    const authHeader = req.headers.get('Authorization')!;
-    const token = authHeader.replace('Bearer ', '');
+    const authHeader = req.headers.get('Authorization') || '';
+    if (!authHeader.startsWith('Bearer ')) {
+      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+        status: 401,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    const token = authHeader.slice('Bearer '.length);
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
     if (authError || !user) {
@@ -47,86 +50,53 @@ serve(async (req) => {
       });
     }
 
-    const { email, fullName, classId, admissionNumber } = await req.json();
-
-    console.log('Creating student:', { email, fullName, classId });
-
-    // Create user using admin API (no auto-login)
-    const { data: newUser, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password: getStudentCreationPassword(),
-      email_confirm: true,
-      user_metadata: {
-        full_name: fullName,
-        role: 'student'
-      }
-    });
-
-    if (createError) {
-      console.error('Create user error:', createError);
-      
-      // Handle specific error cases
-      let errorMessage = createError.message || 'Failed to create student';
-      let errorCode = createError.code || 'unknown_error';
-      
-      if (errorCode === 'email_exists' || createError.message?.includes('already been registered') ||
-          createError.message?.includes('User already registered') ||
-          createError.message?.includes('already exists') || errorCode === '23505') {
-        // Look up who owns this email so the admin sees a useful message
-        let existing: Record<string, unknown> | null = null;
-        try {
-          let page = 1;
-          let found: any = null;
-          while (!found && page <= 20) {
-            const { data } = await supabaseAdmin.auth.admin.listUsers({ page, perPage: 1000 });
-            const users = data?.users ?? [];
-            found = users.find((u: any) => (u.email ?? '').toLowerCase() === String(email).toLowerCase());
-            if (users.length < 1000) break;
-            page++;
-          }
-          if (found) {
-            const [{ data: prof }, { data: stu }, { data: ca }, { data: roles }] = await Promise.all([
-              supabaseAdmin.from('profiles').select('full_name').eq('user_id', found.id).maybeSingle(),
-              supabaseAdmin.from('students').select('id, admission_number, status').eq('user_id', found.id).maybeSingle(),
-              supabaseAdmin.from('class_assignments').select('class_id').eq('student_id', found.id),
-              supabaseAdmin.from('user_roles').select('role').eq('user_id', found.id),
-            ]);
-            let className: string | null = null;
-            const classIds = (ca ?? []).map((r: any) => r.class_id);
-            if (classIds.length) {
-              const { data: cls } = await supabaseAdmin.from('classes').select('name').in('id', classIds);
-              className = (cls ?? []).map((c: any) => c.name).join(', ') || null;
-            }
-            existing = {
-              user_id: found.id,
-              student_id: stu?.id ?? null,
-              full_name: prof?.full_name || found.user_metadata?.full_name || found.email,
-              admission_number: stu?.admission_number ?? null,
-              status: stu?.status ?? null,
-              class_name: className,
-              roles: (roles ?? []).map((r: any) => r.role),
-            };
-          }
-        } catch (lookupErr) {
-          console.error('existing lookup failed', lookupErr);
-        }
-        const who = existing
-          ? `${existing.full_name}${existing.admission_number ? ` (${existing.admission_number}${existing.class_name ? `, ${existing.class_name}` : ''})` : ''}`
-          : 'another account';
-        return new Response(JSON.stringify({
-          error: `This email already belongs to ${who}.`,
-          code: 'email_exists',
-          existing,
-        }), { status: 409, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-
-      if (/password/i.test(errorMessage)) errorMessage = `Password problem: ${errorMessage}`;
-      return new Response(JSON.stringify({ 
-        error: errorMessage,
-        code: errorCode,
-        details: createError.message 
-      }), {
+    const body = await req.json();
+    const fullName = typeof body?.fullName === 'string' ? body.fullName.trim() : '';
+    const classId = typeof body?.classId === 'string' ? body.classId : null;
+    const admissionNumber = typeof body?.admissionNumber === 'string' ? body.admissionNumber : null;
+    if (fullName.length < 2 || fullName.length > 120) {
+      return new Response(JSON.stringify({ error: 'Enter a valid student name.', code: 'invalid_name' }), {
         status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    let newUser: any = null;
+    let assignedEmail = '';
+    let createError: any = null;
+    for (let suffix = 1; suffix <= 100; suffix += 1) {
+      assignedEmail = generateStudentEmail(fullName, suffix);
+      const attempt = await supabaseAdmin.auth.admin.createUser({
+        email: assignedEmail,
+        password: getStudentCreationPassword(),
+        email_confirm: true,
+        user_metadata: { full_name: fullName, role: 'student' },
+      });
+      if (!attempt.error) {
+        newUser = attempt.data;
+        createError = null;
+        break;
+      }
+      createError = attempt.error;
+      const isDuplicateEmail = createError.code === 'email_exists' || createError.code === '23505' ||
+        /already been registered|user already registered|already exists/i.test(createError.message || '');
+      if (!isDuplicateEmail) break;
+    }
+
+    if (createError || !newUser?.user) {
+      console.error('Create student user error:', createError);
+      const duplicateLimitReached = createError && (
+        createError.code === 'email_exists' || createError.code === '23505' ||
+        /already been registered|user already registered|already exists/i.test(createError.message || '')
+      );
+      const errorMessage = duplicateLimitReached
+        ? 'Could not find an unused school email for this name. Please contact an administrator.'
+        : createError?.message || 'Failed to create student';
+      return new Response(JSON.stringify({
+        error: errorMessage,
+        code: duplicateLimitReached ? 'email_generation_exhausted' : createError?.code || 'unknown_error',
+      }), {
+        status: duplicateLimitReached ? 409 : 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -180,6 +150,7 @@ serve(async (req) => {
     return new Response(JSON.stringify({ 
       success: true, 
       user: newUser.user,
+      email: newUser.user.email || assignedEmail,
       admission_number: assignedAdmission,
       message: 'Student created successfully' 
     }), {

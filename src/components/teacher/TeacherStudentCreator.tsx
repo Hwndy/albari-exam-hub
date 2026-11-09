@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from '@supabase/supabase-js';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
+import { generateStudentEmail, STUDENT_DEFAULT_PASSWORD } from '@/lib/student-account';
 
 interface StudentForm {
   fullName: string;
@@ -238,20 +238,20 @@ export const TeacherStudentCreator: React.FC = () => {
                 <Input
                   id="fullName"
                   value={studentForm.fullName}
-                  onChange={(e) => setStudentForm({ ...studentForm, fullName: e.target.value })}
+                  onChange={(e) => setStudentForm({ ...studentForm, fullName: e.target.value, email: generateStudentEmail(e.target.value) })}
                   placeholder="Enter student's full name"
                   required
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">Generated email</Label>
                 <Input
                   id="email"
                   type="email"
                   value={studentForm.email}
-                  onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })}
-                  placeholder="Enter student's email"
+                  readOnly
+                  placeholder="Generated from the student's name"
                   required
                 />
               </div>
